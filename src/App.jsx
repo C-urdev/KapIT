@@ -1,0 +1,441 @@
+import React, { useState, useEffect } from 'react';
+import { ThemeProvider } from './context/ThemeContext';
+import LandingPage from './pages/Landing/LandingPage';
+import AuthPage from './pages/Auth/AuthPage';
+import HomePage from './pages/Home/HomePage';
+import HelpPage from './pages/Help/HelpPage';
+import CompleteProfilePage from './pages/Onboarding/CompleteProfilePage';
+import ChooseAccountTypePage from './pages/Auth/ChooseAccountTypePage';
+import CompleteCompanyProfilePage from './pages/Onboarding/CompleteCompanyProfilePage';
+import DeveloperProfile from './pages/Onboarding/DeveloperProfile';
+import CompanyProfileOnboarding from './pages/Onboarding/CompanyProfile';
+import CompanyLayout from './layouts/CompanyLayout';
+import CompanyDashboard from './pages/Company/CompanyDashboard';
+import PostJob from './pages/Company/PostJob';
+import ManageJobs from './pages/Company/ManageJobs';
+import Applicants from './pages/Company/Applicants';
+import SearchDevelopers from './pages/Company/SearchDevelopers';
+import CompanyAnalytics from './pages/Company/CompanyAnalytics';
+import CompanyProfile from './pages/Company/CompanyProfile';
+import { getStoredUser, isAuthenticated, logoutUser, updateStoredUser, getCurrentUser, updateMyProfile, getCachedProfileForEmail } from './services/authService';
+import { COMPANY_PATHS, isCompanyRoute, navigate } from './features/company/companyUtils';
+import { saveDeveloperProfile } from './features/developer/developerAPI';
+import { saveCompanyProfileOnboarding } from './features/company/companyAPI';
+import SelectAccountTypeModal from './components/Auth/SelectAccountTypeModal';
+
+const AUTH_PATHS = {
+  register: '/auth/register',
+  login: '/auth/login',
+};
+
+const ONBOARDING_PATHS = {
+  developer: '/onboarding/developer-profile',
+  company: '/onboarding/company-profile',
+};
+
+const getAccountTypeFromSearch = (search) => {
+  try {
+    const params = new URLSearchParams(search || '');
+    const value = String(params.get('type') || '').trim().toLowerCase();
+    if (value === 'developer' || value === 'company') {
+      return value;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+};
+
+const getViewForPathname = (pathname) => {
+  if (pathname === AUTH_PATHS.register || pathname === AUTH_PATHS.login) return 'auth';
+  if (pathname === ONBOARDING_PATHS.developer) return 'onboarding-developer-profile';
+  if (pathname === ONBOARDING_PATHS.company) return 'onboarding-company-profile';
+  return null;
+};
+
+export default function KapIT() {
+  const [currentView, setCurrentView] = useState('landing');
+  const [userType, setUserType] = useState(null);
+  const [isAuth, setIsAuth] = useState(false);
+  const [user, setUser] = useState(null);
+  const [pendingSignup, setPendingSignup] = useState(null);
+  const [authEntryMode, setAuthEntryMode] = useState('login');
+  const [pathname, setPathname] = useState(() => (typeof window !== 'undefined' ? window.location.pathname : '/'));
+  const [isAccountTypeModalOpen, setIsAccountTypeModalOpen] = useState(false);
+
+  // Check authentication on mount
+  useEffect(() => {
+    let canceled = false;
+
+    const routeForUser = (u) => {
+      if (!u?.profileCompleted) {
+        const accountType = u?.accountType || (u?.type === 'company' ? 'company' : 'developer');
+        return accountType === 'company' ? 'onboarding-company-profile' : 'onboarding-developer-profile';
+      }
+      return u?.type === 'company' ? 'company' : 'home';
+    };
+
+    const bootstrap = async () => {
+      if (!isAuthenticated()) {
+        const unauthView = getViewForPathname(window.location.pathname);
+        if (window.location.pathname === '/auth/select-account-type') {
+          setCurrentView('landing');
+          setIsAccountTypeModalOpen(true);
+          navigate('/');
+          return;
+        }
+        if (unauthView) {
+          setCurrentView(unauthView);
+          setAuthEntryMode(window.location.pathname === AUTH_PATHS.register ? 'signup' : 'login');
+        }
+        return;
+      }
+
+      const storedUser = getStoredUser();
+      if (!storedUser) {
+        logoutUser();
+        return;
+      }
+
+      setUser(storedUser);
+      setUserType(storedUser.type);
+      setIsAuth(true);
+      const initialView = routeForUser(storedUser);
+      setCurrentView(initialView);
+      if (initialView === 'company') {
+        if (!isCompanyRoute(window.location.pathname)) {
+          navigate(COMPANY_PATHS.dashboard);
+        }
+      } else if (initialView === 'onboarding-company-profile') {
+        navigate(ONBOARDING_PATHS.company);
+      } else if (initialView === 'onboarding-developer-profile') {
+        navigate(ONBOARDING_PATHS.developer);
+      }
+
+      try {
+        const data = await getCurrentUser();
+        if (canceled) {
+          return;
+        }
+
+        const freshUser = data?.user;
+        if (!freshUser) {
+          return;
+        }
+
+        setUser(freshUser);
+        setUserType(freshUser.type);
+        updateStoredUser(freshUser);
+        const nextView = routeForUser(freshUser);
+        setCurrentView(nextView);
+        if (nextView === 'company') {
+          if (!isCompanyRoute(window.location.pathname)) {
+            navigate(COMPANY_PATHS.dashboard);
+          }
+        } else if (nextView === 'onboarding-company-profile') {
+          navigate(ONBOARDING_PATHS.company);
+        } else if (nextView === 'onboarding-developer-profile') {
+          navigate(ONBOARDING_PATHS.developer);
+        }
+      } catch {
+        // keep local session if backend is unreachable
+      }
+    };
+
+    bootstrap();
+
+    return () => {
+      canceled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setPathname(window.location.pathname);
+      const nextView = getViewForPathname(window.location.pathname);
+      if (window.location.pathname === '/auth/select-account-type') {
+        setCurrentView('landing');
+        setIsAccountTypeModalOpen(true);
+        navigate('/');
+        return;
+      }
+      if (nextView) {
+        setCurrentView(nextView);
+        if (nextView === 'auth') {
+          setAuthEntryMode(window.location.pathname === AUTH_PATHS.register ? 'signup' : 'login');
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleGetStarted = () => {
+    setPendingSignup(null);
+    setAuthEntryMode('login');
+    setIsAccountTypeModalOpen(true);
+  };
+
+  const handleJoinAsDeveloper = () => {
+    setPendingSignup(null);
+    setAuthEntryMode('signup');
+    setCurrentView('auth');
+    navigate(`${AUTH_PATHS.register}?type=developer`);
+  };
+
+  const handleLogin = async (userData) => {
+    setPendingSignup(null);
+    setUser(userData);
+    setUserType(userData.type);
+    setIsAuth(true);
+
+    const routeForUser = (u) => {
+      if (!u?.profileCompleted) {
+        const accountType = u?.accountType || (u?.type === 'company' ? 'company' : 'developer');
+        return accountType === 'company' ? 'onboarding-company-profile' : 'onboarding-developer-profile';
+      }
+      return u?.type === 'company' ? 'company' : 'home';
+    };
+
+    if (!userData.profileCompleted) {
+      const cached = getCachedProfileForEmail(userData.email);
+      if (cached) {
+        try {
+          const data = await updateMyProfile(cached);
+          const refreshed = data?.user;
+          if (refreshed) {
+            setUser(refreshed);
+            setUserType(refreshed.type);
+            updateStoredUser(refreshed);
+            setCurrentView(routeForUser(refreshed));
+            return;
+          }
+        } catch {
+          // fall through
+        }
+      }
+    }
+
+    const nextView = routeForUser(userData);
+    setCurrentView(nextView);
+    if (nextView === 'company') {
+      if (!isCompanyRoute(window.location.pathname)) {
+        navigate(COMPANY_PATHS.dashboard);
+      }
+    } else if (nextView === 'onboarding-company-profile') {
+      navigate(ONBOARDING_PATHS.company);
+    } else if (nextView === 'onboarding-developer-profile') {
+      navigate(ONBOARDING_PATHS.developer);
+    }
+  };
+
+  const handleLogout = () => {
+    logoutUser();
+    setUser(null);
+    setUserType(null);
+    setIsAuth(false);
+    setPendingSignup(null);
+    setCurrentView('landing');
+  };
+
+  const handleProfileComplete = async (profileData) => {
+    try {
+      const data = await updateMyProfile(profileData);
+      const updatedUser = data?.user || {
+        ...user,
+        ...profileData,
+        profileCompleted: true,
+      };
+
+      setUser(updatedUser);
+      updateStoredUser(updatedUser);
+      setCurrentView('home');
+    } catch (error) {
+      console.error(error);
+      window.alert(error?.message || 'Failed to save profile. Please try again.');
+    }
+  };
+
+  const handleDeveloperProfileComplete = async (profileData) => {
+    try {
+      const data = await saveDeveloperProfile(profileData);
+      const updatedUser = data?.user || { ...user, profileCompleted: true, accountType: 'developer' };
+      setUser(updatedUser);
+      updateStoredUser(updatedUser);
+      setCurrentView('home');
+      navigate('/');
+    } catch (error) {
+      console.error(error);
+      window.alert(error?.message || 'Failed to save profile. Please try again.');
+    }
+  };
+
+  const handleCompanyProfileComplete = async (profileData) => {
+    try {
+      const data = await saveCompanyProfileOnboarding(profileData);
+      const updatedUser = data?.user || { ...user, profileCompleted: true, accountType: 'company', type: 'company' };
+      setUser(updatedUser);
+      updateStoredUser(updatedUser);
+      setCurrentView('company');
+      navigate(COMPANY_PATHS.dashboard);
+    } catch (error) {
+      console.error(error);
+      window.alert(error?.message || 'Failed to save company profile. Please try again.');
+    }
+  };
+
+  const handleBeginSignup = (signupData) => {
+    setPendingSignup(signupData);
+    setCurrentView('choose-account-type');
+  };
+
+  const handleSignupCanceled = () => {
+    setPendingSignup(null);
+    setAuthEntryMode('signup');
+    setCurrentView('auth');
+  };
+
+  const handleUserUpdate = async (updates) => {
+    const previousUser = user;
+    const optimisticUser = {
+      ...user,
+      ...updates,
+    };
+
+    setUser(optimisticUser);
+    updateStoredUser(optimisticUser);
+
+    try {
+      const data = await updateMyProfile(updates);
+      const savedUser = data?.user;
+      if (savedUser) {
+        setUser(savedUser);
+        updateStoredUser(savedUser);
+      }
+    } catch (error) {
+      const isProfileImageUpdate = Object.prototype.hasOwnProperty.call(updates || {}, 'profileImage');
+      if (isProfileImageUpdate) {
+        setUser(previousUser);
+        updateStoredUser(previousUser);
+        throw error;
+      }
+    }
+  };
+
+  return (
+    <ThemeProvider>
+      <div className="min-h-screen bg-white dark:bg-black transition-colors duration-300">
+        {currentView === 'company' && isAuth && userType === 'company' && (
+          <CompanyLayout pathname={pathname} user={user} onLogout={handleLogout}>
+            {pathname === COMPANY_PATHS.dashboard && <CompanyDashboard />}
+            {pathname === COMPANY_PATHS.premium && <CompanyDashboard />}
+            {pathname === COMPANY_PATHS.postJob && <PostJob />}
+            {pathname === COMPANY_PATHS.jobs && <ManageJobs />}
+            {pathname === COMPANY_PATHS.applicants && <Applicants />}
+            {pathname === COMPANY_PATHS.search && <SearchDevelopers />}
+            {pathname === COMPANY_PATHS.analytics && <CompanyAnalytics />}
+            {pathname === COMPANY_PATHS.profile && (
+              <CompanyProfile
+                user={user}
+                onUpdated={(company, form) =>
+                  handleUserUpdate({
+                    companyName: form?.name,
+                    profileImage: form?.logo,
+                    bio: form?.description,
+                    address: form?.location,
+                    website: form?.website,
+                  })
+                }
+              />
+            )}
+            {!Object.values(COMPANY_PATHS).includes(pathname) && <CompanyDashboard />}
+          </CompanyLayout>
+        )}
+        {currentView === 'landing' && (
+          <LandingPage onGetStarted={handleGetStarted} onJoinDeveloper={handleJoinAsDeveloper} />
+        )}
+        {currentView === 'auth' && (
+          <AuthPage 
+            userType={userType}
+            accountType={pathname === AUTH_PATHS.register ? getAccountTypeFromSearch(window.location.search) : null}
+            onLogin={handleLogin}
+            onBeginSignup={handleBeginSignup}
+            onRequestAccountType={() => {
+              setCurrentView('landing');
+              navigate('/');
+              setIsAccountTypeModalOpen(true);
+            }}
+            initialMode={authEntryMode}
+            onBack={() => { setCurrentView('landing'); navigate('/'); }} 
+          />
+        )}
+        {currentView === 'choose-account-type' && (
+          <ChooseAccountTypePage
+            pendingSignup={pendingSignup}
+            onBack={handleSignupCanceled}
+            onRegistered={handleLogin}
+          />
+        )}
+        {currentView === 'home' && isAuth && (
+          <HomePage
+            user={user}
+            userType={userType}
+            onOpenHelp={() => setCurrentView('help')}
+            onLogout={handleLogout}
+            onUpdateUser={handleUserUpdate}
+          />
+        )}
+        {currentView === 'help' && isAuth && (
+          <HelpPage onBack={() => setCurrentView('home')} />
+        )}
+        {currentView === 'complete-profile' && isAuth && (
+          <CompleteProfilePage
+            user={user}
+            onSubmit={handleProfileComplete}
+            onLogout={handleLogout}
+          />
+        )}
+        {currentView === 'complete-company-profile' && isAuth && (
+          <CompleteCompanyProfilePage
+            user={user}
+            onSubmit={handleProfileComplete}
+            onLogout={handleLogout}
+          />
+        )}
+        {currentView === 'onboarding-developer-profile' && isAuth && (
+          <DeveloperProfile user={user} onSubmit={handleDeveloperProfileComplete} onLogout={handleLogout} />
+        )}
+        {currentView === 'onboarding-company-profile' && isAuth && (
+          <CompanyProfileOnboarding user={user} onSubmit={handleCompanyProfileComplete} onLogout={handleLogout} />
+        )}
+
+        <SelectAccountTypeModal
+          open={isAccountTypeModalOpen && currentView === 'landing'}
+          onClose={() => setIsAccountTypeModalOpen(false)}
+          onSelect={(type) => {
+            setIsAccountTypeModalOpen(false);
+            if (type === 'login') {
+              setAuthEntryMode('login');
+              setCurrentView('auth');
+              navigate(AUTH_PATHS.login);
+              return;
+            }
+
+            if (type === 'developer') {
+              setAuthEntryMode('signup');
+              setCurrentView('auth');
+              navigate(`${AUTH_PATHS.register}?type=developer`);
+              return;
+            }
+
+            if (type === 'company') {
+              setAuthEntryMode('signup');
+              setCurrentView('auth');
+              navigate(`${AUTH_PATHS.register}?type=company`);
+            }
+          }}
+        />
+      </div>
+    </ThemeProvider>
+  );
+}
