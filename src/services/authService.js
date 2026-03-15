@@ -9,6 +9,35 @@ const getErrorMessage = (data, fallbackMessage) => {
   return data?.message || fallbackMessage;
 };
 
+const parseApiResponse = async (response, fallbackMessage) => {
+  const contentType = response.headers.get('content-type') || '';
+  const rawText = await response.text();
+
+  if (!rawText) {
+    return {};
+  }
+
+  if (contentType.includes('application/json')) {
+    try {
+      return JSON.parse(rawText);
+    } catch {
+      throw new Error(fallbackMessage);
+    }
+  }
+
+  const normalizedText = rawText.trim();
+
+  if (normalizedText.startsWith('<!DOCTYPE') || normalizedText.startsWith('<html')) {
+    throw new Error('API returned HTML instead of JSON. Check your Vercel API deployment and environment variables.');
+  }
+
+  try {
+    return JSON.parse(normalizedText);
+  } catch {
+    throw new Error(normalizedText || fallbackMessage);
+  }
+};
+
 const getStoredUserSafe = () => {
   try {
     const raw = localStorage.getItem('user');
@@ -100,7 +129,6 @@ export const getCachedProfileForEmail = (email) => {
   return cache[emailKey] || null;
 };
 
-// Register user
 export const registerUser = async (userData) => {
   try {
     const payload = { ...(userData || {}) };
@@ -129,13 +157,12 @@ export const registerUser = async (userData) => {
       body: JSON.stringify(payload),
     });
 
-    const data = await response.json();
+    const data = await parseApiResponse(response, 'Registration failed');
 
     if (!response.ok) {
       throw new Error(getErrorMessage(data, 'Registration failed'));
     }
 
-    // Store token in localStorage
     if (data.token) {
       const existingUser = getStoredUserSafe() || {};
       const mergedUser = mergeWithProfileCache({ ...existingUser, ...data.user });
@@ -151,7 +178,6 @@ export const registerUser = async (userData) => {
   }
 };
 
-// Login user
 export const loginUser = async (credentials) => {
   try {
     const response = await fetch(`${API_URL}/login`, {
@@ -162,13 +188,12 @@ export const loginUser = async (credentials) => {
       body: JSON.stringify(credentials),
     });
 
-    const data = await response.json();
+    const data = await parseApiResponse(response, 'Login failed');
 
     if (!response.ok) {
       throw new Error(getErrorMessage(data, 'Login failed'));
     }
 
-    // Store token in localStorage
     if (data.token) {
       const existingUser = getStoredUserSafe() || {};
       const mergedUser = mergeWithProfileCache({ ...existingUser, ...data.user });
@@ -184,7 +209,6 @@ export const loginUser = async (credentials) => {
   }
 };
 
-// Get current user
 export const getCurrentUser = async () => {
   try {
     const token = localStorage.getItem('token');
@@ -196,12 +220,12 @@ export const getCurrentUser = async () => {
     const response = await fetch(`${API_URL}/me`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
 
-    const data = await response.json();
+    const data = await parseApiResponse(response, 'Failed to get user');
 
     if (!response.ok) {
       throw new Error(getErrorMessage(data, 'Failed to get user'));
@@ -213,7 +237,6 @@ export const getCurrentUser = async () => {
   }
 };
 
-// Update current user's profile (requires auth)
 export const updateMyProfile = async (updates) => {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -229,7 +252,7 @@ export const updateMyProfile = async (updates) => {
     body: JSON.stringify(updates || {}),
   });
 
-  const data = await response.json();
+  const data = await parseApiResponse(response, 'Failed to update profile');
   if (!response.ok) {
     throw new Error(getErrorMessage(data, 'Failed to update profile'));
   }
@@ -243,19 +266,16 @@ export const updateMyProfile = async (updates) => {
   return data;
 };
 
-// Logout user
 export const logoutUser = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
 };
 
-// Check if user is authenticated
 export const isAuthenticated = () => {
   const token = localStorage.getItem('token');
   return !!token;
 };
 
-// Get stored user
 export const getStoredUser = () => {
   const user = localStorage.getItem('user');
   if (!user) {
@@ -269,7 +289,6 @@ export const getStoredUser = () => {
   }
 };
 
-// Persist updated user data
 export const updateStoredUser = (updates) => {
   const currentUser = getStoredUser() || {};
   const nextUser = { ...currentUser, ...updates };
@@ -278,7 +297,6 @@ export const updateStoredUser = (updates) => {
   return nextUser;
 };
 
-// Search users/companies (requires auth)
 export const searchAccounts = async (query) => {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -293,7 +311,7 @@ export const searchAccounts = async (query) => {
     },
   });
 
-  const data = await response.json();
+  const data = await parseApiResponse(response, 'Search failed');
   if (!response.ok) {
     throw new Error(getErrorMessage(data, 'Search failed'));
   }
@@ -301,7 +319,6 @@ export const searchAccounts = async (query) => {
   return Array.isArray(data.results) ? data.results : [];
 };
 
-// Get public profile by id (requires auth)
 export const getPublicProfile = async (userId) => {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -316,7 +333,7 @@ export const getPublicProfile = async (userId) => {
     },
   });
 
-  const data = await response.json();
+  const data = await parseApiResponse(response, 'Failed to load profile');
   if (!response.ok) {
     throw new Error(getErrorMessage(data, 'Failed to load profile'));
   }

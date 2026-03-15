@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/database');
+const isDev = process.env.NODE_ENV !== 'production';
 
 const normalizeAccountType = (raw) => {
   const value = String(raw || '').trim().toLowerCase();
@@ -164,7 +165,13 @@ const register = async (req, res) => {
     console.error('Registration error:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Server error during registration' 
+      message: 'Server error during registration',
+      ...(isDev
+        ? {
+            errorDetail: error?.message || String(error),
+            errorCode: error?.code || '',
+          }
+        : {}),
     });
   } finally {
     if (client) {
@@ -233,7 +240,13 @@ const login = async (req, res) => {
     console.error('Login error:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Server error during login'
+      message: 'Server error during login',
+      ...(isDev
+        ? {
+            errorDetail: error?.message || String(error),
+            errorCode: error?.code || '',
+          }
+        : {}),
     });
   } finally {
     if (client) {
@@ -289,7 +302,13 @@ const getCurrentUser = async (req, res) => {
     console.error('Get user error:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Server error' 
+      message: 'Server error',
+      ...(isDev
+        ? {
+            errorDetail: error?.message || String(error),
+            errorCode: error?.code || '',
+          }
+        : {}),
     });
   } finally {
     if (client) {
@@ -353,6 +372,12 @@ const getPublicProfile = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Server error while fetching profile',
+      ...(isDev
+        ? {
+            errorDetail: error?.message || String(error),
+            errorCode: error?.code || '',
+          }
+        : {}),
     });
   } finally {
     if (client) {
@@ -408,6 +433,12 @@ const searchUsers = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Server error during search',
+      ...(isDev
+        ? {
+            errorDetail: error?.message || String(error),
+            errorCode: error?.code || '',
+          }
+        : {}),
     });
   } finally {
     if (client) {
@@ -508,6 +539,12 @@ const updateMyProfile = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Server error while updating profile',
+      ...(isDev
+        ? {
+            errorDetail: error?.message || String(error),
+            errorCode: error?.code || '',
+          }
+        : {}),
     });
   } finally {
     if (client) {
