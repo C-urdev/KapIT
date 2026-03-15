@@ -290,8 +290,7 @@ export default function DeveloperProfile({ user, onSubmit, onLogout }) {
         (!requiresVocationalCourse || String(form.vocationalCourse).trim()) &&
         (!requiresCustomEducation || String(form.customEducationAttainment).trim()) &&
         String(form.school).trim() &&
-        (!requiresCustomSchool || String(form.customSchool).trim()) &&
-        String(form.aboutMe).trim()
+        (!requiresCustomSchool || String(form.customSchool).trim())
     );
   }, [form, requiresCustomEducation, requiresCustomSchool, requiresVocationalCourse]);
 
@@ -414,7 +413,7 @@ export default function DeveloperProfile({ user, onSubmit, onLogout }) {
                     onChange={(e) => onPickPhoto(e.target.files?.[0] || null)}
                     className="block w-full text-sm text-[#344e41] dark:text-slate-300 file:mr-4 file:rounded-lg file:border-0 file:bg-[#eef6ee] file:px-4 file:py-2 file:font-semibold file:text-[#3a5a40] hover:file:bg-[#e3eee3] dark:file:bg-[#1e3a5f] dark:file:text-[#b8d4e8] dark:hover:file:bg-[#24496d]"
                   />
-                  <p className="mt-2 text-xs text-[#5f6f52] dark:text-slate-400">JPG/PNG recommended (stored as a base64 data URL).</p>
+                  <p className="mt-2 text-xs text-[#5f6f52] dark:text-slate-400">JPG/PNG recommended.</p>
                 </div>
               </div>
             </Section>
@@ -569,7 +568,7 @@ export default function DeveloperProfile({ user, onSubmit, onLogout }) {
             </Section>
 
             <Section title="About Me">
-              <textarea value={form.aboutMe} onChange={(e) => setForm((p) => ({ ...p, aboutMe: e.target.value }))} className="field min-h-28" placeholder="Short description about you, your work style, and what you're looking for." required />
+              <textarea value={form.aboutMe} onChange={(e) => setForm((p) => ({ ...p, aboutMe: e.target.value }))} className="field min-h-28" placeholder="Short description about you, your work style, and what you're looking for. (Optional)" />
             </Section>
 
             <Section title="Resume (Optional)">

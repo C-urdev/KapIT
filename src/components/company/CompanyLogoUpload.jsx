@@ -9,7 +9,7 @@ const readAsDataUrl = (file) =>
     reader.readAsDataURL(file);
   });
 
-export default function CompanyLogoUpload({ value, onChange }) {
+export default function CompanyLogoUpload({ value, onChange, compact = false }) {
   const hasValue = Boolean(value);
 
   const handleFile = async (file) => {
@@ -46,9 +46,7 @@ export default function CompanyLogoUpload({ value, onChange }) {
       </div>
 
       {hasValue && (
-        <div className="mt-3 w-20 h-20 rounded-2xl bg-[#f5f5f2] dark:bg-[#1e3a5f] border border-[#a3b18a] dark:border-[#2a4a6f] overflow-hidden transition-colors duration-300">
-          <img src={value} alt="Company logo" className="w-full h-full object-cover" />
-        </div>
+        <div className={`mt-3 overflow-hidden border border-[#a3b18a] bg-[#f5f5f2] transition-colors duration-300 dark:border-[#2a4a6f] dark:bg-[#1e3a5f] ${compact ? 'h-16 w-16 rounded-xl' : 'h-20 w-20 rounded-2xl'}`}><img src={value} alt="Company logo" className="h-full w-full object-cover" /></div>
       )}
 
       <input
@@ -57,7 +55,6 @@ export default function CompanyLogoUpload({ value, onChange }) {
         onChange={(e) => handleFile(e.target.files?.[0] || null)}
         className="mt-3 block w-full text-sm text-[#344e41] dark:text-[#b8d4e8] file:mr-4 file:rounded-lg file:border-0 file:bg-[#f5f5f2] file:px-4 file:py-2 file:font-semibold file:text-[#344e41] hover:file:bg-[#dad7cd] dark:file:bg-[#1e3a5f] dark:file:text-white dark:hover:file:bg-[#2a4a6f] transition-colors"
       />
-      <p className="mt-2 text-xs text-[#4b5563] dark:text-[#b8d4e8]">Stored as a base64 data URL.</p>
     </div>
   );
 }

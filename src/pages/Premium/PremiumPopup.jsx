@@ -39,7 +39,7 @@ function PlanCard({ plan }) {
 
   return (
     <div
-      className={`flex min-h-[620px] flex-col rounded-[22px] border p-6 transition-colors ${
+      className={`flex min-h-[520px] flex-col rounded-[20px] border p-5 transition-colors ${
         highlighted
           ? 'border-[#588157] bg-[linear-gradient(180deg,#f4f8f1,#eaf2e5)] shadow-[0_20px_60px_rgba(88,129,87,0.16)] dark:border-[#3ba9d6]/45 dark:bg-[linear-gradient(180deg,#17314a,#102235)] dark:shadow-[0_20px_60px_rgba(11,26,45,0.42)]'
           : 'border-[#d6d3c9] bg-[linear-gradient(180deg,#ffffff,#f5f5f2)] shadow-[0_20px_60px_rgba(0,0,0,0.08)] dark:border-[#2a4a6f] dark:bg-[linear-gradient(180deg,#162842,#102235)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.25)]'
@@ -86,8 +86,8 @@ export default function PremiumPopup({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-5xl overflow-hidden rounded-[28px] border border-[#a3b18a] bg-white shadow-[0_30px_80px_rgba(0,0,0,0.18)] dark:border-[#2a4a6f] dark:bg-[#162842] dark:shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
-        <div className="flex items-start justify-between gap-4 border-b border-[#a3b18a] px-6 py-5 dark:border-[#2a4a6f]">
+      <div className="w-full max-w-4xl overflow-hidden rounded-[28px] border border-[#a3b18a] bg-white shadow-[0_30px_80px_rgba(0,0,0,0.18)] dark:border-[#2a4a6f] dark:bg-[#162842] dark:shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+        <div className="flex items-start justify-between gap-4 border-b border-[#a3b18a] px-5 py-4 dark:border-[#2a4a6f]">
           <div>
             <h2 className="flex items-center gap-2 text-2xl font-semibold text-[#102a1b] dark:text-white">
               <Crown className="h-6 w-6 text-[#588157] dark:text-[#7fd0ee]" />
@@ -105,7 +105,7 @@ export default function PremiumPopup({ isOpen, onClose }) {
           </button>
         </div>
 
-        <div className="grid gap-6 p-6 md:grid-cols-2">
+        <div className="grid gap-5 p-5 md:grid-cols-2">
           {plans.map((plan) => (
             <PlanCard key={plan.id} plan={plan} />
           ))}

@@ -1,35 +1,185 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Building2, LogOut, Moon, Sun } from 'lucide-react';
+import phil from 'phil-reg-prov-mun-brgy';
 import { useTheme } from '@context/ThemeContext';
 import KapITLogo from '@components/KapITLogo';
 import CompanyLogoUpload from '@components/company/CompanyLogoUpload';
-import ProjectForm from '@components/company/ProjectForm';
 import { navigate } from '@features/company/companyUtils';
+
+const INDUSTRY_OPTIONS = [
+  'Information Technology Services',
+  'Software Development',
+  'Web Development',
+  'Mobile App Development',
+  'E-commerce',
+  'Fintech',
+  'EdTech',
+  'HealthTech',
+  'Cybersecurity',
+  'Cloud Computing',
+  'AI / Machine Learning',
+  'Data Analytics',
+  'IT Consulting',
+  'BPO / Outsourcing',
+  'Telecommunications',
+  'Digital Marketing',
+  'Gaming / Entertainment Tech',
+  'Startup / SaaS',
+];
+
+const COMPANY_SIZE_OPTIONS = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'];
+const NCR_PROVINCE_CODE = 'metro-manila';
+const NCR_COMPONENT_CODES = ['1339', '1374', '1375', '1376'];
+const EXCLUDED_PROVINCE_CODES = new Set(['0997', '1298']);
+
+const titleCase = (value) =>
+  String(value || '')
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+const cleanPlaceName = (value) =>
+  titleCase(String(value || ''))
+    .replace(/\s*\(Capital\)$/i, '')
+    .replace(/^City Of /i, '')
+    .replace(/\s+City$/i, '')
+    .trim();
+
+const provinceOptions = (() => {
+  const unique = new Map();
+  for (const province of phil.provinces || []) {
+    if (EXCLUDED_PROVINCE_CODES.has(province.prov_code)) {
+      continue;
+    }
+    if (NCR_COMPONENT_CODES.includes(province.prov_code)) {
+      continue;
+    }
+    if (!unique.has(province.prov_code)) {
+      unique.set(province.prov_code, {
+        code: province.prov_code,
+        label: cleanPlaceName(province.name),
+      });
+    }
+  }
+
+  const options = Array.from(unique.values()).sort((a, b) => a.label.localeCompare(b.label));
+  options.unshift({ code: NCR_PROVINCE_CODE, label: 'Metro Manila' });
+  return options;
+})();
+
+const provinceLabelByCode = Object.fromEntries(provinceOptions.map((option) => [option.code, option.label]));
+const provinceCodeByLabel = Object.fromEntries(provinceOptions.map((option) => [option.label.toLowerCase(), option.code]));
+
+const ncrCityOptions = (() => {
+  const seen = new Set(['Manila']);
+  const cities = [{ name: 'Manila' }];
+
+  for (const record of phil.city_mun || []) {
+    if (!NCR_COMPONENT_CODES.includes(record.prov_code)) {
+      continue;
+    }
+
+    const cleaned = cleanPlaceName(record.name);
+    if (!cleaned || seen.has(cleaned)) {
+      continue;
+    }
+
+    seen.add(cleaned);
+    cities.push({ name: cleaned });
+  }
+
+  return cities.sort((a, b) => a.name.localeCompare(b.name));
+})();
+
+const getCitiesForProvince = (provinceCode) => {
+  if (!provinceCode) {
+    return [];
+  }
+
+  if (provinceCode === NCR_PROVINCE_CODE) {
+    return ncrCityOptions;
+  }
+
+  const result = phil.getCityMunByProvince(provinceCode) || [];
+  return result
+    .map((record) => ({ name: cleanPlaceName(record.name) }))
+    .filter((record, index, arr) => record.name && arr.findIndex((item) => item.name === record.name) === index)
+    .sort((a, b) => a.name.localeCompare(b.name));
+};
+
+const parseLocation = (rawLocation) => {
+  const normalized = String(rawLocation || '')
+    .replace(/,\s*Philippines\s*$/i, '')
+    .trim();
+
+  if (!normalized) {
+    return { provinceCode: '', city: '' };
+  }
+
+  const parts = normalized.split(',').map((part) => part.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    const city = cleanPlaceName(parts[0]);
+    const provinceCode = provinceCodeByLabel[cleanPlaceName(parts[1]).toLowerCase()] || '';
+    return { provinceCode, city };
+  }
+
+  const cityOnly = cleanPlaceName(normalized);
+  for (const option of provinceOptions) {
+    const cities = getCitiesForProvince(option.code);
+    if (cities.some((item) => item.name.toLowerCase() === cityOnly.toLowerCase())) {
+      return { provinceCode: option.code, city: cityOnly };
+    }
+  }
+
+  return { provinceCode: '', city: '' };
+};
+
+const formatLocation = (city, provinceCode) => {
+  const provinceLabel = provinceLabelByCode[provinceCode] || '';
+  if (!city || !provinceLabel) {
+    return '';
+  }
+  return `${city}, ${provinceLabel}, Philippines`;
+};
 
 export default function CompanyProfile({ user, onSubmit, onLogout }) {
   const { theme, toggleTheme } = useTheme();
   const [saving, setSaving] = useState(false);
+  const initialLocation = parseLocation(user?.address || '');
   const [form, setForm] = useState({
     companyName: user?.companyName || user?.username || '',
     logoUrl: user?.profileImage || '',
     industry: user?.industry || '',
     companySize: user?.companySize || '',
-
     description: user?.bio || '',
     website: user?.website || '',
-    location: user?.address || '',
-
+    provinceCode: initialLocation.provinceCode,
+    city: initialLocation.city,
+    location: formatLocation(initialLocation.city, initialLocation.provinceCode),
     contactEmail: user?.email || '',
     phoneNumber: user?.phone || '',
-
-    project: {
-      title: '',
-      description: '',
-      budgetRange: '',
-      timeline: '',
-      servicesNeeded: [],
-    },
   });
+
+  const cityOptions = useMemo(() => getCitiesForProvince(form.provinceCode), [form.provinceCode]);
+
+  useEffect(() => {
+    setForm((prev) => {
+      const nextCities = getCitiesForProvince(prev.provinceCode);
+      const hasCity = nextCities.some((option) => option.name === prev.city);
+      const nextCity = hasCity ? prev.city : '';
+      return {
+        ...prev,
+        city: nextCity,
+        location: formatLocation(nextCity, prev.provinceCode),
+      };
+    });
+  }, [form.provinceCode]);
+
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      location: formatLocation(prev.city, prev.provinceCode),
+    }));
+  }, [form.city]);
 
   const isComplete = useMemo(() => {
     return Boolean(
@@ -56,11 +206,6 @@ export default function CompanyProfile({ user, onSubmit, onLogout }) {
         location: form.location,
         contactEmail: form.contactEmail,
         phoneNumber: form.phoneNumber,
-        servicesNeeded: form.project.servicesNeeded,
-        projectTitle: form.project.title,
-        projectDescription: form.project.description,
-        budgetRange: form.project.budgetRange,
-        timeline: form.project.timeline,
       });
     } finally {
       setSaving(false);
@@ -69,8 +214,8 @@ export default function CompanyProfile({ user, onSubmit, onLogout }) {
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-200">
-      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-30">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-900/80 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
           <button
             type="button"
             onClick={() => navigate('/')}
@@ -87,7 +232,7 @@ export default function CompanyProfile({ user, onSubmit, onLogout }) {
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+              className="rounded-lg p-2 transition-colors hover:bg-slate-800"
               aria-label="Toggle theme"
             >
               {theme === 'light' ? <Moon className="w-5 h-5 text-slate-200" /> : <Sun className="w-5 h-5 text-slate-200" />}
@@ -95,7 +240,7 @@ export default function CompanyProfile({ user, onSubmit, onLogout }) {
             <button
               type="button"
               onClick={onLogout}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-200 hover:bg-rose-500/15"
+              className="inline-flex items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-rose-200 hover:bg-rose-500/15"
             >
               <LogOut className="w-4 h-4" />
               Log out
@@ -104,21 +249,24 @@ export default function CompanyProfile({ user, onSubmit, onLogout }) {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-10">
-        <div className="rounded-xl shadow-lg shadow-black/30 border border-slate-800 bg-slate-800/60 p-6">
+      <main className="mx-auto max-w-5xl px-4 py-10">
+        <div className="rounded-xl border border-slate-800 bg-slate-800/60 p-6 shadow-lg shadow-black/30">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-700 bg-slate-900">
               <Building2 className="w-6 h-6 text-blue-400" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white">Complete your company profile</h1>
-              <p className="mt-1 text-sm text-slate-400">Set up your company details and hiring needs.</p>
+              <h1 className="text-2xl font-extrabold text-white sm:text-3xl">Complete your company profile</h1>
+              <p className="mt-1 text-sm text-slate-400">Set up your company details so developers can recognize and trust your brand.</p>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-8">
             <Section title="Company Identity">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Field label="Company Logo (Optional)" full>
+                  <CompanyLogoUpload value={form.logoUrl} onChange={(logoUrl) => setForm((p) => ({ ...p, logoUrl }))} compact />
+                </Field>
                 <Field label="Company Name">
                   <input
                     value={form.companyName}
@@ -128,32 +276,41 @@ export default function CompanyProfile({ user, onSubmit, onLogout }) {
                   />
                 </Field>
                 <Field label="Industry">
-                  <input
+                  <select
                     value={form.industry}
                     onChange={(e) => setForm((p) => ({ ...p, industry: e.target.value }))}
                     className="field"
-                    placeholder="e.g. IT Services, E-commerce"
                     required
-                  />
+                  >
+                    <option value="">Select an industry</option>
+                    {INDUSTRY_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
                 </Field>
                 <Field label="Company Size">
-                  <input
+                  <select
                     value={form.companySize}
                     onChange={(e) => setForm((p) => ({ ...p, companySize: e.target.value }))}
                     className="field"
-                    placeholder="e.g. 11-50"
                     required
-                  />
-                </Field>
-                <Field label="Company Logo" full>
-                  <CompanyLogoUpload value={form.logoUrl} onChange={(logoUrl) => setForm((p) => ({ ...p, logoUrl }))} />
+                  >
+                    <option value="">Select company size</option>
+                    {COMPANY_SIZE_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
                 </Field>
               </div>
             </Section>
 
             <Section title="Company Details">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Field label="Website (optional)">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Field label="Website (Optional)">
                   <input
                     value={form.website}
                     onChange={(e) => setForm((p) => ({ ...p, website: e.target.value }))}
@@ -161,39 +318,60 @@ export default function CompanyProfile({ user, onSubmit, onLogout }) {
                     placeholder="https://"
                   />
                 </Field>
-                <Field label="Location">
-                  <input
-                    value={form.location}
-                    onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
+                <Field label="Province">
+                  <select
+                    value={form.provinceCode}
+                    onChange={(e) => setForm((p) => ({ ...p, provinceCode: e.target.value }))}
                     className="field"
-                    placeholder="e.g. Manila, Philippines"
                     required
-                  />
+                  >
+                    <option value="">Select a province</option>
+                    {provinceOptions.map((province) => (
+                      <option key={province.code} value={province.code}>
+                        {province.label}
+                      </option>
+                    ))}
+                  </select>
                 </Field>
-                <Field label="Company Description" full>
+                <Field label="City / Municipality">
+                  <select
+                    value={form.city}
+                    onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))}
+                    className="field"
+                    required
+                    disabled={!form.provinceCode}
+                  >
+                    <option value="">{form.provinceCode ? 'Select a city or municipality' : 'Select a province first'}</option>
+                    {cityOptions.map((city) => (
+                      <option key={city.name} value={city.name}>
+                        {city.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Country">
+                  <input value="Philippines" readOnly className="field bg-[#f5f5f2] dark:bg-[#0f2139]/60" />
+                </Field>
+                <Field label="Saved Location" full>
+                  <input value={form.location} readOnly className="field bg-[#f5f5f2] dark:bg-[#0f2139]/60" />
+                </Field>
+                <Field label="Company Description (Optional)" full>
                   <textarea
                     value={form.description}
                     onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
                     className="field min-h-28"
-                    placeholder="What does your company do?"
+                    placeholder="What does your company do? (Optional)"
                   />
                 </Field>
               </div>
             </Section>
 
-            <Section title="Project Details">
-              <ProjectForm
-                value={form.project}
-                onChange={(project) => setForm((p) => ({ ...p, project }))}
-              />
-            </Section>
-
             <Section title="Contact Information">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Field label="Contact Email">
                   <input value={form.contactEmail} readOnly className="field bg-[#f5f5f2] dark:bg-[#0f2139]/60" />
                 </Field>
-                <Field label="Phone Number (optional)">
+                <Field label="Phone Number (Optional)">
                   <input
                     value={form.phoneNumber}
                     onChange={(e) => setForm((p) => ({ ...p, phoneNumber: e.target.value }))}
@@ -208,9 +386,9 @@ export default function CompanyProfile({ user, onSubmit, onLogout }) {
               <button
                 type="submit"
                 disabled={!isComplete || saving}
-                className="rounded-xl shadow-lg shadow-black/30 bg-blue-500/15 border border-blue-500/30 text-blue-200 hover:bg-blue-500/25 px-5 py-3 font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+                className="rounded-xl border border-blue-500/30 bg-blue-500/15 px-5 py-3 font-semibold text-blue-200 shadow-lg shadow-black/30 hover:bg-blue-500/25 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {saving ? 'Saving…' : 'Save company profile'}
+                {saving ? 'Saving...' : 'Save company profile'}
               </button>
             </div>
           </form>
@@ -232,7 +410,7 @@ function Section({ title, children }) {
 function Field({ label, full = false, children }) {
   return (
     <div className={full ? 'md:col-span-2' : ''}>
-      <label className="block text-sm font-semibold text-slate-200 mb-1">{label}</label>
+      <label className="mb-1 block text-sm font-semibold text-slate-200">{label}</label>
       {children}
     </div>
   );
