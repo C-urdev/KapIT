@@ -165,7 +165,7 @@ const upsertMyDeveloperProfile = async (req, res) => {
          school_university,
          updated_at
        )
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,CURRENT_TIMESTAMP)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,CURRENT_TIMESTAMP)
        ON CONFLICT (user_id) DO UPDATE SET
          full_name = EXCLUDED.full_name,
          username = EXCLUDED.username,
@@ -235,4 +235,3 @@ module.exports = {
   getMyDeveloperProfile,
   upsertMyDeveloperProfile,
 };
-

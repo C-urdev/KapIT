@@ -53,6 +53,68 @@ const getViewForPathname = (pathname) => {
   return null;
 };
 
+const buildDeveloperProfilePayload = (cached, userData) => {
+  const payload = {
+    profileImage: cached?.profileImage || '',
+    fullName: cached?.fullName || cached?.name || '',
+    username: cached?.username || userData?.username || '',
+    location: cached?.location || cached?.address || '',
+    phoneNumber: cached?.phoneNumber || cached?.phone || '',
+    email: userData?.email || cached?.contactEmail || '',
+    jobTitle: cached?.jobTitle || '',
+    yearsOfExperience: cached?.yearsOfExperience || '',
+    skills: Array.isArray(cached?.skills) ? cached.skills.filter(Boolean) : [],
+    preferredRole: cached?.preferredRole || cached?.desiredJob || '',
+    educationAttainment: cached?.educationAttainment || cached?.education || '',
+    school: cached?.school || '',
+    certifications: cached?.certifications || '',
+    github: cached?.github || '',
+    portfolioWebsite: cached?.portfolioWebsite || '',
+    linkedin: cached?.linkedin || '',
+    otherLinks: cached?.otherLinks || '',
+    workPreference: cached?.workPreference || 'remote',
+    aboutMe: cached?.aboutMe || cached?.bio || '',
+    resume: cached?.resume || '',
+  };
+
+  const isValid =
+    payload.fullName &&
+    payload.username &&
+    payload.location &&
+    payload.phoneNumber &&
+    payload.email &&
+    payload.jobTitle &&
+    String(payload.yearsOfExperience).trim() !== '' &&
+    payload.preferredRole &&
+    payload.educationAttainment &&
+    payload.school &&
+    payload.aboutMe;
+
+  return isValid ? payload : null;
+};
+
+const buildCompanyProfilePayload = (cached, userData) => {
+  const payload = {
+    companyName: cached?.companyName || userData?.companyName || userData?.username || '',
+    logoUrl: cached?.logoUrl || cached?.profileImage || '',
+    industry: cached?.industry || '',
+    companySize: cached?.companySize || '',
+    description: cached?.description || cached?.bio || '',
+    website: cached?.website || '',
+    location: cached?.location || cached?.address || '',
+    contactEmail: userData?.email || cached?.contactEmail || '',
+    phoneNumber: cached?.phoneNumber || cached?.phone || '',
+    servicesNeeded: Array.isArray(cached?.servicesNeeded) ? cached.servicesNeeded.filter(Boolean) : [],
+    projectTitle: cached?.projectTitle || '',
+    projectDescription: cached?.projectDescription || '',
+    budgetRange: cached?.budgetRange || '',
+    timeline: cached?.timeline || '',
+  };
+
+  const isValid = payload.companyName && payload.industry && payload.companySize && payload.location && payload.contactEmail;
+  return isValid ? payload : null;
+};
+
 export default function KapIT() {
   const [currentView, setCurrentView] = useState('landing');
   const [userType, setUserType] = useState(null);
@@ -63,17 +125,59 @@ export default function KapIT() {
   const [pathname, setPathname] = useState(() => (typeof window !== 'undefined' ? window.location.pathname : '/'));
   const [isAccountTypeModalOpen, setIsAccountTypeModalOpen] = useState(false);
 
+  const routeForUser = (u) => {
+    if (!u?.profileCompleted) {
+      const accountType = u?.accountType || (u?.type === 'company' ? 'company' : 'developer');
+      return accountType === 'company' ? 'onboarding-company-profile' : 'onboarding-developer-profile';
+    }
+    return u?.type === 'company' ? 'company' : 'home';
+  };
+
+  const syncCachedProfileIfNeeded = async (userData) => {
+    if (!userData || userData.profileCompleted) {
+      return userData;
+    }
+
+    const cached = getCachedProfileForEmail(userData.email);
+    if (!cached) {
+      return userData;
+    }
+
+    const accountType = userData?.accountType || (userData?.type === 'company' ? 'company' : 'developer');
+
+    try {
+      if (accountType === 'company') {
+        const companyPayload = buildCompanyProfilePayload(cached, userData);
+        if (companyPayload) {
+          const data = await saveCompanyProfileOnboarding(companyPayload);
+          if (data?.user) {
+            return { ...data.user, ...companyPayload };
+          }
+        }
+      } else {
+        const developerPayload = buildDeveloperProfilePayload(cached, userData);
+        if (developerPayload) {
+          const data = await saveDeveloperProfile(developerPayload);
+          if (data?.user) {
+            return { ...data.user, ...developerPayload };
+          }
+        }
+      }
+
+      const data = await updateMyProfile(cached);
+      if (data?.user) {
+        return { ...cached, ...data.user };
+      }
+    } catch {
+      // fall through to existing incomplete user
+    }
+
+    return userData;
+  };
+
   // Check authentication on mount
   useEffect(() => {
     let canceled = false;
-
-    const routeForUser = (u) => {
-      if (!u?.profileCompleted) {
-        const accountType = u?.accountType || (u?.type === 'company' ? 'company' : 'developer');
-        return accountType === 'company' ? 'onboarding-company-profile' : 'onboarding-developer-profile';
-      }
-      return u?.type === 'company' ? 'company' : 'home';
-    };
 
     const bootstrap = async () => {
       if (!isAuthenticated()) {
@@ -123,10 +227,15 @@ export default function KapIT() {
           return;
         }
 
-        setUser(freshUser);
-        setUserType(freshUser.type);
-        updateStoredUser(freshUser);
-        const nextView = routeForUser(freshUser);
+        const syncedUser = await syncCachedProfileIfNeeded(freshUser);
+        if (canceled) {
+          return;
+        }
+
+        setUser(syncedUser);
+        setUserType(syncedUser.type);
+        updateStoredUser(syncedUser);
+        const nextView = routeForUser(syncedUser);
         setCurrentView(nextView);
         if (nextView === 'company') {
           if (!isCompanyRoute(window.location.pathname)) {
@@ -185,38 +294,14 @@ export default function KapIT() {
 
   const handleLogin = async (userData) => {
     setPendingSignup(null);
-    setUser(userData);
-    setUserType(userData.type);
+    const syncedUser = await syncCachedProfileIfNeeded(userData);
+
+    setUser(syncedUser);
+    setUserType(syncedUser.type);
     setIsAuth(true);
 
-    const routeForUser = (u) => {
-      if (!u?.profileCompleted) {
-        const accountType = u?.accountType || (u?.type === 'company' ? 'company' : 'developer');
-        return accountType === 'company' ? 'onboarding-company-profile' : 'onboarding-developer-profile';
-      }
-      return u?.type === 'company' ? 'company' : 'home';
-    };
-
-    if (!userData.profileCompleted) {
-      const cached = getCachedProfileForEmail(userData.email);
-      if (cached) {
-        try {
-          const data = await updateMyProfile(cached);
-          const refreshed = data?.user;
-          if (refreshed) {
-            setUser(refreshed);
-            setUserType(refreshed.type);
-            updateStoredUser(refreshed);
-            setCurrentView(routeForUser(refreshed));
-            return;
-          }
-        } catch {
-          // fall through
-        }
-      }
-    }
-
-    const nextView = routeForUser(userData);
+    updateStoredUser(syncedUser);
+    const nextView = routeForUser(syncedUser);
     setCurrentView(nextView);
     if (nextView === 'company') {
       if (!isCompanyRoute(window.location.pathname)) {
@@ -259,7 +344,9 @@ export default function KapIT() {
   const handleDeveloperProfileComplete = async (profileData) => {
     try {
       const data = await saveDeveloperProfile(profileData);
-      const updatedUser = data?.user || { ...user, profileCompleted: true, accountType: 'developer' };
+      const updatedUser = data?.user
+        ? { ...data.user, ...profileData, profileCompleted: true, accountType: 'developer' }
+        : { ...user, ...profileData, profileCompleted: true, accountType: 'developer' };
       setUser(updatedUser);
       updateStoredUser(updatedUser);
       setCurrentView('home');
@@ -273,7 +360,9 @@ export default function KapIT() {
   const handleCompanyProfileComplete = async (profileData) => {
     try {
       const data = await saveCompanyProfileOnboarding(profileData);
-      const updatedUser = data?.user || { ...user, profileCompleted: true, accountType: 'company', type: 'company' };
+      const updatedUser = data?.user
+        ? { ...data.user, ...profileData, profileCompleted: true, accountType: 'company', type: 'company' }
+        : { ...user, ...profileData, profileCompleted: true, accountType: 'company', type: 'company' };
       setUser(updatedUser);
       updateStoredUser(updatedUser);
       setCurrentView('company');
@@ -439,3 +528,4 @@ export default function KapIT() {
     </ThemeProvider>
   );
 }
+
