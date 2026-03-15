@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/database');
 const isDev = process.env.NODE_ENV !== 'production';
@@ -144,10 +145,10 @@ const register = async (req, res) => {
 
     // Insert new user
     const result = await client.query(
-      `INSERT INTO users (username, email, password, user_type, account_type) 
-       VALUES ($1, $2, $3, $4, $5) 
+      `INSERT INTO users (id, username, email, password, user_type, account_type) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
        RETURNING *`,
-      [username, email, hashedPassword, derived.userType, derived.accountType]
+      [crypto.randomUUID(), username, email, hashedPassword, derived.userType, derived.accountType]
     );
 
     const user = result.rows[0];

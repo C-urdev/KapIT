@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const pool = require('../config/database');
 
 const serializeUser = (user) => ({
@@ -47,10 +48,10 @@ const getOrCreateCompanyForUserId = async (client, userId) => {
   const name = user.company_name || user.username || 'Company';
 
   const created = await client.query(
-    `INSERT INTO companies (user_id, name, logo, description, location, website)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO companies (id, user_id, name, logo, description, location, website)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING *`,
-    [userId, name, user.profile_image || null, user.bio || null, user.address || null, user.website || null]
+    [crypto.randomUUID(), userId, name, user.profile_image || null, user.bio || null, user.address || null, user.website || null]
   );
 
   return created.rows[0];

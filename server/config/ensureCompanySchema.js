@@ -8,7 +8,7 @@ const ensureCompanySchema = async () => {
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS companies (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY,
         user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         name VARCHAR(160) NOT NULL,
         logo TEXT,
@@ -61,4 +61,3 @@ const ensureCompanySchema = async () => {
 };
 
 module.exports = { ensureCompanySchema };
-
