@@ -22,6 +22,58 @@ const JOB_TITLE_OPTIONS = {
 };
 
 const JOB_TITLES = Object.keys(JOB_TITLE_OPTIONS);
+const VOCATIONAL_EDUCATION_OPTION = 'Vocational / Technical Graduate';
+const OTHER_EDUCATION_OPTION = 'Other educational attainment';
+const OTHER_SCHOOL_OPTION = 'Other / School not listed';
+const EDUCATIONAL_ATTAINMENT_OPTIONS = [
+  'Senior High School Graduate',
+  'High School Graduate',
+  VOCATIONAL_EDUCATION_OPTION,
+  'College Undergraduate',
+  'Bachelor of Science in Information Technology',
+  'Bachelor of Science in Computer Science',
+  'Bachelor of Science in Information Systems',
+  'Bachelor of Science in Computer Engineering',
+  'Bachelor of Science in Electronics Engineering',
+  'Bachelor of Science in Software Engineering',
+  'Bachelor of Science in Multimedia Arts',
+  'Bachelor of Science in Data Science',
+  'Bachelor of Science in Cybersecurity',
+  OTHER_EDUCATION_OPTION,
+];
+const SCHOOL_OPTIONS = [
+  'University of the Philippines',
+  'Ateneo de Manila University',
+  'De La Salle University',
+  'Mapua University',
+  'Polytechnic University of the Philippines',
+  'Technological University of the Philippines',
+  'Technological Institute of the Philippines',
+  'University of Santo Tomas',
+  'Far Eastern University Institute of Technology',
+  'Adamson University',
+  'National University',
+  'University of San Carlos',
+  'Cebu Institute of Technology - University',
+  'University of Cebu',
+  'STI College',
+  'AMA University',
+  'Informatics College',
+  'Our Lady of Fatima University',
+  'Batangas State University',
+  'Cavite State University',
+  'Bulacan State University',
+  'Laguna State Polytechnic University',
+  'Pamantasan ng Lungsod ng Maynila',
+  'Jose Rizal University',
+  'Lyceum of the Philippines University',
+  'University of Mindanao',
+  'Ateneo de Davao University',
+  'University of Southeastern Philippines',
+  'Silliman University',
+  'Xavier University - Ateneo de Cagayan',
+  OTHER_SCHOOL_OPTION,
+];
 const NCR_PROVINCE_CODE = 'metro-manila';
 const NCR_COMPONENT_CODES = ['1339', '1374', '1375', '1376'];
 const EXCLUDED_PROVINCE_CODES = new Set(['0997', '1298']);
@@ -146,6 +198,12 @@ const formatLocation = (city, provinceCode) => {
 export default function DeveloperProfile({ user, onSubmit, onLogout }) {
   const { theme, toggleTheme } = useTheme();
   const initialLocation = parseLocation(user?.location || user?.address || '');
+  const savedEducation = String(user?.educationAttainment || user?.education || '');
+  const isSavedVocational = savedEducation.toLowerCase().startsWith(VOCATIONAL_EDUCATION_OPTION.toLowerCase());
+  const savedVocationalCourse = isSavedVocational ? savedEducation.slice(VOCATIONAL_EDUCATION_OPTION.length).replace(/^\s*[-:]\s*/, '').trim() : '';
+  const isSavedCustomEducation = Boolean(savedEducation) && !isSavedVocational && !EDUCATIONAL_ATTAINMENT_OPTIONS.includes(savedEducation);
+  const savedSchool = String(user?.school || '');
+  const isSavedCustomSchool = savedSchool && !SCHOOL_OPTIONS.includes(savedSchool);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     profileImage: user?.profileImage || '',
@@ -162,8 +220,11 @@ export default function DeveloperProfile({ user, onSubmit, onLogout }) {
     skills: Array.isArray(user?.skills) ? user.skills : [],
     preferredRole: user?.preferredRole || user?.desiredJob || '',
 
-    educationAttainment: user?.educationAttainment || user?.education || '',
-    school: user?.school || '',
+    educationAttainment: isSavedVocational ? VOCATIONAL_EDUCATION_OPTION : isSavedCustomEducation ? OTHER_EDUCATION_OPTION : savedEducation,
+    vocationalCourse: savedVocationalCourse,
+    customEducationAttainment: isSavedCustomEducation ? savedEducation : '',
+    school: isSavedCustomSchool ? OTHER_SCHOOL_OPTION : savedSchool,
+    customSchool: isSavedCustomSchool ? savedSchool : '',
     certifications: user?.certifications || '',
 
     github: user?.github || '',
@@ -178,6 +239,9 @@ export default function DeveloperProfile({ user, onSubmit, onLogout }) {
 
   const preferredRoleOptions = useMemo(() => JOB_TITLE_OPTIONS[form.jobTitle] || [], [form.jobTitle]);
   const cityOptions = useMemo(() => getCitiesForProvince(form.provinceCode), [form.provinceCode]);
+  const requiresVocationalCourse = form.educationAttainment === VOCATIONAL_EDUCATION_OPTION;
+  const requiresCustomEducation = form.educationAttainment === OTHER_EDUCATION_OPTION;
+  const requiresCustomSchool = form.school === OTHER_SCHOOL_OPTION;
 
   useEffect(() => {
     if (!form.jobTitle) {
@@ -223,10 +287,13 @@ export default function DeveloperProfile({ user, onSubmit, onLogout }) {
         String(form.yearsOfExperience).trim() &&
         String(form.preferredRole).trim() &&
         String(form.educationAttainment).trim() &&
+        (!requiresVocationalCourse || String(form.vocationalCourse).trim()) &&
+        (!requiresCustomEducation || String(form.customEducationAttainment).trim()) &&
         String(form.school).trim() &&
+        (!requiresCustomSchool || String(form.customSchool).trim()) &&
         String(form.aboutMe).trim()
     );
-  }, [form]);
+  }, [form, requiresCustomEducation, requiresCustomSchool, requiresVocationalCourse]);
 
   const onPickPhoto = async (file) => {
     if (!file) return;
@@ -247,6 +314,13 @@ export default function DeveloperProfile({ user, onSubmit, onLogout }) {
     if (!isComplete || saving) return;
     setSaving(true);
     try {
+      const educationAttainment = requiresVocationalCourse
+        ? `${VOCATIONAL_EDUCATION_OPTION} - ${String(form.vocationalCourse || '').trim()}`
+        : requiresCustomEducation
+          ? String(form.customEducationAttainment || '').trim()
+          : form.educationAttainment;
+      const school = requiresCustomSchool ? String(form.customSchool || '').trim() : form.school;
+
       await onSubmit?.({
         profileImage: form.profileImage,
         fullName: form.fullName,
@@ -258,8 +332,8 @@ export default function DeveloperProfile({ user, onSubmit, onLogout }) {
         yearsOfExperience: form.yearsOfExperience,
         skills: form.skills,
         preferredRole: form.preferredRole,
-        educationAttainment: form.educationAttainment,
-        school: form.school,
+        educationAttainment,
+        school,
         certifications: form.certifications,
         github: form.github,
         portfolioWebsite: form.portfolioWebsite,
@@ -422,11 +496,40 @@ export default function DeveloperProfile({ user, onSubmit, onLogout }) {
             <Section title="Education">
               <Grid>
                 <Field label="Educational Attainment">
-                  <input value={form.educationAttainment} onChange={(e) => setForm((p) => ({ ...p, educationAttainment: e.target.value }))} className="field" placeholder="e.g. BS Computer Science" required />
+                  <select value={form.educationAttainment} onChange={(e) => setForm((p) => ({ ...p, educationAttainment: e.target.value, vocationalCourse: e.target.value === VOCATIONAL_EDUCATION_OPTION ? p.vocationalCourse : '', customEducationAttainment: e.target.value === OTHER_EDUCATION_OPTION ? p.customEducationAttainment : '' }))} className="field" required>
+                    <option value="">Select educational attainment</option>
+                    {EDUCATIONAL_ATTAINMENT_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
                 </Field>
                 <Field label="School / University">
-                  <input value={form.school} onChange={(e) => setForm((p) => ({ ...p, school: e.target.value }))} className="field" placeholder="e.g. University of the Philippines" required />
+                  <select value={form.school} onChange={(e) => setForm((p) => ({ ...p, school: e.target.value, customSchool: e.target.value === OTHER_SCHOOL_OPTION ? p.customSchool : '' }))} className="field" required>
+                    <option value="">Select a school or university</option>
+                    {SCHOOL_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
                 </Field>
+                {requiresVocationalCourse ? (
+                  <Field label="Specify Vocational Course">
+                    <input value={form.vocationalCourse} onChange={(e) => setForm((p) => ({ ...p, vocationalCourse: e.target.value }))} className="field" placeholder="e.g. Computer Programming NC IV" required />
+                  </Field>
+                ) : null}
+                {requiresCustomEducation ? (
+                  <Field label="Specify Educational Attainment">
+                    <input value={form.customEducationAttainment} onChange={(e) => setForm((p) => ({ ...p, customEducationAttainment: e.target.value }))} className="field" placeholder="Type your educational attainment" required />
+                  </Field>
+                ) : null}
+                {requiresCustomSchool ? (
+                  <Field label="Specify School / University">
+                    <input value={form.customSchool} onChange={(e) => setForm((p) => ({ ...p, customSchool: e.target.value }))} className="field" placeholder="Type your school or university" required />
+                  </Field>
+                ) : null}
                 <Field label="Certifications (Optional)" full>
                   <input value={form.certifications} onChange={(e) => setForm((p) => ({ ...p, certifications: e.target.value }))} className="field" placeholder="e.g. AWS CCP, Google UX" />
                 </Field>
@@ -444,19 +547,24 @@ export default function DeveloperProfile({ user, onSubmit, onLogout }) {
 
             <Section title="Work Preferences">
               <div className="grid gap-3 sm:grid-cols-3">
-                {['remote', 'hybrid', 'on-site'].map((value) => (
-                  <label
-                    key={value}
-                    className={`cursor-pointer rounded-xl border px-4 py-3 text-sm font-semibold ${
-                      form.workPreference === value
-                        ? 'border-[#588157] bg-[#eef6ee] text-[#3a5a40] dark:border-[#3ba9d6] dark:bg-[#1e3a5f] dark:text-white'
-                        : 'border-[#a3b18a] bg-[#f5f5f2] text-[#344e41] hover:bg-[#eef6ee] dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-200 dark:hover:bg-slate-900/60'
-                    }`}
-                  >
-                    <input type="radio" name="workPreference" value={value} checked={form.workPreference === value} onChange={(e) => setForm((p) => ({ ...p, workPreference: e.target.value }))} className="hidden" />
-                    {value === 'on-site' ? 'On-site' : value.charAt(0).toUpperCase() + value.slice(1)}
-                  </label>
-                ))}
+                {['remote', 'hybrid', 'on-site'].map((value) => {
+                  const selected = form.workPreference === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setForm((p) => ({ ...p, workPreference: value }))}
+                      aria-pressed={selected}
+                      className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors active:scale-[0.99] ${
+                        selected
+                          ? 'border-[#588157] bg-[#eef6ee] text-[#3a5a40] dark:border-[#3ba9d6] dark:bg-[#1e3a5f] dark:text-white'
+                          : 'border-[#a3b18a] bg-[#f5f5f2] text-[#344e41] hover:bg-[#eef6ee] dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-200 dark:hover:bg-slate-900/60'
+                      }`}
+                    >
+                      {value === 'on-site' ? 'On-site' : value.charAt(0).toUpperCase() + value.slice(1)}
+                    </button>
+                  );
+                })}
               </div>
             </Section>
 
