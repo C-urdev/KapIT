@@ -1,27 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { ThemeProvider } from './context/ThemeContext';
-import LandingPage from './pages/Landing/LandingPage';
-import AuthPage from './pages/Auth/AuthPage';
-import HomePage from './pages/Home/HomePage';
-import HelpPage from './pages/Help/HelpPage';
-import CompleteProfilePage from './pages/Onboarding/CompleteProfilePage';
-import ChooseAccountTypePage from './pages/Auth/ChooseAccountTypePage';
-import CompleteCompanyProfilePage from './pages/Onboarding/CompleteCompanyProfilePage';
-import DeveloperProfile from './pages/Onboarding/DeveloperProfile';
-import CompanyProfileOnboarding from './pages/Onboarding/CompanyProfile';
-import CompanyLayout from './layouts/CompanyLayout';
-import CompanyDashboard from './pages/Company/CompanyDashboard';
-import PostJob from './pages/Company/PostJob';
-import ManageJobs from './pages/Company/ManageJobs';
-import Applicants from './pages/Company/Applicants';
-import SearchDevelopers from './pages/Company/SearchDevelopers';
-import CompanyAnalytics from './pages/Company/CompanyAnalytics';
-import CompanyProfile from './pages/Company/CompanyProfile';
-import { getStoredUser, isAuthenticated, logoutUser, updateStoredUser, getCurrentUser, updateMyProfile, getCachedProfileForEmail } from './services/authService';
-import { COMPANY_PATHS, isCompanyRoute, navigate } from './features/company/companyUtils';
-import { saveDeveloperProfile } from './features/developer/developerAPI';
-import { saveCompanyProfileOnboarding } from './features/company/companyAPI';
-import SelectAccountTypeModal from './components/Auth/SelectAccountTypeModal';
+import { ThemeProvider } from '@sharedContext/ThemeContext';
+import LandingPage from '@sharedPages/landing/LandingPage';
+import AuthPage from '@sharedPages/auth/AuthPage';
+import HomePage from '@userPages/Home/UserHomePage';
+import HelpPage from '@sharedPages/help/HelpPage';
+import CompleteProfilePage from '@sharedPages/onboarding/UserCompleteProfilePage';
+import ChooseAccountTypePage from '@sharedPages/auth/ChooseAccountTypePage';
+import CompleteCompanyProfilePage from '@sharedPages/onboarding/CompanyCompleteProfilePage';
+import DeveloperProfile from '@sharedPages/onboarding/DeveloperProfileOnboardingPage';
+import CompanyProfileOnboarding from '@sharedPages/onboarding/CompanyProfileOnboardingPage';
+import CompanyLayout from '@companyLayouts/CompanyLayout';
+import CompanyDashboard from '@companyPages/CompanyDashboardPage';
+import PostJob from '@companyPages/CompanyPostJobPage';
+import CompanyPostJobPayment from '@companyPages/CompanyPostJobPaymentPage';
+import ManageJobs from '@companyPages/CompanyManageJobsPage';
+import Applicants from '@companyPages/CompanyApplicantsPage';
+import CompanyMessagesPage from '@companyPages/CompanyMessagesPage';
+import SearchDevelopers from '@companyPages/CompanySearchDevelopersPage';
+import CompanyProfile from '@companyPages/CompanyProfilePage';
+import ConfirmModal from '@sharedComponents/ui/ConfirmModal';
+import { getStoredUser, isAuthenticated, logoutUser, updateStoredUser, getCurrentUser, updateMyProfile, getCachedProfileForEmail } from '@sharedServices/authService';
+import { COMPANY_PATHS, isCompanyRoute, navigate } from '@companyFeatures/companyUtils';
+import { saveDeveloperProfile } from '@userFeatures/developer/userDeveloperAPI';
+import { saveCompanyProfileOnboarding } from '@companyFeatures/companyAPI';
+import SelectAccountTypeModal from '@sharedComponents/auth/SelectAccountTypeModal';
 
 const AUTH_PATHS = {
   register: '/auth/register',
@@ -124,6 +126,7 @@ export default function KapIT() {
   const [authEntryMode, setAuthEntryMode] = useState('login');
   const [pathname, setPathname] = useState(() => (typeof window !== 'undefined' ? window.location.pathname : '/'));
   const [isAccountTypeModalOpen, setIsAccountTypeModalOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
   const routeForUser = (u) => {
     if (!u?.profileCompleted) {
@@ -175,7 +178,6 @@ export default function KapIT() {
     return userData;
   };
 
-  // Check authentication on mount
   useEffect(() => {
     let canceled = false;
 
@@ -315,12 +317,18 @@ export default function KapIT() {
   };
 
   const handleLogout = () => {
+    setLogoutConfirmOpen(true);
+  };
+
+  const confirmLogout = () => {
+    setLogoutConfirmOpen(false);
     logoutUser();
     setUser(null);
     setUserType(null);
     setIsAuth(false);
     setPendingSignup(null);
     setCurrentView('landing');
+    navigate('/');
   };
 
   const handleProfileComplete = async (profileData) => {
@@ -411,18 +419,22 @@ export default function KapIT() {
     }
   };
 
+  const isCompanyPaymentWindow = currentView === 'company' && isAuth && userType === 'company' && pathname === COMPANY_PATHS.postJobPayment;
+
   return (
     <ThemeProvider>
       <div className="min-h-screen bg-white dark:bg-black transition-colors duration-300">
-        {currentView === 'company' && isAuth && userType === 'company' && (
+        {isCompanyPaymentWindow && <CompanyPostJobPayment />}
+
+        {currentView === 'company' && isAuth && userType === 'company' && !isCompanyPaymentWindow && (
           <CompanyLayout pathname={pathname} user={user} onLogout={handleLogout}>
             {pathname === COMPANY_PATHS.dashboard && <CompanyDashboard />}
             {pathname === COMPANY_PATHS.premium && <CompanyDashboard />}
             {pathname === COMPANY_PATHS.postJob && <PostJob />}
             {pathname === COMPANY_PATHS.jobs && <ManageJobs />}
             {pathname === COMPANY_PATHS.applicants && <Applicants />}
+            {pathname === COMPANY_PATHS.messages && <CompanyMessagesPage user={user} />}
             {pathname === COMPANY_PATHS.search && <SearchDevelopers />}
-            {pathname === COMPANY_PATHS.analytics && <CompanyAnalytics />}
             {pathname === COMPANY_PATHS.profile && (
               <CompanyProfile
                 user={user}
@@ -430,7 +442,7 @@ export default function KapIT() {
                   handleUserUpdate({
                     companyName: form?.name,
                     profileImage: form?.logo,
-                    bio: form?.description,
+                    bio: form?.shortDescription || form?.description,
                     address: form?.location,
                     website: form?.website,
                   })
@@ -444,7 +456,7 @@ export default function KapIT() {
           <LandingPage onGetStarted={handleGetStarted} onJoinDeveloper={handleJoinAsDeveloper} />
         )}
         {currentView === 'auth' && (
-          <AuthPage 
+          <AuthPage
             userType={userType}
             accountType={pathname === AUTH_PATHS.register ? getAccountTypeFromSearch(window.location.search) : null}
             onLogin={handleLogin}
@@ -455,7 +467,7 @@ export default function KapIT() {
               setIsAccountTypeModalOpen(true);
             }}
             initialMode={authEntryMode}
-            onBack={() => { setCurrentView('landing'); navigate('/'); }} 
+            onBack={() => { setCurrentView('landing'); navigate('/'); }}
           />
         )}
         {currentView === 'choose-account-type' && (
@@ -524,8 +536,22 @@ export default function KapIT() {
             }
           }}
         />
+
+        <ConfirmModal
+          open={logoutConfirmOpen}
+          title="Log out?"
+          message="Would you really like to log out?"
+          confirmLabel="Log out"
+          cancelLabel="Stay signed in"
+          tone="danger"
+          onCancel={() => setLogoutConfirmOpen(false)}
+          onConfirm={confirmLogout}
+        />
       </div>
     </ThemeProvider>
   );
 }
+
+
+
 

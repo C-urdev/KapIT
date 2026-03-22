@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/authRoutes');
 const messagesRoutes = require('./routes/messagesRoutes');
+const notificationsRoutes = require('./routes/notificationsRoutes');
 const companyRoutes = require('./routes/companyRoutes');
 const developerRoutes = require('./routes/developerRoutes');
 const { ensureUsersProfileSchema } = require('./config/ensureUsersProfileSchema');
@@ -12,6 +13,7 @@ const { ensureOnboardingSchema } = require('./config/ensureOnboardingSchema');
 dotenv.config();
 
 let schemaInitPromise;
+let schemaReady = false;
 
 const ensureSchemaReady = async () => {
   if (!schemaInitPromise) {
@@ -19,8 +21,10 @@ const ensureSchemaReady = async () => {
       await ensureUsersProfileSchema();
       await ensureCompanySchema();
       await ensureOnboardingSchema();
+      schemaReady = true;
     })().catch((error) => {
       schemaInitPromise = null;
+      schemaReady = false;
       throw error;
     });
   }
@@ -55,6 +59,11 @@ const createApp = () => {
   app.use(express.urlencoded({ extended: true }));
 
   app.use(async (req, res, next) => {
+    if (schemaReady) {
+      next();
+      return;
+    }
+
     try {
       await ensureSchemaReady();
       next();
@@ -67,6 +76,7 @@ const createApp = () => {
 
   app.use('/api/auth', authRoutes);
   app.use('/api/messages', messagesRoutes);
+  app.use('/api/notifications', notificationsRoutes);
   app.use('/api/company', companyRoutes);
   app.use('/api/developer', developerRoutes);
 

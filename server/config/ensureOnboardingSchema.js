@@ -62,10 +62,22 @@ const ensureOnboardingSchema = async () => {
       );
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS company_related_companies (
+        id BIGSERIAL PRIMARY KEY,
+        company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+        name VARCHAR(160) NOT NULL,
+        short_description VARCHAR(220),
+        website TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     await client.query('CREATE INDEX IF NOT EXISTS idx_dev_profiles_experience ON developer_profiles(experience_years);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_dev_profiles_location ON developer_profiles(location);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_company_profiles_industry ON company_profiles(industry);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_projects_company_id_created ON projects(company_id, created_at DESC);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_company_related_company_id_created ON company_related_companies(company_id, created_at DESC);');
 
     await client.query('COMMIT');
   } catch (error) {
@@ -78,4 +90,3 @@ const ensureOnboardingSchema = async () => {
 };
 
 module.exports = { ensureOnboardingSchema };
-

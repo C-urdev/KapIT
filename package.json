@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "server": "nodemon server/server.js",
-    "start": "concurrently \"npm run dev\" \"npm run server\"",
+    "server": "node server/server.js",
+    "server:watch": "nodemon server/server.js",
+    "start": "node scripts/start-dev.js",
     "migrate:legacy-users": "node server/scripts/migrateLegacyUsers.js",
     "build": "vite build",
     "preview": "vite preview"

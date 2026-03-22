@@ -1,7 +1,8 @@
-const bcrypt = require('bcrypt');
+﻿const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/database');
+const { createNotification, ensureNotificationsTable } = require('./notificationsController');
 const isDev = process.env.NODE_ENV !== 'production';
 
 const normalizeAccountType = (raw) => {
@@ -345,6 +346,106 @@ const getPublicProfile = async (req, res) => {
     }
 
     const user = result.rows[0];
+    let jobListings = [];
+    let relatedCompanies = [];
+    let companyShortDescription = user.bio || '';
+    let companyDescription = user.bio || '';
+    let companyWebsite = user.website || '';
+    let companyLocation = user.address || '';
+    let companyLogo = user.profile_image || '';
+
+    if (user.user_type === 'company') {
+      const companyResult = await client.query(
+        `SELECT c.id, c.name, c.logo, c.short_description, c.description, c.location, c.website
+         FROM companies c
+         WHERE c.user_id = $1
+         LIMIT 1`,
+        [id]
+      );
+
+      const company = companyResult.rows[0] || null;
+
+      if (company?.id) {
+        companyShortDescription = company.short_description || company.description || user.bio || '';
+        companyDescription = company.description || user.bio || '';
+        companyWebsite = company.website || user.website || '';
+        companyLocation = company.location || user.address || '';
+        companyLogo = company.logo || user.profile_image || '';
+
+        const jobsResult = await client.query(
+          `SELECT j.id, j.title, j.location, j.type, j.status, j.created_at
+           FROM jobs j
+           WHERE j.company_id = $1
+             AND COALESCE(j.posting_payment_status, 'paid') = 'paid'
+           ORDER BY
+             CASE j.status
+               WHEN 'open' THEN 0
+               WHEN 'filled' THEN 1
+               WHEN 'closed' THEN 2
+               ELSE 3
+             END,
+             j.created_at DESC`,
+          [company.id]
+        );
+
+        const relatedResult = await client.query(
+          `SELECT rc.id, rc.name, rc.short_description, rc.website
+           FROM company_related_companies rc
+           WHERE rc.company_id = $1
+           ORDER BY rc.created_at DESC, rc.name ASC`,
+          [company.id]
+        );
+
+        jobListings = jobsResult.rows.map((row) => ({
+          id: row.id,
+          title: row.title,
+          location: row.location || '',
+          type: row.type || '',
+          status: row.status || 'open',
+          createdAt: row.created_at,
+        }));
+
+        relatedCompanies = relatedResult.rows.map((row) => ({
+          id: row.id,
+          name: row.name,
+          shortDescription: row.short_description || '',
+          website: row.website || '',
+        }));
+      }
+    }
+
+    if (req.user?.id && req.user.id !== user.id) {
+      const viewerResult = await client.query(
+        `SELECT id, username, email, company_name
+         FROM users
+         WHERE id = $1
+         LIMIT 1`,
+        [req.user.id]
+      );
+
+      if (viewerResult.rows.length) {
+        const viewerLabel =
+          viewerResult.rows[0].company_name ||
+          viewerResult.rows[0].username ||
+          viewerResult.rows[0].email ||
+          'Someone';
+
+        await ensureNotificationsTable(client);
+        await createNotification(client, {
+          userId: user.id,
+          actorUserId: req.user.id,
+          type: 'profile_view',
+          title: 'Profile viewed',
+          message: `${viewerLabel} viewed your profile.`,
+          metadata: {
+            actorLabel: viewerLabel,
+            viewerUserId: req.user.id,
+            eventAt: new Date().toISOString(),
+          },
+        });
+      }
+    }
+
     return res.json({
       success: true,
       profile: {
@@ -356,15 +457,19 @@ const getPublicProfile = async (req, res) => {
         profileCompleted: Boolean(user.profile_completed),
         bio: user.bio || '',
         socials: user.socials || '',
-        profileImage: user.profile_image || '',
-        address: user.address || '',
+        profileImage: companyLogo,
+        address: companyLocation,
         education: user.education || '',
         desiredJob: user.desired_job || '',
         companyName: user.company_name || '',
         industry: user.industry || '',
         companySize: user.company_size || '',
-        website: user.website || '',
+        website: companyWebsite,
         hiringFor: user.hiring_for || '',
+        shortDescription: companyShortDescription,
+        bio: companyDescription,
+        jobListings,
+        relatedCompanies,
         createdAt: user.created_at,
       },
     });
@@ -403,15 +508,16 @@ const searchUsers = async (req, res) => {
     const searchPattern = `%${query}%`;
 
     const result = await client.query(
-      `SELECT id, username, email, user_type, is_premium, profile_completed, profile_image
+      `SELECT id, username, email, user_type, company_name, is_premium, profile_completed, profile_image
        FROM users
-       WHERE (username ILIKE $1 OR email ILIKE $1)
+       WHERE (username ILIKE $1 OR email ILIKE $1 OR company_name ILIKE $1)
          AND id <> $2
        ORDER BY
          CASE
-           WHEN username ILIKE $3 THEN 0
-           WHEN email ILIKE $3 THEN 1
-           ELSE 2
+           WHEN company_name ILIKE $3 THEN 0
+           WHEN username ILIKE $3 THEN 1
+           WHEN email ILIKE $3 THEN 2
+           ELSE 3
          END,
          username ASC
        LIMIT 12`,
@@ -423,6 +529,7 @@ const searchUsers = async (req, res) => {
       username: row.username,
       email: row.email,
       type: row.user_type,
+      companyName: row.company_name || '',
       isPremium: row.is_premium,
       profileCompleted: Boolean(row.profile_completed),
       profileImage: row.profile_image || '',
@@ -554,6 +661,219 @@ const updateMyProfile = async (req, res) => {
   }
 };
 
+// @desc    Get available jobs for authenticated users
+// @route   GET /api/auth/jobs
+// @access  Private
+const getJobsFeed = async (req, res) => {
+  let client;
+
+  try {
+    client = await pool.connect();
+    const result = await client.query(
+      `SELECT j.id,
+              j.title,
+              j.description,
+              j.salary,
+              j.location,
+              j.type,
+              j.skills,
+              j.status,
+              j.created_at,
+              EXISTS (
+                SELECT 1
+                FROM applications a
+                WHERE a.job_id = j.id AND a.user_id = $1
+              ) AS has_applied,
+              COALESCE(c.name, u.company_name, u.username, 'Company') AS company_name,
+              COALESCE(c.logo, u.profile_image, '') AS company_logo
+       FROM jobs j
+       LEFT JOIN companies c ON c.id = j.company_id
+       LEFT JOIN users u ON u.id = c.user_id
+       WHERE COALESCE(j.posting_payment_status, 'paid') = 'paid'
+       ORDER BY
+         CASE j.status
+           WHEN 'open' THEN 0
+           WHEN 'filled' THEN 1
+           WHEN 'closed' THEN 2
+           ELSE 3
+         END,
+         j.created_at DESC`,
+      [req.user.id]
+    );
+
+    const jobs = result.rows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      description: row.description || '',
+      salary: row.salary || '',
+      location: row.location || '',
+      type: row.type || '',
+      skills: Array.isArray(row.skills) ? row.skills : [],
+      status: row.status || 'open',
+      createdAt: row.created_at,
+      hasApplied: Boolean(row.has_applied),
+      company: {
+        name: row.company_name || 'Company',
+        logo: row.company_logo || '',
+      },
+    }));
+
+    return res.json({ success: true, jobs });
+  } catch (error) {
+    console.error('Get jobs feed error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error while fetching jobs',
+      ...(isDev
+        ? {
+            errorDetail: error?.message || String(error),
+            errorCode: error?.code || '',
+          }
+        : {}),
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+};
+
+// @desc    Apply to a job
+// @route   POST /api/auth/jobs/:id/apply
+// @access  Private
+const applyToJob = async (req, res) => {
+  let client;
+
+  try {
+    if (req.user?.userType !== 'employee') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only developer accounts can apply to jobs.',
+      });
+    }
+
+    const jobId = Number(req.params.id);
+    if (!Number.isInteger(jobId) || jobId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid job id.',
+      });
+    }
+
+    client = await pool.connect();
+    await client.query('BEGIN');
+
+    const jobResult = await client.query(
+      `SELECT id, company_id, status
+       FROM jobs
+       WHERE id = $1
+         AND COALESCE(posting_payment_status, 'paid') = 'paid'
+       LIMIT 1`,
+      [jobId]
+    );
+
+    if (!jobResult.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({
+        success: false,
+        message: 'Job not found.',
+      });
+    }
+
+    const job = jobResult.rows[0];
+    const status = String(job.status || '').toLowerCase();
+    if (status !== 'open') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        message: 'This job is no longer accepting applications.',
+      });
+    }
+
+    const userResult = await client.query(
+      `SELECT id, user_type
+       FROM users
+       WHERE id = $1
+       LIMIT 1`,
+      [req.user.id]
+    );
+
+    if (!userResult.rows.length || userResult.rows[0].user_type !== 'employee') {
+      await client.query('ROLLBACK');
+      return res.status(403).json({
+        success: false,
+        message: 'Only developer accounts can apply to jobs.',
+      });
+    }
+
+    const existingApplication = await client.query(
+      `SELECT id
+       FROM applications
+       WHERE job_id = $1 AND user_id = $2
+       LIMIT 1`,
+      [jobId, req.user.id]
+    );
+
+    if (existingApplication.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        message: 'You already applied to this job.',
+      });
+    }
+
+    const developerProfile = await client.query(
+      `SELECT resume_url
+       FROM developer_profiles
+       WHERE user_id = $1
+       LIMIT 1`,
+      [req.user.id]
+    );
+
+    const resumeUrl = developerProfile.rows[0]?.resume_url || null;
+
+    const applicationResult = await client.query(
+      `INSERT INTO applications (job_id, user_id, status, resume_url)
+       VALUES ($1, $2, 'pending', $3)
+       RETURNING id, status, resume_url, created_at, updated_at`,
+      [jobId, req.user.id, resumeUrl]
+    );
+
+    await client.query('COMMIT');
+
+    return res.status(201).json({
+      success: true,
+      message: 'Application submitted successfully.',
+      application: {
+        id: applicationResult.rows[0].id,
+        status: applicationResult.rows[0].status,
+        resumeUrl: applicationResult.rows[0].resume_url || '',
+        createdAt: applicationResult.rows[0].created_at,
+        updatedAt: applicationResult.rows[0].updated_at,
+      },
+    });
+  } catch (error) {
+    if (client) {
+      await client.query('ROLLBACK');
+    }
+    console.error('Apply to job error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error while applying to job',
+      ...(isDev
+        ? {
+            errorDetail: error?.message || String(error),
+            errorCode: error?.code || '',
+          }
+        : {}),
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -561,4 +881,7 @@ module.exports = {
   searchUsers,
   getPublicProfile,
   updateMyProfile,
+  getJobsFeed,
+  applyToJob,
 };
+

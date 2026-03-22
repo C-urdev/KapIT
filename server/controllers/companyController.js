@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const pool = require('../config/database');
+const { createNotification, ensureNotificationsTable } = require('./notificationsController');
 
 const serializeUser = (user) => ({
   id: user.id,
@@ -74,6 +75,66 @@ const normalizeSkills = (skills) => {
   return [];
 };
 
+const normalizeRelatedCompanies = (items) => {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items
+    .map((item) => ({
+      name: String(item?.name || '').trim(),
+      shortDescription: String(item?.shortDescription || '').trim(),
+      website: String(item?.website || '').trim(),
+    }))
+    .filter((item) => item.name)
+    .slice(0, 12);
+};
+
+const serializeJobRow = (row) => ({
+  ...row,
+  applicant_count: Number(row?.applicant_count || 0),
+  pay_per_use_fee: Number(row?.pay_per_use_fee || 0),
+  posting_plan_duration_days: row?.posting_plan_duration_days == null ? null : Number(row.posting_plan_duration_days),
+  posting_plan_price: row?.posting_plan_price == null ? null : Number(row.posting_plan_price),
+});
+
+const getAccountLabel = (row) => row?.company_name || row?.username || row?.email || 'Company';
+
+// GET /api/company/profile
+const getCompanyProfile = async (req, res) => {
+  let client;
+
+  try {
+    client = await pool.connect();
+    const company = await getOrCreateCompanyForUserId(client, req.user.id);
+    const relatedResult = await client.query(
+      `SELECT id, name, short_description, website
+       FROM company_related_companies
+       WHERE company_id = $1
+       ORDER BY created_at DESC, name ASC`,
+      [company.id]
+    );
+
+    return res.json({
+      success: true,
+      company: {
+        ...company,
+        related_companies: relatedResult.rows.map((row) => ({
+          id: row.id,
+          name: row.name,
+          shortDescription: row.short_description || '',
+          website: row.website || '',
+        })),
+      },
+    });
+  } catch (error) {
+    console.error('Get company profile error:', error);
+    return res.status(500).json({ success: false, message: 'Server error while fetching company profile' });
+  } finally {
+    client?.release();
+  }
+};
+
 // POST /api/company/jobs
 const createJob = async (req, res) => {
   let client;
@@ -83,7 +144,7 @@ const createJob = async (req, res) => {
     await client.query('BEGIN');
 
     const company = await getOrCreateCompanyForUserId(client, req.user.id);
-    const { title, description, salary, location, type, skills } = req.body || {};
+    const { title, description, salary, location, type, skills, planId, planDuration, planDurationDays, planPrice } = req.body || {};
 
     if (!String(title || '').trim() || !String(description || '').trim()) {
       await client.query('ROLLBACK');
@@ -91,10 +152,53 @@ const createJob = async (req, res) => {
     }
 
     const normalizedSkills = normalizeSkills(skills);
+    const normalizedPlanId = String(planId || '').trim();
+    const normalizedPlanDuration = String(planDuration || '').trim();
+    const normalizedPlanDurationDays = Math.trunc(Number(planDurationDays));
+    const normalizedPlanPrice = Math.trunc(Number(planPrice));
+
+    if (!normalizedPlanId || !normalizedPlanDuration || !Number.isFinite(normalizedPlanDurationDays) || normalizedPlanDurationDays <= 0 || !Number.isFinite(normalizedPlanPrice) || normalizedPlanPrice <= 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, message: 'A valid job posting plan is required before payment.' });
+    }
 
     const result = await client.query(
-      `INSERT INTO jobs (company_id, title, description, salary, location, type, skills)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO jobs (
+         company_id,
+         title,
+         description,
+         salary,
+         location,
+         type,
+         skills,
+         status,
+         pay_per_use_fee,
+         pay_per_use_status,
+         posting_plan_id,
+         posting_plan_duration,
+         posting_plan_duration_days,
+         posting_plan_price,
+         published_at,
+         active_until
+       )
+       VALUES (
+         $1,
+         $2,
+         $3,
+         $4,
+         $5,
+         $6,
+         $7,
+         'open',
+         $8::integer,
+         'not_due',
+         $9,
+         $10,
+         $11::integer,
+         $8::integer,
+         CURRENT_TIMESTAMP,
+         CURRENT_TIMESTAMP + ($11::integer * INTERVAL '1 day')
+       )
        RETURNING *`,
       [
         company.id,
@@ -104,11 +208,15 @@ const createJob = async (req, res) => {
         location ? String(location).trim() : null,
         type ? String(type).trim() : null,
         normalizedSkills,
+        normalizedPlanPrice,
+        normalizedPlanId,
+        normalizedPlanDuration,
+        normalizedPlanDurationDays,
       ]
     );
 
     await client.query('COMMIT');
-    return res.status(201).json({ success: true, job: result.rows[0] });
+    return res.status(201).json({ success: true, job: serializeJobRow(result.rows[0]) });
   } catch (error) {
     if (client) {
       await client.query('ROLLBACK');
@@ -139,11 +247,12 @@ const getJobs = async (req, res) => {
        ) app_counts
        ON app_counts.job_id = j.id
        WHERE j.company_id = $1
+         AND COALESCE(j.posting_payment_status, 'paid') = 'paid'
        ORDER BY j.created_at DESC`,
       [company.id]
     );
 
-    return res.json({ success: true, jobs: result.rows });
+    return res.json({ success: true, jobs: result.rows.map(serializeJobRow) });
   } catch (error) {
     console.error('Get jobs error:', error);
     return res.status(500).json({ success: false, message: 'Server error while fetching jobs' });
@@ -165,8 +274,10 @@ const getApplicants = async (req, res) => {
               a.status,
               a.resume_url,
               a.created_at,
+              a.updated_at,
               j.id AS job_id,
               j.title AS job_title,
+              j.status AS job_status,
               u.id AS user_id,
               u.username,
               u.email,
@@ -187,7 +298,8 @@ const getApplicants = async (req, res) => {
       status: row.status,
       resumeUrl: row.resume_url || '',
       createdAt: row.created_at,
-      job: { id: row.job_id, title: row.job_title },
+      updatedAt: row.updated_at,
+      job: { id: row.job_id, title: row.job_title, status: row.job_status },
       user: {
         id: row.user_id,
         username: row.username,
@@ -202,6 +314,389 @@ const getApplicants = async (req, res) => {
   } catch (error) {
     console.error('Get applicants error:', error);
     return res.status(500).json({ success: false, message: 'Server error while fetching applicants' });
+  } finally {
+    client?.release();
+  }
+};
+
+// PATCH /api/company/applications/:applicationId/status
+const updateApplicantStatus = async (req, res) => {
+  let client;
+
+  try {
+    client = await pool.connect();
+    await client.query('BEGIN');
+
+    const company = await getOrCreateCompanyForUserId(client, req.user.id);
+    const applicationId = Number(req.params.applicationId);
+    const status = String(req.body?.status || '').trim().toLowerCase();
+    const allowed = new Set(['pending', 'reviewed', 'rejected', 'accepted']);
+
+    if (!Number.isInteger(applicationId) || applicationId <= 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, message: 'Invalid application id.' });
+    }
+
+    if (!allowed.has(status)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, message: 'Invalid application status.' });
+    }
+
+    const applicationResult = await client.query(
+      `SELECT a.id, a.job_id, a.user_id, a.status, j.company_id, j.status AS job_status
+       FROM applications a
+       JOIN jobs j ON j.id = a.job_id
+       WHERE a.id = $1 AND j.company_id = $2`,
+      [applicationId, company.id]
+    );
+
+    if (!applicationResult.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: 'Applicant not found.' });
+    }
+
+    const application = applicationResult.rows[0];
+
+    if (status === 'accepted' && application.job_status === 'filled') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, message: 'This job is already filled. Reopen it to hire again.' });
+    }
+
+    const actorResult = await client.query(
+      `SELECT id, username, email, company_name
+       FROM users
+       WHERE id = $1
+       LIMIT 1`,
+      [req.user.id]
+    );
+    const actorLabel = getAccountLabel(actorResult.rows[0] || {});
+    await ensureNotificationsTable(client);
+
+    await client.query(
+      `UPDATE applications
+       SET status = $1,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2`,
+      [status, applicationId]
+    );
+
+    let job = null;
+
+    if (status === 'accepted') {
+      const jobResult = await client.query(
+        `UPDATE jobs
+         SET status = 'filled',
+             closed_reason = 'hired',
+             pay_per_use_status = 'due',
+             filled_application_id = $1,
+             filled_candidate_user_id = $2,
+             closed_at = CURRENT_TIMESTAMP,
+             hired_at = CURRENT_TIMESTAMP
+         WHERE id = $3
+         RETURNING *`,
+        [applicationId, application.user_id, application.job_id]
+      );
+      job = serializeJobRow(jobResult.rows[0]);
+
+      await client.query(
+        `UPDATE applications
+         SET status = CASE WHEN id = $1 THEN 'accepted' ELSE 'rejected' END,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE job_id = $2`,
+        [applicationId, application.job_id]
+      );
+
+      const affectedApplicants = await client.query(
+        `SELECT a.id, a.user_id, a.status, j.title AS job_title
+         FROM applications a
+         JOIN jobs j ON j.id = a.job_id
+         WHERE a.job_id = $1`,
+        [application.job_id]
+      );
+
+      for (const item of affectedApplicants.rows) {
+        const isAcceptedApplicant = Number(item.id) === applicationId;
+        await createNotification(client, {
+          userId: item.user_id,
+          actorUserId: req.user.id,
+          type: 'application_status',
+          title: isAcceptedApplicant ? 'Application accepted' : 'Application update',
+          message: isAcceptedApplicant
+            ? `${actorLabel} hired you for ${item.job_title}.`
+            : `${actorLabel} updated your application for ${item.job_title} to rejected.`,
+          metadata: {
+            actorLabel,
+            status: isAcceptedApplicant ? 'accepted' : 'rejected',
+            jobTitle: item.job_title,
+            eventAt: new Date().toISOString(),
+          },
+        });
+      }
+    }
+
+    if (status !== 'accepted') {
+      const jobTitleResult = await client.query('SELECT title FROM jobs WHERE id = $1 LIMIT 1', [application.job_id]);
+      const jobTitle = jobTitleResult.rows[0]?.title || 'the role';
+      await createNotification(client, {
+        userId: application.user_id,
+        actorUserId: req.user.id,
+        type: 'application_status',
+        title: status === 'reviewed' ? 'Application reviewed' : 'Application update',
+        message:
+          status === 'reviewed'
+            ? `${actorLabel} reviewed your application for ${jobTitle}.`
+            : `${actorLabel} updated your application for ${jobTitle} to ${status}.`,
+        metadata: {
+          actorLabel,
+          status,
+          jobTitle,
+          eventAt: new Date().toISOString(),
+        },
+      });
+    }
+
+    const refreshed = await client.query(
+      `SELECT a.id,
+              a.status,
+              a.resume_url,
+              a.created_at,
+              a.updated_at,
+              j.id AS job_id,
+              j.title AS job_title,
+              j.status AS job_status,
+              u.id AS user_id,
+              u.username,
+              u.email,
+              u.desired_job,
+              u.address,
+              u.profile_image
+       FROM applications a
+       JOIN jobs j ON j.id = a.job_id
+       JOIN users u ON u.id = a.user_id
+       WHERE a.id = $1`,
+      [applicationId]
+    );
+
+    await client.query('COMMIT');
+    const row = refreshed.rows[0];
+    return res.json({
+      success: true,
+      applicant: {
+        id: row.id,
+        status: row.status,
+        resumeUrl: row.resume_url || '',
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        job: { id: row.job_id, title: row.job_title, status: row.job_status },
+        user: {
+          id: row.user_id,
+          username: row.username,
+          email: row.email,
+          desiredJob: row.desired_job || '',
+          address: row.address || '',
+          profileImage: row.profile_image || '',
+        },
+      },
+      job,
+    });
+  } catch (error) {
+    if (client) {
+      await client.query('ROLLBACK');
+    }
+    console.error('Update applicant status error:', error);
+    return res.status(500).json({ success: false, message: 'Server error while updating applicant status' });
+  } finally {
+    client?.release();
+  }
+};
+
+// PATCH /api/company/jobs/:jobId/status
+const updateJobStatus = async (req, res) => {
+  let client;
+
+  try {
+    client = await pool.connect();
+    await client.query('BEGIN');
+
+    const company = await getOrCreateCompanyForUserId(client, req.user.id);
+    const jobId = Number(req.params.jobId);
+    const status = String(req.body?.status || '').trim().toLowerCase();
+    const allowed = new Set(['open', 'closed']);
+
+    if (!Number.isInteger(jobId) || jobId <= 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, message: 'Invalid job id.' });
+    }
+
+    if (!allowed.has(status)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, message: 'Invalid job status.' });
+    }
+
+    const existing = await client.query('SELECT * FROM jobs WHERE id = $1 AND company_id = $2', [jobId, company.id]);
+    if (!existing.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: 'Job not found.' });
+    }
+
+    const nextReason = status === 'closed' ? 'manual' : null;
+    const result = await client.query(
+      `UPDATE jobs
+       SET status = $1::text,
+           closed_reason = $2::text,
+           closed_at = CASE WHEN $1::text = 'closed' THEN CURRENT_TIMESTAMP ELSE NULL END,
+           hired_at = CASE WHEN $1::text = 'open' THEN NULL ELSE hired_at END,
+           filled_application_id = CASE WHEN $1::text = 'open' THEN NULL ELSE filled_application_id END,
+           filled_candidate_user_id = CASE WHEN $1::text = 'open' THEN NULL ELSE filled_candidate_user_id END,
+           pay_per_use_status = CASE
+             WHEN $1::text = 'open' AND pay_per_use_status <> 'paid' THEN 'not_due'
+             ELSE pay_per_use_status
+           END
+       WHERE id = $3
+       RETURNING *`,
+      [status, nextReason, jobId]
+    );
+
+    if (status === 'open') {
+      await client.query(
+        `UPDATE applications
+         SET status = CASE WHEN status = 'rejected' THEN 'pending' ELSE status END,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE job_id = $1`,
+        [jobId]
+      );
+    }
+
+    await client.query('COMMIT');
+    return res.json({ success: true, job: serializeJobRow(result.rows[0]) });
+  } catch (error) {
+    if (client) {
+      await client.query('ROLLBACK');
+    }
+    console.error('Update job status error:', error);
+    return res.status(500).json({ success: false, message: 'Server error while updating job status' });
+  } finally {
+    client?.release();
+  }
+};
+
+// POST /api/company/jobs/:jobId/reopen
+const reopenJob = async (req, res) => {
+  let client;
+
+  try {
+    client = await pool.connect();
+    await client.query('BEGIN');
+
+    const company = await getOrCreateCompanyForUserId(client, req.user.id);
+    const jobId = Number(req.params.jobId);
+
+    if (!Number.isInteger(jobId) || jobId <= 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, message: 'Invalid job id.' });
+    }
+
+    const existing = await client.query('SELECT * FROM jobs WHERE id = $1 AND company_id = $2', [jobId, company.id]);
+    if (!existing.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: 'Job not found.' });
+    }
+
+    const source = existing.rows[0];
+    const duplicated = await client.query(
+      `INSERT INTO jobs (
+         company_id,
+         title,
+         description,
+         salary,
+         location,
+         type,
+         skills,
+         status,
+         closed_reason,
+         pay_per_use_fee,
+         pay_per_use_status,
+         reopened_from_job_id,
+         posting_plan_id,
+         posting_plan_duration,
+         posting_plan_duration_days,
+         posting_plan_price,
+         filled_application_id,
+         filled_candidate_user_id,
+         closed_at,
+         hired_at
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'open', NULL, $8, 'not_due', $9, $10, $11, $12, $13, NULL, NULL, NULL, NULL)
+       RETURNING *`,
+      [
+        source.company_id,
+        source.title,
+        source.description,
+        source.salary,
+        source.location,
+        source.type,
+        Array.isArray(source.skills) ? source.skills : [],
+        source.pay_per_use_fee || source.posting_plan_price || 0,
+        source.id,
+        source.posting_plan_id || null,
+        source.posting_plan_duration || null,
+        source.posting_plan_duration_days || null,
+        source.posting_plan_price || source.pay_per_use_fee || 0,
+      ]
+    );
+
+    await client.query('COMMIT');
+    return res.status(201).json({ success: true, job: serializeJobRow(duplicated.rows[0]) });
+  } catch (error) {
+    if (client) {
+      await client.query('ROLLBACK');
+    }
+    console.error('Reopen job error:', error);
+    return res.status(500).json({ success: false, message: 'Server error while reopening job' });
+  } finally {
+    client?.release();
+  }
+};
+
+// DELETE /api/company/jobs/:jobId
+const deleteJob = async (req, res) => {
+  let client;
+
+  try {
+    client = await pool.connect();
+    await client.query('BEGIN');
+
+    const company = await getOrCreateCompanyForUserId(client, req.user.id);
+    const jobId = Number(req.params.jobId);
+
+    if (!Number.isInteger(jobId) || jobId <= 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, message: 'Invalid job id.' });
+    }
+
+    const existing = await client.query('SELECT id, title FROM jobs WHERE id = $1 AND company_id = $2', [jobId, company.id]);
+    if (!existing.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: 'Job not found.' });
+    }
+
+    const deleted = existing.rows[0];
+    await client.query('DELETE FROM jobs WHERE id = $1 AND company_id = $2', [jobId, company.id]);
+
+    await client.query('COMMIT');
+    return res.json({
+      success: true,
+      deletedJob: {
+        id: deleted.id,
+        title: deleted.title,
+      },
+    });
+  } catch (error) {
+    if (client) {
+      await client.query('ROLLBACK');
+    }
+    console.error('Delete job error:', error);
+    return res.status(500).json({ success: false, message: 'Server error while deleting job' });
   } finally {
     client?.release();
   }
@@ -306,6 +801,13 @@ const getAnalytics = async (req, res) => {
     const company = await getOrCreateCompanyForUserId(client, req.user.id);
 
     const jobsResult = await client.query('SELECT COUNT(*)::int AS count FROM jobs WHERE company_id = $1', [company.id]);
+    const jobsByStatusResult = await client.query(
+      `SELECT status, COUNT(*)::int AS count
+       FROM jobs
+       WHERE company_id = $1
+       GROUP BY status`,
+      [company.id]
+    );
     const appsResult = await client.query(
       `SELECT COUNT(*)::int AS count
        FROM applications a
@@ -333,6 +835,10 @@ const getAnalytics = async (req, res) => {
       analytics: {
         totalJobs: jobsResult.rows[0]?.count || 0,
         totalApplicants: appsResult.rows[0]?.count || 0,
+        jobsByStatus: jobsByStatusResult.rows.reduce((acc, row) => {
+          acc[row.status] = row.count;
+          return acc;
+        }, {}),
         applicantsByStatus: byStatus,
       },
     });
@@ -353,7 +859,7 @@ const updateCompanyProfile = async (req, res) => {
     await client.query('BEGIN');
 
     const company = await getOrCreateCompanyForUserId(client, req.user.id);
-    const { name, logo, description, location, website } = req.body || {};
+    const { name, logo, shortDescription, description, location, website, relatedCompanies } = req.body || {};
 
     const nextName = String(name || '').trim();
     if (!nextName) {
@@ -365,21 +871,33 @@ const updateCompanyProfile = async (req, res) => {
       `UPDATE companies
        SET name = $1,
            logo = $2,
-           description = $3,
-           location = $4,
-           website = $5,
+           short_description = $3,
+           description = $4,
+           location = $5,
+           website = $6,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $6
+       WHERE id = $7
        RETURNING *`,
       [
         nextName,
         logo ? String(logo) : null,
+        shortDescription ? String(shortDescription) : null,
         description ? String(description) : null,
         location ? String(location) : null,
         website ? String(website) : null,
         company.id,
       ]
     );
+
+    const nextRelatedCompanies = normalizeRelatedCompanies(relatedCompanies);
+    await client.query('DELETE FROM company_related_companies WHERE company_id = $1', [company.id]);
+    for (const item of nextRelatedCompanies) {
+      await client.query(
+        `INSERT INTO company_related_companies (company_id, name, short_description, website)
+         VALUES ($1, $2, $3, $4)`,
+        [company.id, item.name, item.shortDescription || null, item.website || null]
+      );
+    }
 
     // Mirror key fields into users table for public profile compatibility.
     await client.query(
@@ -390,11 +908,24 @@ const updateCompanyProfile = async (req, res) => {
            address = COALESCE($4, address),
            website = COALESCE($5, website)
        WHERE id = $6`,
-      [nextName, logo ? String(logo) : null, description ? String(description) : null, location ? String(location) : null, website ? String(website) : null, req.user.id]
+      [
+        nextName,
+        logo ? String(logo) : null,
+        shortDescription ? String(shortDescription) : description ? String(description) : null,
+        location ? String(location) : null,
+        website ? String(website) : null,
+        req.user.id,
+      ]
     );
 
     await client.query('COMMIT');
-    return res.json({ success: true, company: result.rows[0] });
+    return res.json({
+      success: true,
+      company: {
+        ...result.rows[0],
+        related_companies: nextRelatedCompanies,
+      },
+    });
   } catch (error) {
     if (client) {
       await client.query('ROLLBACK');
@@ -542,11 +1073,18 @@ const updateCompanyOnboardingProfile = async (req, res) => {
 };
 
 module.exports = {
+  getCompanyProfile,
   createJob,
   getJobs,
   getApplicants,
+  updateApplicantStatus,
+  updateJobStatus,
+  reopenJob,
+  deleteJob,
   getDevelopers,
   getAnalytics,
   updateCompanyProfile,
   updateCompanyOnboardingProfile,
 };
+
+
