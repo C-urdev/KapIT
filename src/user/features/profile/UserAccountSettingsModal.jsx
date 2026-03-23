@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import phil from 'phil-reg-prov-mun-brgy';
 import { Briefcase, Calendar, MapPin, Phone, Search, UserCircle, X } from 'lucide-react';
 import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
+import { loadAddressOptions } from '@sharedUtils/philippinesLocations';
 import { developerAPI } from '@userFeatures/developer/userDeveloperAPI';
 
 const JOB_OPTIONS = [
@@ -70,54 +70,11 @@ const JOB_OPTIONS = [
 ];
 
 const SEX_OPTIONS = ['Male', 'Female', 'Prefer not to say'];
-const NCR_COMPONENT_CODES = ['1339', '1374', '1375', '1376'];
-const EXCLUDED_PROVINCE_CODES = new Set(['0997', '1298']);
-
-const titleCase = (value) =>
-  String(value || '')
-    .toLowerCase()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-
-const cleanPlaceName = (value) =>
-  titleCase(String(value || ''))
-    .replace(/\s*\(Capital\)$/i, '')
-    .replace(/^City Of /i, '')
-    .replace(/\s+City$/i, '')
-    .trim();
-
-const provinceMap = new Map((phil.provinces || []).map((item) => [item.prov_code, cleanPlaceName(item.name)]));
-
-const ADDRESS_OPTIONS = (() => {
-  const labels = new Set();
-  const options = [];
-
-  for (const record of phil.city_mun || []) {
-    if (EXCLUDED_PROVINCE_CODES.has(record.prov_code)) {
-      continue;
-    }
-
-    const municipalityOrCity = cleanPlaceName(record.name);
-    const provinceLabel = NCR_COMPONENT_CODES.includes(record.prov_code)
-      ? 'Metro Manila'
-      : provinceMap.get(record.prov_code) || '';
-
-    const fullLabel = provinceLabel
-      ? `${municipalityOrCity}, ${provinceLabel}, Philippines`
-      : `${municipalityOrCity}, Philippines`;
-
-    if (!labels.has(fullLabel)) {
-      labels.add(fullLabel);
-      options.push(fullLabel);
-    }
-  }
-
-  return options.sort((a, b) => a.localeCompare(b));
-})();
-
 export default function AccountSettingsModal({ isOpen, user, onClose, onSave }) {
   const [activeSection, setActiveSection] = useState('profile');
   const [profileLoading, setProfileLoading] = useState(false);
   const [developerProfile, setDeveloperProfile] = useState(null);
+  const [addressOptions, setAddressOptions] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     username: '',
@@ -180,6 +137,24 @@ export default function AccountSettingsModal({ isOpen, user, onClose, onSave }) 
       cancelled = true;
     };
   }, [isOpen, user?.type]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadLocations = async () => {
+      if (!isOpen) return;
+      const options = await loadAddressOptions();
+      if (!cancelled) {
+        setAddressOptions(options);
+      }
+    };
+
+    loadLocations();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   const desiredJobValue = useMemo(
     () =>
@@ -352,7 +327,7 @@ export default function AccountSettingsModal({ isOpen, user, onClose, onSave }) 
                     <SearchableSelect
                       value={formData.address}
                       onChange={(address) => setFormData({ ...formData, address })}
-                      options={ADDRESS_OPTIONS}
+                      options={addressOptions}
                       placeholder="Select a municipality or city in the Philippines"
                       searchPlaceholder="Search municipality, city, or province"
                       className="input-base"

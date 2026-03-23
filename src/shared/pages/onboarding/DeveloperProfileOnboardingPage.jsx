@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Briefcase, LogOut, Moon, Sun, UserCircle2 } from 'lucide-react';
-import phil from 'phil-reg-prov-mun-brgy';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
 import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
@@ -8,6 +7,7 @@ import SkillTags from '@userComponents/developer/UserSkillTags';
 import PortfolioCard from '@userComponents/developer/UserPortfolioCard';
 import ResumeUploader from '@userComponents/developer/UserResumeUploader';
 import { navigate } from '@companyFeatures/companyUtils';
+import { cleanPlaceName, loadProvinceCityData } from '@sharedUtils/philippinesLocations';
 
 const JOB_TITLE_OPTIONS = {
   'Frontend Developer': ['React Developer', 'Vue Developer', 'Angular Developer', 'UI Developer'],
@@ -75,84 +75,6 @@ const SCHOOL_OPTIONS = [
   'Xavier University - Ateneo de Cagayan',
   OTHER_SCHOOL_OPTION,
 ];
-const NCR_PROVINCE_CODE = 'metro-manila';
-const NCR_COMPONENT_CODES = ['1339', '1374', '1375', '1376'];
-const EXCLUDED_PROVINCE_CODES = new Set(['0997', '1298']);
-
-const titleCase = (value) =>
-  String(value || '')
-    .toLowerCase()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-
-const cleanPlaceName = (value) =>
-  titleCase(String(value || ''))
-    .replace(/\s*\(Capital\)$/i, '')
-    .replace(/^City Of /i, '')
-    .replace(/\s+City$/i, '')
-    .trim();
-
-const provinceOptions = (() => {
-  const unique = new Map();
-  for (const province of phil.provinces || []) {
-    if (EXCLUDED_PROVINCE_CODES.has(province.prov_code)) {
-      continue;
-    }
-    if (NCR_COMPONENT_CODES.includes(province.prov_code)) {
-      continue;
-    }
-    if (!unique.has(province.prov_code)) {
-      unique.set(province.prov_code, {
-        code: province.prov_code,
-        label: cleanPlaceName(province.name),
-      });
-    }
-  }
-
-  const options = Array.from(unique.values()).sort((a, b) => a.label.localeCompare(b.label));
-  options.unshift({ code: NCR_PROVINCE_CODE, label: 'Metro Manila' });
-  return options;
-})();
-
-const provinceLabelByCode = Object.fromEntries(provinceOptions.map((option) => [option.code, option.label]));
-const provinceCodeByLabel = Object.fromEntries(provinceOptions.map((option) => [option.label.toLowerCase(), option.code]));
-
-const ncrCityOptions = (() => {
-  const seen = new Set(['Manila']);
-  const cities = [{ name: 'Manila' }];
-
-  for (const record of phil.city_mun || []) {
-    if (!NCR_COMPONENT_CODES.includes(record.prov_code)) {
-      continue;
-    }
-
-    const cleaned = cleanPlaceName(record.name);
-    if (!cleaned || seen.has(cleaned)) {
-      continue;
-    }
-
-    seen.add(cleaned);
-    cities.push({ name: cleaned });
-  }
-
-  return cities.sort((a, b) => a.name.localeCompare(b.name));
-})();
-
-const getCitiesForProvince = (provinceCode) => {
-  if (!provinceCode) {
-    return [];
-  }
-
-  if (provinceCode === NCR_PROVINCE_CODE) {
-    return ncrCityOptions;
-  }
-
-  const result = phil.getCityMunByProvince(provinceCode) || [];
-  return result
-    .map((record) => ({ name: cleanPlaceName(record.name) }))
-    .filter((record, index, arr) => record.name && arr.findIndex((item) => item.name === record.name) === index)
-    .sort((a, b) => a.name.localeCompare(b.name));
-};
-
 const readAsDataUrl = (file) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -161,7 +83,7 @@ const readAsDataUrl = (file) =>
     reader.readAsDataURL(file);
   });
 
-const parseLocation = (rawLocation) => {
+const parseLocation = (rawLocation, provinceOptions, provinceCodeByLabel, getCitiesForProvince) => {
   const normalized = String(rawLocation || '')
     .replace(/,\s*Philippines\s*$/i, '')
     .trim();
@@ -188,7 +110,7 @@ const parseLocation = (rawLocation) => {
   return { provinceCode: '', city: '' };
 };
 
-const formatLocation = (city, provinceCode) => {
+const formatLocation = (city, provinceCode, provinceLabelByCode) => {
   const provinceLabel = provinceLabelByCode[provinceCode] || '';
   if (!city || !provinceLabel) {
     return '';
@@ -198,7 +120,12 @@ const formatLocation = (city, provinceCode) => {
 
 export default function DeveloperProfile({ user, onSubmit, onLogout }) {
   const { theme, toggleTheme } = useTheme();
-  const initialLocation = parseLocation(user?.location || user?.address || '');
+  const [locationData, setLocationData] = useState({
+    provinceOptions: [],
+    provinceLabelByCode: {},
+    provinceCodeByLabel: {},
+    getCitiesForProvince: () => [],
+  });
   const savedEducation = String(user?.educationAttainment || user?.education || '');
   const isSavedVocational = savedEducation.toLowerCase().startsWith(VOCATIONAL_EDUCATION_OPTION.toLowerCase());
   const savedVocationalCourse = isSavedVocational ? savedEducation.slice(VOCATIONAL_EDUCATION_OPTION.length).replace(/^\s*[-:]\s*/, '').trim() : '';
@@ -210,9 +137,9 @@ export default function DeveloperProfile({ user, onSubmit, onLogout }) {
     profileImage: user?.profileImage || '',
     fullName: user?.fullName || user?.name || '',
     username: user?.username || '',
-    provinceCode: initialLocation.provinceCode,
-    city: initialLocation.city,
-    location: formatLocation(initialLocation.city, initialLocation.provinceCode),
+    provinceCode: '',
+    city: '',
+    location: String(user?.location || user?.address || ''),
     phoneNumber: user?.phoneNumber || user?.phone || '',
     email: user?.email || '',
 
@@ -239,10 +166,53 @@ export default function DeveloperProfile({ user, onSubmit, onLogout }) {
   });
 
   const preferredRoleOptions = useMemo(() => JOB_TITLE_OPTIONS[form.jobTitle] || [], [form.jobTitle]);
-  const cityOptions = useMemo(() => getCitiesForProvince(form.provinceCode), [form.provinceCode]);
+  const cityOptions = useMemo(() => locationData.getCitiesForProvince(form.provinceCode), [form.provinceCode, locationData]);
   const requiresVocationalCourse = form.educationAttainment === VOCATIONAL_EDUCATION_OPTION;
   const requiresCustomEducation = form.educationAttainment === OTHER_EDUCATION_OPTION;
   const requiresCustomSchool = form.school === OTHER_SCHOOL_OPTION;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadLocations = async () => {
+      const nextData = await loadProvinceCityData();
+      if (!cancelled) {
+        setLocationData(nextData);
+      }
+    };
+
+    loadLocations();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!locationData.provinceOptions.length) {
+      return;
+    }
+
+    setForm((prev) => {
+      if (prev.provinceCode || prev.city) {
+        return prev;
+      }
+
+      const nextLocation = parseLocation(
+        user?.location || user?.address || '',
+        locationData.provinceOptions,
+        locationData.provinceCodeByLabel,
+        locationData.getCitiesForProvince
+      );
+
+      return {
+        ...prev,
+        provinceCode: nextLocation.provinceCode,
+        city: nextLocation.city,
+        location: formatLocation(nextLocation.city, nextLocation.provinceCode, locationData.provinceLabelByCode),
+      };
+    });
+  }, [locationData, user]);
 
   useEffect(() => {
     if (!form.jobTitle) {
@@ -259,23 +229,23 @@ export default function DeveloperProfile({ user, onSubmit, onLogout }) {
 
   useEffect(() => {
     setForm((prev) => {
-      const nextCities = getCitiesForProvince(prev.provinceCode);
+      const nextCities = locationData.getCitiesForProvince(prev.provinceCode);
       const hasCity = nextCities.some((option) => option.name === prev.city);
       const nextCity = hasCity ? prev.city : '';
       return {
         ...prev,
         city: nextCity,
-        location: formatLocation(nextCity, prev.provinceCode),
+        location: formatLocation(nextCity, prev.provinceCode, locationData.provinceLabelByCode),
       };
     });
-  }, [form.provinceCode]);
+  }, [form.provinceCode, locationData]);
 
   useEffect(() => {
     setForm((prev) => ({
       ...prev,
-      location: formatLocation(prev.city, prev.provinceCode),
+      location: formatLocation(prev.city, prev.provinceCode, locationData.provinceLabelByCode),
     }));
-  }, [form.city]);
+  }, [form.city, locationData]);
 
   const isComplete = useMemo(() => {
     return Boolean(
@@ -431,7 +401,7 @@ export default function DeveloperProfile({ user, onSubmit, onLogout }) {
                   <SearchableSelect
                     value={form.provinceCode}
                     onChange={(provinceCode) => setForm((p) => ({ ...p, provinceCode }))}
-                    options={provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
+                    options={locationData.provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
                     placeholder="Select a province"
                     searchPlaceholder="Search provinces"
                   />

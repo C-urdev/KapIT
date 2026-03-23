@@ -27,6 +27,13 @@
   mask-image: linear-gradient(to right, transparent 0, black 56px, black calc(100% - 56px), transparent 100%);
 }
 
+@media (min-width: 1024px) {
+  .orbit-shell {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, black 88px, black calc(100% - 88px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, black 88px, black calc(100% - 88px), transparent 100%);
+  }
+}
+
 .orbit-track {
   will-change: transform;
   transform: translate3d(0, 0, 0);

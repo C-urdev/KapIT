@@ -41,6 +41,10 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
   const { theme, toggleTheme } = useTheme();
   const [query, setQuery] = useState('');
   const [highlightGetStarted, setHighlightGetStarted] = useState(false);
+  const [isDesktopCarousel, setIsDesktopCarousel] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(min-width: 1024px)').matches;
+  });
   const topRef = useRef(null);
   const categoriesRef = useRef(null);
 
@@ -70,6 +74,25 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
   const handleJoinDeveloperClick = () => {
     highlightTopGetStarted();
   };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    const updateCarouselMode = (event) => {
+      setIsDesktopCarousel(event.matches);
+    };
+
+    setIsDesktopCarousel(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', updateCarouselMode);
+      return () => mediaQuery.removeEventListener('change', updateCarouselMode);
+    }
+
+    mediaQuery.addListener(updateCarouselMode);
+    return () => mediaQuery.removeListener(updateCarouselMode);
+  }, []);
 
   const highlightTopGetStarted = () => {
     scrollToTop();
@@ -250,7 +273,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
         ref={categoriesRef}
         className="relative bg-gradient-to-b from-[#e2ddcf] via-[#ebe6da] to-[#f7f6f1] dark:bg-[#0f2139] scroll-mt-24"
       >
-        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 pt-14 pb-8 min-h-[360px] sm:min-h-[400px]">
+        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 pt-14 pb-10 min-h-[360px] sm:min-h-[400px]">
           <div className="max-w-3xl">
             <h3 className="text-3xl font-bold text-[#102a1b] dark:text-white">Explore categories</h3>
             <p className="mt-2 text-[#344e41] dark:text-[#b8d4e8]">
@@ -258,15 +281,19 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
             </p>
           </div>
 
-        <div className="mt-8">
-          <CategoryOrbitRow categories={CATEGORIES} onCategoryClick={highlightTopGetStarted} />
-        </div>
+          <div className="mt-8">
+            {isDesktopCarousel ? (
+              <CategoryOrbitRow categories={CATEGORIES} onCategoryClick={highlightTopGetStarted} />
+            ) : (
+              <MobileCategoryCarousel categories={CATEGORIES} onCategoryClick={highlightTopGetStarted} />
+            )}
+          </div>
       </div>
         <ThinSectionLine className="bottom-0" />
       </section>
 
       <section className="relative bg-gradient-to-b from-[#fbfaf6] via-[#fbfaf6] via-[97%] to-[#f8f4ec] dark:bg-[#0f2139]">
-        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 pt-10 pb-8 min-h-[360px] sm:min-h-[400px]">
+        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 pt-10 pb-10 min-h-[360px] sm:min-h-[400px]">
           <div className="max-w-3xl">
             <h3 className="text-3xl font-bold text-[#102a1b] dark:text-white">How KapIT works</h3>
             <p className="mt-2 text-[#344e41] dark:text-[#b8d4e8]">
@@ -274,7 +301,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
             </p>
           </div>
 
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-5 xl:gap-6">
             <StepCard
               step="Step 1"
               title="Create your profile"
@@ -300,7 +327,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
 
       <section className="relative bg-gradient-to-b from-[#f8f4ec] via-[#eee9de] via-[8%] to-[#e2ddcf] dark:bg-[#0a1628]">
         <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 py-10 min-h-[360px] sm:min-h-[400px] flex items-center">
-          <div className="rounded-3xl border border-white/50 dark:border-[#1e3a5f] bg-white/60 dark:bg-[#0f2139]/50 backdrop-blur p-8 sm:p-10 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-lg shadow-black/5 dark:shadow-[#3ba9d6]/10">
+          <div className="w-full rounded-[2rem] border border-white/50 dark:border-[#1e3a5f] bg-white/70 dark:bg-[#0f2139]/50 backdrop-blur px-8 py-8 sm:px-10 sm:py-10 lg:px-12 lg:py-11 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-10 shadow-lg shadow-black/5 dark:shadow-[#3ba9d6]/10">
             <div className="max-w-2xl">
               <h3 className="text-3xl sm:text-4xl font-extrabold text-[#102a1b] dark:text-white">
                 Start building with Filipino IT Talent
@@ -310,18 +337,18 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto lg:shrink-0">
               <button
                 type="button"
                 onClick={highlightTopGetStarted}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#2a4a6f] text-[#102a1b] dark:text-white font-semibold hover:bg-white/90 dark:hover:bg-[#1e3a5f] transition-colors"
+                className="w-full sm:w-auto inline-flex min-h-[54px] items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#2a4a6f] text-[#102a1b] dark:text-white font-semibold hover:bg-white/90 dark:hover:bg-[#1e3a5f] transition-colors"
               >
                 Find Developers <ArrowRight className="w-4 h-4" />
               </button>
               <button
                 type="button"
                 onClick={handleJoinDeveloperClick}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold transition-colors"
+                className="w-full sm:w-auto inline-flex min-h-[54px] items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold transition-colors"
               >
                 Join as Developer <ArrowRight className="w-4 h-4" />
               </button>
@@ -335,21 +362,40 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
   );
 }
 
-function CategoryCard({ icon: Icon, title, onClick }) {
+function CategoryCard({ icon: Icon, title, onClick, className = '' }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group flex min-h-[164px] w-[min(78vw,320px)] shrink-0 flex-col text-left rounded-2xl bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] p-5 sm:min-h-[176px] sm:w-[280px] sm:p-6 lg:w-[320px] shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all"
+      className={`group flex min-h-[164px] w-[min(78vw,320px)] shrink-0 flex-col text-left rounded-2xl bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] p-5 sm:min-h-[176px] sm:w-[280px] sm:p-6 lg:min-h-[210px] lg:w-[360px] lg:rounded-[1.75rem] lg:p-8 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all ${className}`}
     >
-      <div className="w-12 h-12 rounded-xl bg-[#f5f5f2] dark:bg-[#1e3a5f] flex items-center justify-center">
-        <Icon className="w-6 h-6 text-[#588157] dark:text-[#3ba9d6]" />
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#f5f5f2] dark:bg-[#1e3a5f] lg:h-14 lg:w-14 lg:rounded-2xl">
+        <Icon className="h-6 w-6 text-[#588157] dark:text-[#3ba9d6] lg:h-7 lg:w-7" />
       </div>
       <div className="mt-4 flex flex-1 flex-col">
-        <div className="text-lg font-bold text-[#102a1b] dark:text-white">{title}</div>
-        <div className="mt-auto pt-1 text-sm text-[#344e41] dark:text-[#b8d4e8]">Browse specialists -&gt;</div>
+        <div className="text-lg font-bold text-[#102a1b] dark:text-white lg:text-[1.35rem]">{title}</div>
+        <div className="mt-auto pt-2 text-sm text-[#344e41] dark:text-[#b8d4e8] lg:text-[0.95rem]">Browse specialists -&gt;</div>
       </div>
     </button>
+  );
+}
+
+function MobileCategoryCarousel({ categories, onCategoryClick }) {
+  return (
+    <div className="relative -mx-3 px-3 pt-4 pb-1 sm:-mx-6 sm:px-6">
+      <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        {categories.map((category) => (
+          <div key={category.title} className="snap-start">
+            <CategoryCard
+              icon={category.icon}
+              title={category.title}
+              onClick={onCategoryClick}
+              className="w-[min(82vw,320px)] min-h-[168px]"
+            />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -562,7 +608,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
   };
 
   return (
-    <div className="relative overflow-hidden px-0 pt-4 pb-1 sm:px-2 sm:pt-5 sm:pb-2">
+    <div className="relative overflow-hidden px-0 pt-4 pb-2 sm:px-2 sm:pt-5 sm:pb-3">
       <div className="orbit-shell relative overflow-hidden">
         <div
           ref={trackRef}
@@ -584,7 +630,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
             <div
               key={`orbit-group-${groupIndex}`}
               ref={groupIndex === 0 ? segmentRef : null}
-              className="flex shrink-0 items-stretch gap-5 pr-5"
+              className="flex shrink-0 items-stretch gap-5 pr-5 lg:gap-6 lg:pr-6"
             >
               {group.map((cat, index) => (
                 <div key={`${cat.title}-${groupIndex}-${index}`} className="shrink-0">
@@ -610,15 +656,15 @@ function ThinSectionLine({ className = '' }) {
 
 function StepCard({ step, title, description, icon: Icon }) {
   return (
-    <div className="rounded-2xl bg-[#f5f5f2] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] p-6 shadow-sm">
+    <div className="flex min-h-[184px] flex-col rounded-2xl border border-[#a3b18a] bg-[#f5f5f2] p-6 shadow-sm dark:border-[#1e3a5f] dark:bg-[#162842] lg:min-h-[214px] lg:rounded-[1.75rem] lg:p-7">
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold tracking-wide text-[#588157] dark:text-[#3ba9d6]">{step}</p>
-        <div className="w-10 h-10 rounded-xl bg-white dark:bg-[#0f2139] border border-[#a3b18a] dark:border-[#2a4a6f] flex items-center justify-center">
-          <Icon className="w-5 h-5 text-[#588157] dark:text-[#3ba9d6]" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#a3b18a] bg-white dark:border-[#2a4a6f] dark:bg-[#0f2139] lg:h-12 lg:w-12 lg:rounded-2xl">
+          <Icon className="h-5 w-5 text-[#588157] dark:text-[#3ba9d6] lg:h-6 lg:w-6" />
         </div>
       </div>
-      <h4 className="mt-4 text-lg font-bold text-[#102a1b] dark:text-white">{title}</h4>
-      <p className="mt-2 text-sm text-[#344e41] dark:text-[#b8d4e8] leading-relaxed">{description}</p>
+      <h4 className="mt-5 text-lg font-bold text-[#102a1b] dark:text-white lg:text-[1.4rem]">{title}</h4>
+      <p className="mt-3 text-sm leading-relaxed text-[#344e41] dark:text-[#b8d4e8] lg:text-[0.98rem]">{description}</p>
     </div>
   );
 }

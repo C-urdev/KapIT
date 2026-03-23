@@ -1,15 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import phil from 'phil-reg-prov-mun-brgy';
 import { WalletCards, X } from 'lucide-react';
 import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
 import { COMPANY_PATHS, formatSkills, navigate } from '@companyFeatures/companyUtils';
 import { TECH_JOB_TITLE_OPTIONS } from '@companyFeatures/companyJobTitleOptions';
 import { PAYMENT_CANCEL_MESSAGE_TYPE, PAYMENT_MESSAGE_TYPE, STORAGE_KEY } from '@companyPages/CompanyPostJobPaymentPage';
+import { loadAddressOptions } from '@sharedUtils/philippinesLocations';
 
 const CUSTOM_JOB_VALUE = 'Other';
 const OTHER_SKILL_VALUE = 'Other';
-const NCR_COMPONENT_CODES = ['1339', '1374', '1375', '1376'];
-const EXCLUDED_PROVINCE_CODES = new Set(['0997', '1298']);
 const JOB_TYPE_OPTIONS = ['Full-time', 'Part-time', 'Contract', 'Internship'];
 const SALARY_CURRENCY_OPTIONS = ['PHP', 'USD', 'EUR'];
 const SALARY_RANGE_OPTIONS = {
@@ -49,35 +47,32 @@ const TECH_SKILL_OPTIONS = [
   'JavaScript','TypeScript','React','Next.js','Vue','Angular','Node.js','Express','NestJS','PHP','Laravel','Python','Django','Flask','Java','Spring Boot','C#','.NET','Go','Rust','React Native','Flutter','Android','iOS','Swift','Kotlin','MySQL','PostgreSQL','MongoDB','Firebase','Redis','GraphQL','REST APIs','Tailwind CSS','Bootstrap','Figma','UI/UX','Docker','Kubernetes','AWS','Azure','GCP','CI/CD','DevOps','Git','GitHub','Jest','Cypress','Selenium','QA Testing','Cybersecurity','Machine Learning','Data Analysis','Power BI','Tableau',OTHER_SKILL_VALUE,
 ];
 
-const titleCase = (value) => String(value || '').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
-const cleanPlaceName = (value) => titleCase(String(value || '')).replace(/\s*\(Capital\)$/i, '').replace(/^City Of /i, '').replace(/\s+City$/i, '').trim();
-const provinceMap = new Map((phil.provinces || []).map((item) => [item.prov_code, cleanPlaceName(item.name)]));
-
-const locationOptions = (() => {
-  const labels = new Set();
-  const options = [];
-  for (const record of phil.city_mun || []) {
-    if (EXCLUDED_PROVINCE_CODES.has(record.prov_code)) continue;
-    const municipalityOrCity = cleanPlaceName(record.name);
-    const provinceLabel = NCR_COMPONENT_CODES.includes(record.prov_code) ? 'Metro Manila' : provinceMap.get(record.prov_code) || '';
-    const fullLabel = provinceLabel ? `${municipalityOrCity}, ${provinceLabel}, Philippines` : `${municipalityOrCity}, Philippines`;
-    if (!labels.has(fullLabel)) {
-      labels.add(fullLabel);
-      options.push(fullLabel);
-    }
-  }
-  return options.sort((a, b) => a.localeCompare(b));
-})();
-
 export default function PostJob() {
   const [error, setError] = useState('');
   const [paymentPending, setPaymentPending] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState('');
   const [customSkill, setCustomSkill] = useState('');
+  const [searchableLocations, setSearchableLocations] = useState([]);
   const [form, setForm] = useState({ selectedTitle: '', customTitle: '', description: '', salaryCurrency: 'PHP', salary: '', customSalary: '', location: '', type: 'Full-time', skills: [] });
-  const searchableLocations = useMemo(() => locationOptions, []);
   const salaryRangeOptions = useMemo(() => SALARY_RANGE_OPTIONS[form.salaryCurrency] || SALARY_RANGE_OPTIONS.PHP, [form.salaryCurrency]);
   const usingCustomSalary = form.salary === CUSTOM_SALARY_OPTION;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadLocations = async () => {
+      const options = await loadAddressOptions();
+      if (!cancelled) {
+        setSearchableLocations(options);
+      }
+    };
+
+    loadLocations();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const handleMessage = (event) => {
