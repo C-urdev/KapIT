@@ -381,42 +381,58 @@ function CategoryCard({ icon: Icon, title, onClick, className = '' }) {
 }
 
 function MobileCategoryCarousel({ categories, onCategoryClick }) {
-  const scrollerRef = useRef(null);
+  const trackRef = useRef(null);
   const segmentRef = useRef(null);
   const frameRef = useRef(0);
   const lastTimestampRef = useRef(0);
+  const offsetRef = useRef(0);
   const segmentWidthRef = useRef(0);
-  const interactionRef = useRef(false);
-  const repeatedGroups = useMemo(() => [categories, categories, categories], [categories]);
+  const suppressClickRef = useRef(false);
+  const scrollSpeedRef = useRef(20);
+  const dragStateRef = useRef({
+    active: false,
+    moved: false,
+    pointerId: null,
+    startX: 0,
+    startOffset: 0,
+  });
+  const [isInteracting, setIsInteracting] = useState(false);
+  const repeatedCategoryGroups = useMemo(() => [categories, categories, categories], [categories]);
 
   useEffect(() => {
-    const scroller = scrollerRef.current;
+    const track = trackRef.current;
     const segment = segmentRef.current;
-    if (!scroller || !segment) return undefined;
+    if (!track || !segment) return undefined;
+
+    const applyTransform = () => {
+      track.style.transform = `translate3d(${offsetRef.current}px, 0, 0)`;
+    };
 
     const syncLoopPosition = () => {
       const segmentWidth = segment.getBoundingClientRect().width;
       if (segmentWidth <= 0) return;
       segmentWidthRef.current = segmentWidth;
 
-      if (scroller.scrollLeft === 0) {
-        scroller.scrollLeft = segmentWidth;
+      if (offsetRef.current === 0) {
+        offsetRef.current = -segmentWidth;
       }
 
-      while (scroller.scrollLeft < segmentWidth * 0.5) {
-        scroller.scrollLeft += segmentWidth;
+      while (offsetRef.current >= 0) {
+        offsetRef.current -= segmentWidth;
+      }
+      while (offsetRef.current <= segmentWidth * -2) {
+        offsetRef.current += segmentWidth;
       }
 
-      while (scroller.scrollLeft > segmentWidth * 1.5) {
-        scroller.scrollLeft -= segmentWidth;
-      }
+      applyTransform();
     };
 
     const measure = () => {
       const segmentWidth = segment.getBoundingClientRect().width;
       if (segmentWidth <= 0) return;
       segmentWidthRef.current = segmentWidth;
-      scroller.scrollLeft = segmentWidth;
+      offsetRef.current = -segmentWidth;
+      applyTransform();
     };
 
     measure();
@@ -435,8 +451,8 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
     window.addEventListener('resize', handleResize);
 
     const tick = (timestamp) => {
-      const currentScroller = scrollerRef.current;
-      if (!currentScroller) return;
+      const currentTrack = trackRef.current;
+      if (!currentTrack) return;
 
       if (!lastTimestampRef.current) {
         lastTimestampRef.current = timestamp;
@@ -445,8 +461,8 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
       const delta = timestamp - lastTimestampRef.current;
       lastTimestampRef.current = timestamp;
 
-      if (!interactionRef.current) {
-        currentScroller.scrollLeft += (22 * delta) / 1000;
+      if (!dragStateRef.current.active) {
+        offsetRef.current += (scrollSpeedRef.current * delta) / 1000;
         syncLoopPosition();
       }
 
@@ -461,49 +477,155 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
       window.removeEventListener('resize', handleResize);
       window.cancelAnimationFrame(frameRef.current);
     };
-  }, [repeatedGroups]);
+  }, [repeatedCategoryGroups]);
 
-  const handleInteractionStart = () => {
-    interactionRef.current = true;
+  const beginDrag = ({ pointerId = null, clientX }) => {
+    dragStateRef.current = {
+      active: true,
+      moved: false,
+      pointerId,
+      startX: clientX,
+      startOffset: offsetRef.current || -segmentWidthRef.current || 0,
+    };
+    setIsInteracting(true);
     lastTimestampRef.current = 0;
   };
 
-  const handleInteractionEnd = () => {
-    interactionRef.current = false;
+  const moveDrag = (clientX) => {
+    const dragState = dragStateRef.current;
+    const track = trackRef.current;
+    if (!track || !dragState.active) return;
+
+    const deltaX = clientX - dragState.startX;
+    if (Math.abs(deltaX) > 4 && !dragState.moved) {
+      dragStateRef.current.moved = true;
+      suppressClickRef.current = true;
+    }
+
+    offsetRef.current = dragState.startOffset + deltaX;
+    const segmentWidth = segmentWidthRef.current;
+    if (segmentWidth > 0) {
+      while (offsetRef.current >= 0) {
+        offsetRef.current -= segmentWidth;
+      }
+      while (offsetRef.current <= segmentWidth * -2) {
+        offsetRef.current += segmentWidth;
+      }
+    }
+
+    track.style.transform = `translate3d(${offsetRef.current}px, 0, 0)`;
+  };
+
+  const endDrag = () => {
+    dragStateRef.current = {
+      active: false,
+      moved: false,
+      pointerId: null,
+      startX: 0,
+      startOffset: 0,
+    };
+    setIsInteracting(false);
     lastTimestampRef.current = 0;
+  };
+
+  const handlePointerDown = (event) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) {
+      return;
+    }
+
+    beginDrag({ pointerId: event.pointerId, clientX: event.clientX });
+    trackRef.current?.setPointerCapture?.(event.pointerId);
+  };
+
+  const handlePointerMove = (event) => {
+    moveDrag(event.clientX);
+  };
+
+  const handlePointerUp = (event) => {
+    const track = trackRef.current;
+    if (track && dragStateRef.current.pointerId !== null) {
+      track.releasePointerCapture?.(dragStateRef.current.pointerId);
+    }
+    endDrag();
+  };
+
+  const handlePointerLeave = () => {
+    if (dragStateRef.current.active) {
+      endDrag();
+    }
+  };
+
+  const handleTouchStart = (event) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    beginDrag({ clientX: touch.clientX });
+  };
+
+  const handleTouchMove = (event) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    moveDrag(touch.clientX);
+    if (dragStateRef.current.moved) {
+      event.preventDefault();
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (dragStateRef.current.active) {
+      endDrag();
+    }
+  };
+
+  const handleCategoryClick = (event) => {
+    if (suppressClickRef.current) {
+      event.preventDefault();
+      event.stopPropagation();
+      window.setTimeout(() => {
+        suppressClickRef.current = false;
+      }, 0);
+      return;
+    }
+    onCategoryClick();
   };
 
   return (
     <div className="relative -mx-3 px-3 pt-4 pb-1 sm:-mx-6 sm:px-6">
-      <div
-        ref={scrollerRef}
-        className="flex gap-4 overflow-x-auto pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-        style={{ touchAction: 'pan-y pinch-zoom' }}
-        onTouchStart={handleInteractionStart}
-        onTouchEnd={handleInteractionEnd}
-        onTouchCancel={handleInteractionEnd}
-        onPointerDown={handleInteractionStart}
-        onPointerUp={handleInteractionEnd}
-        onPointerCancel={handleInteractionEnd}
-      >
-        {repeatedGroups.map((group, groupIndex) => (
-          <div
-            key={`mobile-group-${groupIndex}`}
-            ref={groupIndex === 0 ? segmentRef : null}
-            className="flex shrink-0 gap-4 pr-4"
-          >
-            {group.map((category, index) => (
-              <div key={`${category.title}-${groupIndex}-${index}`} className="shrink-0">
-                <CategoryCard
-                  icon={category.icon}
-                  title={category.title}
-                  onClick={onCategoryClick}
-                  className="w-[min(82vw,320px)] min-h-[168px]"
-                />
-              </div>
-            ))}
-          </div>
-        ))}
+      <div className="relative overflow-hidden">
+        <div
+          ref={trackRef}
+          className={`relative flex w-max items-stretch py-2 select-none ${
+            isInteracting ? 'cursor-grabbing' : 'cursor-grab'
+          }`}
+          style={{ touchAction: 'pan-y pinch-zoom' }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          onPointerLeave={handlePointerLeave}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
+        >
+          {repeatedCategoryGroups.map((group, groupIndex) => (
+            <div
+              key={`mobile-group-${groupIndex}`}
+              ref={groupIndex === 0 ? segmentRef : null}
+              className="flex shrink-0 gap-4 pr-4"
+            >
+              {group.map((category, index) => (
+                <div key={`${category.title}-${groupIndex}-${index}`} className="shrink-0">
+                  <CategoryCard
+                    icon={category.icon}
+                    title={category.title}
+                    onClick={handleCategoryClick}
+                    className="w-[min(82vw,320px)] min-h-[168px]"
+                  />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
