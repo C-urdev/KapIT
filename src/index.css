@@ -21,5 +21,10 @@
   display: none;
 }
 
+.orbit-fade {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, black 44px, black calc(100% - 44px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, black 44px, black calc(100% - 44px), transparent 100%);
+}
+
 
 

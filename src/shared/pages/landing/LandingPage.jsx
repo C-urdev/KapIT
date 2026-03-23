@@ -97,7 +97,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
             <button
               type="button"
               onClick={onGetStarted}
-              className={`group hidden sm:inline-flex relative px-4 py-2 rounded-lg text-white font-semibold transition-all duration-500 ease-out ${
+              className={`group relative inline-flex px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base text-white font-semibold transition-all duration-500 ease-out ${
                 highlightGetStarted
                   ? 'bg-[#3a5a40] dark:bg-[#3ba9d6] -translate-y-1 scale-105 shadow-[0_0_0_1px_rgba(255,255,255,0.14)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_0_18px_rgba(59,130,246,0.38),0_0_32px_rgba(139,92,246,0.42)]'
                   : 'bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de]'
@@ -243,8 +243,11 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
         </div>
       </section>
 
-      <section ref={categoriesRef} className="bg-[#f5f5f2] dark:bg-[#0f2139] scroll-mt-24">
-        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 pt-14 pb-6">
+      <section
+        ref={categoriesRef}
+        className="bg-gradient-to-b from-[#d7d2c4] via-[#e1dccf] to-[#f7f6f1] dark:bg-[#0f2139] scroll-mt-24"
+      >
+        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 pt-14 pb-6 min-h-[360px] sm:min-h-[400px]">
           <div className="max-w-3xl">
             <h3 className="text-3xl font-bold text-[#102a1b] dark:text-white">Explore categories</h3>
             <p className="mt-2 text-[#344e41] dark:text-[#b8d4e8]">
@@ -258,8 +261,8 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
         </div>
       </section>
 
-      <section className="bg-[#f5f5f2] dark:bg-[#0f2139]">
-        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 pt-4 pb-14">
+      <section className="bg-gradient-to-b from-[#fbfaf6] via-[#fbfaf6] via-[91%] to-[#f3eee2] dark:bg-[#0f2139]">
+        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 pt-4 pb-10 min-h-[350px] sm:min-h-[380px]">
           <div className="max-w-3xl">
             <h3 className="text-3xl font-bold text-[#102a1b] dark:text-white">How KapIT works</h3>
             <p className="mt-2 text-[#344e41] dark:text-[#b8d4e8]">
@@ -290,8 +293,8 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
         </div>
       </section>
 
-      <section className="bg-gradient-to-br from-[#dad7cd] to-[#f5f5f2] dark:from-[#0a1628] dark:to-[#162842]">
-        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 py-16">
+      <section className="bg-gradient-to-b from-[#f3eee2] via-[#ddd8ca] via-[14%] to-[#d7d2c4] dark:bg-[#0a1628]">
+        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 py-12 min-h-[340px] sm:min-h-[380px] flex items-center">
           <div className="rounded-3xl border border-white/50 dark:border-[#1e3a5f] bg-white/60 dark:bg-[#0f2139]/50 backdrop-blur p-8 sm:p-10 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-lg shadow-black/5 dark:shadow-[#3ba9d6]/10">
             <div className="max-w-2xl">
               <h3 className="text-3xl sm:text-4xl font-extrabold text-[#102a1b] dark:text-white">
@@ -488,12 +491,9 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
 
   return (
     <div className="relative overflow-hidden px-0 pt-4 pb-1 sm:px-2 sm:pt-5 sm:pb-2">
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-16 sm:w-24 lg:w-32 bg-gradient-to-r from-[#f5f5f2] via-[#f5f5f2]/88 via-25% to-transparent dark:from-[#0f2139] dark:via-[#0f2139]/88 dark:to-transparent z-10" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-16 sm:w-24 lg:w-32 bg-gradient-to-l from-[#f5f5f2] via-[#f5f5f2]/88 via-25% to-transparent dark:from-[#0f2139] dark:via-[#0f2139]/88 dark:to-transparent z-10" />
-
       <div
         ref={trackRef}
-        className={`orbit-scroll relative mx-auto flex items-center gap-5 overflow-x-auto py-5 sm:py-6 w-full select-none touch-pan-x ${
+        className={`orbit-scroll orbit-fade relative mx-auto flex items-center gap-5 overflow-x-auto py-5 sm:py-6 w-full select-none touch-pan-x ${
           isInteracting ? 'cursor-grabbing' : 'cursor-grab'
         }`}
         onPointerDown={handlePointerDown}
