@@ -396,6 +396,7 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
     startX: 0,
     startOffset: 0,
   });
+  const orbitPausedRef = useRef(false);
   const [isInteracting, setIsInteracting] = useState(false);
   const repeatedCategoryGroups = useMemo(() => [categories, categories, categories], [categories]);
 
@@ -461,7 +462,7 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
       const delta = timestamp - lastTimestampRef.current;
       lastTimestampRef.current = timestamp;
 
-      if (!dragStateRef.current.active) {
+      if (!dragStateRef.current.active && !orbitPausedRef.current) {
         offsetRef.current += (scrollSpeedRef.current * delta) / 1000;
         syncLoopPosition();
       }
@@ -480,6 +481,7 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
   }, [repeatedCategoryGroups]);
 
   const beginDrag = ({ pointerId = null, clientX }) => {
+    orbitPausedRef.current = true;
     dragStateRef.current = {
       active: true,
       moved: false,
@@ -525,34 +527,8 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
       startOffset: 0,
     };
     setIsInteracting(false);
+    orbitPausedRef.current = false;
     lastTimestampRef.current = 0;
-  };
-
-  const handlePointerDown = (event) => {
-    if (event.pointerType === 'mouse' && event.button !== 0) {
-      return;
-    }
-
-    beginDrag({ pointerId: event.pointerId, clientX: event.clientX });
-    trackRef.current?.setPointerCapture?.(event.pointerId);
-  };
-
-  const handlePointerMove = (event) => {
-    moveDrag(event.clientX);
-  };
-
-  const handlePointerUp = (event) => {
-    const track = trackRef.current;
-    if (track && dragStateRef.current.pointerId !== null) {
-      track.releasePointerCapture?.(dragStateRef.current.pointerId);
-    }
-    endDrag();
-  };
-
-  const handlePointerLeave = () => {
-    if (dragStateRef.current.active) {
-      endDrag();
-    }
   };
 
   const handleTouchStart = (event) => {
@@ -597,11 +573,6 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
             isInteracting ? 'cursor-grabbing' : 'cursor-grab'
           }`}
           style={{ touchAction: 'pan-y pinch-zoom' }}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-          onPointerLeave={handlePointerLeave}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
