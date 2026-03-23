@@ -359,6 +359,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
   const lastTimestampRef = useRef(0);
   const scrollPositionRef = useRef(0);
   const autoScrollEnabledRef = useRef(true);
+  const resumeAutoScrollTimeoutRef = useRef(null);
   const suppressClickRef = useRef(false);
   const scrollSpeedRef = useRef(18);
   const dragStateRef = useRef({
@@ -374,8 +375,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
   useEffect(() => {
     const track = trackRef.current;
     if (!track) return undefined;
-
-    autoScrollEnabledRef.current = !window.matchMedia('(pointer: coarse)').matches;
+    autoScrollEnabledRef.current = true;
 
     const syncLoopPosition = () => {
       const segmentWidth = track.scrollWidth / 3;
@@ -423,34 +423,52 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
 
     return () => {
       lastTimestampRef.current = 0;
+      if (resumeAutoScrollTimeoutRef.current) {
+        window.clearTimeout(resumeAutoScrollTimeoutRef.current);
+      }
       window.cancelAnimationFrame(initFrame);
       window.cancelAnimationFrame(frameRef.current);
     };
   }, [loopedCategories]);
 
-  const handlePointerDown = (event) => {
+  const pauseAutoScroll = () => {
+    autoScrollEnabledRef.current = false;
+    if (resumeAutoScrollTimeoutRef.current) {
+      window.clearTimeout(resumeAutoScrollTimeoutRef.current);
+    }
+  };
+
+  const resumeAutoScrollSoon = () => {
+    if (resumeAutoScrollTimeoutRef.current) {
+      window.clearTimeout(resumeAutoScrollTimeoutRef.current);
+    }
+    resumeAutoScrollTimeoutRef.current = window.setTimeout(() => {
+      autoScrollEnabledRef.current = true;
+    }, 2200);
+  };
+
+  const beginDrag = ({ pointerId = null, clientX }) => {
     const track = trackRef.current;
     if (!track) return;
 
-    autoScrollEnabledRef.current = false;
+    pauseAutoScroll();
     dragStateRef.current = {
       active: true,
       moved: false,
-      pointerId: event.pointerId,
-      startX: event.clientX,
+      pointerId,
+      startX: clientX,
       startScrollLeft: scrollPositionRef.current || track.scrollLeft,
     };
     setIsInteracting(true);
     lastTimestampRef.current = 0;
-    track.setPointerCapture?.(event.pointerId);
   };
 
-  const handlePointerMove = (event) => {
+  const moveDrag = (clientX) => {
     const dragState = dragStateRef.current;
     const track = trackRef.current;
     if (!track || !dragState.active) return;
 
-    const deltaX = event.clientX - dragState.startX;
+    const deltaX = clientX - dragState.startX;
     if (Math.abs(deltaX) > 4 && !dragState.moved) {
       dragStateRef.current.moved = true;
       suppressClickRef.current = true;
@@ -470,6 +488,20 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
     };
     lastTimestampRef.current = 0;
     setIsInteracting(false);
+    resumeAutoScrollSoon();
+  };
+
+  const handlePointerDown = (event) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) {
+      return;
+    }
+
+    beginDrag({ pointerId: event.pointerId, clientX: event.clientX });
+    trackRef.current?.setPointerCapture?.(event.pointerId);
+  };
+
+  const handlePointerMove = (event) => {
+    moveDrag(event.clientX);
   };
 
   const handlePointerUp = (event) => {
@@ -486,7 +518,34 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
     }
   };
 
-    const handleCategoryClick = (event) => {
+  const handleTouchStart = (event) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    beginDrag({ clientX: touch.clientX });
+  };
+
+  const handleTouchMove = (event) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    moveDrag(touch.clientX);
+    if (dragStateRef.current.moved) {
+      event.preventDefault();
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (dragStateRef.current.active) {
+      endDrag();
+    }
+  };
+
+  const handleScroll = () => {
+    const track = trackRef.current;
+    if (!track || dragStateRef.current.active) return;
+    scrollPositionRef.current = track.scrollLeft;
+  };
+
+  const handleCategoryClick = (event) => {
     if (suppressClickRef.current) {
       event.preventDefault();
       event.stopPropagation();
@@ -505,12 +564,17 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
         className={`orbit-scroll orbit-fade relative mx-auto flex w-full snap-x snap-mandatory items-stretch gap-5 overflow-x-auto py-5 sm:py-6 select-none touch-pan-x ${
           isInteracting ? 'cursor-grabbing' : 'cursor-grab'
         }`}
-        style={{ WebkitOverflowScrolling: 'touch' }}
+        style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-x pinch-zoom' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         onPointerLeave={handlePointerLeave}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+        onScroll={handleScroll}
       >
         {loopedCategories.map((cat, index) => (
           <div key={`${cat.title}-${index}`} className="shrink-0 snap-start">
