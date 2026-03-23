@@ -3,6 +3,7 @@ import { ArrowLeft, Building2, LogOut, Moon, Sun } from 'lucide-react';
 import phil from 'phil-reg-prov-mun-brgy';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
+import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
 import CompanyLogoUpload from '@companyComponents/CompanyLogoUpload';
 import { navigate } from '@companyFeatures/companyUtils';
 

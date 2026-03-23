@@ -245,9 +245,9 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
 
       <section
         ref={categoriesRef}
-        className="bg-gradient-to-b from-[#d7d2c4] via-[#e1dccf] to-[#f7f6f1] dark:bg-[#0f2139] scroll-mt-24"
+        className="relative bg-gradient-to-b from-[#e2ddcf] via-[#ebe6da] to-[#f7f6f1] dark:bg-[#0f2139] scroll-mt-24"
       >
-        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 pt-14 pb-6 min-h-[360px] sm:min-h-[400px]">
+        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 pt-14 pb-8 min-h-[360px] sm:min-h-[400px]">
           <div className="max-w-3xl">
             <h3 className="text-3xl font-bold text-[#102a1b] dark:text-white">Explore categories</h3>
             <p className="mt-2 text-[#344e41] dark:text-[#b8d4e8]">
@@ -259,10 +259,14 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
             <CategoryOrbitRow categories={CATEGORIES} onCategoryClick={highlightTopGetStarted} />
           </div>
         </div>
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-[#bfb6a1] to-transparent dark:via-[#5f87b5]/85"
+          aria-hidden="true"
+        />
       </section>
 
-      <section className="bg-gradient-to-b from-[#fbfaf6] via-[#fbfaf6] via-[91%] to-[#f3eee2] dark:bg-[#0f2139]">
-        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 pt-4 pb-10 min-h-[350px] sm:min-h-[380px]">
+      <section className="relative bg-gradient-to-b from-[#fbfaf6] via-[#fbfaf6] via-[97%] to-[#f8f4ec] dark:bg-[#0f2139]">
+        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 pt-10 pb-8 min-h-[360px] sm:min-h-[400px]">
           <div className="max-w-3xl">
             <h3 className="text-3xl font-bold text-[#102a1b] dark:text-white">How KapIT works</h3>
             <p className="mt-2 text-[#344e41] dark:text-[#b8d4e8]">
@@ -291,10 +295,14 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
             />
           </div>
         </div>
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[2px] bg-gradient-to-r from-transparent via-[#b8af9b] to-transparent dark:via-[#5f87b5]/85"
+          aria-hidden="true"
+        />
       </section>
 
-      <section className="bg-gradient-to-b from-[#f3eee2] via-[#ddd8ca] via-[14%] to-[#d7d2c4] dark:bg-[#0a1628]">
-        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 py-12 min-h-[340px] sm:min-h-[380px] flex items-center">
+      <section className="relative bg-gradient-to-b from-[#f8f4ec] via-[#eee9de] via-[8%] to-[#e2ddcf] dark:bg-[#0a1628]">
+        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 py-10 min-h-[360px] sm:min-h-[400px] flex items-center">
           <div className="rounded-3xl border border-white/50 dark:border-[#1e3a5f] bg-white/60 dark:bg-[#0f2139]/50 backdrop-blur p-8 sm:p-10 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-lg shadow-black/5 dark:shadow-[#3ba9d6]/10">
             <div className="max-w-2xl">
               <h3 className="text-3xl sm:text-4xl font-extrabold text-[#102a1b] dark:text-white">

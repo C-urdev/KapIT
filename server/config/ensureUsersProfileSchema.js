@@ -108,6 +108,50 @@ const ensureUsersProfileSchema = async () => {
     await client.query('CREATE INDEX IF NOT EXISTS idx_users_profile_completed ON users(profile_completed);');
 
     await client.query(`
+      CREATE OR REPLACE VIEW developer_signup_accounts AS
+      SELECT
+        id,
+        username,
+        email,
+        user_type,
+        account_type,
+        is_premium,
+        profile_completed,
+        name,
+        education,
+        desired_job,
+        phone,
+        address,
+        created_at,
+        updated_at
+      FROM users
+      WHERE account_type = 'developer' OR user_type = 'employee';
+    `);
+
+    await client.query(`
+      CREATE OR REPLACE VIEW company_signup_accounts AS
+      SELECT
+        id,
+        username,
+        email,
+        user_type,
+        account_type,
+        is_premium,
+        profile_completed,
+        company_name,
+        industry,
+        company_size,
+        website,
+        hiring_for,
+        phone,
+        address,
+        created_at,
+        updated_at
+      FROM users
+      WHERE account_type = 'company' OR user_type = 'company';
+    `);
+
+    await client.query(`
       CREATE TABLE IF NOT EXISTS messages (
         id BIGSERIAL PRIMARY KEY,
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

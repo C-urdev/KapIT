@@ -107,6 +107,34 @@ const getCompanyProfile = async (req, res) => {
   try {
     client = await pool.connect();
     const company = await getOrCreateCompanyForUserId(client, req.user.id);
+    const profileResult = await client.query(
+      `SELECT company_name,
+              industry,
+              company_size,
+              website,
+              description,
+              location,
+              logo_url
+       FROM company_profiles
+       WHERE user_id = $1
+       LIMIT 1`,
+      [req.user.id]
+    );
+    const userResult = await client.query(
+      `SELECT email, phone, hiring_for
+       FROM users
+       WHERE id = $1
+       LIMIT 1`,
+      [req.user.id]
+    );
+    const latestProjectResult = await client.query(
+      `SELECT title, description, budget, timeline, created_at
+       FROM projects
+       WHERE company_id = $1
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [company.id]
+    );
     const relatedResult = await client.query(
       `SELECT id, name, short_description, website
        FROM company_related_companies
@@ -114,11 +142,38 @@ const getCompanyProfile = async (req, res) => {
        ORDER BY created_at DESC, name ASC`,
       [company.id]
     );
+    const profile = profileResult.rows[0] || null;
+    const account = userResult.rows[0] || {};
+    const latestProject = latestProjectResult.rows[0] || null;
 
     return res.json({
       success: true,
       company: {
         ...company,
+        onboardingProfile: {
+          companyName: profile?.company_name || company.name || '',
+          industry: profile?.industry || '',
+          companySize: profile?.company_size || '',
+          website: profile?.website || company.website || '',
+          description: profile?.description || company.description || '',
+          location: profile?.location || company.location || '',
+          logoUrl: profile?.logo_url || company.logo || '',
+          contactEmail: account.email || '',
+          phoneNumber: account.phone || '',
+          servicesNeeded: String(account.hiring_for || '')
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean),
+        },
+        latestProject: latestProject
+          ? {
+              title: latestProject.title || '',
+              description: latestProject.description || '',
+              budgetRange: latestProject.budget || '',
+              timeline: latestProject.timeline || '',
+              createdAt: latestProject.created_at,
+            }
+          : null,
         related_companies: relatedResult.rows.map((row) => ({
           id: row.id,
           name: row.name,

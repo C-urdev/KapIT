@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import phil from 'phil-reg-prov-mun-brgy';
 import { Briefcase, Calendar, MapPin, Phone, Search, UserCircle, X } from 'lucide-react';
 import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
+import { developerAPI } from '@userFeatures/developer/userDeveloperAPI';
 
 const JOB_OPTIONS = [
   'Software Engineer',
@@ -115,6 +116,8 @@ const ADDRESS_OPTIONS = (() => {
 
 export default function AccountSettingsModal({ isOpen, user, onClose, onSave }) {
   const [activeSection, setActiveSection] = useState('profile');
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [developerProfile, setDeveloperProfile] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     username: '',
@@ -146,6 +149,38 @@ export default function AccountSettingsModal({ isOpen, user, onClose, onSave }) 
     });
   }, [isOpen, user]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadDeveloperProfile = async () => {
+      if (!isOpen || user?.type === 'company') {
+        return;
+      }
+
+      setProfileLoading(true);
+      try {
+        const data = await developerAPI.getMyProfile();
+        if (!cancelled) {
+          setDeveloperProfile(data?.profile || null);
+        }
+      } catch {
+        if (!cancelled) {
+          setDeveloperProfile(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setProfileLoading(false);
+        }
+      }
+    };
+
+    loadDeveloperProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, user?.type]);
+
   const desiredJobValue = useMemo(
     () =>
       formData.desiredJob === 'Other IT jobs' && formData.customDesiredJob.trim()
@@ -153,6 +188,44 @@ export default function AccountSettingsModal({ isOpen, user, onClose, onSave }) 
         : formData.desiredJob,
     [formData.desiredJob, formData.customDesiredJob]
   );
+
+  const completeProfileRows = useMemo(() => {
+    if (user?.type === 'company') {
+      return [];
+    }
+
+    const socialLinks =
+      typeof user?.socials === 'string'
+        ? (() => {
+            try {
+              return JSON.parse(user.socials);
+            } catch {
+              return {};
+            }
+          })()
+        : user?.socials || {};
+
+    return [
+      ['Full name', developerProfile?.full_name || user?.name || ''],
+      ['Email', developerProfile?.email || user?.email || ''],
+      ['Phone number', developerProfile?.phone_number || user?.phone || ''],
+      ['Location', developerProfile?.location || user?.address || ''],
+      ['Job title', developerProfile?.job_title || ''],
+      ['Years of experience', developerProfile?.experience_years ?? ''],
+      ['Preferred IT role', developerProfile?.preferred_it_role || user?.desiredJob || ''],
+      ['Education', developerProfile?.education || user?.education || ''],
+      ['School / University', developerProfile?.school_university || ''],
+      ['Certifications', developerProfile?.certifications || ''],
+      ['Work preference', developerProfile?.work_preference || ''],
+      ['Skills', Array.isArray(developerProfile?.skills) ? developerProfile.skills.join(', ') : ''],
+      ['GitHub', developerProfile?.github_link || socialLinks.github || ''],
+      ['Portfolio website', developerProfile?.portfolio_link || socialLinks.portfolio || ''],
+      ['LinkedIn', developerProfile?.linkedin_link || socialLinks.linkedin || ''],
+      ['Other links', developerProfile?.other_links || socialLinks.other || ''],
+      ['Resume', developerProfile?.resume_url || ''],
+      ['About me', developerProfile?.bio || user?.bio || ''],
+    ].filter(([, value]) => String(value ?? '').trim() !== '');
+  }, [developerProfile, user]);
 
   if (!isOpen) {
     return null;
@@ -221,6 +294,29 @@ export default function AccountSettingsModal({ isOpen, user, onClose, onSave }) 
               <h4 className="text-2xl font-bold text-[#3a5a40] dark:text-white">Account settings</h4>
               <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8] mt-1">Update your current website settings only.</p>
             </div>
+
+            {user?.type !== 'company' && (
+              <section className="bg-white dark:bg-[#162842] border border-[#d1d5db] dark:border-[#1e3a5f] rounded-xl p-4 mb-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Briefcase className="w-4 h-4 text-[#588157] dark:text-[#3ba9d6]" />
+                  <h5 className="font-semibold text-[#3a5a40] dark:text-white">Complete profile details</h5>
+                </div>
+                {profileLoading ? (
+                  <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">Loading your saved profile details...</p>
+                ) : completeProfileRows.length ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {completeProfileRows.map(([label, value]) => (
+                      <div key={label} className="rounded-lg border border-[#e5e7eb] dark:border-[#2a4a6f] bg-[#f9fafb] dark:bg-[#0f2139] px-3 py-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-[#6b7280] dark:text-[#7d9ab8]">{label}</p>
+                        <p className="mt-1 text-sm text-[#344e41] dark:text-white break-words">{String(value)}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">No complete profile details saved yet.</p>
+                )}
+              </section>
+            )}
 
             <div className="grid grid-cols-1 gap-4">
               {activeSection === 'profile' && (

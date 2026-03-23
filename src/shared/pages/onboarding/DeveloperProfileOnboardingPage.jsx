@@ -3,6 +3,7 @@ import { ArrowLeft, Briefcase, LogOut, Moon, Sun, UserCircle2 } from 'lucide-rea
 import phil from 'phil-reg-prov-mun-brgy';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
+import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
 import SkillTags from '@userComponents/developer/UserSkillTags';
 import PortfolioCard from '@userComponents/developer/UserPortfolioCard';
 import ResumeUploader from '@userComponents/developer/UserResumeUploader';

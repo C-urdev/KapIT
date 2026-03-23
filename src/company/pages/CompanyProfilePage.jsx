@@ -54,6 +54,7 @@ export default function CompanyProfile({ user, onUpdated }) {
     website: user?.website || '',
     relatedCompanies: [],
   });
+  const [onboardingDetails, setOnboardingDetails] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,6 +77,10 @@ export default function CompanyProfile({ user, onUpdated }) {
             shortDescription: item?.shortDescription || '',
             website: item?.website || '',
           })) : [],
+        });
+        setOnboardingDetails({
+          ...(company?.onboardingProfile || {}),
+          latestProject: company?.latestProject || null,
         });
       } catch (err) {
         if (!cancelled) {
@@ -158,6 +163,36 @@ export default function CompanyProfile({ user, onUpdated }) {
       {loading && <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">Loading company profile...</p>}
 
       <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] shadow-lg shadow-black/5 dark:shadow-black/20 p-8 space-y-6 transition-colors duration-300">
+        {onboardingDetails && (
+          <section className="space-y-4 rounded-2xl border border-[#d8dfc9] dark:border-[#2a4a6f] bg-[#f8faf5] dark:bg-[#102235] p-5">
+            <div>
+              <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Company onboarding details</h3>
+              <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">Saved from your complete company profile flow.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <ReadOnlyField label="Industry" value={onboardingDetails.industry} />
+              <ReadOnlyField label="Company Size" value={onboardingDetails.companySize} />
+              <ReadOnlyField label="Contact Email" value={onboardingDetails.contactEmail} />
+              <ReadOnlyField label="Phone Number" value={onboardingDetails.phoneNumber} />
+              <ReadOnlyField
+                label="Services Needed"
+                value={Array.isArray(onboardingDetails.servicesNeeded) ? onboardingDetails.servicesNeeded.join(', ') : ''}
+              />
+              <ReadOnlyField label="Saved Location" value={onboardingDetails.location} />
+            </div>
+
+            {onboardingDetails.latestProject ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ReadOnlyField label="Project Title" value={onboardingDetails.latestProject.title} />
+                <ReadOnlyField label="Budget Range" value={onboardingDetails.latestProject.budgetRange} />
+                <ReadOnlyField label="Timeline" value={onboardingDetails.latestProject.timeline} />
+                <ReadOnlyField label="Project Description" value={onboardingDetails.latestProject.description} full />
+              </div>
+            ) : null}
+          </section>
+        )}
+
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-2xl bg-[#f5f5f2] dark:bg-[#1e3a5f] border border-[#a3b18a] dark:border-[#2a4a6f] overflow-hidden text-[#3a5a40] dark:text-white flex items-center justify-center font-extrabold text-2xl transition-colors duration-300">
             {form.logo ? <img src={form.logo} alt="Company logo" className="w-full h-full object-cover" /> : initial}
@@ -244,6 +279,21 @@ function Field({ label, children }) {
     <div className="space-y-1">
       <label className="text-sm font-semibold text-[#3a5a40] dark:text-white">{label}</label>
       {children}
+    </div>
+  );
+}
+
+function ReadOnlyField({ label, value, full = false }) {
+  if (!String(value || '').trim()) {
+    return null;
+  }
+
+  return (
+    <div className={`${full ? 'md:col-span-2' : ''} space-y-1`}>
+      <p className="text-sm font-semibold text-[#3a5a40] dark:text-white">{label}</p>
+      <div className="rounded-xl border border-[#d8dfc9] dark:border-[#2a4a6f] bg-white dark:bg-[#162842] px-4 py-3 text-sm text-[#344e41] dark:text-[#dcecff]">
+        {value}
+      </div>
     </div>
   );
 }
