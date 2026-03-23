@@ -167,19 +167,30 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
 
               <form onSubmit={handleSearch} className="mt-16 sm:mt-20">
                 <div className="mx-auto max-w-5xl">
-                  <div className="flex items-stretch gap-2 rounded-2xl bg-white/85 dark:bg-[#0f2139]/85 border border-[#a3b18a] dark:border-[#2a4a6f] shadow-lg shadow-black/5 dark:shadow-[#3ba9d6]/10 p-2 backdrop-blur">
-                    <div className="flex items-center pl-3">
-                      <Search className="w-6 h-6 text-[#588157] dark:text-[#3ba9d6]" />
+                  <div className="rounded-2xl bg-white/85 dark:bg-[#0f2139]/85 border border-[#a3b18a] dark:border-[#2a4a6f] shadow-lg shadow-black/5 dark:shadow-[#3ba9d6]/10 p-2 backdrop-blur">
+                    <div className="flex items-center gap-2">
+                      <div className="flex min-w-0 flex-1 items-center">
+                        <div className="flex items-center pl-3">
+                          <Search className="w-5 h-5 sm:w-6 sm:h-6 text-[#588157] dark:text-[#3ba9d6]" />
+                        </div>
+                        <input
+                          value={query}
+                          onChange={(e) => setQuery(e.target.value)}
+                          placeholder="Search developers, skills, or services..."
+                          className="min-w-0 flex-1 bg-transparent px-3 sm:px-4 py-4 text-base sm:text-lg text-[#102a1b] dark:text-white placeholder:text-[#344e41]/70 dark:placeholder:text-[#b8d4e8]/70 outline-none"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        className="hidden sm:inline-flex shrink-0 items-center justify-center px-6 sm:px-8 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white text-base sm:text-lg font-semibold transition-colors"
+                      >
+                        Search
+                      </button>
                     </div>
-                    <input
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      placeholder="Search developers, skills, or services..."
-                      className="flex-1 bg-transparent px-4 py-4 text-base sm:text-lg text-[#102a1b] dark:text-white placeholder:text-[#344e41]/70 dark:placeholder:text-[#b8d4e8]/70 outline-none"
-                    />
+
                     <button
                       type="submit"
-                      className="px-6 sm:px-8 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white text-base sm:text-lg font-semibold transition-colors"
+                      className="mt-2 flex w-full sm:hidden items-center justify-center rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] px-5 py-3 text-base font-semibold text-white transition-colors"
                     >
                       Search
                     </button>
