@@ -1,8 +1,9 @@
 import React from 'react';
-import { Moon, Sun, LogOut } from 'lucide-react';
+import { Moon, Sun, LogOut, Bell } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
+import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
 
-export default function CompanyDesktopHeader({ title, user, onLogout, sidebarCollapsed }) {
+export default function CompanyDesktopHeader({ title, user, onLogout, sidebarCollapsed, unreadNotificationCount = 0 }) {
   const { theme, toggleTheme } = useTheme();
   const companyName = user?.companyName || user?.username || 'Company';
   const profileImage = user?.profileImage || '';
@@ -59,6 +60,18 @@ export default function CompanyDesktopHeader({ title, user, onLogout, sidebarCol
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => navigate(COMPANY_PATHS.notifications)}
+            className="relative p-2 rounded-lg hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+            aria-label="Open notifications"
+          >
+            <Bell className="w-5 h-5 text-[#344e41] dark:text-white" />
+            {unreadNotificationCount > 0 ? (
+              <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-[#588157] dark:bg-[#3ba9d6]" />
+            ) : null}
+          </button>
+
           <button
             type="button"
             onClick={toggleTheme}

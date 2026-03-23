@@ -1,29 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { ThemeProvider } from '@sharedContext/ThemeContext';
-import LandingPage from '@sharedPages/landing/LandingPage';
-import AuthPage from '@sharedPages/auth/AuthPage';
-import HomePage from '@userPages/Home/UserHomePage';
-import HelpPage from '@sharedPages/help/HelpPage';
-import CompleteProfilePage from '@sharedPages/onboarding/UserCompleteProfilePage';
-import ChooseAccountTypePage from '@sharedPages/auth/ChooseAccountTypePage';
-import CompleteCompanyProfilePage from '@sharedPages/onboarding/CompanyCompleteProfilePage';
-import DeveloperProfile from '@sharedPages/onboarding/DeveloperProfileOnboardingPage';
-import CompanyProfileOnboarding from '@sharedPages/onboarding/CompanyProfileOnboardingPage';
-import CompanyLayout from '@companyLayouts/CompanyLayout';
-import CompanyDashboard from '@companyPages/CompanyDashboardPage';
-import PostJob from '@companyPages/CompanyPostJobPage';
-import CompanyPostJobPayment from '@companyPages/CompanyPostJobPaymentPage';
-import ManageJobs from '@companyPages/CompanyManageJobsPage';
-import Applicants from '@companyPages/CompanyApplicantsPage';
-import CompanyMessagesPage from '@companyPages/CompanyMessagesPage';
-import SearchDevelopers from '@companyPages/CompanySearchDevelopersPage';
-import CompanyProfile from '@companyPages/CompanyProfilePage';
 import ConfirmModal from '@sharedComponents/ui/ConfirmModal';
 import { getStoredUser, isAuthenticated, logoutUser, updateStoredUser, getCurrentUser, updateMyProfile, getCachedProfileForEmail } from '@sharedServices/authService';
 import { COMPANY_PATHS, isCompanyRoute, navigate } from '@companyFeatures/companyUtils';
 import { saveDeveloperProfile } from '@userFeatures/developer/userDeveloperAPI';
 import { saveCompanyProfileOnboarding } from '@companyFeatures/companyAPI';
 import SelectAccountTypeModal from '@sharedComponents/auth/SelectAccountTypeModal';
+
+const LandingPage = lazy(() => import('@sharedPages/landing/LandingPage'));
+const AuthPage = lazy(() => import('@sharedPages/auth/AuthPage'));
+const HomePage = lazy(() => import('@userPages/Home/UserHomePage'));
+const HelpPage = lazy(() => import('@sharedPages/help/HelpPage'));
+const CompleteProfilePage = lazy(() => import('@sharedPages/onboarding/UserCompleteProfilePage'));
+const ChooseAccountTypePage = lazy(() => import('@sharedPages/auth/ChooseAccountTypePage'));
+const CompleteCompanyProfilePage = lazy(() => import('@sharedPages/onboarding/CompanyCompleteProfilePage'));
+const DeveloperProfile = lazy(() => import('@sharedPages/onboarding/DeveloperProfileOnboardingPage'));
+const CompanyProfileOnboarding = lazy(() => import('@sharedPages/onboarding/CompanyProfileOnboardingPage'));
+const CompanyLayout = lazy(() => import('@companyLayouts/CompanyLayout'));
+const CompanyDashboard = lazy(() => import('@companyPages/CompanyDashboardPage'));
+const PostJob = lazy(() => import('@companyPages/CompanyPostJobPage'));
+const CompanyPostJobPayment = lazy(() => import('@companyPages/CompanyPostJobPaymentPage'));
+const ManageJobs = lazy(() => import('@companyPages/CompanyManageJobsPage'));
+const Applicants = lazy(() => import('@companyPages/CompanyApplicantsPage'));
+const CompanyMessagesPage = lazy(() => import('@companyPages/CompanyMessagesPage'));
+const CompanyNotificationsPage = lazy(() => import('@companyPages/CompanyNotificationsPage'));
+const SearchDevelopers = lazy(() => import('@companyPages/CompanySearchDevelopersPage'));
+const CompanyProfile = lazy(() => import('@companyPages/CompanyProfilePage'));
 
 const AUTH_PATHS = {
   register: '/auth/register',
@@ -424,91 +426,94 @@ export default function KapIT() {
   return (
     <ThemeProvider>
       <div className="min-h-screen bg-white dark:bg-black transition-colors duration-300">
-        {isCompanyPaymentWindow && <CompanyPostJobPayment />}
+        <Suspense fallback={<AppShellLoader />}>
+          {isCompanyPaymentWindow && <CompanyPostJobPayment />}
 
-        {currentView === 'company' && isAuth && userType === 'company' && !isCompanyPaymentWindow && (
-          <CompanyLayout pathname={pathname} user={user} onLogout={handleLogout}>
-            {pathname === COMPANY_PATHS.dashboard && <CompanyDashboard />}
-            {pathname === COMPANY_PATHS.premium && <CompanyDashboard />}
-            {pathname === COMPANY_PATHS.postJob && <PostJob />}
-            {pathname === COMPANY_PATHS.jobs && <ManageJobs />}
-            {pathname === COMPANY_PATHS.applicants && <Applicants />}
+          {currentView === 'company' && isAuth && userType === 'company' && !isCompanyPaymentWindow && (
+            <CompanyLayout pathname={pathname} user={user} onLogout={handleLogout} onHelp={() => setCurrentView('help')}>
+              {pathname === COMPANY_PATHS.dashboard && <CompanyDashboard />}
+              {pathname === COMPANY_PATHS.premium && <CompanyDashboard />}
+              {pathname === COMPANY_PATHS.postJob && <PostJob />}
+              {pathname === COMPANY_PATHS.jobs && <ManageJobs />}
+              {pathname === COMPANY_PATHS.applicants && <Applicants />}
             {pathname === COMPANY_PATHS.messages && <CompanyMessagesPage user={user} />}
+            {pathname === COMPANY_PATHS.notifications && <CompanyNotificationsPage onReadAll={() => {}} />}
             {pathname === COMPANY_PATHS.search && <SearchDevelopers />}
-            {pathname === COMPANY_PATHS.profile && (
-              <CompanyProfile
-                user={user}
-                onUpdated={(company, form) =>
-                  handleUserUpdate({
-                    companyName: form?.name,
-                    profileImage: form?.logo,
-                    bio: form?.shortDescription || form?.description,
-                    address: form?.location,
-                    website: form?.website,
-                  })
-                }
-              />
-            )}
-            {!Object.values(COMPANY_PATHS).includes(pathname) && <CompanyDashboard />}
-          </CompanyLayout>
-        )}
-        {currentView === 'landing' && (
-          <LandingPage onGetStarted={handleGetStarted} onJoinDeveloper={handleJoinAsDeveloper} />
-        )}
-        {currentView === 'auth' && (
-          <AuthPage
-            userType={userType}
-            accountType={pathname === AUTH_PATHS.register ? getAccountTypeFromSearch(window.location.search) : null}
-            onLogin={handleLogin}
-            onBeginSignup={handleBeginSignup}
-            onRequestAccountType={() => {
-              setCurrentView('landing');
-              navigate('/');
-              setIsAccountTypeModalOpen(true);
-            }}
-            initialMode={authEntryMode}
-            onBack={() => { setCurrentView('landing'); navigate('/'); }}
-          />
-        )}
-        {currentView === 'choose-account-type' && (
-          <ChooseAccountTypePage
-            pendingSignup={pendingSignup}
-            onBack={handleSignupCanceled}
-            onRegistered={handleLogin}
-          />
-        )}
-        {currentView === 'home' && isAuth && (
-          <HomePage
-            user={user}
-            userType={userType}
-            onOpenHelp={() => setCurrentView('help')}
-            onLogout={handleLogout}
-            onUpdateUser={handleUserUpdate}
-          />
-        )}
-        {currentView === 'help' && isAuth && (
-          <HelpPage onBack={() => setCurrentView('home')} />
-        )}
-        {currentView === 'complete-profile' && isAuth && (
-          <CompleteProfilePage
-            user={user}
-            onSubmit={handleProfileComplete}
-            onLogout={handleLogout}
-          />
-        )}
-        {currentView === 'complete-company-profile' && isAuth && (
-          <CompleteCompanyProfilePage
-            user={user}
-            onSubmit={handleProfileComplete}
-            onLogout={handleLogout}
-          />
-        )}
-        {currentView === 'onboarding-developer-profile' && isAuth && (
-          <DeveloperProfile user={user} onSubmit={handleDeveloperProfileComplete} onLogout={handleLogout} />
-        )}
-        {currentView === 'onboarding-company-profile' && isAuth && (
-          <CompanyProfileOnboarding user={user} onSubmit={handleCompanyProfileComplete} onLogout={handleLogout} />
-        )}
+              {pathname === COMPANY_PATHS.profile && (
+                <CompanyProfile
+                  user={user}
+                  onUpdated={(company, form) =>
+                    handleUserUpdate({
+                      companyName: form?.name,
+                      profileImage: form?.logo,
+                      bio: form?.shortDescription || form?.description,
+                      address: form?.location,
+                      website: form?.website,
+                    })
+                  }
+                />
+              )}
+              {!Object.values(COMPANY_PATHS).includes(pathname) && <CompanyDashboard />}
+            </CompanyLayout>
+          )}
+          {currentView === 'landing' && (
+            <LandingPage onGetStarted={handleGetStarted} onJoinDeveloper={handleJoinAsDeveloper} />
+          )}
+          {currentView === 'auth' && (
+            <AuthPage
+              userType={userType}
+              accountType={pathname === AUTH_PATHS.register ? getAccountTypeFromSearch(window.location.search) : null}
+              onLogin={handleLogin}
+              onBeginSignup={handleBeginSignup}
+              onRequestAccountType={() => {
+                setCurrentView('landing');
+                navigate('/');
+                setIsAccountTypeModalOpen(true);
+              }}
+              initialMode={authEntryMode}
+              onBack={() => { setCurrentView('landing'); navigate('/'); }}
+            />
+          )}
+          {currentView === 'choose-account-type' && (
+            <ChooseAccountTypePage
+              pendingSignup={pendingSignup}
+              onBack={handleSignupCanceled}
+              onRegistered={handleLogin}
+            />
+          )}
+          {currentView === 'home' && isAuth && (
+            <HomePage
+              user={user}
+              userType={userType}
+              onOpenHelp={() => setCurrentView('help')}
+              onLogout={handleLogout}
+              onUpdateUser={handleUserUpdate}
+            />
+          )}
+          {currentView === 'help' && isAuth && (
+            <HelpPage onBack={() => setCurrentView(userType === 'company' ? 'company' : 'home')} />
+          )}
+          {currentView === 'complete-profile' && isAuth && (
+            <CompleteProfilePage
+              user={user}
+              onSubmit={handleProfileComplete}
+              onLogout={handleLogout}
+            />
+          )}
+          {currentView === 'complete-company-profile' && isAuth && (
+            <CompleteCompanyProfilePage
+              user={user}
+              onSubmit={handleProfileComplete}
+              onLogout={handleLogout}
+            />
+          )}
+          {currentView === 'onboarding-developer-profile' && isAuth && (
+            <DeveloperProfile user={user} onSubmit={handleDeveloperProfileComplete} onLogout={handleLogout} />
+          )}
+          {currentView === 'onboarding-company-profile' && isAuth && (
+            <CompanyProfileOnboarding user={user} onSubmit={handleCompanyProfileComplete} onLogout={handleLogout} />
+          )}
+        </Suspense>
 
         <SelectAccountTypeModal
           open={isAccountTypeModalOpen && currentView === 'landing'}
@@ -540,7 +545,7 @@ export default function KapIT() {
         <ConfirmModal
           open={logoutConfirmOpen}
           title="Log out?"
-          message="are u sure to log out?"
+          message="Are you sure to log out?"
           confirmLabel="Log out"
           cancelLabel="Stay signed in"
           tone="danger"
@@ -549,6 +554,23 @@ export default function KapIT() {
         />
       </div>
     </ThemeProvider>
+  );
+}
+
+function AppShellLoader() {
+  return (
+    <div className="min-h-screen bg-[#f7f6f1] dark:bg-[#0a1628] px-4 py-6 sm:px-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
+        <div className="h-12 w-48 animate-pulse rounded-2xl bg-[#e5e1d4] dark:bg-[#16304a]" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="h-28 animate-pulse rounded-2xl bg-white dark:bg-[#162842]" />
+          ))}
+        </div>
+        <div className="h-40 animate-pulse rounded-2xl bg-white dark:bg-[#162842]" />
+        <div className="h-72 animate-pulse rounded-2xl bg-white dark:bg-[#162842]" />
+      </div>
+    </div>
   );
 }
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Briefcase, Users, Building2, Settings, PanelLeftClose, PanelLeftOpen, MessageCircle } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Users, Settings, PanelLeftClose, PanelLeftOpen, MessageCircle, Bell } from 'lucide-react';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
 
 const LINKS = [
@@ -7,7 +7,7 @@ const LINKS = [
   { key: 'jobs', label: 'Manage Jobs', icon: Briefcase, path: COMPANY_PATHS.jobs },
   { key: 'applicants', label: 'Applicants', icon: Users, path: COMPANY_PATHS.applicants },
   { key: 'messages', label: 'Messages', icon: MessageCircle, path: COMPANY_PATHS.messages },
-  { key: 'profile', label: 'Company Profile', icon: Building2, path: COMPANY_PATHS.profile },
+  { key: 'notifications', label: 'Notifications', icon: Bell, path: COMPANY_PATHS.notifications },
 ];
 
 function SidebarButton({ collapsed, active = false, label, title, onClick, icon, text }) {
@@ -37,7 +37,7 @@ function SidebarButton({ collapsed, active = false, label, title, onClick, icon,
   );
 }
 
-export default function CompanyDesktopSidebar({ activePath, collapsed = false, onToggleCollapsed }) {
+export default function CompanyDesktopSidebar({ activePath, collapsed = false, onToggleCollapsed, unreadNotificationCount = 0 }) {
   return (
     <aside className={`hidden xl:flex fixed top-20 bottom-0 left-0 flex-col bg-white dark:bg-[#162842] transition-[width,background-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] z-40 ${collapsed ? 'w-16' : 'w-72'}`}>
       <div className="h-1 bg-gradient-to-r from-[#588157] to-[#3a5a40] dark:from-[#2d8bb8] dark:to-[#3ba9d6]" />
@@ -45,6 +45,7 @@ export default function CompanyDesktopSidebar({ activePath, collapsed = false, o
         {LINKS.map((link) => {
           const isActive = activePath === link.path;
           const Icon = link.icon;
+          const showBadge = link.path === COMPANY_PATHS.notifications && unreadNotificationCount > 0;
           return (
             <SidebarButton
               key={link.key}
@@ -52,7 +53,12 @@ export default function CompanyDesktopSidebar({ activePath, collapsed = false, o
               active={isActive}
               label={link.label}
               onClick={() => navigate(link.path)}
-              icon={<Icon className={`${collapsed ? 'w-4 h-4' : 'w-5 h-5'} ${isActive ? 'text-[#588157] dark:text-[#3ba9d6]' : 'text-[#4b5563] dark:text-[#7d9ab8]'} transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]`} />}
+              icon={
+                <span className="relative inline-flex">
+                  <Icon className={`${collapsed ? 'w-4 h-4' : 'w-5 h-5'} ${isActive ? 'text-[#588157] dark:text-[#3ba9d6]' : 'text-[#4b5563] dark:text-[#7d9ab8]'} transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]`} />
+                  {showBadge ? <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-[#588157] dark:bg-[#3ba9d6]" /> : null}
+                </span>
+              }
               text={link.label}
             />
           );

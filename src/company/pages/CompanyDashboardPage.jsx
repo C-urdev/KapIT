@@ -12,8 +12,8 @@ function OverviewIconAction({ icon: Icon, label, onClick, variant = 'default' })
       type="button"
       onClick={onClick}
       className={isPrimary
-        ? 'inline-flex items-center gap-2 rounded-xl border border-[#588157] dark:border-[#3ba9d6] bg-[#3a5a40] dark:bg-[#1f6f96] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-[#344e41] dark:hover:bg-[#2d8bb8] hover:shadow-lg hover:shadow-black/10'
-        : 'inline-flex items-center gap-2 rounded-xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] px-4 py-2.5 text-sm font-semibold text-[#3a5a40] dark:text-white transition-all hover:-translate-y-0.5 hover:border-[#588157] dark:hover:border-[#3ba9d6] hover:bg-[#f8fbf5] dark:hover:bg-[#1e3a5f]'}
+        ? 'inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-[#588157] dark:border-[#3ba9d6] bg-[#3a5a40] dark:bg-[#1f6f96] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-[#344e41] dark:hover:bg-[#2d8bb8] hover:shadow-lg hover:shadow-black/10'
+        : 'inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] px-4 py-2.5 text-sm font-semibold text-[#3a5a40] dark:text-white transition-all hover:-translate-y-0.5 hover:border-[#588157] dark:hover:border-[#3ba9d6] hover:bg-[#f8fbf5] dark:hover:bg-[#1e3a5f]'}
     >
       <Icon className={isPrimary ? 'w-4 h-4 text-white' : 'w-4 h-4 text-[#588157] dark:text-[#7fd0ee]'} />
       <span>{label}</span>
@@ -173,16 +173,16 @@ export default function CompanyDashboard() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Overview</h2>
+          <h2 className="text-xl sm:text-2xl font-extrabold text-[#3a5a40] dark:text-white">Overview</h2>
           <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">Track jobs, applicants, and hiring performance.</p>
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-3 ml-auto">
+        <div className="flex w-full sm:w-auto flex-col min-[420px]:flex-row flex-wrap items-stretch sm:items-center justify-end gap-3 ml-auto">
           <OverviewIconAction icon={PlusCircle} label="Post a job" variant="primary" onClick={() => navigate(COMPANY_PATHS.postJob)} />
           <OverviewIconAction icon={Search} label="Search developers" onClick={() => navigate(COMPANY_PATHS.search)} />
         </div>
       </div>
 
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[linear-gradient(135deg,#f8fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#16304a,#102235)] p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
+      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[linear-gradient(135deg,#f8fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#16304a,#102235)] p-4 sm:p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
         <div className="flex items-start gap-3">
           <div className="rounded-xl bg-white/80 dark:bg-[#0f2139] p-3 border border-[#d6d3c9] dark:border-[#2a4a6f]">
             <WalletCards className="w-5 h-5 text-[#3a5a40] dark:text-[#7fd0ee]" />
@@ -196,7 +196,7 @@ export default function CompanyDashboard() {
       </div>
 
       {analyticsError && <p className="text-sm text-red-600 dark:text-red-400">{analyticsError}</p>}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 min-[430px]:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         <StatsCard label="Total jobs" value={analyticsLoading ? '-' : analytics?.totalJobs ?? 0} icon={Briefcase} />
         <StatsCard label="Open jobs" value={analyticsLoading ? '-' : jobsByStatus.open ?? 0} icon={BarChart3} />
         <StatsCard label="Filled jobs" value={analyticsLoading ? '-' : jobsByStatus.filled ?? 0} icon={Users} />
@@ -209,7 +209,7 @@ export default function CompanyDashboard() {
           <OverviewTab active={statusTab === 'closed'} label="Closed" count={closedJobs.length} onClick={() => setStatusTab('closed')} />
         </div>
 
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(180px,0.72fr)_minmax(180px,0.72fr)]">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(180px,0.72fr)_minmax(180px,0.72fr)]">
           <FilterInput icon={Search} value={titleQuery} onChange={(event) => setTitleQuery(event.target.value)} placeholder="Search job titles" />
           <FilterInput icon={MapPin} value={locationQuery} onChange={(event) => setLocationQuery(event.target.value)} placeholder="Search locations" />
           <FilterSelect icon={Search} label="Sort by" value={sortBy} onChange={(event) => setSortBy(event.target.value)}>

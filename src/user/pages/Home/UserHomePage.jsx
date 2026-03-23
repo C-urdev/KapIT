@@ -12,7 +12,7 @@ import PremiumPopup from '@userPages/Premium/UserPremiumPopup';
 import PostComposerModal from '@userFeatures/posts/UserPostComposerModal';
 import MyProfilePage from '@userFeatures/profile/UserMyProfilePage';
 import AccountSettingsModal from '@userFeatures/profile/UserAccountSettingsModal';
-import UserMobileBottomNav from '@userComponents/navigation/UserMobileBottomNav';
+import UserMobileBottomNav from '@userComponents/navigation/mobile/UserMobileBottomNav';
 import { addPostForUser, getPostsForUser } from '@userFeatures/posts/userPostStorage';
 import { getPublicProfile } from '@sharedServices/authService';
 import { getUnreadNotificationCount } from '@sharedServices/notificationsService';
@@ -104,6 +104,7 @@ export default function HomePage({ user, userType, onOpenHelp, onLogout, onUpdat
         onHelp={onOpenHelp}
         onLogout={onLogout}
         onOpenSettings={() => setSettingsOpen(true)}
+        onOpenPremium={() => setPremiumPopupOpen(true)}
         onOpenPublicProfile={handleOpenPublicProfile}
         unreadNotificationCount={unreadNotificationCount}
       />

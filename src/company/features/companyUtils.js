@@ -6,6 +6,7 @@ export const COMPANY_PATHS = {
   jobs: '/company/jobs',
   applicants: '/company/applicants',
   messages: '/company/messages',
+  notifications: '/company/notifications',
   search: '/company/search',
   profile: '/company/profile',
 };

@@ -62,12 +62,16 @@ Examples:
 
 ### User
 - `src/user/components`
+- `src/user/components/navigation/desktop`
+- `src/user/components/navigation/mobile`
 - `src/user/features`
 - `src/user/pages`
 - `src/user/layouts`
 
 ### Company
 - `src/company/components`
+- `src/company/components/layout/desktop`
+- `src/company/components/layout/mobile`
 - `src/company/features`
 - `src/company/pages`
 - `src/company/layouts`
@@ -84,7 +88,11 @@ Use this rule:
 
 - A reusable modal for both sides: `src/shared/components`
 - User account settings: `src/user/features`
+- User mobile navigation: `src/user/components/navigation/mobile`
+- User desktop navigation: `src/user/components/navigation/desktop`
 - Company job posting page: `src/company/pages`
+- Company mobile layout pieces: `src/company/components/layout/mobile`
+- Company desktop layout pieces: `src/company/components/layout/desktop`
 - Shared auth logic: `src/shared/services`
 
 ## Goal

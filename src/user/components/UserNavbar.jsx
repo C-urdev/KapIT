@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { searchAccounts } from '@sharedServices/authService';
-import UserDesktopNavbar from './navigation/UserDesktopNavbar';
-import UserMobileTopbar from './navigation/UserMobileTopbar';
-import UserMobileMenuDrawer from './navigation/UserMobileMenuDrawer';
+import UserDesktopNavbar from './navigation/desktop/UserDesktopNavbar';
+import UserMobileTopbar from './navigation/mobile/UserMobileTopbar';
+import UserMobileMenuDrawer from './navigation/mobile/UserMobileMenuDrawer';
 
 export default function Navbar({
   activeNav,
@@ -13,6 +13,7 @@ export default function Navbar({
   onHelp,
   onLogout,
   onOpenSettings,
+  onOpenPremium,
   onOpenPublicProfile,
   unreadNotificationCount = 0,
 }) {
@@ -108,6 +109,7 @@ export default function Navbar({
 
         <div className="xl:hidden flex items-center justify-between h-16 gap-4">
           <UserMobileTopbar
+            user={user}
             setActiveNav={setActiveNav}
             mobileMenuOpen={mobileMenuOpen}
             setMobileMenuOpen={setMobileMenuOpen}
@@ -118,8 +120,10 @@ export default function Navbar({
       <UserMobileMenuDrawer
         open={mobileMenuVisible}
         active={mobileMenuActive}
+        user={user}
         setMobileMenuOpen={setMobileMenuOpen}
         onOpenSettings={onOpenSettings}
+        onOpenPremium={onOpenPremium}
         onHelp={onHelp}
         onLogout={onLogout}
       />

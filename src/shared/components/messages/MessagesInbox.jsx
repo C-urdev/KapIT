@@ -1,7 +1,9 @@
 import React from 'react';
-import { MessageCircle, Search, Send } from 'lucide-react';
+import { MessageCircle, Search, Send, Smile } from 'lucide-react';
 import { getPublicProfile } from '@sharedServices/authService';
 import { getMessages, listConversations, sendMessage } from '@sharedServices/messageService';
+
+const QUICK_EMOJIS = ['😀', '😂', '😊', '😍', '👍', '👌', '👏', '🙏', '🔥', '🎉', '💯', '❤️', '😢', '😭', '💀', '🕵️'];
 
 const formatTime = (value) =>
   new Date(value || Date.now()).toLocaleTimeString([], {
@@ -34,6 +36,8 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
   const [error, setError] = React.useState('');
   const [contactSearchQuery, setContactSearchQuery] = React.useState('');
   const [sendingMessage, setSendingMessage] = React.useState(false);
+  const [emojiPickerOpen, setEmojiPickerOpen] = React.useState(false);
+  const composerRef = React.useRef(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -151,6 +155,17 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
     };
   }, [selectedConversation?.id]);
 
+  React.useEffect(() => {
+    const handlePointerDown = (event) => {
+      if (!composerRef.current?.contains(event.target)) {
+        setEmojiPickerOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, []);
+
   const filteredConversations = React.useMemo(() => {
     const query = String(contactSearchQuery || '').trim().toLowerCase();
     if (!query) {
@@ -252,6 +267,11 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
     }
   };
 
+  const appendEmoji = (emoji) => {
+    setMessageInput((current) => `${current || ''}${emoji}`);
+    setEmojiPickerOpen(false);
+  };
+
   return (
     <div className="w-full max-w-[1500px] mx-auto">
       <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl overflow-hidden min-h-[68vh]">
@@ -350,12 +370,45 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
                 </div>
 
                 <div className="p-4 border-t border-[#a3b18a] dark:border-[#2a4a6f]">
-                  <div className="flex gap-2">
+                  <div className="flex gap-2" ref={composerRef}>
+                    <div className="relative shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setEmojiPickerOpen((current) => !current)}
+                        className="inline-flex h-full min-h-[42px] items-center justify-center rounded-lg border border-[#a3b18a] bg-[#f5f5f2] px-3 text-[#3a5a40] transition-colors hover:bg-[#eef6ee] dark:border-[#2a4a6f] dark:bg-[#1e3a5f] dark:text-white dark:hover:bg-[#24466c]"
+                        aria-label="Open emoji picker"
+                      >
+                        <Smile className="h-5 w-5" />
+                      </button>
+
+                      {emojiPickerOpen ? (
+                        <div className="absolute bottom-[calc(100%+0.5rem)] left-0 z-20 w-56 rounded-xl border border-[#a3b18a] bg-white p-3 shadow-xl dark:border-[#2a4a6f] dark:bg-[#162842]">
+                          <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#588157] dark:text-[#7fd0ee]">
+                            Emojis
+                          </div>
+                          <div className="grid grid-cols-6 gap-2">
+                            {QUICK_EMOJIS.map((emoji) => (
+                              <button
+                                key={emoji}
+                                type="button"
+                                onClick={() => appendEmoji(emoji)}
+                                className="flex h-9 w-9 items-center justify-center rounded-lg text-lg transition-colors hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f]"
+                                aria-label={`Insert ${emoji}`}
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+
                     <input
                       type="text"
                       placeholder={`Message ${selectedConversation.displayName}...`}
                       value={messageInput}
                       onChange={(event) => setMessageInput(event.target.value)}
+                      onFocus={() => setEmojiPickerOpen(false)}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter') {
                           event.preventDefault();

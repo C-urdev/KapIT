@@ -4,6 +4,31 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) {
+            return undefined;
+          }
+
+          if (id.includes('react-dom') || id.includes('\\react\\') || id.includes('/react/')) {
+            return 'react-vendor';
+          }
+
+          if (id.includes('lucide-react')) {
+            return 'icons-vendor';
+          }
+
+          if (id.includes('phil-reg-prov-mun-brgy')) {
+            return 'location-vendor';
+          }
+
+          return 'vendor';
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       '/api': {

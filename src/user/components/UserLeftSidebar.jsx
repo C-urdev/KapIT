@@ -73,17 +73,19 @@ export default function LeftSidebar({ user, userType, onOpenPremium, onOpenMyPro
       </div>
 
       {!isPremium && (
-        <div className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 border border-yellow-200 dark:border-yellow-900/30 rounded-xl p-4">
+        <div className="rounded-2xl border border-[#f2c84b] bg-[#fffdf5] p-4 shadow-[0_8px_24px_rgba(242,200,75,0.12)] dark:border-[#8a6a15] dark:bg-[#2b2206]">
           <div className="flex items-start gap-3">
-            <Zap className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-            <div>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#fff4cc] text-[#d69100] dark:bg-[#3a2f0d] dark:text-[#f5c84c]">
+              <Zap className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
               <h4 className="font-semibold text-[#3a5a40] dark:text-white text-sm mb-1">Upgrade to Premium</h4>
-              <p className="text-xs text-[#344e41] dark:text-[#b8d4e8] mb-3">
+              <p className="text-xs text-[#344e41] dark:text-[#e7d9a5] mb-3">
                 {userType === 'employee' ? 'Top search rankings, unlimited projects, premium badge' : 'Priority candidate access, advanced filters, unlimited views'}
               </p>
               <button
                 onClick={() => onOpenPremium?.()}
-                className="w-full bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-600 dark:hover:bg-yellow-700 text-white text-sm font-semibold py-2 rounded-lg transition-colors"
+                className="w-full rounded-xl bg-[#f2b500] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#dfaa00] dark:bg-[#d9a300] dark:hover:bg-[#c39200]"
               >
                 Upgrade Now
               </button>

@@ -1,6 +1,6 @@
 import React from 'react';
-import CompanyMobileHeader from './layout/CompanyMobileHeader';
-import CompanyDesktopHeader from './layout/CompanyDesktopHeader';
+import CompanyMobileHeader from './layout/mobile/CompanyMobileHeader';
+import CompanyDesktopHeader from './layout/desktop/CompanyDesktopHeader';
 
 export default function CompanyHeader(props) {
   return (
