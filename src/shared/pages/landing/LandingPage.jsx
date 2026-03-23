@@ -361,7 +361,6 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
   const offsetRef = useRef(0);
   const segmentWidthRef = useRef(0);
   const autoScrollEnabledRef = useRef(true);
-  const resumeAutoScrollTimeoutRef = useRef(null);
   const suppressClickRef = useRef(false);
   const scrollSpeedRef = useRef(18);
   const dragStateRef = useRef({
@@ -447,9 +446,6 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
 
     return () => {
       lastTimestampRef.current = 0;
-      if (resumeAutoScrollTimeoutRef.current) {
-        window.clearTimeout(resumeAutoScrollTimeoutRef.current);
-      }
       resizeObserver?.disconnect();
       window.removeEventListener('resize', handleResize);
       window.cancelAnimationFrame(frameRef.current);
@@ -458,18 +454,11 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
 
   const pauseAutoScroll = () => {
     autoScrollEnabledRef.current = false;
-    if (resumeAutoScrollTimeoutRef.current) {
-      window.clearTimeout(resumeAutoScrollTimeoutRef.current);
-    }
   };
 
-  const resumeAutoScrollSoon = () => {
-    if (resumeAutoScrollTimeoutRef.current) {
-      window.clearTimeout(resumeAutoScrollTimeoutRef.current);
-    }
-    resumeAutoScrollTimeoutRef.current = window.setTimeout(() => {
-      autoScrollEnabledRef.current = true;
-    }, 2200);
+  const resumeAutoScroll = () => {
+    autoScrollEnabledRef.current = true;
+    lastTimestampRef.current = 0;
   };
 
   const beginDrag = ({ pointerId = null, clientX }) => {
@@ -522,7 +511,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
     };
     lastTimestampRef.current = 0;
     setIsInteracting(false);
-    resumeAutoScrollSoon();
+    resumeAutoScroll();
   };
 
   const handlePointerDown = (event) => {
@@ -593,7 +582,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
           className={`orbit-track relative flex w-max items-stretch py-5 sm:py-6 select-none ${
             isInteracting ? 'cursor-grabbing' : 'cursor-grab'
           }`}
-          style={{ touchAction: 'pan-x pinch-zoom' }}
+          style={{ touchAction: 'pan-y pinch-zoom' }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
