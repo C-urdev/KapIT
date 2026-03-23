@@ -355,9 +355,10 @@ function CategoryCard({ icon: Icon, title, onClick }) {
 
 function CategoryOrbitRow({ categories, onCategoryClick }) {
   const trackRef = useRef(null);
+  const segmentRef = useRef(null);
   const frameRef = useRef(0);
   const lastTimestampRef = useRef(0);
-  const positionRef = useRef(0);
+  const offsetRef = useRef(0);
   const segmentWidthRef = useRef(0);
   const autoScrollEnabledRef = useRef(true);
   const resumeAutoScrollTimeoutRef = useRef(null);
@@ -371,31 +372,32 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
     startScrollLeft: 0,
   });
   const [isInteracting, setIsInteracting] = useState(false);
-  const loopedCategories = useMemo(() => [...categories, ...categories, ...categories], [categories]);
+  const repeatedCategoryGroups = useMemo(() => [categories, categories, categories], [categories]);
 
   useEffect(() => {
     const track = trackRef.current;
-    if (!track) return undefined;
+    const segment = segmentRef.current;
+    if (!track || !segment) return undefined;
     autoScrollEnabledRef.current = true;
 
     const applyTransform = () => {
-      track.style.transform = `translate3d(${-positionRef.current}px, 0, 0)`;
+      track.style.transform = `translate3d(${offsetRef.current}px, 0, 0)`;
     };
 
     const syncLoopPosition = ({ shouldApplyTransform = true } = {}) => {
-      const segmentWidth = track.scrollWidth / 3;
+      const segmentWidth = segment.getBoundingClientRect().width;
       if (segmentWidth <= 0) return;
       segmentWidthRef.current = segmentWidth;
 
-      if (positionRef.current === 0) {
-        positionRef.current = segmentWidth;
+      if (offsetRef.current === 0) {
+        offsetRef.current = -segmentWidth;
       }
 
-      while (positionRef.current >= segmentWidth * 2) {
-        positionRef.current -= segmentWidth;
+      while (offsetRef.current >= 0) {
+        offsetRef.current -= segmentWidth;
       }
-      while (positionRef.current <= 0) {
-        positionRef.current += segmentWidth;
+      while (offsetRef.current <= segmentWidth * -2) {
+        offsetRef.current += segmentWidth;
       }
 
       if (shouldApplyTransform) {
@@ -434,7 +436,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
       lastTimestampRef.current = timestamp;
 
       if (autoScrollEnabledRef.current && !dragStateRef.current.active) {
-        positionRef.current -= (scrollSpeedRef.current * delta) / 1000;
+        offsetRef.current += (scrollSpeedRef.current * delta) / 1000;
       }
 
       syncLoopPosition();
@@ -452,7 +454,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
       window.removeEventListener('resize', handleResize);
       window.cancelAnimationFrame(frameRef.current);
     };
-  }, [loopedCategories]);
+  }, [repeatedCategoryGroups]);
 
   const pauseAutoScroll = () => {
     autoScrollEnabledRef.current = false;
@@ -480,7 +482,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
       moved: false,
       pointerId,
       startX: clientX,
-      startScrollLeft: positionRef.current || segmentWidthRef.current || 0,
+      startScrollLeft: offsetRef.current || -segmentWidthRef.current || 0,
     };
     setIsInteracting(true);
     lastTimestampRef.current = 0;
@@ -497,17 +499,17 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
       suppressClickRef.current = true;
     }
 
-    positionRef.current = dragState.startScrollLeft - deltaX;
+    offsetRef.current = dragState.startScrollLeft + deltaX;
     const segmentWidth = segmentWidthRef.current;
     if (segmentWidth > 0) {
-      while (positionRef.current >= segmentWidth * 2) {
-        positionRef.current -= segmentWidth;
+      while (offsetRef.current >= 0) {
+        offsetRef.current -= segmentWidth;
       }
-      while (positionRef.current <= 0) {
-        positionRef.current += segmentWidth;
+      while (offsetRef.current <= segmentWidth * -2) {
+        offsetRef.current += segmentWidth;
       }
     }
-    track.style.transform = `translate3d(${-positionRef.current}px, 0, 0)`;
+    track.style.transform = `translate3d(${offsetRef.current}px, 0, 0)`;
   };
 
   const endDrag = () => {
@@ -585,28 +587,34 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
 
   return (
     <div className="relative overflow-hidden px-0 pt-4 pb-1 sm:px-2 sm:pt-5 sm:pb-2">
-      <div
-        className="orbit-fade relative overflow-hidden"
-      >
+      <div className="orbit-shell relative overflow-hidden">
         <div
           ref={trackRef}
-          className={`orbit-track relative flex w-max items-stretch gap-5 py-5 sm:py-6 select-none ${
-          isInteracting ? 'cursor-grabbing' : 'cursor-grab'
-        }`}
+          className={`orbit-track relative flex w-max items-stretch py-5 sm:py-6 select-none ${
+            isInteracting ? 'cursor-grabbing' : 'cursor-grab'
+          }`}
           style={{ touchAction: 'pan-x pinch-zoom' }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        onPointerLeave={handlePointerLeave}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchEnd}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          onPointerLeave={handlePointerLeave}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
         >
-          {loopedCategories.map((cat, index) => (
-            <div key={`${cat.title}-${index}`} className="shrink-0">
-              <CategoryCard icon={cat.icon} title={cat.title} onClick={handleCategoryClick} />
+          {repeatedCategoryGroups.map((group, groupIndex) => (
+            <div
+              key={`orbit-group-${groupIndex}`}
+              ref={groupIndex === 0 ? segmentRef : null}
+              className="flex shrink-0 items-stretch gap-5 pr-5"
+            >
+              {group.map((cat, index) => (
+                <div key={`${cat.title}-${groupIndex}-${index}`} className="shrink-0">
+                  <CategoryCard icon={cat.icon} title={cat.title} onClick={handleCategoryClick} />
+                </div>
+              ))}
             </div>
           ))}
         </div>
