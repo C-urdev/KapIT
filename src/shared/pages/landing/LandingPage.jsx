@@ -381,17 +381,127 @@ function CategoryCard({ icon: Icon, title, onClick, className = '' }) {
 }
 
 function MobileCategoryCarousel({ categories, onCategoryClick }) {
+  const scrollerRef = useRef(null);
+  const segmentRef = useRef(null);
+  const frameRef = useRef(0);
+  const lastTimestampRef = useRef(0);
+  const segmentWidthRef = useRef(0);
+  const interactionRef = useRef(false);
+  const repeatedGroups = useMemo(() => [categories, categories, categories], [categories]);
+
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    const segment = segmentRef.current;
+    if (!scroller || !segment) return undefined;
+
+    const syncLoopPosition = () => {
+      const segmentWidth = segment.getBoundingClientRect().width;
+      if (segmentWidth <= 0) return;
+      segmentWidthRef.current = segmentWidth;
+
+      if (scroller.scrollLeft === 0) {
+        scroller.scrollLeft = segmentWidth;
+      }
+
+      while (scroller.scrollLeft < segmentWidth * 0.5) {
+        scroller.scrollLeft += segmentWidth;
+      }
+
+      while (scroller.scrollLeft > segmentWidth * 1.5) {
+        scroller.scrollLeft -= segmentWidth;
+      }
+    };
+
+    const measure = () => {
+      const segmentWidth = segment.getBoundingClientRect().width;
+      if (segmentWidth <= 0) return;
+      segmentWidthRef.current = segmentWidth;
+      scroller.scrollLeft = segmentWidth;
+    };
+
+    measure();
+
+    const resizeObserver =
+      typeof ResizeObserver === 'function'
+        ? new ResizeObserver(() => {
+            measure();
+          })
+        : null;
+    resizeObserver?.observe(segment);
+
+    const handleResize = () => {
+      measure();
+    };
+    window.addEventListener('resize', handleResize);
+
+    const tick = (timestamp) => {
+      const currentScroller = scrollerRef.current;
+      if (!currentScroller) return;
+
+      if (!lastTimestampRef.current) {
+        lastTimestampRef.current = timestamp;
+      }
+
+      const delta = timestamp - lastTimestampRef.current;
+      lastTimestampRef.current = timestamp;
+
+      if (!interactionRef.current) {
+        currentScroller.scrollLeft += (22 * delta) / 1000;
+        syncLoopPosition();
+      }
+
+      frameRef.current = window.requestAnimationFrame(tick);
+    };
+
+    frameRef.current = window.requestAnimationFrame(tick);
+
+    return () => {
+      lastTimestampRef.current = 0;
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', handleResize);
+      window.cancelAnimationFrame(frameRef.current);
+    };
+  }, [repeatedGroups]);
+
+  const handleInteractionStart = () => {
+    interactionRef.current = true;
+    lastTimestampRef.current = 0;
+  };
+
+  const handleInteractionEnd = () => {
+    interactionRef.current = false;
+    lastTimestampRef.current = 0;
+  };
+
   return (
     <div className="relative -mx-3 px-3 pt-4 pb-1 sm:-mx-6 sm:px-6">
-      <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        {categories.map((category) => (
-          <div key={category.title} className="snap-start">
-            <CategoryCard
-              icon={category.icon}
-              title={category.title}
-              onClick={onCategoryClick}
-              className="w-[min(82vw,320px)] min-h-[168px]"
-            />
+      <div
+        ref={scrollerRef}
+        className="flex gap-4 overflow-x-auto pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        style={{ touchAction: 'pan-y pinch-zoom' }}
+        onTouchStart={handleInteractionStart}
+        onTouchEnd={handleInteractionEnd}
+        onTouchCancel={handleInteractionEnd}
+        onPointerDown={handleInteractionStart}
+        onPointerUp={handleInteractionEnd}
+        onPointerCancel={handleInteractionEnd}
+      >
+        {repeatedGroups.map((group, groupIndex) => (
+          <div
+            key={`mobile-group-${groupIndex}`}
+            ref={groupIndex === 0 ? segmentRef : null}
+            className="flex shrink-0 gap-4 pr-4"
+          >
+            {group.map((category, index) => (
+              <div key={`${category.title}-${groupIndex}-${index}`} className="shrink-0">
+                <CategoryCard
+                  icon={category.icon}
+                  title={category.title}
+                  onClick={onCategoryClick}
+                  className="w-[min(82vw,320px)] min-h-[168px]"
+                />
+              </div>
+            ))}
           </div>
         ))}
       </div>
