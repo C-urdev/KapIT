@@ -360,7 +360,6 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
   const lastTimestampRef = useRef(0);
   const offsetRef = useRef(0);
   const segmentWidthRef = useRef(0);
-  const autoScrollEnabledRef = useRef(true);
   const suppressClickRef = useRef(false);
   const scrollSpeedRef = useRef(18);
   const dragStateRef = useRef({
@@ -377,7 +376,6 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
     const track = trackRef.current;
     const segment = segmentRef.current;
     if (!track || !segment) return undefined;
-    autoScrollEnabledRef.current = true;
 
     const applyTransform = () => {
       track.style.transform = `translate3d(${offsetRef.current}px, 0, 0)`;
@@ -434,7 +432,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
       const delta = timestamp - lastTimestampRef.current;
       lastTimestampRef.current = timestamp;
 
-      if (autoScrollEnabledRef.current && !dragStateRef.current.active) {
+      if (!dragStateRef.current.active) {
         offsetRef.current += (scrollSpeedRef.current * delta) / 1000;
       }
 
@@ -452,20 +450,10 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
     };
   }, [repeatedCategoryGroups]);
 
-  const pauseAutoScroll = () => {
-    autoScrollEnabledRef.current = false;
-  };
-
-  const resumeAutoScroll = () => {
-    autoScrollEnabledRef.current = true;
-    lastTimestampRef.current = 0;
-  };
-
   const beginDrag = ({ pointerId = null, clientX }) => {
     const track = trackRef.current;
     if (!track) return;
 
-    pauseAutoScroll();
     dragStateRef.current = {
       active: true,
       moved: false,
@@ -511,7 +499,6 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
     };
     lastTimestampRef.current = 0;
     setIsInteracting(false);
-    resumeAutoScroll();
   };
 
   const handlePointerDown = (event) => {
