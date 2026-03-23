@@ -540,7 +540,7 @@ export default function KapIT() {
         <ConfirmModal
           open={logoutConfirmOpen}
           title="Log out?"
-          message="Would you really like to log out?"
+          message="are u sure to log out?"
           confirmLabel="Log out"
           cancelLabel="Stay signed in"
           tone="danger"

@@ -81,7 +81,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-gradient-to-b dark:from-[#0a1628] dark:via-[#0f2139] dark:to-[#162842]">
       <div ref={topRef} />
-      <header className="sticky top-0 z-30 border-b border-[#a3b18a] dark:border-[#1e3a5f] bg-white/75 dark:bg-[#0f2139]/75 backdrop-blur">
+      <header className="sticky top-0 z-30 bg-white/75 dark:bg-[#0f2139]/75 backdrop-blur">
         <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 py-4 flex justify-between items-center">
           <button
             type="button"
@@ -139,6 +139,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
             </button>
           </div>
         </div>
+        <ThinSectionLine className="bottom-0" />
       </header>
 
       <section className="relative overflow-hidden min-h-[calc(100vh-5rem)] flex flex-col">
@@ -222,7 +223,8 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
           </div>
         </div>
 
-        <div className="relative border-y border-[#a3b18a]/60 dark:border-[#1e3a5f] bg-white/95 dark:bg-[#0f2139]/95 backdrop-blur">
+        <div className="relative bg-white/95 dark:bg-[#0f2139]/95 backdrop-blur">
+          <ThinSectionLine className="top-0" />
           <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 py-6 sm:py-7">
             <div className="flex flex-col md:flex-row items-center justify-center md:justify-between gap-4">
               <p className="text-sm font-semibold text-[#344e41] dark:text-[#b8d4e8]">
@@ -240,6 +242,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
               </div>
             </div>
           </div>
+          <ThinSectionLine className="bottom-0" />
         </div>
       </section>
 
@@ -255,14 +258,11 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
             </p>
           </div>
 
-          <div className="mt-8">
-            <CategoryOrbitRow categories={CATEGORIES} onCategoryClick={highlightTopGetStarted} />
-          </div>
+        <div className="mt-8">
+          <CategoryOrbitRow categories={CATEGORIES} onCategoryClick={highlightTopGetStarted} />
         </div>
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-[#bfb6a1] to-transparent dark:via-[#5f87b5]/85"
-          aria-hidden="true"
-        />
+      </div>
+        <ThinSectionLine className="bottom-0" />
       </section>
 
       <section className="relative bg-gradient-to-b from-[#fbfaf6] via-[#fbfaf6] via-[97%] to-[#f8f4ec] dark:bg-[#0f2139]">
@@ -295,10 +295,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
             />
           </div>
         </div>
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[2px] bg-gradient-to-r from-transparent via-[#b8af9b] to-transparent dark:via-[#5f87b5]/85"
-          aria-hidden="true"
-        />
+        <ThinSectionLine className="bottom-0 z-10" />
       </section>
 
       <section className="relative bg-gradient-to-b from-[#f8f4ec] via-[#eee9de] via-[8%] to-[#e2ddcf] dark:bg-[#0a1628]">
@@ -343,14 +340,14 @@ function CategoryCard({ icon: Icon, title, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="group shrink-0 w-[220px] sm:w-[280px] lg:w-[320px] text-left rounded-2xl bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] p-5 sm:p-6 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all"
+      className="group flex min-h-[164px] w-[min(78vw,320px)] shrink-0 flex-col text-left rounded-2xl bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] p-5 sm:min-h-[176px] sm:w-[280px] sm:p-6 lg:w-[320px] shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all"
     >
       <div className="w-12 h-12 rounded-xl bg-[#f5f5f2] dark:bg-[#1e3a5f] flex items-center justify-center">
         <Icon className="w-6 h-6 text-[#588157] dark:text-[#3ba9d6]" />
       </div>
-      <div className="mt-4">
+      <div className="mt-4 flex flex-1 flex-col">
         <div className="text-lg font-bold text-[#102a1b] dark:text-white">{title}</div>
-        <div className="mt-1 text-sm text-[#344e41] dark:text-[#b8d4e8]">Browse specialists -&gt;</div>
+        <div className="mt-auto pt-1 text-sm text-[#344e41] dark:text-[#b8d4e8]">Browse specialists -&gt;</div>
       </div>
     </button>
   );
@@ -361,6 +358,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
   const frameRef = useRef(0);
   const lastTimestampRef = useRef(0);
   const scrollPositionRef = useRef(0);
+  const autoScrollEnabledRef = useRef(true);
   const suppressClickRef = useRef(false);
   const scrollSpeedRef = useRef(18);
   const dragStateRef = useRef({
@@ -376,6 +374,8 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
   useEffect(() => {
     const track = trackRef.current;
     if (!track) return undefined;
+
+    autoScrollEnabledRef.current = !window.matchMedia('(pointer: coarse)').matches;
 
     const syncLoopPosition = () => {
       const segmentWidth = track.scrollWidth / 3;
@@ -410,7 +410,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
       const delta = timestamp - lastTimestampRef.current;
       lastTimestampRef.current = timestamp;
 
-      if (!dragStateRef.current.active) {
+      if (autoScrollEnabledRef.current && !dragStateRef.current.active) {
         scrollPositionRef.current -= (scrollSpeedRef.current * delta) / 1000;
       }
 
@@ -432,6 +432,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
     const track = trackRef.current;
     if (!track) return;
 
+    autoScrollEnabledRef.current = false;
     dragStateRef.current = {
       active: true,
       moved: false,
@@ -485,7 +486,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
     }
   };
 
-  const handleCategoryClick = (event) => {
+    const handleCategoryClick = (event) => {
     if (suppressClickRef.current) {
       event.preventDefault();
       event.stopPropagation();
@@ -501,9 +502,10 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
     <div className="relative overflow-hidden px-0 pt-4 pb-1 sm:px-2 sm:pt-5 sm:pb-2">
       <div
         ref={trackRef}
-        className={`orbit-scroll orbit-fade relative mx-auto flex items-center gap-5 overflow-x-auto py-5 sm:py-6 w-full select-none touch-pan-x ${
+        className={`orbit-scroll orbit-fade relative mx-auto flex w-full snap-x snap-mandatory items-stretch gap-5 overflow-x-auto py-5 sm:py-6 select-none touch-pan-x ${
           isInteracting ? 'cursor-grabbing' : 'cursor-grab'
         }`}
+        style={{ WebkitOverflowScrolling: 'touch' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -511,13 +513,22 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
         onPointerLeave={handlePointerLeave}
       >
         {loopedCategories.map((cat, index) => (
-          <div key={`${cat.title}-${index}`} className="shrink-0">
+          <div key={`${cat.title}-${index}`} className="shrink-0 snap-start">
             <CategoryCard icon={cat.icon} title={cat.title} onClick={handleCategoryClick} />
           </div>
         ))}
       </div>
     </div>
   );
+}
+
+function ThinSectionLine({ className = '' }) {
+  return (
+      <div
+        className={`pointer-events-none absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-[#b8ad94] to-transparent opacity-95 shadow-[0_1px_0_rgba(255,255,255,0.45)] dark:via-[#6d95c5] dark:shadow-[0_1px_0_rgba(12,24,40,0.7)] ${className}`}
+        aria-hidden="true"
+      />
+    );
 }
 
 function StepCard({ step, title, description, icon: Icon }) {

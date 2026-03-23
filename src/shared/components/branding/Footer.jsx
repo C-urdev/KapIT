@@ -62,7 +62,11 @@ export default function Footer() {
   const selectedDescription = useMemo(() => FOOTER_INFO[selectedItem] ?? '', [selectedItem]);
 
   return (
-    <footer className="border-t border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#0a1628]">
+    <footer className="relative bg-white dark:bg-[#0a1628]">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#b8ad94] to-transparent opacity-95 shadow-[0_1px_0_rgba(255,255,255,0.45)] dark:via-[#6d95c5] dark:shadow-[0_1px_0_rgba(12,24,40,0.7)]"
+        aria-hidden="true"
+      />
       <div className="relative w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-12">
         <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-6">
           <div className="col-span-2 sm:col-span-3 lg:col-span-1">
@@ -101,7 +105,11 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="mt-10 pt-8 border-t border-[#a3b18a]/70 dark:border-[#1e3a5f] flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative mt-10 pt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div
+              className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#b8ad94] to-transparent opacity-95 shadow-[0_1px_0_rgba(255,255,255,0.45)] dark:via-[#6d95c5] dark:shadow-[0_1px_0_rgba(12,24,40,0.7)]"
+              aria-hidden="true"
+            />
           <p className="text-xs text-[#344e41] dark:text-[#b8d4e8]">© {new Date().getFullYear()} KapIT. All rights reserved.</p>
           <p className="text-xs text-[#344e41] dark:text-[#b8d4e8]">KapIT - Empowering Filipino IT Talent</p>
         </div>
