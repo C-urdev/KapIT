@@ -26,5 +26,10 @@
   mask-image: linear-gradient(to right, transparent 0, black 44px, black calc(100% - 44px), transparent 100%);
 }
 
+.orbit-track {
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
 
 
