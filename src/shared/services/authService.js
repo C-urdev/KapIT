@@ -1,5 +1,12 @@
 const API_URL = import.meta.env.VITE_API_URL || '/api/auth';
 const PROFILE_CACHE_KEY = 'kapit_profile_cache_by_email';
+const getSessionStorage = () => window.sessionStorage;
+
+if (typeof window !== 'undefined') {
+  window.localStorage.removeItem('token');
+  window.localStorage.removeItem('user');
+  window.localStorage.removeItem(PROFILE_CACHE_KEY);
+}
 
 const getErrorMessage = (data, fallbackMessage) => {
   if (data?.errors?.length) {
@@ -40,7 +47,7 @@ const parseApiResponse = async (response, fallbackMessage) => {
 
 const getStoredUserSafe = () => {
   try {
-    const raw = localStorage.getItem('user');
+    const raw = getSessionStorage().getItem('user');
     if (!raw) {
       return null;
     }
@@ -52,7 +59,7 @@ const getStoredUserSafe = () => {
 
 const readProfileCache = () => {
   try {
-    const raw = localStorage.getItem(PROFILE_CACHE_KEY);
+    const raw = getSessionStorage().getItem(PROFILE_CACHE_KEY);
     if (!raw) {
       return {};
     }
@@ -63,7 +70,7 @@ const readProfileCache = () => {
 };
 
 const writeProfileCache = (cache) => {
-  localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(cache));
+  getSessionStorage().setItem(PROFILE_CACHE_KEY, JSON.stringify(cache));
 };
 
 const getUserEmailKey = (user) => {
@@ -192,8 +199,8 @@ export const registerUser = async (userData) => {
     if (data.token) {
       const existingUser = getStoredUserSafe() || {};
       const mergedUser = mergeWithProfileCache({ ...existingUser, ...data.user });
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(mergedUser));
+      getSessionStorage().setItem('token', data.token);
+      getSessionStorage().setItem('user', JSON.stringify(mergedUser));
       saveProfileCacheForUser(mergedUser);
       data.user = mergedUser;
     }
@@ -223,8 +230,8 @@ export const loginUser = async (credentials) => {
     if (data.token) {
       const existingUser = getStoredUserSafe() || {};
       const mergedUser = mergeWithProfileCache({ ...existingUser, ...data.user });
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(mergedUser));
+      getSessionStorage().setItem('token', data.token);
+      getSessionStorage().setItem('user', JSON.stringify(mergedUser));
       saveProfileCacheForUser(mergedUser);
       data.user = mergedUser;
     }
@@ -237,7 +244,7 @@ export const loginUser = async (credentials) => {
 
 export const getCurrentUser = async () => {
   try {
-    const token = localStorage.getItem('token');
+    const token = getSessionStorage().getItem('token');
 
     if (!token) {
       throw new Error('No token found');
@@ -264,7 +271,7 @@ export const getCurrentUser = async () => {
 };
 
 export const updateMyProfile = async (updates) => {
-  const token = localStorage.getItem('token');
+  const token = getSessionStorage().getItem('token');
   if (!token) {
     throw new Error('No token found');
   }
@@ -285,7 +292,7 @@ export const updateMyProfile = async (updates) => {
 
   const existingUser = getStoredUserSafe() || {};
   const mergedUser = mergeWithProfileCache({ ...existingUser, ...(data.user || {}) });
-  localStorage.setItem('user', JSON.stringify(mergedUser));
+  getSessionStorage().setItem('user', JSON.stringify(mergedUser));
   saveProfileCacheForUser(mergedUser);
   data.user = mergedUser;
 
@@ -293,17 +300,17 @@ export const updateMyProfile = async (updates) => {
 };
 
 export const logoutUser = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
+  getSessionStorage().removeItem('token');
+  getSessionStorage().removeItem('user');
 };
 
 export const isAuthenticated = () => {
-  const token = localStorage.getItem('token');
+  const token = getSessionStorage().getItem('token');
   return !!token;
 };
 
 export const getStoredUser = () => {
-  const user = localStorage.getItem('user');
+  const user = getSessionStorage().getItem('user');
   if (!user) {
     return null;
   }
@@ -318,13 +325,13 @@ export const getStoredUser = () => {
 export const updateStoredUser = (updates) => {
   const currentUser = getStoredUser() || {};
   const nextUser = { ...currentUser, ...updates };
-  localStorage.setItem('user', JSON.stringify(nextUser));
+  getSessionStorage().setItem('user', JSON.stringify(nextUser));
   saveProfileCacheForUser(nextUser);
   return nextUser;
 };
 
 export const searchAccounts = async (query) => {
-  const token = localStorage.getItem('token');
+  const token = getSessionStorage().getItem('token');
   if (!token) {
     throw new Error('No token found');
   }
@@ -346,7 +353,7 @@ export const searchAccounts = async (query) => {
 };
 
 export const getPublicProfile = async (userId) => {
-  const token = localStorage.getItem('token');
+  const token = getSessionStorage().getItem('token');
   if (!token) {
     throw new Error('No token found');
   }
@@ -368,7 +375,7 @@ export const getPublicProfile = async (userId) => {
 };
 
 export const getJobsFeed = async () => {
-  const token = localStorage.getItem('token');
+  const token = getSessionStorage().getItem('token');
   if (!token) {
     throw new Error('No token found');
   }
@@ -390,7 +397,7 @@ export const getJobsFeed = async () => {
 };
 
 export const applyToJob = async (jobId) => {
-  const token = localStorage.getItem('token');
+  const token = getSessionStorage().getItem('token');
   if (!token) {
     throw new Error('No token found');
   }

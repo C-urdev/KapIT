@@ -1,6 +1,6 @@
 const API_URL = import.meta.env.VITE_API_BASE || '/api';
 
-const getToken = () => localStorage.getItem('token');
+const getToken = () => sessionStorage.getItem('token');
 
 const getErrorMessage = (data, fallback) => data?.message || fallback;
 

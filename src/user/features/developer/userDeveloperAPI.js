@@ -1,6 +1,6 @@
 const API_BASE = '/api/developer';
 
-const getToken = () => localStorage.getItem('token');
+const getToken = () => sessionStorage.getItem('token');
 
 const request = async (path, { method = 'GET', body } = {}) => {
   const token = getToken();
