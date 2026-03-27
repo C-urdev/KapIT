@@ -18,6 +18,7 @@ const TITLES = {
   [COMPANY_PATHS.notifications]: 'Notifications',
   [COMPANY_PATHS.search]: 'Search Developers',
   [COMPANY_PATHS.profile]: 'Company Profile',
+  [COMPANY_PATHS.publicProfile]: 'Public Profile',
 };
 
 export default function CompanyLayout({ pathname, user, onLogout, onHelp, children }) {

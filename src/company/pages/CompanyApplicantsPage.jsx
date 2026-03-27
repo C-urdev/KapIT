@@ -21,7 +21,7 @@ export default function Applicants() {
     setProfileLoading(true);
     try {
       const data = await getPublicProfile(user.id);
-      setProfile({ ...user, ...data });
+      setProfile(data ? { ...user, ...data } : user);
     } catch {
       setProfile(user);
     } finally {
@@ -41,7 +41,7 @@ export default function Applicants() {
     try {
       await companyAPI.updateApplicantStatus(applicant.id, status);
       setFeedback(successMessage);
-      await refetch();
+      await Promise.all([refetch(), refetchAnalytics()]);
     } catch (err) {
       setFeedback(err?.message || 'Failed to update applicant.');
     } finally {
@@ -121,7 +121,14 @@ export default function Applicants() {
           <p className="text-[#344e41] dark:text-[#b8d4e8]">No applicants yet.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
+          <div className="hidden xl:grid xl:grid-cols-[minmax(0,1.8fr)_minmax(0,0.95fr)_0.9fr_0.95fr_minmax(0,1.5fr)] gap-8 rounded-2xl bg-[#f5f5f2] dark:bg-[#102235] px-6 py-4 text-sm font-semibold text-[#344e41] dark:text-[#dcecff]">
+            <div>Candidate</div>
+            <div>Applied To</div>
+            <div>Job Status</div>
+            <div>Applicant Status</div>
+            <div>Action</div>
+          </div>
           {applicants.map((applicant) => (
             <ApplicantCard
               key={applicant.id}
@@ -138,12 +145,21 @@ export default function Applicants() {
       )}
 
       {profile && (
-        <Modal title="Candidate Profile" onClose={() => setProfile(null)}>
+        <Modal onClose={() => setProfile(null)}>
           {profileLoading ? (
             <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">Loading profile...</p>
           ) : (
             <div className="bg-white dark:bg-[#0f2139] rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] p-4 transition-colors duration-300">
-              <PublicProfilePage profile={profile} onBack={() => setProfile(null)} onMessage={handleMessage} />
+              <PublicProfilePage
+                profile={profile}
+                onBack={() => setProfile(null)}
+                onMessage={handleMessage}
+                onMore={(currentProfile) => {
+                  if (!currentProfile?.id) return;
+                  setProfile(null);
+                  navigate(`${COMPANY_PATHS.publicProfile}?id=${encodeURIComponent(currentProfile.id)}&from=${encodeURIComponent(COMPANY_PATHS.applicants)}`);
+                }}
+              />
             </div>
           )}
         </Modal>
@@ -161,20 +177,10 @@ function SummaryStat({ label, value }) {
   );
 }
 
-function Modal({ title, onClose, children }) {
+function Modal({ onClose, children }) {
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="w-full max-w-5xl max-h-[85vh] overflow-y-auto rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] shadow-2xl shadow-black/20 dark:shadow-black/50 transition-colors duration-300">
-        <div className="sticky top-0 z-10 px-5 py-4 border-b border-[#a3b18a] dark:border-[#1e3a5f] bg-white/90 dark:bg-[#162842]/90 backdrop-blur flex items-center justify-between transition-colors duration-300">
-          <div className="text-[#3a5a40] dark:text-white font-bold">{title}</div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
-          >
-            Close
-          </button>
-        </div>
         <div className="p-5">{children}</div>
       </div>
     </div>

@@ -34,17 +34,27 @@ const ensureSchemaReady = async () => {
 
 const createApp = () => {
   const app = express();
+  const normalizeOrigin = (value) => String(value || '').trim().replace(/\/+$/, '');
+  const isProduction = process.env.NODE_ENV === 'production';
 
   const allowedOrigins = [
     process.env.CLIENT_URL,
     'https://kapit-website.vercel.app',
     'http://localhost:5173',
-  ].filter(Boolean);
+  ]
+    .map(normalizeOrigin)
+    .filter(Boolean);
 
   app.use(
     cors({
       origin: (origin, callback) => {
-        if (allowedOrigins.includes(origin)) {
+        const normalizedOrigin = normalizeOrigin(origin);
+
+        if (!normalizedOrigin && !isProduction) {
+          return callback(null, true);
+        }
+
+        if (allowedOrigins.includes(normalizedOrigin)) {
           return callback(null, true);
         }
 

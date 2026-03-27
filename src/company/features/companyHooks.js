@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { companyAPI } from './companyAPI';
 
 const useAsyncResource = (fetcher, deps = []) => {
@@ -6,7 +6,7 @@ const useAsyncResource = (fetcher, deps = []) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const refetch = async () => {
+  const refetch = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -18,28 +18,30 @@ const useAsyncResource = (fetcher, deps = []) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetcher]);
 
   useEffect(() => {
     refetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [refetch, ...deps]);
 
   return { data, loading, error, refetch };
 };
 
 export const useCompanyJobs = () => {
-  const { data, loading, error, refetch } = useAsyncResource(() => companyAPI.getJobs(), []);
+  const fetchJobs = useCallback(() => companyAPI.getJobs(), []);
+  const { data, loading, error, refetch } = useAsyncResource(fetchJobs, []);
   return { jobs: data?.jobs || [], loading, error, refetch };
 };
 
 export const useCompanyApplicants = () => {
-  const { data, loading, error, refetch } = useAsyncResource(() => companyAPI.getApplicants(), []);
+  const fetchApplicants = useCallback(() => companyAPI.getApplicants(), []);
+  const { data, loading, error, refetch } = useAsyncResource(fetchApplicants, []);
   return { applicants: data?.applicants || [], loading, error, refetch };
 };
 
 export const useCompanyAnalytics = () => {
-  const { data, loading, error, refetch } = useAsyncResource(() => companyAPI.getAnalytics(), []);
+  const fetchAnalytics = useCallback(() => companyAPI.getAnalytics(), []);
+  const { data, loading, error, refetch } = useAsyncResource(fetchAnalytics, []);
   return { analytics: data?.analytics || null, loading, error, refetch };
 };
 
@@ -57,7 +59,8 @@ export const useDeveloperSearch = (query) => {
   }, [query]);
 
   const deps = useMemo(() => [JSON.stringify(normalized)], [normalized]);
-  const { data, loading, error, refetch } = useAsyncResource(() => companyAPI.searchDevelopers(normalized), deps);
+  const fetchDevelopers = useCallback(() => companyAPI.searchDevelopers(normalized), [normalized]);
+  const { data, loading, error, refetch } = useAsyncResource(fetchDevelopers, deps);
   return { developers: data?.developers || [], loading, error, refetch };
 };
 

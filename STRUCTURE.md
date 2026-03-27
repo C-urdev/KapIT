@@ -64,6 +64,8 @@ Examples:
 - `src/user/components`
 - `src/user/components/navigation/desktop`
 - `src/user/components/navigation/mobile`
+- `src/user/components/desktop`
+- `src/user/components/mobile`
 - `src/user/features`
 - `src/user/pages`
 - `src/user/layouts`
@@ -72,9 +74,27 @@ Examples:
 - `src/company/components`
 - `src/company/components/layout/desktop`
 - `src/company/components/layout/mobile`
+- `src/company/components/desktop`
+- `src/company/components/mobile`
 - `src/company/features`
 - `src/company/pages`
 - `src/company/layouts`
+
+## View Requirements
+
+For every new feature added to the user side or company side:
+
+- Always create both a mobile view and a desktop/PC view
+- Do not leave a new feature with only one responsive layout
+- Mobile and desktop designs can share logic, but the UI structure and layout should be intentionally designed for each screen size
+- If a feature is used by both user and company flows, both sides must still have complete mobile and desktop implementations
+
+Recommended organization:
+
+- Put shared business logic in `features`, `services`, or shared hooks/helpers
+- Put mobile-specific UI in `mobile` folders when the UI differs clearly on small screens
+- Put desktop-specific UI in `desktop` folders when the UI differs clearly on larger screens
+- Keep one feature complete only when both screen experiences are built
 
 ## Where To Put New Code
 
@@ -88,9 +108,13 @@ Use this rule:
 
 - A reusable modal for both sides: `src/shared/components`
 - User account settings: `src/user/features`
+- User account settings mobile UI: `src/user/components/mobile`
+- User account settings desktop UI: `src/user/components/desktop`
 - User mobile navigation: `src/user/components/navigation/mobile`
 - User desktop navigation: `src/user/components/navigation/desktop`
 - Company job posting page: `src/company/pages`
+- Company job posting mobile UI: `src/company/components/mobile`
+- Company job posting desktop UI: `src/company/components/desktop`
 - Company mobile layout pieces: `src/company/components/layout/mobile`
 - Company desktop layout pieces: `src/company/components/layout/desktop`
 - Shared auth logic: `src/shared/services`

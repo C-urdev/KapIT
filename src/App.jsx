@@ -26,6 +26,7 @@ const CompanyMessagesPage = lazy(() => import('@companyPages/CompanyMessagesPage
 const CompanyNotificationsPage = lazy(() => import('@companyPages/CompanyNotificationsPage'));
 const SearchDevelopers = lazy(() => import('@companyPages/CompanySearchDevelopersPage'));
 const CompanyProfile = lazy(() => import('@companyPages/CompanyProfilePage'));
+const CompanyPublicProfilePage = lazy(() => import('@companyPages/CompanyPublicProfilePage'));
 
 const AUTH_PATHS = {
   register: '/auth/register',
@@ -439,6 +440,7 @@ export default function KapIT() {
             {pathname === COMPANY_PATHS.messages && <CompanyMessagesPage user={user} />}
             {pathname === COMPANY_PATHS.notifications && <CompanyNotificationsPage onReadAll={() => {}} />}
             {pathname === COMPANY_PATHS.search && <SearchDevelopers />}
+              {pathname === COMPANY_PATHS.publicProfile && <CompanyPublicProfilePage />}
               {pathname === COMPANY_PATHS.profile && (
                 <CompanyProfile
                   user={user}

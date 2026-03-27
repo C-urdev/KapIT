@@ -9,6 +9,7 @@ export const COMPANY_PATHS = {
   notifications: '/company/notifications',
   search: '/company/search',
   profile: '/company/profile',
+  publicProfile: '/company/public-profile',
 };
 
 export const isCompanyRoute = (pathname) => typeof pathname === 'string' && pathname.startsWith('/company/');
@@ -24,10 +25,13 @@ export const navigate = (to) => {
   if (typeof window === 'undefined') {
     return;
   }
-  if (window.location.pathname === next) {
+  const nextUrl = new URL(next, window.location.origin);
+  const currentPathWithSearch = `${window.location.pathname}${window.location.search}`;
+  const nextPathWithSearch = `${nextUrl.pathname}${nextUrl.search}`;
+  if (currentPathWithSearch === nextPathWithSearch) {
     return;
   }
-  window.history.pushState({}, '', next);
+  window.history.pushState({}, '', nextPathWithSearch);
   window.dispatchEvent(new PopStateEvent('popstate'));
 };
 
