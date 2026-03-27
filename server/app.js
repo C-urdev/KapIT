@@ -15,7 +15,7 @@ const ensureSchemaReady = async () => warmRuntimeSchemas();
 const createApp = () => {
   const app = express();
   const normalizeOrigin = (value) => String(value || '').trim().replace(/\/+$/, '');
-  const isProduction = process.env.NODE_ENV === 'production';
+  const isKapitVercelOrigin = (origin) => /^https:\/\/kapit-website(?:-[a-z0-9-]+)?\.vercel\.app$/i.test(origin);
 
   const allowedOrigins = [
     process.env.CLIENT_URL,
@@ -30,11 +30,13 @@ const createApp = () => {
       origin: (origin, callback) => {
         const normalizedOrigin = normalizeOrigin(origin);
 
-        if (!normalizedOrigin && !isProduction) {
+        // Same-origin browser requests, server-to-server requests, and some Vercel
+        // function invocations may omit the Origin header entirely.
+        if (!normalizedOrigin) {
           return callback(null, true);
         }
 
-        if (allowedOrigins.includes(normalizedOrigin)) {
+        if (allowedOrigins.includes(normalizedOrigin) || isKapitVercelOrigin(normalizedOrigin)) {
           return callback(null, true);
         }
 
