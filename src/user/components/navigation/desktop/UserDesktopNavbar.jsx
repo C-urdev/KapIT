@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, Home, Briefcase, FolderKanban, MessageCircle, Bell, Moon, Sun, LogOut, HelpCircle, Settings } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
+import KapITLogo from '@sharedComponents/branding/KapITLogo';
 
 function NavButton({ icon: Icon, label, active, onClick, badgeCount = 0 }) {
   return (
@@ -50,6 +51,7 @@ export default function UserDesktopNavbar({
   const displayName = user?.username || user?.name || 'User';
   const userInitial = displayName.charAt(0).toUpperCase();
   const profileImage = user?.profileImage || '';
+  const accountLabel = user?.headline || user?.title || 'User Account';
 
   return (
     <>
@@ -58,10 +60,15 @@ export default function UserDesktopNavbar({
           <button
             type="button"
             onClick={() => setActiveNav('home')}
-            className="text-xl font-bold text-[#3a5a40] dark:text-white hidden sm:block"
+            className="hidden sm:flex items-center gap-3 min-w-0 rounded-xl px-2 py-1.5 hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
             aria-label="Go to home"
           >
-            kapIT
+            <div className="w-10 h-10 rounded-xl shrink-0 bg-[#f5f5f2] dark:bg-[#1e3a5f] border border-[#a3b18a]/60 dark:border-[#2a4a6f] flex items-center justify-center overflow-hidden">
+              <KapITLogo className="w-8 h-8 object-contain" alt="KapIT" />
+            </div>
+            <div className="min-w-0 text-left">
+              <div className="text-base font-bold text-[#3a5a40] dark:text-white leading-tight truncate">KapIT</div>
+            </div>
           </button>
         </div>
 
@@ -114,7 +121,7 @@ export default function UserDesktopNavbar({
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-[#3a5a40] dark:text-white truncate">{result.username || result.email}</p>
-                        <p className="text-xs text-[#344e41] dark:text-[#b8d4e8]">{result.type === 'company' ? 'Company' : 'User'} � {result.email}</p>
+                        <p className="text-xs text-[#344e41] dark:text-[#b8d4e8]">{result.type === 'company' ? 'Company' : 'User'} - {result.email}</p>
                       </div>
                     </div>
                   </button>
@@ -148,7 +155,21 @@ export default function UserDesktopNavbar({
         <div className="relative" ref={profileMenuRef}>
           <button
             onClick={() => setProfileMenuOpen((prev) => !prev)}
-            className="w-8 h-8 bg-[#588157] dark:bg-[#3ba9d6] rounded-full flex items-center justify-center text-white text-sm font-semibold cursor-pointer hover:ring-2 hover:ring-[#588157] dark:hover:ring-[#5bc0de] transition-all overflow-hidden"
+            className="hidden 2xl:flex items-center gap-2 pl-2 pr-3 py-2 rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] bg-[#f5f5f2] dark:bg-[#1e3a5f] cursor-pointer hover:ring-2 hover:ring-[#588157]/20 dark:hover:ring-[#5bc0de]/20 transition-all overflow-hidden"
+            aria-label="Open profile menu"
+          >
+            <div className="w-8 h-8 rounded-full bg-[#588157] dark:bg-[#3ba9d6] text-white overflow-hidden flex items-center justify-center font-bold shrink-0">
+              {profileImage ? <img src={profileImage} alt={`${displayName} profile`} className="w-full h-full object-cover" /> : userInitial}
+            </div>
+            <div className="min-w-0 text-left">
+              <div className="text-sm font-semibold text-[#3a5a40] dark:text-white truncate max-w-[180px]">{displayName}</div>
+              <div className="text-xs text-[#4b5563] dark:text-[#b8d4e8] truncate max-w-[180px]">{accountLabel}</div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setProfileMenuOpen((prev) => !prev)}
+            className="flex 2xl:hidden w-8 h-8 bg-[#588157] dark:bg-[#3ba9d6] rounded-full items-center justify-center text-white text-sm font-semibold cursor-pointer hover:ring-2 hover:ring-[#588157] dark:hover:ring-[#5bc0de] transition-all overflow-hidden"
             aria-label="Open profile menu"
           >
             {profileImage ? <img src={profileImage} alt={`${displayName} profile`} className="w-full h-full object-cover" /> : userInitial}
@@ -193,6 +214,3 @@ export default function UserDesktopNavbar({
     </>
   );
 }
-
-
-

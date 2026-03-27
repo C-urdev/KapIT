@@ -152,7 +152,12 @@ export default function HomePage({ user, userType, onOpenHelp, onLogout, onUpdat
         )}
       </div>
 
-      <PremiumPopup isOpen={premiumPopupOpen} onClose={() => setPremiumPopupOpen(false)} />
+      <PremiumPopup
+        isOpen={premiumPopupOpen}
+        onClose={() => setPremiumPopupOpen(false)}
+        user={user}
+        onUpgrade={(updates) => onUpdateUser?.(updates)}
+      />
       <PostComposerModal isOpen={composerOpen} user={user} onClose={() => setComposerOpen(false)} onSubmit={handleCreatePost} />
       <AccountSettingsModal isOpen={settingsOpen} user={user} onClose={() => setSettingsOpen(false)} onSave={onUpdateUser} />
       <UserMobileBottomNav

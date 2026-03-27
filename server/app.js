@@ -37,15 +37,14 @@ const createApp = () => {
 
   const allowedOrigins = [
     process.env.CLIENT_URL,
-    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '',
+    'https://kapit-website.vercel.app',
     'http://localhost:5173',
-    'http://localhost:5174',
   ].filter(Boolean);
 
   app.use(
     cors({
       origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (allowedOrigins.includes(origin)) {
           return callback(null, true);
         }
 
