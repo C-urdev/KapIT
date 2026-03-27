@@ -1,9 +1,27 @@
 const API_BASE = '/api/company';
+const SERVER_COOLDOWN_MS = 60 * 1000;
+const endpointCooldowns = new Map();
 
 const getToken = () => sessionStorage.getItem('token');
 const isServerFailure = (response) => response.status >= 500;
 
+const getCooldownKey = (path, method) => `${String(method || 'GET').toUpperCase()}:${path}`;
+
+const isEndpointCoolingDown = (key) => {
+  const until = endpointCooldowns.get(key) || 0;
+  return until > Date.now();
+};
+
+const markEndpointFailed = (key) => {
+  endpointCooldowns.set(key, Date.now() + SERVER_COOLDOWN_MS);
+};
+
 const request = async (path, { method = 'GET', body, fallbackData } = {}) => {
+  const cooldownKey = getCooldownKey(path, method);
+  if (fallbackData !== undefined && isEndpointCoolingDown(cooldownKey)) {
+    return fallbackData;
+  }
+
   const token = getToken();
   if (!token) {
     throw new Error('No token found');
@@ -21,6 +39,7 @@ const request = async (path, { method = 'GET', body, fallbackData } = {}) => {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     if (fallbackData !== undefined && isServerFailure(response)) {
+      markEndpointFailed(cooldownKey);
       return fallbackData;
     }
     throw new Error(data?.message || 'Request failed');

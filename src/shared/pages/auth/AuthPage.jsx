@@ -11,6 +11,7 @@ export default function AuthPage({
   onRequestAccountType,
   onBack,
   initialMode = 'login',
+  onWarmRoute,
 }) {
   const { theme, toggleTheme } = useTheme();
   const [authMode, setAuthMode] = useState(initialMode);
@@ -29,6 +30,10 @@ export default function AuthPage({
     setAuthMode(initialMode);
     setError('');
   }, [initialMode]);
+
+  useEffect(() => {
+    onWarmRoute?.(authMode === 'signup' ? (accountType || 'developer') : 'login');
+  }, [accountType, authMode, onWarmRoute]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -1,5 +1,7 @@
 const API_URL = import.meta.env.VITE_API_URL || '/api/auth';
 const PROFILE_CACHE_KEY = 'kapit_profile_cache_by_email';
+const SERVER_COOLDOWN_MS = 60 * 1000;
+const endpointCooldowns = new Map();
 const getSessionStorage = () => window.sessionStorage;
 
 if (typeof window !== 'undefined') {
@@ -17,6 +19,15 @@ const getErrorMessage = (data, fallbackMessage) => {
 };
 
 const isServerFailure = (response) => response.status >= 500;
+
+const isEndpointCoolingDown = (key) => {
+  const until = endpointCooldowns.get(key) || 0;
+  return until > Date.now();
+};
+
+const markEndpointFailed = (key) => {
+  endpointCooldowns.set(key, Date.now() + SERVER_COOLDOWN_MS);
+};
 
 const parseApiResponse = async (response, fallbackMessage) => {
   const contentType = response.headers.get('content-type') || '';
@@ -377,6 +388,10 @@ export const getPublicProfile = async (userId) => {
 };
 
 export const getJobsFeed = async () => {
+  if (isEndpointCoolingDown('auth:jobs-feed')) {
+    return [];
+  }
+
   const token = getSessionStorage().getItem('token');
   if (!token) {
     throw new Error('No token found');
@@ -393,6 +408,7 @@ export const getJobsFeed = async () => {
   const data = await parseApiResponse(response, 'Failed to load jobs');
   if (!response.ok) {
     if (isServerFailure(response)) {
+      markEndpointFailed('auth:jobs-feed');
       return [];
     }
     throw new Error(getErrorMessage(data, 'Failed to load jobs'));

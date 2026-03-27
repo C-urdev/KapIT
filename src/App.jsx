@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState, useEffect } from 'react';
+import React, { Suspense, lazy, startTransition, useState, useEffect } from 'react';
 import { ThemeProvider } from '@sharedContext/ThemeContext';
 import ConfirmModal from '@sharedComponents/ui/ConfirmModal';
 import { getStoredUser, isAuthenticated, logoutUser, updateStoredUser, getCurrentUser, updateMyProfile, getCachedProfileForEmail } from '@sharedServices/authService';
@@ -7,26 +7,47 @@ import { saveDeveloperProfile } from '@userFeatures/developer/userDeveloperAPI';
 import { saveCompanyProfileOnboarding } from '@companyFeatures/companyAPI';
 import SelectAccountTypeModal from '@sharedComponents/auth/SelectAccountTypeModal';
 
-const LandingPage = lazy(() => import('@sharedPages/landing/LandingPage'));
-const AuthPage = lazy(() => import('@sharedPages/auth/AuthPage'));
-const HomePage = lazy(() => import('@userPages/Home/UserHomePage'));
-const HelpPage = lazy(() => import('@sharedPages/help/HelpPage'));
-const CompleteProfilePage = lazy(() => import('@sharedPages/onboarding/UserCompleteProfilePage'));
-const ChooseAccountTypePage = lazy(() => import('@sharedPages/auth/ChooseAccountTypePage'));
-const CompleteCompanyProfilePage = lazy(() => import('@sharedPages/onboarding/CompanyCompleteProfilePage'));
-const DeveloperProfile = lazy(() => import('@sharedPages/onboarding/DeveloperProfileOnboardingPage'));
-const CompanyProfileOnboarding = lazy(() => import('@sharedPages/onboarding/CompanyProfileOnboardingPage'));
-const CompanyLayout = lazy(() => import('@companyLayouts/CompanyLayout'));
-const CompanyDashboard = lazy(() => import('@companyPages/CompanyDashboardPage'));
-const PostJob = lazy(() => import('@companyPages/CompanyPostJobPage'));
-const CompanyPostJobPayment = lazy(() => import('@companyPages/CompanyPostJobPaymentPage'));
-const ManageJobs = lazy(() => import('@companyPages/CompanyManageJobsPage'));
-const Applicants = lazy(() => import('@companyPages/CompanyApplicantsPage'));
-const CompanyMessagesPage = lazy(() => import('@companyPages/CompanyMessagesPage'));
-const CompanyNotificationsPage = lazy(() => import('@companyPages/CompanyNotificationsPage'));
-const SearchDevelopers = lazy(() => import('@companyPages/CompanySearchDevelopersPage'));
-const CompanyProfile = lazy(() => import('@companyPages/CompanyProfilePage'));
-const CompanyPublicProfilePage = lazy(() => import('@companyPages/CompanyPublicProfilePage'));
+const loadLandingPage = () => import('@sharedPages/landing/LandingPage');
+const loadAuthPage = () => import('@sharedPages/auth/AuthPage');
+const loadHomePage = () => import('@userPages/Home/UserHomePage');
+const loadHelpPage = () => import('@sharedPages/help/HelpPage');
+const loadCompleteProfilePage = () => import('@sharedPages/onboarding/UserCompleteProfilePage');
+const loadChooseAccountTypePage = () => import('@sharedPages/auth/ChooseAccountTypePage');
+const loadCompleteCompanyProfilePage = () => import('@sharedPages/onboarding/CompanyCompleteProfilePage');
+const loadDeveloperProfile = () => import('@sharedPages/onboarding/DeveloperProfileOnboardingPage');
+const loadCompanyProfileOnboarding = () => import('@sharedPages/onboarding/CompanyProfileOnboardingPage');
+const loadCompanyLayout = () => import('@companyLayouts/CompanyLayout');
+const loadCompanyDashboard = () => import('@companyPages/CompanyDashboardPage');
+const loadCompanyPostJob = () => import('@companyPages/CompanyPostJobPage');
+const loadCompanyPostJobPayment = () => import('@companyPages/CompanyPostJobPaymentPage');
+const loadManageJobs = () => import('@companyPages/CompanyManageJobsPage');
+const loadApplicants = () => import('@companyPages/CompanyApplicantsPage');
+const loadCompanyMessagesPage = () => import('@companyPages/CompanyMessagesPage');
+const loadCompanyNotificationsPage = () => import('@companyPages/CompanyNotificationsPage');
+const loadSearchDevelopers = () => import('@companyPages/CompanySearchDevelopersPage');
+const loadCompanyProfile = () => import('@companyPages/CompanyProfilePage');
+const loadCompanyPublicProfilePage = () => import('@companyPages/CompanyPublicProfilePage');
+
+const LandingPage = lazy(loadLandingPage);
+const AuthPage = lazy(loadAuthPage);
+const HomePage = lazy(loadHomePage);
+const HelpPage = lazy(loadHelpPage);
+const CompleteProfilePage = lazy(loadCompleteProfilePage);
+const ChooseAccountTypePage = lazy(loadChooseAccountTypePage);
+const CompleteCompanyProfilePage = lazy(loadCompleteCompanyProfilePage);
+const DeveloperProfile = lazy(loadDeveloperProfile);
+const CompanyProfileOnboarding = lazy(loadCompanyProfileOnboarding);
+const CompanyLayout = lazy(loadCompanyLayout);
+const CompanyDashboard = lazy(loadCompanyDashboard);
+const PostJob = lazy(loadCompanyPostJob);
+const CompanyPostJobPayment = lazy(loadCompanyPostJobPayment);
+const ManageJobs = lazy(loadManageJobs);
+const Applicants = lazy(loadApplicants);
+const CompanyMessagesPage = lazy(loadCompanyMessagesPage);
+const CompanyNotificationsPage = lazy(loadCompanyNotificationsPage);
+const SearchDevelopers = lazy(loadSearchDevelopers);
+const CompanyProfile = lazy(loadCompanyProfile);
+const CompanyPublicProfilePage = lazy(loadCompanyPublicProfilePage);
 
 const AUTH_PATHS = {
   register: '/auth/register',
@@ -56,6 +77,27 @@ const getViewForPathname = (pathname) => {
   if (pathname === ONBOARDING_PATHS.developer) return 'onboarding-developer-profile';
   if (pathname === ONBOARDING_PATHS.company) return 'onboarding-company-profile';
   return null;
+};
+
+const preloadRouteForUser = (u) => {
+  const accountType = u?.accountType || (u?.type === 'company' ? 'company' : 'developer');
+
+  if (!u?.profileCompleted) {
+    if (accountType === 'company') {
+      loadCompanyProfileOnboarding();
+    } else {
+      loadDeveloperProfile();
+    }
+    return;
+  }
+
+  if (u?.type === 'company') {
+    loadCompanyLayout();
+    loadCompanyDashboard();
+    return;
+  }
+
+  loadHomePage();
 };
 
 const buildDeveloperProfilePayload = (cached, userData) => {
@@ -139,6 +181,21 @@ export default function KapIT() {
     return u?.type === 'company' ? 'company' : 'home';
   };
 
+  const warmAuthTarget = (target) => {
+    if (target === 'login') {
+      loadHomePage();
+      loadCompanyLayout();
+      return;
+    }
+
+    if (target === 'company') {
+      loadCompanyProfileOnboarding();
+      return;
+    }
+
+    loadDeveloperProfile();
+  };
+
   const syncCachedProfileIfNeeded = async (userData) => {
     if (!userData || userData.profileCompleted) {
       return userData;
@@ -180,6 +237,11 @@ export default function KapIT() {
 
     return userData;
   };
+
+  useEffect(() => {
+    loadLandingPage();
+    loadAuthPage();
+  }, []);
 
   useEffect(() => {
     let canceled = false;
@@ -237,11 +299,15 @@ export default function KapIT() {
           return;
         }
 
-        setUser(syncedUser);
-        setUserType(syncedUser.type);
+        startTransition(() => {
+          setUser(syncedUser);
+          setUserType(syncedUser.type);
+        });
         updateStoredUser(syncedUser);
         const nextView = routeForUser(syncedUser);
-        setCurrentView(nextView);
+        startTransition(() => {
+          setCurrentView(nextView);
+        });
         if (nextView === 'company') {
           if (!isCompanyRoute(window.location.pathname)) {
             navigate(COMPANY_PATHS.dashboard);
@@ -299,15 +365,17 @@ export default function KapIT() {
 
   const handleLogin = async (userData) => {
     setPendingSignup(null);
-    const syncedUser = await syncCachedProfileIfNeeded(userData);
+    preloadRouteForUser(userData);
 
-    setUser(syncedUser);
-    setUserType(syncedUser.type);
+    setUser(userData);
+    setUserType(userData.type);
     setIsAuth(true);
 
-    updateStoredUser(syncedUser);
-    const nextView = routeForUser(syncedUser);
-    setCurrentView(nextView);
+    updateStoredUser(userData);
+    const nextView = routeForUser(userData);
+    startTransition(() => {
+      setCurrentView(nextView);
+    });
     if (nextView === 'company') {
       if (!isCompanyRoute(window.location.pathname)) {
         navigate(COMPANY_PATHS.dashboard);
@@ -316,6 +384,15 @@ export default function KapIT() {
       navigate(ONBOARDING_PATHS.company);
     } else if (nextView === 'onboarding-developer-profile') {
       navigate(ONBOARDING_PATHS.developer);
+    }
+
+    try {
+      const syncedUser = await syncCachedProfileIfNeeded(userData);
+      setUser(syncedUser);
+      setUserType(syncedUser.type);
+      updateStoredUser(syncedUser);
+    } catch {
+      // Keep the optimistic session active if follow-up syncing is slow or unavailable.
     }
   };
 
@@ -467,6 +544,7 @@ export default function KapIT() {
               accountType={pathname === AUTH_PATHS.register ? getAccountTypeFromSearch(window.location.search) : null}
               onLogin={handleLogin}
               onBeginSignup={handleBeginSignup}
+              onWarmRoute={warmAuthTarget}
               onRequestAccountType={() => {
                 setCurrentView('landing');
                 navigate('/');

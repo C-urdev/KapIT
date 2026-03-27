@@ -1,4 +1,6 @@
 const API_URL = import.meta.env.VITE_API_BASE || '/api';
+const SERVER_COOLDOWN_MS = 60 * 1000;
+const endpointCooldowns = new Map();
 
 const getToken = () => sessionStorage.getItem('token');
 
@@ -13,7 +15,20 @@ const safeJson = async (response) => {
   }
 };
 
+const isEndpointCoolingDown = (key) => {
+  const until = endpointCooldowns.get(key) || 0;
+  return until > Date.now();
+};
+
+const markEndpointFailed = (key) => {
+  endpointCooldowns.set(key, Date.now() + SERVER_COOLDOWN_MS);
+};
+
 export const listConversations = async () => {
+  if (isEndpointCoolingDown('messages:conversations')) {
+    return [];
+  }
+
   const token = getToken();
   if (!token) {
     throw new Error('No token found');
@@ -29,6 +44,7 @@ export const listConversations = async () => {
   const data = await safeJson(response);
   if (!response.ok) {
     if (isServerFailure(response)) {
+      markEndpointFailed('messages:conversations');
       return [];
     }
     throw new Error(getErrorMessage(data, 'Failed to load conversations'));
@@ -38,6 +54,11 @@ export const listConversations = async () => {
 };
 
 export const getMessages = async (contactId) => {
+  const cooldownKey = `messages:thread:${String(contactId || '')}`;
+  if (isEndpointCoolingDown(cooldownKey)) {
+    return [];
+  }
+
   const token = getToken();
   if (!token) {
     throw new Error('No token found');
@@ -53,6 +74,7 @@ export const getMessages = async (contactId) => {
   const data = await safeJson(response);
   if (!response.ok) {
     if (isServerFailure(response)) {
+      markEndpointFailed(cooldownKey);
       return [];
     }
     throw new Error(getErrorMessage(data, 'Failed to load messages'));
