@@ -3,6 +3,15 @@ const API_URL = import.meta.env.VITE_API_BASE || '/api';
 const getToken = () => sessionStorage.getItem('token');
 
 const getErrorMessage = (data, fallback) => data?.message || fallback;
+const isServerFailure = (response) => response.status >= 500;
+
+const safeJson = async (response) => {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
+};
 
 const getHeaders = () => {
   const token = getToken();
@@ -21,8 +30,11 @@ export const getNotifications = async () => {
     headers: getHeaders(),
   });
 
-  const data = await response.json();
+  const data = await safeJson(response);
   if (!response.ok) {
+    if (isServerFailure(response)) {
+      return [];
+    }
     throw new Error(getErrorMessage(data, 'Failed to load notifications'));
   }
 
@@ -34,8 +46,11 @@ export const getUnreadNotificationCount = async () => {
     headers: getHeaders(),
   });
 
-  const data = await response.json();
+  const data = await safeJson(response);
   if (!response.ok) {
+    if (isServerFailure(response)) {
+      return 0;
+    }
     throw new Error(getErrorMessage(data, 'Failed to load unread notifications'));
   }
 
@@ -48,8 +63,11 @@ export const markNotificationsRead = async () => {
     headers: getHeaders(),
   });
 
-  const data = await response.json();
+  const data = await safeJson(response);
   if (!response.ok) {
+    if (isServerFailure(response)) {
+      return 0;
+    }
     throw new Error(getErrorMessage(data, 'Failed to mark notifications as read'));
   }
 

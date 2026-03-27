@@ -1,8 +1,9 @@
 const API_BASE = '/api/company';
 
 const getToken = () => sessionStorage.getItem('token');
+const isServerFailure = (response) => response.status >= 500;
 
-const request = async (path, { method = 'GET', body } = {}) => {
+const request = async (path, { method = 'GET', body, fallbackData } = {}) => {
   const token = getToken();
   if (!token) {
     throw new Error('No token found');
@@ -19,6 +20,9 @@ const request = async (path, { method = 'GET', body } = {}) => {
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if (fallbackData !== undefined && isServerFailure(response)) {
+      return fallbackData;
+    }
     throw new Error(data?.message || 'Request failed');
   }
 
@@ -28,11 +32,11 @@ const request = async (path, { method = 'GET', body } = {}) => {
 export const companyAPI = {
   getProfile: () => request('/profile'),
   createJob: (jobInput) => request('/jobs', { method: 'POST', body: jobInput }),
-  getJobs: () => request('/jobs'),
+  getJobs: () => request('/jobs', { fallbackData: { success: true, jobs: [] } }),
   deleteJob: (jobId) => request(`/jobs/${jobId}`, { method: 'DELETE' }),
   updateJobStatus: (jobId, status) => request(`/jobs/${jobId}/status`, { method: 'PATCH', body: { status } }),
   reopenJob: (jobId) => request(`/jobs/${jobId}/reopen`, { method: 'POST' }),
-  getApplicants: () => request('/applicants'),
+  getApplicants: () => request('/applicants', { fallbackData: { success: true, applicants: [] } }),
   updateApplicantStatus: (applicationId, status) => request(`/applications/${applicationId}/status`, { method: 'PATCH', body: { status } }),
   searchDevelopers: (input) => {
     if (input && typeof input === 'object') {
@@ -48,7 +52,17 @@ export const companyAPI = {
     }
     return request(`/developers?q=${encodeURIComponent(input || '')}`);
   },
-  getAnalytics: () => request('/analytics'),
+  getAnalytics: () => request('/analytics', {
+    fallbackData: {
+      success: true,
+      analytics: {
+        totalJobs: 0,
+        totalApplicants: 0,
+        jobsByStatus: {},
+        applicantsByStatus: {},
+      },
+    },
+  }),
   updateProfile: (profileInput) => request('/profile', { method: 'PUT', body: profileInput }),
   saveOnboardingProfile: (profileInput) => request('/onboarding/profile', { method: 'PUT', body: profileInput }),
 };

@@ -16,6 +16,8 @@ const getErrorMessage = (data, fallbackMessage) => {
   return data?.message || fallbackMessage;
 };
 
+const isServerFailure = (response) => response.status >= 500;
+
 const parseApiResponse = async (response, fallbackMessage) => {
   const contentType = response.headers.get('content-type') || '';
   const rawText = await response.text();
@@ -390,6 +392,9 @@ export const getJobsFeed = async () => {
 
   const data = await parseApiResponse(response, 'Failed to load jobs');
   if (!response.ok) {
+    if (isServerFailure(response)) {
+      return [];
+    }
     throw new Error(getErrorMessage(data, 'Failed to load jobs'));
   }
 
