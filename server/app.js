@@ -6,31 +6,11 @@ const messagesRoutes = require('./routes/messagesRoutes');
 const notificationsRoutes = require('./routes/notificationsRoutes');
 const companyRoutes = require('./routes/companyRoutes');
 const developerRoutes = require('./routes/developerRoutes');
-const { ensureUsersProfileSchema } = require('./config/ensureUsersProfileSchema');
-const { ensureCompanySchema } = require('./config/ensureCompanySchema');
-const { ensureOnboardingSchema } = require('./config/ensureOnboardingSchema');
+const { warmRuntimeSchemas } = require('./config/runtimeSchema');
 
 dotenv.config();
 
-let schemaInitPromise;
-let schemaReady = false;
-
-const ensureSchemaReady = async () => {
-  if (!schemaInitPromise) {
-    schemaInitPromise = (async () => {
-      await ensureUsersProfileSchema();
-      await ensureCompanySchema();
-      await ensureOnboardingSchema();
-      schemaReady = true;
-    })().catch((error) => {
-      schemaInitPromise = null;
-      schemaReady = false;
-      throw error;
-    });
-  }
-
-  return schemaInitPromise;
-};
+const ensureSchemaReady = async () => warmRuntimeSchemas();
 
 const createApp = () => {
   const app = express();
@@ -68,19 +48,14 @@ const createApp = () => {
   app.use(express.urlencoded({ extended: true }));
 
   app.use(async (req, res, next) => {
-    if (schemaReady) {
-      next();
-      return;
-    }
-
     try {
       await ensureSchemaReady();
-      next();
     } catch (error) {
       console.warn('Continuing without schema bootstrap (profile saving may fail).');
       console.warn(error?.message || error);
-      next();
     }
+
+    next();
   });
 
   app.use('/api/auth', authRoutes);

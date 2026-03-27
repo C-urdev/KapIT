@@ -6,7 +6,7 @@ const app = createApp();
 (async () => {
   try {
     await ensureSchemaReady();
-    console.log('Database schema ready');
+    console.log('Runtime schema warmup complete');
   } catch (error) {
     console.warn('Continuing without schema bootstrap (profile saving may fail).');
     console.warn(error?.message || error);

@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const pool = require('../config/database');
 const { createNotification, ensureNotificationsTable } = require('./notificationsController');
+const { ensureBaseUserSchemaReady, ensureHiringSchemaReady, ensureOnboardingSchemaReady } = require('../config/runtimeSchema');
 
 const serializeUser = (user) => ({
   id: user.id,
@@ -105,6 +106,9 @@ const getCompanyProfile = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
+    await ensureOnboardingSchemaReady();
     client = await pool.connect();
     const company = await getOrCreateCompanyForUserId(client, req.user.id);
     const profileResult = await client.query(
@@ -195,6 +199,8 @@ const createJob = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
     client = await pool.connect();
     await client.query('BEGIN');
 
@@ -288,6 +294,8 @@ const getJobs = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
     client = await pool.connect();
     const company = await getOrCreateCompanyForUserId(client, req.user.id);
 
@@ -321,6 +329,8 @@ const getApplicants = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
     client = await pool.connect();
     const company = await getOrCreateCompanyForUserId(client, req.user.id);
 
@@ -379,6 +389,8 @@ const updateApplicantStatus = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
     client = await pool.connect();
     await client.query('BEGIN');
 
@@ -570,6 +582,8 @@ const updateJobStatus = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
     client = await pool.connect();
     await client.query('BEGIN');
 
@@ -640,6 +654,8 @@ const reopenJob = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
     client = await pool.connect();
     await client.query('BEGIN');
 
@@ -718,6 +734,8 @@ const deleteJob = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
     client = await pool.connect();
     await client.query('BEGIN');
 
@@ -762,6 +780,9 @@ const getDevelopers = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
+    await ensureOnboardingSchemaReady();
     const q = String(req.query.q || '').trim();
     const skill = String(req.query.skill || '').trim();
     const location = String(req.query.location || '').trim();
@@ -852,6 +873,8 @@ const getAnalytics = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
     client = await pool.connect();
     const company = await getOrCreateCompanyForUserId(client, req.user.id);
 
@@ -910,6 +933,8 @@ const updateCompanyProfile = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
     client = await pool.connect();
     await client.query('BEGIN');
 
@@ -997,6 +1022,9 @@ const updateCompanyOnboardingProfile = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
+    await ensureOnboardingSchemaReady();
     client = await pool.connect();
     await client.query('BEGIN');
 

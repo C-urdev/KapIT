@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { ensureBaseUserSchemaReady, ensureOnboardingSchemaReady } = require('../config/runtimeSchema');
 
 const normalizeSkills = (skills) => {
   if (!skills) return [];
@@ -55,6 +56,8 @@ const buildDevErrorMeta = (error) => (
 const getMyDeveloperProfile = async (req, res) => {
   let client;
   try {
+    await ensureBaseUserSchemaReady();
+    await ensureOnboardingSchemaReady();
     client = await pool.connect();
     const result = await client.query('SELECT * FROM developer_profiles WHERE user_id = $1', [req.user.id]);
     return res.json({ success: true, profile: result.rows[0] || null });
@@ -75,6 +78,8 @@ const getMyDeveloperProfile = async (req, res) => {
 const upsertMyDeveloperProfile = async (req, res) => {
   let client;
   try {
+    await ensureBaseUserSchemaReady();
+    await ensureOnboardingSchemaReady();
     client = await pool.connect();
     await client.query('BEGIN');
 

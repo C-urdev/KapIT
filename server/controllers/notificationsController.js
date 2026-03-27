@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { ensureBaseUserSchemaReady } = require('../config/runtimeSchema');
 
 let notificationsTableReady = false;
 let notificationsTablePromise = null;
@@ -236,6 +237,7 @@ const listNotifications = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
     client = await pool.connect();
     await ensureNotificationsTable(client);
 
@@ -279,6 +281,7 @@ const getUnreadNotificationCount = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
     client = await pool.connect();
     await ensureNotificationsTable(client);
 
@@ -324,6 +327,7 @@ const markNotificationsRead = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
     client = await pool.connect();
     await ensureNotificationsTable(client);
 

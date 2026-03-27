@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/database');
 const { createNotification, ensureNotificationsTable } = require('./notificationsController');
+const { ensureBaseUserSchemaReady, ensureHiringSchemaReady, ensureOnboardingSchemaReady } = require('../config/runtimeSchema');
 const isDev = process.env.NODE_ENV !== 'production';
 const buildDevErrorMeta = (error) => (
   isDev
@@ -334,6 +335,8 @@ const getPublicProfile = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
     client = await pool.connect();
     const { id } = req.params;
 
@@ -676,6 +679,8 @@ const getJobsFeed = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
     client = await pool.connect();
     const result = await client.query(
       `SELECT j.id,
@@ -749,6 +754,9 @@ const applyToJob = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
+    await ensureOnboardingSchemaReady();
     if (req.user?.userType !== 'employee') {
       return res.status(403).json({
         success: false,

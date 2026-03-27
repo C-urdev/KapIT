@@ -18,7 +18,7 @@ const {
 const router = express.Router();
 
 const requireCompanyAccount = (req, res, next) => {
-  if (req.user?.userType !== 'company') {
+  if (req.user?.userType !== 'company' && req.user?.accountType !== 'company') {
     return res.status(403).json({ success: false, message: 'Company account required' });
   }
   return next();

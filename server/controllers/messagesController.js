@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const { createNotification, ensureNotificationsTable } = require('./notificationsController');
+const { ensureBaseUserSchemaReady } = require('../config/runtimeSchema');
 
 let messagesTableReady = false;
 let messagesTablePromise = null;
@@ -182,6 +183,7 @@ const listConversations = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
     client = await pool.connect();
     await ensureMessagesTable(client);
 
@@ -254,6 +256,7 @@ const listMessages = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
     client = await pool.connect();
     await ensureMessagesTable(client);
 
@@ -317,6 +320,7 @@ const sendMessage = async (req, res) => {
   let client;
 
   try {
+    await ensureBaseUserSchemaReady();
     client = await pool.connect();
     await ensureMessagesTable(client);
     await client.query('BEGIN');
