@@ -42,6 +42,15 @@ const serializeUser = (user) => ({
   hiringFor: user.hiring_for || '',
 });
 
+const buildDevErrorMeta = (error) => (
+  process.env.NODE_ENV !== 'production'
+    ? {
+        errorDetail: error?.message || String(error),
+        errorCode: error?.code || '',
+      }
+    : {}
+);
+
 // GET /api/developer/profile
 const getMyDeveloperProfile = async (req, res) => {
   let client;
@@ -51,7 +60,12 @@ const getMyDeveloperProfile = async (req, res) => {
     return res.json({ success: true, profile: result.rows[0] || null });
   } catch (error) {
     console.error('Get developer profile error:', error);
-    return res.status(500).json({ success: false, message: 'Server error while fetching profile' });
+    return res.json({
+      success: true,
+      profile: null,
+      warning: 'Developer profile is temporarily unavailable.',
+      ...buildDevErrorMeta(error),
+    });
   } finally {
     client?.release();
   }

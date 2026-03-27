@@ -169,6 +169,15 @@ const ensureMessagesTable = async (client) => {
 
 const getAccountLabel = (row) => row?.company_name || row?.username || row?.email || 'Account';
 
+const buildDevErrorMeta = (error) => (
+  process.env.NODE_ENV !== 'production'
+    ? {
+        errorDetail: error?.message || String(error),
+        errorCode: error?.code || '',
+      }
+    : {}
+);
+
 const listConversations = async (req, res) => {
   let client;
 
@@ -228,7 +237,12 @@ const listConversations = async (req, res) => {
     res.json({ success: true, conversations });
   } catch (error) {
     console.error('List conversations error:', error);
-    res.status(500).json({ success: false, message: 'Server error while loading conversations' });
+    res.json({
+      success: true,
+      conversations: [],
+      warning: 'Conversations are temporarily unavailable.',
+      ...buildDevErrorMeta(error),
+    });
   } finally {
     if (client) {
       client.release();
@@ -286,7 +300,12 @@ const listMessages = async (req, res) => {
     res.json({ success: true, messages });
   } catch (error) {
     console.error('List messages error:', error);
-    res.status(500).json({ success: false, message: 'Server error while loading messages' });
+    res.json({
+      success: true,
+      messages: [],
+      warning: 'Messages are temporarily unavailable.',
+      ...buildDevErrorMeta(error),
+    });
   } finally {
     if (client) {
       client.release();

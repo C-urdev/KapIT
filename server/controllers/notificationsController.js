@@ -223,6 +223,15 @@ const createNotification = async (
   return result.rows[0] || null;
 };
 
+const buildDevErrorMeta = (error) => (
+  process.env.NODE_ENV !== 'production'
+    ? {
+        errorDetail: error?.message || String(error),
+        errorCode: error?.code || '',
+      }
+    : {}
+);
+
 const listNotifications = async (req, res) => {
   let client;
 
@@ -253,9 +262,11 @@ const listNotifications = async (req, res) => {
     return res.json({ success: true, notifications });
   } catch (error) {
     console.error('List notifications error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Server error while loading notifications',
+    return res.json({
+      success: true,
+      notifications: [],
+      warning: 'Notifications are temporarily unavailable.',
+      ...buildDevErrorMeta(error),
     });
   } finally {
     if (client) {
@@ -296,9 +307,11 @@ const getUnreadNotificationCount = async (req, res) => {
     });
   } catch (error) {
     console.error('Unread notification count error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Server error while loading unread notification count',
+    return res.json({
+      success: true,
+      unreadCount: 0,
+      warning: 'Unread notification count is temporarily unavailable.',
+      ...buildDevErrorMeta(error),
     });
   } finally {
     if (client) {
@@ -328,9 +341,11 @@ const markNotificationsRead = async (req, res) => {
     });
   } catch (error) {
     console.error('Mark notifications read error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Server error while updating notifications',
+    return res.json({
+      success: true,
+      updatedCount: 0,
+      warning: 'Notifications could not be updated right now.',
+      ...buildDevErrorMeta(error),
     });
   } finally {
     if (client) {

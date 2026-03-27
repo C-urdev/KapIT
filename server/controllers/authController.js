@@ -4,6 +4,14 @@ const jwt = require('jsonwebtoken');
 const pool = require('../config/database');
 const { createNotification, ensureNotificationsTable } = require('./notificationsController');
 const isDev = process.env.NODE_ENV !== 'production';
+const buildDevErrorMeta = (error) => (
+  isDev
+    ? {
+        errorDetail: error?.message || String(error),
+        errorCode: error?.code || '',
+      }
+    : {}
+);
 
 const normalizeAccountType = (raw) => {
   const value = String(raw || '').trim().toLowerCase();
@@ -721,15 +729,11 @@ const getJobsFeed = async (req, res) => {
     return res.json({ success: true, jobs });
   } catch (error) {
     console.error('Get jobs feed error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Server error while fetching jobs',
-      ...(isDev
-        ? {
-            errorDetail: error?.message || String(error),
-            errorCode: error?.code || '',
-          }
-        : {}),
+    return res.json({
+      success: true,
+      jobs: [],
+      warning: 'Jobs feed is temporarily unavailable.',
+      ...buildDevErrorMeta(error),
     });
   } finally {
     if (client) {
