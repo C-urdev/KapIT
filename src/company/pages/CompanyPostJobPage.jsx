@@ -221,7 +221,7 @@ export default function PostJob() {
 
         <div className="flex gap-3">
           <button type="button" onClick={() => navigate(COMPANY_PATHS.dashboard)} className="px-4 py-2.5 rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors">Cancel</button>
-          <button type="submit" className="px-4 py-2.5 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold transition-colors">Save draft and continue to payment</button>
+          <button type="submit" className="px-4 py-2.5 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold transition-colors">Continue to payment</button>
         </div>
       </form>
     </div>

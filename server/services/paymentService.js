@@ -340,6 +340,65 @@ const startJobPostCheckout = async ({ client, req, companyUserId, provider, plan
   };
 };
 
+const completeLocalBypassPayment = async ({ client, companyUserId, provider, planId, draft, jobId = null, payerEmail = null }) => {
+  const normalizedProvider = assertValidProvider(provider);
+  const plan = getJobPostPlanById(planId);
+
+  if (!plan) {
+    throw new Error('Please select a valid pricing plan.');
+  }
+
+  const normalizedDraft = normalizeDraftPayload(draft);
+  if (!normalizedDraft.title || !normalizedDraft.description) {
+    throw new Error('Job title and description are required.');
+  }
+
+  const company = await getOrCreateCompanyForUserId(client, companyUserId);
+  let linkedJobId = null;
+  if (jobId != null) {
+    const draftJobResult = await client.query(
+      `SELECT id
+       FROM jobs
+       WHERE id = $1
+         AND company_id = $2
+         AND COALESCE(posting_payment_status, 'pending') <> 'paid'
+       LIMIT 1`,
+      [Number(jobId), company.id]
+    );
+
+    if (!draftJobResult.rows.length) {
+      throw new Error('Draft job not found for payment.');
+    }
+
+    linkedJobId = draftJobResult.rows[0].id;
+  }
+
+  const payment = await createPaymentRecord(client, {
+    companyId: company.id,
+    provider: normalizedProvider,
+    plan,
+    draft: normalizedDraft,
+    jobId: linkedJobId,
+  });
+
+  return finalizeVerifiedPayment({
+    client,
+    companyUserId,
+    payment,
+    verification: {
+      providerCheckoutId: `localhost-checkout-${payment.id}`,
+      providerPaymentId: `localhost-paid-${Date.now()}`,
+      payerEmail,
+      status: 'paid',
+      rawPayload: {
+        bypass: true,
+        source: 'localhost-env-flag',
+      },
+      amount: Number(plan.price || 0),
+    },
+  });
+};
+
 const extractStripeVerification = async (sessionId) => {
   const stripe = getStripeClient();
   const session = await stripe.checkout.sessions.retrieve(sessionId, {
@@ -436,6 +495,7 @@ module.exports = {
   getOrCreateCompanyForUserId,
   normalizeProvider,
   startJobPostCheckout,
+  completeLocalBypassPayment,
   extractStripeVerification,
   capturePayPalOrder,
   finalizeVerifiedPayment,

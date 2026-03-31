@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 const authRoutes = require('./routes/authRoutes');
 const messagesRoutes = require('./routes/messagesRoutes');
 const notificationsRoutes = require('./routes/notificationsRoutes');
@@ -8,7 +9,8 @@ const companyRoutes = require('./routes/companyRoutes');
 const developerRoutes = require('./routes/developerRoutes');
 const { warmRuntimeSchemas } = require('./config/runtimeSchema');
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+dotenv.config({ path: path.resolve(__dirname, '..', '.env.local'), override: true });
 
 const ensureSchemaReady = async () => warmRuntimeSchemas();
 

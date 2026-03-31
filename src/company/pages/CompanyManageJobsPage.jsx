@@ -5,6 +5,7 @@ import { useCompanyJobs } from '@companyFeatures/companyHooks';
 import { COMPANY_PATHS, formatSkills, navigate } from '@companyFeatures/companyUtils';
 import { PAYMENT_CANCEL_MESSAGE_TYPE, PAYMENT_MESSAGE_TYPE, STORAGE_KEY } from '@companyPages/CompanyPostJobPaymentPage';
 import ConfirmModal from '@sharedComponents/ui/ConfirmModal';
+import { X } from 'lucide-react';
 
 export default function ManageJobs() {
   const { jobs, loading, error, refetch } = useCompanyJobs();
@@ -253,9 +254,10 @@ function JobDetailsModal({ job, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+            aria-label="Close job details"
           >
-            Close
+            <X className="h-4.5 w-4.5" />
           </button>
         </div>
 

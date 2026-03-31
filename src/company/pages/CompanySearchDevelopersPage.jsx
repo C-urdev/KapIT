@@ -415,9 +415,10 @@ function Modal({ title, onClose, children }) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-[#a3b18a] px-3 py-2 text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#1e3a5f]"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#a3b18a] text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#1e3a5f]"
+            aria-label="Close developer profile"
           >
-            Close
+            <X className="h-4.5 w-4.5" />
           </button>
         </div>
         <div className="p-5">{children}</div>

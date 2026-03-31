@@ -356,6 +356,13 @@ export default function KapIT() {
     setIsAccountTypeModalOpen(true);
   };
 
+  const handleSignIn = () => {
+    setPendingSignup(null);
+    setAuthEntryMode('login');
+    setCurrentView('auth');
+    navigate(AUTH_PATHS.login);
+  };
+
   const handleJoinAsDeveloper = () => {
     setPendingSignup(null);
     setAuthEntryMode('signup');
@@ -536,7 +543,7 @@ export default function KapIT() {
             </CompanyLayout>
           )}
           {currentView === 'landing' && (
-            <LandingPage onGetStarted={handleGetStarted} onJoinDeveloper={handleJoinAsDeveloper} />
+            <LandingPage onGetStarted={handleGetStarted} onJoinDeveloper={handleJoinAsDeveloper} onSignIn={handleSignIn} />
           )}
           {currentView === 'auth' && (
             <AuthPage

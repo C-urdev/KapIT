@@ -7,11 +7,19 @@ const {
   getOrCreateCompanyForUserId,
   normalizeProvider,
   startJobPostCheckout,
+  completeLocalBypassPayment,
   extractStripeVerification,
   capturePayPalOrder,
   finalizeVerifiedPayment,
   updatePaymentRecord,
 } = require('../services/paymentService');
+
+const isLocalPaymentBypassEnabled = () => String(process.env.ENABLE_LOCAL_PAYMENT_BYPASS || '').trim().toLowerCase() === 'true';
+
+const isLocalhostRequest = (req) => {
+  const host = String(req.hostname || req.get('host') || '').toLowerCase();
+  return host.includes('localhost') || host.includes('127.0.0.1') || host.includes('::1');
+};
 
 const listJobPostingPlans = async (req, res) => {
   try {
@@ -240,6 +248,46 @@ const cancelCheckoutSession = async (req, res) => {
   }
 };
 
+const completeLocalBypassCheckout = async (req, res) => {
+  let client;
+
+  try {
+    if (!isLocalPaymentBypassEnabled() || !isLocalhostRequest(req)) {
+      return res.status(404).json({ success: false, message: 'Route not found' });
+    }
+
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
+    client = await pool.connect();
+    await client.query('BEGIN');
+
+    const provider = normalizeProvider(req.body?.provider);
+    const planId = req.body?.planId;
+    const draft = req.body?.draft || {};
+    const jobId = req.body?.jobId == null ? null : Number(req.body.jobId);
+    const result = await completeLocalBypassPayment({
+      client,
+      companyUserId: req.user.id,
+      provider,
+      planId,
+      draft,
+      jobId: Number.isFinite(jobId) ? jobId : null,
+      payerEmail: req.user?.email || null,
+    });
+
+    await client.query('COMMIT');
+    return res.json({ success: true, payment: result.payment, job: result.job });
+  } catch (error) {
+    if (client) {
+      await client.query('ROLLBACK');
+    }
+    console.error('Complete localhost bypass checkout error:', error);
+    return res.status(400).json({ success: false, message: error?.message || 'Failed to complete localhost bypass payment.' });
+  } finally {
+    client?.release();
+  }
+};
+
 module.exports = {
   listJobPostingPlans,
   listPaymentProviders,
@@ -247,4 +295,5 @@ module.exports = {
   verifyStripeCheckout,
   capturePayPalCheckout,
   cancelCheckoutSession,
+  completeLocalBypassCheckout,
 };

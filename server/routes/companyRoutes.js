@@ -22,6 +22,7 @@ const {
   verifyStripeCheckout,
   capturePayPalCheckout,
   cancelCheckoutSession,
+  completeLocalBypassCheckout,
 } = require('../controllers/companyPaymentController');
 
 const router = express.Router();
@@ -40,6 +41,7 @@ router.post('/jobs/draft', createDraftJob);
 router.get('/payments/plans', listJobPostingPlans);
 router.get('/payments/providers', listPaymentProviders);
 router.post('/payments/checkout-session', createCheckoutSession);
+router.post('/payments/localhost-bypass', completeLocalBypassCheckout);
 router.post('/payments/stripe/verify', verifyStripeCheckout);
 router.post('/payments/paypal/capture', capturePayPalCheckout);
 router.post('/payments/:paymentId/cancel', cancelCheckoutSession);

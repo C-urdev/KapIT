@@ -37,7 +37,7 @@ const CATEGORIES = [
   { title: 'Cloud & DevOps', icon: Cloud },
 ];
 
-export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
+export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn }) {
   const { theme, toggleTheme } = useTheme();
   const [query, setQuery] = useState('');
   const [highlightGetStarted, setHighlightGetStarted] = useState(false);
@@ -117,6 +117,13 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
           </button>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onSignIn}
+              className="inline-flex px-3 sm:px-4 py-2 rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] bg-white dark:bg-[#162842] text-[#344e41] dark:text-white text-sm sm:text-base font-semibold hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+            >
+              Sign In
+            </button>
             <button
               type="button"
               onClick={onGetStarted}
@@ -271,7 +278,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
 
       <section
         ref={categoriesRef}
-        className="relative bg-gradient-to-b from-[#e2ddcf] via-[#ebe6da] to-[#f7f6f1] dark:bg-[#0f2139] scroll-mt-24"
+        className="relative bg-gradient-to-b from-[#e2ddcf] via-[#ebe6da] to-[#f7f6f1] dark:bg-gradient-to-b dark:from-[#0f2139] dark:via-[#102743] dark:to-[#132d4d] scroll-mt-24"
       >
         <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 pt-14 pb-10 min-h-[360px] sm:min-h-[400px]">
           <div className="max-w-3xl">
@@ -292,7 +299,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
         <ThinSectionLine className="bottom-0" />
       </section>
 
-      <section className="relative bg-gradient-to-b from-[#fbfaf6] via-[#fbfaf6] via-[97%] to-[#f8f4ec] dark:bg-[#0f2139]">
+      <section className="relative bg-gradient-to-b from-[#fbfaf6] via-[#fbfaf6] via-[97%] to-[#f8f4ec] dark:bg-gradient-to-b dark:from-[#132d4d] dark:via-[#102743] dark:to-[#0f2139]">
         <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 pt-10 pb-10 min-h-[360px] sm:min-h-[400px]">
           <div className="max-w-3xl">
             <h3 className="text-3xl font-bold text-[#102a1b] dark:text-white">How KapIT works</h3>
@@ -325,9 +332,9 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper }) {
         <ThinSectionLine className="bottom-0 z-10" />
       </section>
 
-      <section className="relative bg-gradient-to-b from-[#f8f4ec] via-[#eee9de] via-[8%] to-[#e2ddcf] dark:bg-[#0a1628]">
+      <section className="relative bg-gradient-to-b from-[#f8f4ec] via-[#eee9de] via-[8%] to-[#e2ddcf] dark:bg-gradient-to-b dark:from-[#0f2139] dark:via-[#0d1d33] dark:to-[#0a1628]">
         <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 py-10 min-h-[360px] sm:min-h-[400px] flex items-center">
-          <div className="w-full rounded-[2rem] border border-white/50 dark:border-[#1e3a5f] bg-white/70 dark:bg-[#0f2139]/50 backdrop-blur px-8 py-8 sm:px-10 sm:py-10 lg:px-12 lg:py-11 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-10 shadow-lg shadow-black/5 dark:shadow-[#3ba9d6]/10">
+          <div className="w-full rounded-[2rem] border border-white/50 dark:border-[#2a4a6f] bg-white/70 dark:bg-[linear-gradient(180deg,rgba(20,42,70,0.94),rgba(13,30,51,0.96))] backdrop-blur px-8 py-8 sm:px-10 sm:py-10 lg:px-12 lg:py-11 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-10 shadow-lg shadow-black/5 dark:shadow-[0_20px_50px_rgba(0,0,0,0.34)]">
             <div className="max-w-2xl">
               <h3 className="text-3xl sm:text-4xl font-extrabold text-[#102a1b] dark:text-white">
                 Start building with Filipino IT Talent
