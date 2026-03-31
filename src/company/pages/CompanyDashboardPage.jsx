@@ -69,7 +69,7 @@ function formatJobDate(value) {
 function CompactJobRow({ job, onManage }) {
   const applicants = Number(job?.applicant_count || job?.applicantCount || 0);
   const status = String(job?.status || 'open').toLowerCase();
-  const statusDot = status === 'open' ? 'bg-emerald-500' : status === 'closed' ? 'bg-amber-500' : 'bg-sky-500';
+  const statusDot = status === 'open' ? 'bg-emerald-500' : status === 'closed' ? 'bg-amber-500' : status === 'draft' ? 'bg-slate-500' : 'bg-sky-500';
   const planPrice = Number(job?.posting_plan_price || job?.pay_per_use_fee || 0);
   const planDuration = String(job?.posting_plan_duration || '').trim();
 
@@ -142,10 +142,14 @@ export default function CompanyDashboard() {
   const [sortOrder, setSortOrder] = useState('desc');
 
   const openJobs = useMemo(() => jobs.filter((job) => String(job?.status || '').toLowerCase() === 'open'), [jobs]);
-  const closedJobs = useMemo(() => jobs.filter((job) => String(job?.status || '').toLowerCase() !== 'open'), [jobs]);
+  const draftJobs = useMemo(() => jobs.filter((job) => String(job?.status || '').toLowerCase() === 'draft' || String(job?.posting_payment_status || '').toLowerCase() !== 'paid'), [jobs]);
+  const closedJobs = useMemo(() => jobs.filter((job) => {
+    const status = String(job?.status || '').toLowerCase();
+    return status !== 'open' && status !== 'draft';
+  }), [jobs]);
 
   const filteredJobs = useMemo(() => {
-    const source = statusTab === 'open' ? openJobs : closedJobs;
+    const source = statusTab === 'open' ? openJobs : statusTab === 'draft' ? draftJobs : closedJobs;
     const normalizedTitle = titleQuery.trim().toLowerCase();
     const normalizedLocation = locationQuery.trim().toLowerCase();
 
@@ -167,7 +171,7 @@ export default function CompanyDashboard() {
     });
 
     return nextJobs;
-  }, [closedJobs, locationQuery, openJobs, sortBy, sortOrder, statusTab, titleQuery]);
+  }, [closedJobs, draftJobs, locationQuery, openJobs, sortBy, sortOrder, statusTab, titleQuery]);
 
   return (
     <div className="space-y-8">
@@ -206,6 +210,7 @@ export default function CompanyDashboard() {
       <section className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           <OverviewTab active={statusTab === 'open'} label="Open" count={openJobs.length} onClick={() => setStatusTab('open')} />
+          <OverviewTab active={statusTab === 'draft'} label="Draft" count={draftJobs.length} onClick={() => setStatusTab('draft')} />
           <OverviewTab active={statusTab === 'closed'} label="Closed" count={closedJobs.length} onClick={() => setStatusTab('closed')} />
         </div>
 

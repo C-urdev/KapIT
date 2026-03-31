@@ -1,7 +1,13 @@
-const crypto = require('crypto');
 const pool = require('../config/database');
 const { createNotification, ensureNotificationsTable } = require('./notificationsController');
 const { ensureBaseUserSchemaReady, ensureHiringSchemaReady, ensureOnboardingSchemaReady } = require('../config/runtimeSchema');
+const {
+  getOrCreateCompanyForUserId,
+  normalizeSkills,
+  normalizeRelatedCompanies,
+  serializeJobRow,
+} = require('../services/companyService');
+const { createDraftJobForCompany } = require('../services/jobService');
 
 const serializeUser = (user) => ({
   id: user.id,
@@ -31,72 +37,6 @@ const serializeUser = (user) => ({
   companySize: user.company_size || '',
   website: user.website || '',
   hiringFor: user.hiring_for || '',
-});
-
-const getOrCreateCompanyForUserId = async (client, userId) => {
-  const existing = await client.query('SELECT * FROM companies WHERE user_id = $1', [userId]);
-  if (existing.rows.length) {
-    return existing.rows[0];
-  }
-
-  const userResult = await client.query('SELECT id, username, company_name, profile_image, bio, address, website FROM users WHERE id = $1', [
-    userId,
-  ]);
-  if (!userResult.rows.length) {
-    throw new Error('User not found');
-  }
-
-  const user = userResult.rows[0];
-  const name = user.company_name || user.username || 'Company';
-
-  const created = await client.query(
-    `INSERT INTO companies (id, user_id, name, logo, description, location, website)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
-     RETURNING *`,
-    [crypto.randomUUID(), userId, name, user.profile_image || null, user.bio || null, user.address || null, user.website || null]
-  );
-
-  return created.rows[0];
-};
-
-const normalizeSkills = (skills) => {
-  if (!skills) {
-    return [];
-  }
-  if (Array.isArray(skills)) {
-    return skills.map((s) => String(s).trim()).filter(Boolean).slice(0, 30);
-  }
-  if (typeof skills === 'string') {
-    return skills
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .slice(0, 30);
-  }
-  return [];
-};
-
-const normalizeRelatedCompanies = (items) => {
-  if (!Array.isArray(items)) {
-    return [];
-  }
-
-  return items
-    .map((item) => ({
-      name: String(item?.name || '').trim(),
-      shortDescription: String(item?.shortDescription || '').trim(),
-      website: String(item?.website || '').trim(),
-    }))
-    .filter((item) => item.name)
-    .slice(0, 12);
-};
-
-const serializeJobRow = (row) => ({
-  ...row,
-  applicant_count: Number(row?.applicant_count || 0),
-  pay_per_use_fee: Number(row?.pay_per_use_fee || 0),
-  posting_plan_duration_days: row?.posting_plan_duration_days == null ? null : Number(row.posting_plan_duration_days),
-  posting_plan_price: row?.posting_plan_price == null ? null : Number(row.posting_plan_price),
 });
 
 const getAccountLabel = (row) => row?.company_name || row?.username || row?.email || 'Company';
@@ -196,6 +136,19 @@ const getCompanyProfile = async (req, res) => {
 
 // POST /api/company/jobs
 const createJob = async (req, res) => {
+  try {
+    return res.status(403).json({
+      success: false,
+      message: 'Direct job publishing is disabled. Complete the verified payment flow before publishing a job.',
+    });
+  } catch (error) {
+    console.error('Create job error:', error);
+    return res.status(500).json({ success: false, message: 'Server error while creating job' });
+  }
+};
+
+// POST /api/company/jobs/draft
+const createDraftJob = async (req, res) => {
   let client;
 
   try {
@@ -205,85 +158,16 @@ const createJob = async (req, res) => {
     await client.query('BEGIN');
 
     const company = await getOrCreateCompanyForUserId(client, req.user.id);
-    const { title, description, salary, location, type, skills, planId, planDuration, planDurationDays, planPrice } = req.body || {};
-
-    if (!String(title || '').trim() || !String(description || '').trim()) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ success: false, message: 'Title and description are required.' });
-    }
-
-    const normalizedSkills = normalizeSkills(skills);
-    const normalizedPlanId = String(planId || '').trim();
-    const normalizedPlanDuration = String(planDuration || '').trim();
-    const normalizedPlanDurationDays = Math.trunc(Number(planDurationDays));
-    const normalizedPlanPrice = Math.trunc(Number(planPrice));
-
-    if (!normalizedPlanId || !normalizedPlanDuration || !Number.isFinite(normalizedPlanDurationDays) || normalizedPlanDurationDays <= 0 || !Number.isFinite(normalizedPlanPrice) || normalizedPlanPrice <= 0) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ success: false, message: 'A valid job posting plan is required before payment.' });
-    }
-
-    const result = await client.query(
-      `INSERT INTO jobs (
-         company_id,
-         title,
-         description,
-         salary,
-         location,
-         type,
-         skills,
-         status,
-         pay_per_use_fee,
-         pay_per_use_status,
-         posting_plan_id,
-         posting_plan_duration,
-         posting_plan_duration_days,
-         posting_plan_price,
-         published_at,
-         active_until
-       )
-       VALUES (
-         $1,
-         $2,
-         $3,
-         $4,
-         $5,
-         $6,
-         $7,
-         'open',
-         $8::integer,
-         'not_due',
-         $9,
-         $10,
-         $11::integer,
-         $8::integer,
-         CURRENT_TIMESTAMP,
-         CURRENT_TIMESTAMP + ($11::integer * INTERVAL '1 day')
-       )
-       RETURNING *`,
-      [
-        company.id,
-        String(title).trim(),
-        String(description).trim(),
-        salary ? String(salary).trim() : null,
-        location ? String(location).trim() : null,
-        type ? String(type).trim() : null,
-        normalizedSkills,
-        normalizedPlanPrice,
-        normalizedPlanId,
-        normalizedPlanDuration,
-        normalizedPlanDurationDays,
-      ]
-    );
+    const draftJob = await createDraftJobForCompany(client, company.id, req.body || {});
 
     await client.query('COMMIT');
-    return res.status(201).json({ success: true, job: serializeJobRow(result.rows[0]) });
+    return res.status(201).json({ success: true, job: draftJob });
   } catch (error) {
     if (client) {
       await client.query('ROLLBACK');
     }
-    console.error('Create job error:', error);
-    return res.status(500).json({ success: false, message: 'Server error while creating job' });
+    console.error('Create draft job error:', error);
+    return res.status(400).json({ success: false, message: error?.message || 'Server error while creating draft job' });
   } finally {
     client?.release();
   }
@@ -310,7 +194,6 @@ const getJobs = async (req, res) => {
        ) app_counts
        ON app_counts.job_id = j.id
        WHERE j.company_id = $1
-         AND COALESCE(j.posting_payment_status, 'paid') = 'paid'
        ORDER BY j.created_at DESC`,
       [company.id]
     );
@@ -651,81 +534,14 @@ const updateJobStatus = async (req, res) => {
 
 // POST /api/company/jobs/:jobId/reopen
 const reopenJob = async (req, res) => {
-  let client;
-
   try {
-    await ensureBaseUserSchemaReady();
-    await ensureHiringSchemaReady();
-    client = await pool.connect();
-    await client.query('BEGIN');
-
-    const company = await getOrCreateCompanyForUserId(client, req.user.id);
-    const jobId = Number(req.params.jobId);
-
-    if (!Number.isInteger(jobId) || jobId <= 0) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ success: false, message: 'Invalid job id.' });
-    }
-
-    const existing = await client.query('SELECT * FROM jobs WHERE id = $1 AND company_id = $2', [jobId, company.id]);
-    if (!existing.rows.length) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ success: false, message: 'Job not found.' });
-    }
-
-    const source = existing.rows[0];
-    const duplicated = await client.query(
-      `INSERT INTO jobs (
-         company_id,
-         title,
-         description,
-         salary,
-         location,
-         type,
-         skills,
-         status,
-         closed_reason,
-         pay_per_use_fee,
-         pay_per_use_status,
-         reopened_from_job_id,
-         posting_plan_id,
-         posting_plan_duration,
-         posting_plan_duration_days,
-         posting_plan_price,
-         filled_application_id,
-         filled_candidate_user_id,
-         closed_at,
-         hired_at
-       )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'open', NULL, $8, 'not_due', $9, $10, $11, $12, $13, NULL, NULL, NULL, NULL)
-       RETURNING *`,
-      [
-        source.company_id,
-        source.title,
-        source.description,
-        source.salary,
-        source.location,
-        source.type,
-        Array.isArray(source.skills) ? source.skills : [],
-        source.pay_per_use_fee || source.posting_plan_price || 0,
-        source.id,
-        source.posting_plan_id || null,
-        source.posting_plan_duration || null,
-        source.posting_plan_duration_days || null,
-        source.posting_plan_price || source.pay_per_use_fee || 0,
-      ]
-    );
-
-    await client.query('COMMIT');
-    return res.status(201).json({ success: true, job: serializeJobRow(duplicated.rows[0]) });
+    return res.status(403).json({
+      success: false,
+      message: 'Direct job reopening is disabled. Reopen the posting through the verified payment flow.',
+    });
   } catch (error) {
-    if (client) {
-      await client.query('ROLLBACK');
-    }
     console.error('Reopen job error:', error);
     return res.status(500).json({ success: false, message: 'Server error while reopening job' });
-  } finally {
-    client?.release();
   }
 };
 
@@ -1158,6 +974,7 @@ const updateCompanyOnboardingProfile = async (req, res) => {
 module.exports = {
   getCompanyProfile,
   createJob,
+  createDraftJob,
   getJobs,
   getApplicants,
   updateApplicantStatus,

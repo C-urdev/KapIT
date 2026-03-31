@@ -1,292 +1,347 @@
 import React from 'react';
-import { BadgeDollarSign, Landmark, QrCode, WalletCards, X } from 'lucide-react';
+import { BadgeCheck, CheckCircle2, ChevronDown, CreditCard, ExternalLink, ShieldCheck, X } from 'lucide-react';
 import { companyAPI } from '@companyFeatures/companyAPI';
-import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
+import { JOB_POST_PLANS, PAYMENT_PROVIDERS, PLAN_FEATURES } from '@companyFeatures/companyPaymentCatalog';
 
 const STORAGE_KEY = 'company-post-job-draft';
 const PAYMENT_MESSAGE_TYPE = 'company-post-job-payment-success';
 const PAYMENT_CANCEL_MESSAGE_TYPE = 'company-post-job-payment-cancelled';
-const DEFAULT_BANK = 'BDO Online Banking';
-const PLAN_FEATURES = ['AI Candidate Matching', 'Smart Filtering', 'Resume Insights', 'Priority Visibility'];
-const JOB_POST_PLANS = [
-  {
-    id: '1-week',
-    label: '1 Week',
-    price: 699,
-    description: 'Best for urgent hiring',
-    durationLabel: '1 week',
-    durationDays: 7,
-  },
-  {
-    id: '1-month',
-    label: '1 Month',
-    price: 1699,
-    description: 'Perfect for consistent hiring',
-    durationLabel: '1 month',
-    durationDays: 30,
-    badge: 'Most Popular',
-    highlighted: true,
-  },
-  {
-    id: '3-months',
-    label: '3 Months',
-    price: 4499,
-    description: 'Great for ongoing recruitment',
-    durationLabel: '3 months',
-    durationDays: 90,
-  },
-  {
-    id: '6-months',
-    label: '6 Months',
-    price: 7999,
-    description: 'Best value for long-term hiring',
-    durationLabel: '6 months',
-    durationDays: 180,
-  },
-];
 
-const BANK_OPTIONS = [
-  'BDO Online Banking',
-  'BPI Online',
-  'UnionBank Online',
-  'Metrobank Online',
-  'Landbank iAccess',
-  'RCBC Pulz',
-  'Security Bank Online',
-  'PNB Digital',
-  'Chinabank Online',
-  'EastWest Online',
-];
+const sanitizeDraft = (draft) => ({
+  jobId: draft?.jobId == null ? null : Number(draft.jobId),
+  title: String(draft?.title || '').trim(),
+  description: String(draft?.description || '').trim(),
+  salary: String(draft?.salary || '').trim(),
+  location: String(draft?.location || '').trim(),
+  type: String(draft?.type || '').trim(),
+  skills: Array.isArray(draft?.skills) ? draft.skills : [],
+});
 
-const PAYMENT_PROVIDERS = [
-  {
-    id: 'gcash',
-    label: 'GCash',
-    merchantName: 'KapIT GCash Merchant',
-    merchantCode: 'KAPIT-GCASH-001',
-    accountHint: 'Merchant wallet ending in 2841',
-    description: 'Collect posting fees through a verified GCash merchant wallet.',
-    icon: WalletCards,
-  },
-  {
-    id: 'maya',
-    label: 'PayMaya',
-    merchantName: 'KapIT Maya Business',
-    merchantCode: 'KAPIT-MAYA-110',
-    accountHint: 'Business wallet ending in 5518',
-    description: 'Accept Maya wallet and card-backed payments in one flow.',
-    icon: QrCode,
-  },
-  {
-    id: 'paypal',
-    label: 'PayPal',
-    merchantName: 'KapIT PayPal Merchant',
-    merchantCode: 'KAPIT-PP-314',
-    accountHint: 'merchant@kapit.example',
-    description: 'Use PayPal checkout for local or international company payers.',
-    icon: BadgeDollarSign,
-  },
-  {
-    id: 'bank',
-    label: 'PH Online Banks',
-    merchantName: 'KapIT Bank Collection',
-    merchantCode: 'KAPIT-BANK-808',
-    accountHint: 'Instapay / Pesonet merchant collection',
-    description: 'Route payment through supported Philippine online banking partners.',
-    icon: Landmark,
-  },
-];
+const notifyOpener = (type, payload = {}) => {
+  if (window.opener && !window.opener.closed) {
+    window.opener.postMessage({ type, ...payload }, window.location.origin);
+  }
+};
 
 export default function CompanyPostJobPayment() {
   const [draft, setDraft] = React.useState(null);
-  const [selectedPlanId, setSelectedPlanId] = React.useState('');
-  const [paymentMethod, setPaymentMethod] = React.useState('gcash');
-  const [selectedBank, setSelectedBank] = React.useState(DEFAULT_BANK);
+  const [plans, setPlans] = React.useState(JOB_POST_PLANS);
+  const [selectedPlanId, setSelectedPlanId] = React.useState('1-month');
+  const [paymentMethod, setPaymentMethod] = React.useState('stripe');
+  const [providerAvailability, setProviderAvailability] = React.useState({
+    stripe: { enabled: true, label: 'Stripe', reason: '' },
+    paypal: { enabled: true, label: 'PayPal', reason: '' },
+  });
+  const [currentPaymentId, setCurrentPaymentId] = React.useState('');
   const [loading, setLoading] = React.useState(false);
+  const [verifying, setVerifying] = React.useState(false);
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState('');
+  const [showFullDescription, setShowFullDescription] = React.useState(false);
+  const handledReturnRef = React.useRef(false);
   const paymentCompletedRef = React.useRef(false);
 
   React.useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (!raw) {
-        setError('No pending job draft found. Please go back and prepare the job post again.');
+        setError('No pending job draft was found. Return to the posting form and prepare the job first.');
         return;
       }
-      const parsed = JSON.parse(raw);
-      if (!parsed?.title || !parsed?.description) {
-        setError('The saved draft is incomplete. Please return to the posting form.');
+
+      const parsed = sanitizeDraft(JSON.parse(raw));
+      if (!parsed.title || !parsed.description) {
+        setError('The saved draft is incomplete. Return to the posting form before continuing.');
         return;
       }
+
       setDraft(parsed);
     } catch {
-      setError('Failed to load the pending job draft.');
+      setError('Failed to load the saved job draft.');
     }
   }, []);
 
   React.useEffect(() => {
-    const cancelPendingDraft = () => {
-      if (paymentCompletedRef.current) {
-        return;
-      }
-      window.localStorage.removeItem(STORAGE_KEY);
-      if (window.opener && !window.opener.closed) {
-        window.opener.postMessage(
-          {
-            type: PAYMENT_CANCEL_MESSAGE_TYPE,
-          },
-          window.location.origin
-        );
+    let cancelled = false;
+
+    const loadPaymentMeta = async () => {
+      try {
+        const [plansData, providersData] = await Promise.all([
+          companyAPI.getPaymentPlans(),
+          companyAPI.getPaymentProviders(),
+        ]);
+
+        if (!cancelled && Array.isArray(plansData?.plans) && plansData.plans.length) {
+          setPlans(plansData.plans);
+        }
+
+        if (!cancelled && providersData?.providers) {
+          setProviderAvailability(providersData.providers);
+          const firstEnabled = PAYMENT_PROVIDERS.find((provider) => providersData.providers?.[provider.id]?.enabled);
+          if (firstEnabled) {
+            setPaymentMethod((current) => (providersData.providers?.[current]?.enabled ? current : firstEnabled.id));
+          }
+        }
+      } catch {
+        // Keep the local fallback catalog if the API is unavailable.
       }
     };
 
-    window.addEventListener('beforeunload', cancelPendingDraft);
-    return () => window.removeEventListener('beforeunload', cancelPendingDraft);
+    loadPaymentMeta();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (handledReturnRef.current) {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get('checkout');
+    const paymentId = params.get('payment_id') || '';
+
+    if (!checkout) {
+      return;
+    }
+
+    handledReturnRef.current = true;
+    setCurrentPaymentId(paymentId);
+
+    const cleanupUrl = () => {
+      window.history.replaceState({}, document.title, COMPANY_PATHS.postJobPayment);
+    };
+
+    const handleProviderReturn = async () => {
+      if (checkout === 'cancelled') {
+        if (paymentId) {
+          try {
+            await companyAPI.cancelPaymentCheckout(paymentId);
+          } catch {
+            // Keep the draft even if cancellation persistence fails.
+          }
+        }
+        setError('Payment was cancelled. Your job draft is still saved and unpublished.');
+        notifyOpener(PAYMENT_CANCEL_MESSAGE_TYPE, { keepDraft: true });
+        cleanupUrl();
+        return;
+      }
+
+      setVerifying(true);
+      setError('');
+
+      try {
+        if (checkout === 'stripe-success') {
+          const sessionId = params.get('session_id');
+          if (!sessionId || !paymentId) {
+            throw new Error('Missing Stripe session details. Please try the payment again.');
+          }
+
+          const data = await companyAPI.verifyStripeCheckout({ paymentId, sessionId });
+          paymentCompletedRef.current = true;
+          window.localStorage.removeItem(STORAGE_KEY);
+          setSuccess('Stripe payment verified and your job was published successfully.');
+          notifyOpener(PAYMENT_MESSAGE_TYPE, { job: data?.job || null });
+          cleanupUrl();
+          window.setTimeout(() => window.close(), 1200);
+          return;
+        }
+
+        if (checkout === 'paypal-success') {
+          const orderId = params.get('token');
+          if (!orderId || !paymentId) {
+            throw new Error('Missing PayPal order details. Please try the payment again.');
+          }
+
+          const data = await companyAPI.capturePayPalCheckout({ paymentId, orderId });
+          paymentCompletedRef.current = true;
+          window.localStorage.removeItem(STORAGE_KEY);
+          setSuccess('PayPal payment verified and your job was published successfully.');
+          notifyOpener(PAYMENT_MESSAGE_TYPE, { job: data?.job || null });
+          cleanupUrl();
+          window.setTimeout(() => window.close(), 1200);
+          return;
+        }
+
+        throw new Error('Unknown checkout return state.');
+      } catch (err) {
+        setError(err?.message || 'Payment verification failed. Your draft is still saved and unpublished.');
+        cleanupUrl();
+      } finally {
+        setVerifying(false);
+      }
+    };
+
+    handleProviderReturn();
   }, []);
 
   const selectedProvider = PAYMENT_PROVIDERS.find((provider) => provider.id === paymentMethod) || PAYMENT_PROVIDERS[0];
-  const selectedPlan = JOB_POST_PLANS.find((plan) => plan.id === selectedPlanId) || null;
+  const selectedProviderState = providerAvailability?.[selectedProvider.id] || { enabled: true, reason: '' };
+  const selectedPlan = plans.find((plan) => plan.id === selectedPlanId) || null;
+  const jobDescription = String(draft?.description || '').trim();
+  const shouldClampDescription = jobDescription.length > 200;
+  const stepState = success ? 3 : verifying || loading ? 2 : 1;
 
   const handlePayAndPost = async () => {
-    if (!draft || !selectedPlan) return;
+    if (!draft || !selectedPlan) {
+      return;
+    }
+
     setLoading(true);
     setError('');
     setSuccess('');
 
     try {
-      const data = await companyAPI.createJob({
-        ...draft,
-        planId: selectedPlan.id,
-        planDuration: selectedPlan.durationLabel,
-        planDurationDays: selectedPlan.durationDays,
-        planPrice: selectedPlan.price,
-      });
-      paymentCompletedRef.current = true;
-      window.localStorage.removeItem(STORAGE_KEY);
-      setSuccess(`Payment confirmed via ${selectedProvider.label} and job posted successfully for the ${selectedPlan.label} plan.`);
-
-      if (window.opener && !window.opener.closed) {
-        window.opener.postMessage(
-          {
-            type: PAYMENT_MESSAGE_TYPE,
-            job: data?.job || null,
-          },
-          window.location.origin
-        );
+      if (!selectedProviderState.enabled) {
+        throw new Error(`${selectedProvider.label} is not available yet. Configure it in the server environment first.`);
       }
 
-      window.setTimeout(() => {
-        window.close();
-      }, 1200);
+      const data = await companyAPI.createPaymentCheckoutSession({
+        provider: paymentMethod,
+        planId: selectedPlan.id,
+        draft,
+        jobId: draft?.jobId || null,
+      });
+
+      if (!data?.checkoutUrl) {
+        throw new Error('The payment provider did not return a checkout URL.');
+      }
+
+      setCurrentPaymentId(data.paymentId || '');
+      window.location.assign(data.checkoutUrl);
     } catch (err) {
-      setError(err?.message || 'Payment was captured but the job could not be posted. Please try again.');
-    } finally {
       setLoading(false);
+      setError(err?.message || 'Unable to start the payment flow.');
     }
   };
 
-  const handleCancel = () => {
-    window.localStorage.removeItem(STORAGE_KEY);
+  const handleCancel = async () => {
+    if (currentPaymentId) {
+      try {
+        await companyAPI.cancelPaymentCheckout(currentPaymentId);
+      } catch {
+        // The local draft remains available even if the server cancellation cannot be saved.
+      }
+    }
+
+    notifyOpener(PAYMENT_CANCEL_MESSAGE_TYPE, { keepDraft: true });
+
     if (window.opener && !window.opener.closed) {
-      window.opener.postMessage(
-        {
-          type: PAYMENT_CANCEL_MESSAGE_TYPE,
-        },
-        window.location.origin
-      );
       window.close();
       return;
     }
+
     navigate(COMPANY_PATHS.postJob);
   };
 
   return (
     <div className="min-h-screen bg-[#dad7cd] dark:bg-[#0a1628] px-4 py-8 text-[#344e41] dark:text-white transition-colors duration-300">
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
-        <div className="w-full max-w-5xl rounded-[2rem] border border-[#a3b18a] dark:border-[#1e3a5f] bg-[rgba(255,255,255,0.82)] dark:bg-[rgba(22,40,66,0.88)] backdrop-blur-xl shadow-2xl shadow-black/20 overflow-hidden">
-          <div className="flex items-start justify-between gap-4 border-b border-[#d6d3c9] dark:border-[#2a4a6f] px-6 py-5">
+        <div className="w-full max-w-5xl overflow-hidden rounded-[30px] border border-[#a3b18a] dark:border-[#1e3657] bg-[rgba(255,255,255,0.88)] dark:bg-[rgba(12,24,40,0.9)] backdrop-blur-2xl shadow-[0_30px_90px_rgba(58,90,64,0.14)] dark:shadow-[0_30px_90px_rgba(0,0,0,0.45)]">
+          <div className="border-b border-[#ccd5c0] dark:border-[#1f3857] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(245,247,240,0.78))] dark:bg-[linear-gradient(180deg,rgba(18,35,58,0.95),rgba(10,21,35,0.82))] px-6 py-5">
+            <div className="mb-5 flex items-center gap-2">
+              {[
+                { key: 1, label: 'Plan' },
+                { key: 2, label: 'Payment' },
+                { key: 3, label: 'Done' },
+              ].map((step, index) => {
+                const active = stepState >= step.key;
+                const complete = stepState > step.key;
+                return (
+                  <React.Fragment key={step.key}>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold transition-colors ${
+                        active
+                          ? 'border-[#588157] bg-[#588157] text-white dark:border-[#63b3ff] dark:bg-[#63b3ff] dark:text-[#0c1728]'
+                          : 'border-[#c7d5c0] bg-white text-[#7b8a7f] dark:border-[#35506f] dark:bg-[#102139] dark:text-[#8fa8c4]'
+                      }`}>
+                        {complete ? <CheckCircle2 className="h-4 w-4" /> : step.key}
+                      </span>
+                      <span className={`text-sm font-medium ${active ? 'text-[#16324f] dark:text-white' : 'text-[#8194a8] dark:text-[#88a3bf]'}`}>
+                        {step.label}
+                      </span>
+                    </div>
+                    {index < 2 ? <div className={`h-px flex-1 min-w-6 ${stepState > step.key ? 'bg-[#588157] dark:bg-[#63b3ff]' : 'bg-[#d8ddd1] dark:bg-[#24415f]'}`} /> : null}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+
+            <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#588157] dark:text-[#7fd0ee]">Secure posting</p>
-              <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold text-[#3a5a40] dark:text-white">Complete payment before publishing</h1>
-              <p className="mt-2 text-sm text-[#344e41] dark:text-[#b8d4e8]">This merchant popup lets you choose a posting plan before continuing through the existing payment flow.</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#588157] dark:text-[#7dc4ff]">Secure checkout</p>
+              <h1 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight text-[#102a1b] dark:text-white">Complete Payment to Publish Job</h1>
+              <p className="mt-2 max-w-2xl text-sm text-[#5f6f52] dark:text-[#a6bfd8]">Choose a plan, select Stripe or PayPal, and we'll only publish the job after payment is successfully verified.</p>
             </div>
             <button
               type="button"
               onClick={handleCancel}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ccd5c0] dark:border-[#294664] bg-white/80 dark:bg-[#11233a] text-[#5f6f52] dark:text-[#d3e3f4] hover:bg-white dark:hover:bg-[#17304d] transition-colors"
               aria-label="Close payment popup"
             >
               <X className="h-5 w-5" />
             </button>
+            </div>
           </div>
 
-          <div className="grid gap-6 p-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] p-6 shadow-lg shadow-black/5 dark:shadow-black/20 space-y-5">
-              <div className="flex items-center justify-between gap-4 border-b border-[#d6d3c9] dark:border-[#2a4a6f] pb-4">
+          <div className="grid gap-6 bg-[linear-gradient(180deg,rgba(255,255,255,0.24),rgba(245,247,240,0.08))] dark:bg-[linear-gradient(180deg,rgba(9,18,31,0.2),rgba(9,18,31,0))] p-6 lg:grid-cols-[1.18fr_0.82fr]">
+            <div className="space-y-5 rounded-[26px] border border-[#d6d3c9] dark:border-[#1e3657] bg-white/90 dark:bg-[#0f1d30] p-6 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]">
+              <div className="flex items-center justify-between gap-4 border-b border-[#d6d3c9] dark:border-[#1e3657] pb-4">
                 <div>
-                  <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">Selected plan total</p>
-                  <p className="text-3xl font-extrabold text-[#3a5a40] dark:text-white">PHP {selectedPlan?.price ?? '--'}</p>
-                  <p className="mt-1 text-sm text-[#4b5563] dark:text-[#b8d4e8]">{selectedPlan ? `${selectedPlan.label} posting duration` : 'Choose a plan below'}</p>
+                  <p className="text-sm text-[#5f6f52] dark:text-[#9db6d0]">Selected plan</p>
+                  <p className="mt-1 text-3xl font-semibold tracking-tight text-[#102a1b] dark:text-white">PHP {selectedPlan?.price?.toLocaleString() ?? '--'}</p>
+                  <p className="mt-1 text-sm text-[#5f6f52] dark:text-[#9db6d0]">{selectedPlan ? `${selectedPlan.label} posting duration` : 'Choose a plan below'}</p>
                 </div>
-                <div className="rounded-xl bg-[#eef6ee] dark:bg-[#102235] px-4 py-3 text-right">
-                  <p className="text-xs uppercase tracking-[0.2em] text-[#588157] dark:text-[#7fd0ee]">Status</p>
-                  <p className="text-sm font-semibold text-[#3a5a40] dark:text-white">{selectedPlan ? 'Plan selected' : 'Select a plan'}</p>
+                <div className="rounded-2xl border border-[#bfd0af] dark:border-[#284463] bg-[#f4f8f1] dark:bg-[#12233b] px-4 py-3 text-right">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-[#588157] dark:text-[#7dc4ff]">Status</p>
+                  <p className="text-sm font-semibold text-[#102a1b] dark:text-white">{verifying ? 'Verifying payment' : selectedPlan ? 'Selected' : 'Waiting'}</p>
                 </div>
               </div>
 
-              {draft ? (
-                <div className="rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-[#f8fbf6] dark:bg-[#102235] p-4 space-y-2">
-                  <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">Job to be published</p>
-                  <p className="text-xl font-bold text-[#3a5a40] dark:text-white">{draft.title}</p>
-                  <p className="text-sm text-[#344e41] dark:text-[#dcecff]">{draft.location || 'Location not specified'} ? {draft.type || 'Employment type not specified'}</p>
-                  <p className="text-sm text-[#344e41] dark:text-[#dcecff] line-clamp-4">{draft.description}</p>
-                </div>
-              ) : null}
-
               <div className="space-y-4">
                 <div>
-                  <h2 className="text-xl font-bold text-[#3a5a40] dark:text-white">Choose Your Job Post Plan</h2>
-                  <p className="mt-1 text-sm text-[#344e41] dark:text-[#b8d4e8]">Select how long you want your job listing to stay active. All plans include the same premium features.</p>
+                  <h2 className="text-xl font-semibold text-[#102a1b] dark:text-white">Plan Summary</h2>
+                  <p className="mt-1 text-sm text-[#5f6f52] dark:text-[#a6bfd8]">Simple pricing with one clear outcome: the job only goes live after payment is completed.</p>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {JOB_POST_PLANS.map((plan) => {
+                  {plans.map((plan) => {
                     const isSelected = selectedPlanId === plan.id;
                     return (
                       <button
                         key={plan.id}
                         type="button"
                         onClick={() => setSelectedPlanId(plan.id)}
-                        className={`relative rounded-2xl border p-4 text-left transition-all ${
+                        className={`relative rounded-[22px] border p-4 text-left transition-all ${
                           isSelected
-                            ? 'border-[#588157] bg-[linear-gradient(180deg,#f4f8f1,#eaf2e5)] shadow-[0_16px_40px_rgba(88,129,87,0.16)] dark:border-[#3ba9d6] dark:bg-[linear-gradient(180deg,#17314a,#102235)]'
+                            ? 'border-[#588157] bg-[linear-gradient(180deg,#f4f8f1,#eaf2e5)] shadow-[0_16px_40px_rgba(88,129,87,0.16)] dark:border-[#63b3ff] dark:bg-[linear-gradient(180deg,#16304b,#102138)]'
                             : plan.highlighted
-                              ? 'border-[#bfd0af] bg-[linear-gradient(180deg,#fbfdf8,#f2f7ed)] hover:border-[#588157] dark:border-[#31597b] dark:bg-[linear-gradient(180deg,#162842,#11263c)]'
-                              : 'border-[#d6d3c9] bg-[#fbfcfa] hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#102235] dark:hover:bg-[#132846]'
+                              ? 'border-[#bfd0af] bg-[linear-gradient(180deg,#fbfdf8,#f2f7ed)] hover:border-[#588157] dark:border-[#31506f] dark:bg-[linear-gradient(180deg,#132439,#102138)]'
+                              : 'border-[#d6d3c9] bg-[#fbfcfa] hover:bg-[#f5f5f2] dark:border-[#26415f] dark:bg-[#102138] dark:hover:bg-[#132844]'
                         }`}
                       >
                         {plan.badge ? (
-                          <span className="absolute right-4 top-4 rounded-full bg-[#3a5a40] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white dark:bg-[#3ba9d6] dark:text-[#0a1628]">
+                          <span className="absolute right-4 top-4 rounded-full bg-[#3a5a40] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white dark:bg-[#63b3ff] dark:text-[#0c1728]">
                             {plan.badge}
                           </span>
                         ) : null}
 
                         <div className="pr-28">
-                          <p className="text-lg font-bold text-[#3a5a40] dark:text-white">{plan.label}</p>
-                          <p className="mt-2 text-3xl font-extrabold text-[#102a1b] dark:text-white">PHP {plan.price.toLocaleString()}</p>
-                          <p className="mt-2 text-sm text-[#344e41] dark:text-[#dcecff]">{plan.description}</p>
+                          <p className="text-lg font-semibold text-[#102a1b] dark:text-white">{plan.label}</p>
+                          <p className="mt-2 text-3xl font-semibold tracking-tight text-[#102a1b] dark:text-white">PHP {Number(plan.price || 0).toLocaleString()}</p>
+                          <p className="mt-2 text-sm text-[#5f6f52] dark:text-[#b0c8e0]">{plan.description}</p>
                         </div>
 
                         <div className="mt-4 flex items-center justify-between gap-3">
-                          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#588157] dark:text-[#7fd0ee]">
+                          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#588157] dark:text-[#7dc4ff]">
                             Active for {plan.durationLabel}
                           </span>
                           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
                             isSelected
-                              ? 'bg-[#3a5a40] text-white dark:bg-[#3ba9d6] dark:text-[#0a1628]'
-                              : 'border border-[#a3b18a] text-[#3a5a40] dark:border-[#2a4a6f] dark:text-white'
+                              ? 'bg-[#3a5a40] text-white dark:bg-[#63b3ff] dark:text-[#0c1728]'
+                              : 'border border-[#a3b18a] text-[#3a5a40] dark:border-[#2a4968] dark:text-white'
                           }`}>
                             {isSelected ? 'Selected' : 'Select'}
                           </span>
@@ -296,13 +351,13 @@ export default function CompanyPostJobPayment() {
                   })}
                 </div>
 
-                <div className="rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-[#f8fbf6] dark:bg-[#102235] p-4">
-                  <p className="text-sm font-semibold text-[#3a5a40] dark:text-white">All plans include the same features</p>
+                <div className="rounded-[22px] border border-[#d6d3c9] dark:border-[#24415f] bg-[#f8fbf6] dark:bg-[#102138] p-4">
+                  <p className="text-sm font-semibold text-[#102a1b] dark:text-white">All plans include</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {PLAN_FEATURES.map((feature) => (
                       <span
                         key={feature}
-                        className="rounded-full border border-[#bfd0af] bg-white px-3 py-1 text-xs font-medium text-[#344e41] dark:border-[#2a4a6f] dark:bg-[#0f2139] dark:text-[#dcecff]"
+                        className="rounded-full border border-[#bfd0af] bg-white px-3 py-1 text-xs font-medium text-[#344e41] dark:border-[#274463] dark:bg-[#0f2137] dark:text-[#dcecff]"
                       >
                         {feature}
                       </span>
@@ -311,27 +366,91 @@ export default function CompanyPostJobPayment() {
                 </div>
               </div>
 
+              {draft ? (
+                <div className="space-y-4">
+                  <div>
+                    <h2 className="text-xl font-semibold text-[#102a1b] dark:text-white">Job Info</h2>
+                    <p className="mt-1 text-sm text-[#5f6f52] dark:text-[#a6bfd8]">Review the job that will be published after payment succeeds.</p>
+                  </div>
+
+                  <div className="rounded-[22px] border border-[#d6d3c9] dark:border-[#24415f] bg-[#fbfcfa] dark:bg-[#102138] p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-lg font-semibold text-[#102a1b] dark:text-white">{draft.title}</p>
+                        <p className="mt-1 text-sm text-[#5f6f52] dark:text-[#a6bfd8]">{draft.location || 'Location not specified'} | {draft.type || 'Employment type not specified'}</p>
+                      </div>
+                      <span className="rounded-full border border-[#bfd0af] bg-white px-3 py-1 text-xs font-semibold text-[#3a5a40] dark:border-[#2a4968] dark:bg-[#0f2137] dark:text-[#dbe9f6]">
+                        Ready to publish
+                      </span>
+                    </div>
+
+                    <p className={`mt-3 text-sm leading-7 text-[#344e41] dark:text-[#bed3e7] ${shouldClampDescription && !showFullDescription ? 'line-clamp-2' : ''}`}>
+                      {jobDescription}
+                    </p>
+
+                    {shouldClampDescription ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowFullDescription((value) => !value)}
+                        className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[#588157] hover:text-[#3a5a40] dark:text-[#7dc4ff] dark:hover:text-white"
+                      >
+                        {showFullDescription ? 'View less' : 'View more'}
+                        <ChevronDown className={`h-4 w-4 transition-transform ${showFullDescription ? 'rotate-180' : ''}`} />
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
               <div className="space-y-3">
-                <p className="text-sm font-semibold text-[#3a5a40] dark:text-white">Choose merchant connection</p>
+                <div>
+                  <h2 className="text-xl font-semibold text-[#102a1b] dark:text-white">Payment Methods</h2>
+                  <p className="mt-1 text-sm text-[#5f6f52] dark:text-[#a6bfd8]">Choose the payment method you trust and complete the secure checkout.</p>
+                </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {PAYMENT_PROVIDERS.map((provider) => {
                     const Icon = provider.icon;
                     const selected = paymentMethod === provider.id;
+                    const providerState = providerAvailability?.[provider.id] || { enabled: true, reason: '' };
                     return (
                       <button
                         key={provider.id}
                         type="button"
-                        onClick={() => setPaymentMethod(provider.id)}
-                        className={`rounded-2xl border p-4 text-left transition-colors ${selected ? 'border-[#588157] bg-[#eef6ee] dark:border-[#3ba9d6] dark:bg-[#1e3a5f]' : 'border-[#d6d3c9] bg-[#fbfcfa] hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#102235] dark:hover:bg-[#132846]'}`}
+                        onClick={() => {
+                          if (!providerState.enabled) return;
+                          setPaymentMethod(provider.id);
+                        }}
+                        disabled={!providerState.enabled}
+                        className={`rounded-[22px] border p-4 text-left transition-colors ${
+                          !providerState.enabled
+                            ? 'cursor-not-allowed border-[#e1e7ee] bg-[#f8fafc] opacity-60 dark:border-[#243d5a] dark:bg-[#102138]'
+                            : selected
+                              ? 'border-[#588157] bg-[#eef6ee] shadow-[0_12px_30px_rgba(88,129,87,0.1)] dark:border-[#63b3ff] dark:bg-[#14304d]'
+                              : 'border-[#d6d3c9] bg-[#fbfcfa] hover:bg-[#f5f5f2] dark:border-[#24415f] dark:bg-[#102138] dark:hover:bg-[#132844]'
+                        }`}
                       >
-                        <div className="flex items-start gap-3">
-                          <div className="rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-white dark:bg-[#0f2139] p-2">
-                            <Icon className="h-5 w-5 text-[#3a5a40] dark:text-[#7fd0ee]" />
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3">
+                            <div className="rounded-xl border border-[#d6d3c9] dark:border-[#294664] bg-white dark:bg-[#0f2139] p-2">
+                              <Icon className="h-5 w-5 text-[#3a5a40] dark:text-[#7dc4ff]" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-[#102a1b] dark:text-white">{provider.id === 'stripe' ? 'Stripe (Card)' : 'PayPal'}</p>
+                              <p className="mt-1 text-xs text-[#5f6f52] dark:text-[#a6bfd8]">{provider.description}</p>
+                              {!providerState.enabled ? (
+                                <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-600 dark:text-amber-300">Setup needed</p>
+                              ) : null}
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-semibold text-[#3a5a40] dark:text-white">{provider.label}</p>
-                            <p className="mt-1 text-xs text-[#4b5563] dark:text-[#b8d4e8]">{provider.description}</p>
-                          </div>
+                          <span className={`mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border ${
+                            !providerState.enabled
+                              ? 'border-[#d5dee8] dark:border-[#35506f]'
+                              : selected
+                                ? 'border-[#588157] bg-[#588157] text-white dark:border-[#63b3ff] dark:bg-[#63b3ff] dark:text-[#0c1728]'
+                                : 'border-[#c8d6e4] dark:border-[#345170]'
+                          }`}>
+                            {providerState.enabled && selected ? <BadgeCheck className="h-3.5 w-3.5" /> : null}
+                          </span>
                         </div>
                       </button>
                     );
@@ -339,73 +458,100 @@ export default function CompanyPostJobPayment() {
                 </div>
               </div>
 
-              {paymentMethod === 'bank' && (
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-[#3a5a40] dark:text-white">Preferred PH online bank</label>
-                  <SearchableSelect
-                    value={selectedBank}
-                    onChange={setSelectedBank}
-                    options={BANK_OPTIONS}
-                    placeholder="Select online bank"
-                    searchPlaceholder="Search online banks"
-                    disabled={loading}
-                  />
+              <div className="rounded-[22px] border border-[#d6d3c9] dark:border-[#24415f] bg-[#f5f5f2] dark:bg-[#0f2137] p-4 text-sm text-[#344e41] dark:text-[#d5e6f5]">
+                The draft stays saved until payment is verified. If checkout fails or is cancelled, the job remains unpublished and you can safely try again.
+              </div>
+
+              {!selectedProviderState.enabled ? (
+                <div className="rounded-[22px] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+                  {selectedProviderState.reason || `${selectedProvider.label} is not configured yet.`} Add the required server env keys, then refresh this popup.
+                </div>
+              ) : null}
+
+              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+              {success && (
+                <div className="rounded-[22px] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
+                  {success}
                 </div>
               )}
 
-              <div className="rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-[#f5f5f2] dark:bg-[#0f2139] p-4 text-sm text-[#344e41] dark:text-[#dcecff]">
-                The job will only be created after this payment is confirmed. If you close this popup now, the unpaid draft is canceled automatically.
-              </div>
-
-              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-              {success && <p className="text-sm text-emerald-700 dark:text-emerald-300">{success}</p>}
-
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-3 border-t border-[#e3ebf3] dark:border-[#1e3657] pt-4">
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="px-4 py-2.5 rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+                  className="px-5 py-3 rounded-2xl border border-[#a3b18a] dark:border-[#294664] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#17304d] transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handlePayAndPost}
-                  disabled={loading || !draft || !selectedPlan}
-                  className="px-4 py-2.5 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold disabled:opacity-60 transition-colors"
+                  disabled={loading || verifying || !draft || !selectedPlan || !selectedProviderState.enabled}
+                  className="min-w-[260px] px-6 py-3 rounded-2xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#63b3ff] dark:hover:bg-[#83c5ff] text-white dark:text-[#0c1728] font-semibold disabled:opacity-60 transition-colors"
                 >
-                  {loading ? 'Processing payment...' : selectedPlan ? `Proceed to payment for PHP ${selectedPlan.price.toLocaleString()}` : 'Select a plan to continue'}
+                  {loading
+                    ? 'Opening checkout...'
+                    : verifying
+                      ? 'Verifying payment...'
+                      : selectedPlan
+                        ? `Pay PHP ${Number(selectedPlan.price || 0).toLocaleString()} with ${selectedProvider.label}`
+                        : 'Select a plan to continue'}
                 </button>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] p-6 shadow-lg shadow-black/5 dark:shadow-black/20 space-y-4">
+            <div className="space-y-4 rounded-[26px] border border-[#d6d3c9] dark:border-[#1e3657] bg-white/92 dark:bg-[#0f1d30] p-6 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#588157] dark:text-[#7fd0ee]">Connected merchant</p>
-                <h2 className="mt-1 text-xl font-bold text-[#3a5a40] dark:text-white">{selectedProvider.merchantName}</h2>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#588157] dark:text-[#7dc4ff]">Merchant summary</p>
+                <h2 className="mt-1 text-xl font-semibold text-[#102a1b] dark:text-white">{selectedProvider.merchantName}</h2>
               </div>
 
-              <div className="rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-[#f8fbf6] dark:bg-[#102235] p-4 space-y-3 text-sm">
+              <div className="rounded-[22px] border border-[#d6d3c9] dark:border-[#24415f] bg-[#f8fbf6] dark:bg-[#102138] p-4 space-y-3 text-sm">
                 <div>
-                  <p className="text-[#4b5563] dark:text-[#b8d4e8]">Merchant code</p>
-                  <p className="font-semibold text-[#3a5a40] dark:text-white">{selectedProvider.merchantCode}</p>
+                  <p className="text-[#5f6f52] dark:text-[#a6bfd8]">Merchant code</p>
+                  <p className="font-semibold text-[#102a1b] dark:text-white">{selectedProvider.merchantCode}</p>
                 </div>
                 <div>
-                  <p className="text-[#4b5563] dark:text-[#b8d4e8]">Receiving account</p>
-                  <p className="font-semibold text-[#3a5a40] dark:text-white">{paymentMethod === 'bank' ? selectedBank : selectedProvider.accountHint}</p>
+                  <p className="text-[#5f6f52] dark:text-[#a6bfd8]">Receiving route</p>
+                  <p className="font-semibold text-[#102a1b] dark:text-white">{selectedProvider.accountHint}</p>
                 </div>
                 <div>
-                  <p className="text-[#4b5563] dark:text-[#b8d4e8]">Settlement route</p>
-                  <p className="font-semibold text-[#3a5a40] dark:text-white">{selectedProvider.label}</p>
+                  <p className="text-[#5f6f52] dark:text-[#a6bfd8]">Posting plan</p>
+                  <p className="font-semibold text-[#102a1b] dark:text-white">
+                    {selectedPlan ? `${selectedPlan.label} - PHP ${Number(selectedPlan.price || 0).toLocaleString()}` : 'Not selected'}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-[#4b5563] dark:text-[#b8d4e8]">Posting plan</p>
-                  <p className="font-semibold text-[#3a5a40] dark:text-white">{selectedPlan ? `${selectedPlan.label} - PHP ${selectedPlan.price.toLocaleString()}` : 'Not selected'}</p>
+                  <p className="text-[#5f6f52] dark:text-[#a6bfd8]">Payment record</p>
+                  <p className="font-semibold text-[#102a1b] dark:text-white">{currentPaymentId || 'Created after checkout starts'}</p>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-dashed border-[#a3b18a] dark:border-[#2a4a6f] p-4 text-sm text-[#344e41] dark:text-[#dcecff]">
-                Merchant connection UI is ready here for GCash, PayMaya, PayPal, and Philippine online banks. To make this fully live, the final provider API keys and webhook/server endpoints still need to be connected.
+              <div className="rounded-[22px] border border-dashed border-[#a3b18a] dark:border-[#294664] p-4 text-sm text-[#344e41] dark:text-[#dcecff] space-y-3">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 text-[#588157] dark:text-[#7dc4ff]" />
+                  <p>Stripe and PayPal payments are verified on the backend before the job is saved and published.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <BadgeCheck className="mt-0.5 h-4 w-4 text-[#588157] dark:text-[#7dc4ff]" />
+                  <p>Successful payments are stored in PostgreSQL and linked to the company and published job post.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <ExternalLink className="mt-0.5 h-4 w-4 text-[#588157] dark:text-[#7dc4ff]" />
+                  <p>Checkout opens on the provider side inside this same popup flow, then returns here for verification and confirmation.</p>
+                </div>
+              </div>
+
+              <div className="rounded-[22px] border border-[#d6d3c9] dark:border-[#24415f] bg-[#fbfcfa] dark:bg-[#102138] p-5">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[#102a1b] dark:text-white">
+                  <CreditCard className="h-4 w-4 text-[#588157] dark:text-[#7dc4ff]" />
+                  Trust info
+                </div>
+                <div className="mt-3 space-y-2 text-sm text-[#344e41] dark:text-[#c1d7ea]">
+                  <p>Secure payment processing</p>
+                  <p>Job publishes only after verified payment</p>
+                  <p>No charge is recorded as successful if checkout fails</p>
+                </div>
               </div>
             </div>
           </div>
@@ -416,6 +562,3 @@ export default function CompanyPostJobPayment() {
 }
 
 export { PAYMENT_MESSAGE_TYPE, PAYMENT_CANCEL_MESSAGE_TYPE, STORAGE_KEY };
-
-
-

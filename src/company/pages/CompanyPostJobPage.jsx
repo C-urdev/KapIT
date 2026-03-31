@@ -3,11 +3,12 @@ import { WalletCards, X } from 'lucide-react';
 import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
 import { COMPANY_PATHS, formatSkills, navigate } from '@companyFeatures/companyUtils';
 import { TECH_JOB_TITLE_OPTIONS } from '@companyFeatures/companyJobTitleOptions';
+import { OTHER_SKILL_VALUE, TECH_SKILL_OPTIONS } from '@companyFeatures/companySkillOptions';
 import { PAYMENT_CANCEL_MESSAGE_TYPE, PAYMENT_MESSAGE_TYPE, STORAGE_KEY } from '@companyPages/CompanyPostJobPaymentPage';
 import { loadAddressOptions } from '@sharedUtils/philippinesLocations';
+import { companyAPI } from '@companyFeatures/companyAPI';
 
 const CUSTOM_JOB_VALUE = 'Other';
-const OTHER_SKILL_VALUE = 'Other';
 const JOB_TYPE_OPTIONS = ['Full-time', 'Part-time', 'Contract', 'Internship'];
 const SALARY_CURRENCY_OPTIONS = ['PHP', 'USD', 'EUR'];
 const SALARY_RANGE_OPTIONS = {
@@ -43,10 +44,6 @@ const SALARY_RANGE_OPTIONS = {
   ],
 };
 const CUSTOM_SALARY_OPTION = 'Other';
-const TECH_SKILL_OPTIONS = [
-  'JavaScript','TypeScript','React','Next.js','Vue','Angular','Node.js','Express','NestJS','PHP','Laravel','Python','Django','Flask','Java','Spring Boot','C#','.NET','Go','Rust','React Native','Flutter','Android','iOS','Swift','Kotlin','MySQL','PostgreSQL','MongoDB','Firebase','Redis','GraphQL','REST APIs','Tailwind CSS','Bootstrap','Figma','UI/UX','Docker','Kubernetes','AWS','Azure','GCP','CI/CD','DevOps','Git','GitHub','Jest','Cypress','Selenium','QA Testing','Cybersecurity','Machine Learning','Data Analysis','Power BI','Tableau',OTHER_SKILL_VALUE,
-];
-
 export default function PostJob() {
   const [error, setError] = useState('');
   const [paymentPending, setPaymentPending] = useState(false);
@@ -84,9 +81,8 @@ export default function PostJob() {
         return;
       }
       if (event.data?.type === PAYMENT_CANCEL_MESSAGE_TYPE) {
-        window.localStorage.removeItem(STORAGE_KEY);
         setPaymentPending(false);
-        setError('Payment was canceled, so the pending job draft was discarded.');
+        setError('Payment was canceled or closed. Your job draft is still saved and unpublished, so you can try again.');
       }
     };
     window.addEventListener('message', handleMessage);
@@ -103,7 +99,7 @@ export default function PostJob() {
     setForm((prev) => ({ ...prev, skills: prev.skills.filter((item) => item !== skill) }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
     const title = form.selectedTitle === CUSTOM_JOB_VALUE ? String(form.customTitle || '').trim() : String(form.selectedTitle || '').trim();
@@ -122,13 +118,18 @@ export default function PostJob() {
     };
 
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      const data = await companyAPI.createDraftJob(payload);
+      const draftPayload = {
+        ...payload,
+        jobId: data?.job?.id || null,
+      };
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draftPayload));
       const paymentWindow = window.open(COMPANY_PATHS.postJobPayment, 'company-post-job-payment', 'width=760,height=860,resizable=yes,scrollbars=yes');
       if (!paymentWindow) return setError('The payment window was blocked. Please allow pop-ups and try again.');
       setPaymentPending(true);
       paymentWindow.focus();
-    } catch {
-      setError('Unable to open the payment window right now.');
+    } catch (err) {
+      setError(err?.message || 'Unable to save the draft or open the payment window right now.');
     }
   };
 
@@ -144,13 +145,13 @@ export default function PostJob() {
           <div className="rounded-xl bg-white/80 dark:bg-[#0f2139] p-3 border border-[#d6d3c9] dark:border-[#2a4a6f]"><WalletCards className="w-5 h-5 text-[#3a5a40] dark:text-[#7fd0ee]" /></div>
           <div>
             <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Payment before publishing</h3>
-            <p className="mt-1 text-sm text-[#344e41] dark:text-[#dcecff]">Selecting <span className="font-semibold text-[#3a5a40] dark:text-white">Post job</span> opens a secure payment window first. The listing is only published after the selected posting plan is confirmed.</p>
-            <p className="mt-1 text-sm text-[#344e41] dark:text-[#dcecff]">If the payment window closes before payment is confirmed, the pending draft is canceled automatically.</p>
+            <p className="mt-1 text-sm text-[#344e41] dark:text-[#dcecff]">Selecting <span className="font-semibold text-[#3a5a40] dark:text-white">Post job</span> first saves this role as a draft in your company account, then opens the secure payment window.</p>
+            <p className="mt-1 text-sm text-[#344e41] dark:text-[#dcecff]">If checkout is canceled, the draft stays saved and unpublished so you can pay later from Manage Jobs.</p>
           </div>
         </div>
       </div>
 
-      {paymentPending && <p className="text-sm text-[#3a5a40] dark:text-[#7fd0ee]">Payment window opened. Finish the payment there to publish this job.</p>}
+      {paymentPending && <p className="text-sm text-[#3a5a40] dark:text-[#7fd0ee]">Draft saved. Finish the payment in the merchant window to publish this job.</p>}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       <form onSubmit={handleSubmit} className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] shadow-lg shadow-black/5 dark:shadow-black/20 p-8 space-y-6 transition-colors duration-300">
@@ -220,7 +221,7 @@ export default function PostJob() {
 
         <div className="flex gap-3">
           <button type="button" onClick={() => navigate(COMPANY_PATHS.dashboard)} className="px-4 py-2.5 rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors">Cancel</button>
-          <button type="submit" className="px-4 py-2.5 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold transition-colors">Continue to payment</button>
+          <button type="submit" className="px-4 py-2.5 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold transition-colors">Save draft and continue to payment</button>
         </div>
       </form>
     </div>

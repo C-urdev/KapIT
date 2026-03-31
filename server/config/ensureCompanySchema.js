@@ -52,6 +52,32 @@ const ensureCompanySchema = async () => {
     `);
 
     await client.query(`
+      CREATE TABLE IF NOT EXISTS job_post_payments (
+        id UUID PRIMARY KEY,
+        company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+        job_id BIGINT REFERENCES jobs(id) ON DELETE SET NULL,
+        provider VARCHAR(20) NOT NULL,
+        payment_context VARCHAR(40) NOT NULL DEFAULT 'job_post',
+        currency VARCHAR(8) NOT NULL DEFAULT 'PHP',
+        amount INTEGER NOT NULL,
+        status VARCHAR(40) NOT NULL DEFAULT 'pending',
+        plan_id VARCHAR(40) NOT NULL,
+        plan_label VARCHAR(80) NOT NULL,
+        plan_duration VARCHAR(60) NOT NULL,
+        plan_duration_days INTEGER NOT NULL,
+        provider_checkout_id VARCHAR(255),
+        provider_payment_id VARCHAR(255),
+        payer_email VARCHAR(255),
+        draft_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+        provider_payload JSONB,
+        paid_at TIMESTAMP,
+        cancelled_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query(`
       CREATE TABLE IF NOT EXISTS applications (
         id BIGSERIAL PRIMARY KEY,
         job_id BIGINT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
@@ -72,6 +98,7 @@ const ensureCompanySchema = async () => {
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS filled_application_id BIGINT;");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS filled_candidate_user_id UUID REFERENCES users(id) ON DELETE SET NULL;");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS posting_payment_status VARCHAR(40) NOT NULL DEFAULT 'paid';");
+    await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS posting_payment_id UUID REFERENCES job_post_payments(id) ON DELETE SET NULL;");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS posting_plan_id VARCHAR(40);");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS posting_plan_duration VARCHAR(60);");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS posting_plan_duration_days INTEGER;");
@@ -86,6 +113,9 @@ const ensureCompanySchema = async () => {
     await client.query('CREATE INDEX IF NOT EXISTS idx_jobs_company_id_created ON jobs(company_id, created_at DESC);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_jobs_company_id_status_created ON jobs(company_id, status, created_at DESC);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_jobs_payment_status_created ON jobs(posting_payment_status, created_at DESC);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_job_post_payments_company_created ON job_post_payments(company_id, created_at DESC);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_job_post_payments_status_created ON job_post_payments(status, created_at DESC);');
+    await client.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_job_post_payments_provider_checkout ON job_post_payments(provider, provider_checkout_id) WHERE provider_checkout_id IS NOT NULL;');
     await client.query('CREATE INDEX IF NOT EXISTS idx_apps_job_id_created ON applications(job_id, created_at DESC);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_apps_user_id_created ON applications(user_id, created_at DESC);');
 

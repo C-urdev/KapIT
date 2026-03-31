@@ -23,13 +23,12 @@ export default function ManageJobs() {
       if (event.origin !== window.location.origin) return;
       if (event.data?.type === PAYMENT_MESSAGE_TYPE) {
         window.localStorage.removeItem(STORAGE_KEY);
-        setFeedback('Payment confirmed and the reposted job was published successfully.');
+        setFeedback('Payment confirmed and the job was published successfully.');
         await refetch();
         return;
       }
       if (event.data?.type === PAYMENT_CANCEL_MESSAGE_TYPE) {
-        window.localStorage.removeItem(STORAGE_KEY);
-        setFeedback('Reposting payment was canceled, so the saved repost draft was discarded.');
+        setFeedback('Payment was canceled or closed. The saved draft is still unpublished so you can retry anytime.');
       }
     };
 
@@ -39,6 +38,7 @@ export default function ManageJobs() {
 
   const summary = useMemo(() => ({
     open: displayJobs.filter((job) => job?.status === 'open').length,
+    draft: displayJobs.filter((job) => job?.status === 'draft' || String(job?.posting_payment_status || '').toLowerCase() !== 'paid').length,
     filled: displayJobs.filter((job) => job?.status === 'filled').length,
     closed: displayJobs.filter((job) => job?.status === 'closed').length,
   }), [displayJobs]);
@@ -101,6 +101,40 @@ export default function ManageJobs() {
     }
   };
 
+  const handlePayNow = async (job) => {
+    if (!job?.id) return;
+    setActionJobId(job.id);
+    setFeedback('');
+    try {
+      const draftPayload = {
+        jobId: job.id,
+        title: String(job?.title || '').trim(),
+        description: String(job?.description || '').trim(),
+        salary: String(job?.salary || '').trim(),
+        location: String(job?.location || '').trim(),
+        type: String(job?.type || '').trim(),
+        skills: formatSkills(job?.skills),
+      };
+
+      if (!draftPayload.title || !draftPayload.description) {
+        throw new Error('This draft job is missing required details for payment.');
+      }
+
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draftPayload));
+      const paymentWindow = window.open(COMPANY_PATHS.postJobPayment, 'company-post-job-payment', 'width=760,height=860,resizable=yes,scrollbars=yes');
+      if (!paymentWindow) {
+        throw new Error('The payment window was blocked. Please allow pop-ups and try again.');
+      }
+
+      paymentWindow.focus();
+      setFeedback(`Draft saved for "${job.title}". Complete payment in the merchant window to publish it.`);
+    } catch (err) {
+      setFeedback(err?.message || 'Failed to open payment for this draft job.');
+    } finally {
+      setActionJobId(null);
+    }
+  };
+
   const handleDelete = async (job) => {
     if (!job?.id) return;
     setActionJobId(job.id);
@@ -142,15 +176,16 @@ export default function ManageJobs() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <SummaryCard label="Open" value={summary.open} />
+        <SummaryCard label="Draft" value={summary.draft} />
         <SummaryCard label="Filled" value={summary.filled} />
         <SummaryCard label="Closed" value={summary.closed} />
       </div>
 
       <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[linear-gradient(135deg,#f6fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#16304a,#102235)] p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
         <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Manage persisted postings</h3>
-        <p className="mt-2 text-sm text-[#344e41] dark:text-[#dcecff]">Every job listed here comes from the database. Reposting an old listing opens the merchant payment page again before it can go live, while delete permanently removes the posting and its related listing data.</p>
+        <p className="mt-2 text-sm text-[#344e41] dark:text-[#dcecff]">Every job listed here comes from the database. Unpaid jobs stay in draft until you use Pay now, while only paid jobs are published to developers.</p>
       </div>
 
       {feedback && <p className="text-sm text-[#3a5a40] dark:text-[#7fd0ee]">{feedback}</p>}
@@ -171,6 +206,7 @@ export default function ManageJobs() {
               onViewDetails={setDetailsJob}
               onClose={handleClose}
               onReopen={handleReopen}
+              onPayNow={handlePayNow}
               onDelete={setDeleteJob}
             />
           ))}
@@ -231,7 +267,7 @@ function JobDetailsModal({ job, onClose }) {
             label="Posting plan"
             value={
               job?.posting_plan_duration
-                ? `${job.posting_plan_duration} • PHP ${Number(job?.posting_plan_price || 0).toLocaleString()}`
+                ? `${job.posting_plan_duration} | PHP ${Number(job?.posting_plan_price || 0).toLocaleString()}`
                 : 'Selected during merchant payment'
             }
           />

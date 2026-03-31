@@ -49,6 +49,13 @@ const request = async (path, { method = 'GET', body, fallbackData } = {}) => {
 };
 
 export const companyAPI = {
+  createDraftJob: (jobInput) => request('/jobs/draft', { method: 'POST', body: jobInput }),
+  getPaymentPlans: () => request('/payments/plans'),
+  getPaymentProviders: () => request('/payments/providers'),
+  createPaymentCheckoutSession: (input) => request('/payments/checkout-session', { method: 'POST', body: input }),
+  verifyStripeCheckout: (input) => request('/payments/stripe/verify', { method: 'POST', body: input }),
+  capturePayPalCheckout: (input) => request('/payments/paypal/capture', { method: 'POST', body: input }),
+  cancelPaymentCheckout: (paymentId) => request(`/payments/${paymentId}/cancel`, { method: 'POST' }),
   getProfile: () => request('/profile'),
   createJob: (jobInput) => request('/jobs', { method: 'POST', body: jobInput }),
   getJobs: () => request('/jobs', { fallbackData: { success: true, jobs: [] } }),

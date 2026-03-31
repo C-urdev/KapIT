@@ -1,10 +1,11 @@
 import React from 'react';
-import { MapPin, Briefcase, Users, RotateCcw, Trash2, Eye } from 'lucide-react';
+import { MapPin, Briefcase, Users, RotateCcw, Trash2, Eye, WalletCards } from 'lucide-react';
 import { formatJobStatus, statusBadgeClass } from '@companyFeatures/companyUtils';
 
-export default function JobCard({ job, onManage, onViewDetails, onClose, onReopen, onDelete, actionLoading }) {
+export default function JobCard({ job, onManage, onViewDetails, onClose, onReopen, onDelete, onPayNow, actionLoading }) {
   const status = String(job?.status || 'open').toLowerCase();
   const isOpen = status === 'open';
+  const isDraft = status === 'draft' || String(job?.posting_payment_status || '').toLowerCase() !== 'paid';
   const applicants = Number(job?.applicant_count || job?.applicantCount || 0);
 
   return (
@@ -65,7 +66,18 @@ export default function JobCard({ job, onManage, onViewDetails, onClose, onReope
               {actionLoading ? 'Updating...' : 'Close listing'}
             </button>
           ) : null}
-          {!isOpen && onReopen ? (
+          {isDraft && onPayNow ? (
+            <button
+              type="button"
+              onClick={() => onPayNow(job)}
+              disabled={actionLoading}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white text-sm font-semibold disabled:opacity-60 transition-colors"
+            >
+              <WalletCards className="w-4 h-4" />
+              {actionLoading ? 'Opening checkout...' : 'Pay now'}
+            </button>
+          ) : null}
+          {!isOpen && !isDraft && onReopen ? (
             <button
               type="button"
               onClick={() => onReopen(job)}

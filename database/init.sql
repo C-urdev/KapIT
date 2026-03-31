@@ -93,7 +93,48 @@ CREATE TABLE IF NOT EXISTS jobs (
     location VARCHAR(200),
     type VARCHAR(60),
     skills TEXT[] DEFAULT ARRAY[]::TEXT[],
+    status VARCHAR(40) NOT NULL DEFAULT 'open',
+    closed_reason VARCHAR(80),
+    pay_per_use_fee INTEGER NOT NULL DEFAULT 1599,
+    pay_per_use_status VARCHAR(40) NOT NULL DEFAULT 'not_due',
+    reopened_from_job_id BIGINT REFERENCES jobs(id) ON DELETE SET NULL,
+    filled_application_id BIGINT,
+    filled_candidate_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    posting_payment_status VARCHAR(40) NOT NULL DEFAULT 'paid',
+    posting_payment_id UUID,
+    posting_plan_id VARCHAR(40),
+    posting_plan_duration VARCHAR(60),
+    posting_plan_duration_days INTEGER,
+    posting_plan_price INTEGER NOT NULL DEFAULT 1599,
+    published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    active_until TIMESTAMP,
+    closed_at TIMESTAMP,
+    hired_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS job_post_payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    job_id BIGINT REFERENCES jobs(id) ON DELETE SET NULL,
+    provider VARCHAR(20) NOT NULL,
+    payment_context VARCHAR(40) NOT NULL DEFAULT 'job_post',
+    currency VARCHAR(8) NOT NULL DEFAULT 'PHP',
+    amount INTEGER NOT NULL,
+    status VARCHAR(40) NOT NULL DEFAULT 'pending',
+    plan_id VARCHAR(40) NOT NULL,
+    plan_label VARCHAR(80) NOT NULL,
+    plan_duration VARCHAR(60) NOT NULL,
+    plan_duration_days INTEGER NOT NULL,
+    provider_checkout_id VARCHAR(255),
+    provider_payment_id VARCHAR(255),
+    payer_email VARCHAR(255),
+    draft_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    provider_payload JSONB,
+    paid_at TIMESTAMP,
+    cancelled_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS applications (
@@ -153,6 +194,12 @@ CREATE TABLE IF NOT EXISTS projects (
 
 CREATE INDEX IF NOT EXISTS idx_companies_user_id ON companies(user_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_company_id_created ON jobs(company_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_jobs_payment_status_created ON jobs(posting_payment_status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_job_post_payments_company_created ON job_post_payments(company_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_job_post_payments_status_created ON job_post_payments(status, created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_job_post_payments_provider_checkout
+ON job_post_payments(provider, provider_checkout_id)
+WHERE provider_checkout_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_apps_job_id_created ON applications(job_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_apps_user_id_created ON applications(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_dev_profiles_experience ON developer_profiles(experience_years);

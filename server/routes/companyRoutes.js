@@ -3,6 +3,7 @@ const { verifyToken } = require('../middleware/auth');
 const {
   getCompanyProfile,
   createJob,
+  createDraftJob,
   getJobs,
   getApplicants,
   updateApplicantStatus,
@@ -14,6 +15,14 @@ const {
   updateCompanyProfile,
   updateCompanyOnboardingProfile,
 } = require('../controllers/companyController');
+const {
+  listJobPostingPlans,
+  listPaymentProviders,
+  createCheckoutSession,
+  verifyStripeCheckout,
+  capturePayPalCheckout,
+  cancelCheckoutSession,
+} = require('../controllers/companyPaymentController');
 
 const router = express.Router();
 
@@ -27,6 +36,13 @@ const requireCompanyAccount = (req, res, next) => {
 router.use(verifyToken, requireCompanyAccount);
 
 router.get('/profile', getCompanyProfile);
+router.post('/jobs/draft', createDraftJob);
+router.get('/payments/plans', listJobPostingPlans);
+router.get('/payments/providers', listPaymentProviders);
+router.post('/payments/checkout-session', createCheckoutSession);
+router.post('/payments/stripe/verify', verifyStripeCheckout);
+router.post('/payments/paypal/capture', capturePayPalCheckout);
+router.post('/payments/:paymentId/cancel', cancelCheckoutSession);
 router.post('/jobs', createJob);
 router.get('/jobs', getJobs);
 router.patch('/jobs/:jobId/status', updateJobStatus);
