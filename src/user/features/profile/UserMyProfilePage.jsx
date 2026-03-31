@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Edit3, GraduationCap, Instagram, MapPin, Mail, Pencil, Phone, User } from 'lucide-react';
+import { BadgeCheck, Edit3, GraduationCap, Instagram, MapPin, Mail, Pencil, Phone, User } from 'lucide-react';
 
 const readFileAsDataUrl = (file) =>
   new Promise((resolve, reject) => {
@@ -135,7 +135,15 @@ export default function MyProfilePage({ user, posts = [], onUpdateUser, onOpenCo
                 </label>
               </div>
               <div className="space-y-0.5 max-w-[460px] -mt-2 sm:-mt-1">
-                <h1 className="text-[2rem] sm:text-[2.2rem] font-bold text-[#1f3a2a] dark:text-white leading-[1.05] -mt-1 sm:-mt-1.5 mb-2 sm:mb-2.5">{displayName}</h1>
+                <div className="mb-2 sm:mb-2.5 flex flex-wrap items-center gap-2">
+                  <h1 className="text-[2rem] sm:text-[2.2rem] font-bold text-[#1f3a2a] dark:text-white leading-[1.05] -mt-1 sm:-mt-1.5">{displayName}</h1>
+                  {user?.isPremium ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#bfd0af] bg-[#eef6ee] px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#3a5a40] dark:border-[#2f5a78] dark:bg-[#14304d] dark:text-[#dcecff]">
+                      <BadgeCheck className="h-3.5 w-3.5 text-[#588157] dark:text-[#7dc4ff]" />
+                      Premium
+                    </span>
+                  ) : null}
+                </div>
                 <p className="text-[1rem] sm:text-[1.05rem] leading-[1.15] font-medium text-[#2f4e39] dark:text-[#b8d4e8]">{profileSubtitle}</p>
                 <p className="text-[0.92rem] sm:text-[0.95rem] leading-[1.15] text-[#2f4e39] dark:text-[#b8d4e8]">
                   {projectCount} project{projectCount === 1 ? '' : 's'}

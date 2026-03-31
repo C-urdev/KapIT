@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ArrowLeft, Award, Building2, Globe, Mail, MapPin, MessageCircle, User } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Building2, Globe, Mail, MapPin, MessageCircle, User } from 'lucide-react';
 import { getPostsForUser } from '@userFeatures/posts/userPostStorage';
 
 export default function PublicProfilePage({ profile, onBack, onMessage, onMore }) {
@@ -48,8 +48,8 @@ export default function PublicProfilePage({ profile, onBack, onMessage, onMore }
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-3xl font-bold text-[#1f3a2a] dark:text-white truncate">{displayName}</h1>
                 {profile?.isPremium ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#f2b500] px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white dark:bg-[#f5c84c] dark:text-[#0a1628]">
-                    <Award className="h-3.5 w-3.5" />
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#bfd0af] bg-[#eef6ee] px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#3a5a40] dark:border-[#2f5a78] dark:bg-[#14304d] dark:text-[#dcecff]">
+                    <BadgeCheck className="h-3.5 w-3.5 text-[#588157] dark:text-[#7dc4ff]" />
                     Premium
                   </span>
                 ) : null}
