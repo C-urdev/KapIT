@@ -312,6 +312,28 @@ export const updateMyProfile = async (updates) => {
   return data;
 };
 
+export const getMyApplications = async () => {
+  const token = getSessionStorage().getItem('token');
+  if (!token) {
+    throw new Error('No token found');
+  }
+
+  const response = await fetch(`${API_URL}/applications`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const data = await parseApiResponse(response, 'Failed to load applications');
+  if (!response.ok) {
+    throw new Error(getErrorMessage(data, 'Failed to load applications'));
+  }
+
+  return Array.isArray(data?.applications) ? data.applications : [];
+};
+
 export const logoutUser = () => {
   getSessionStorage().removeItem('token');
   getSessionStorage().removeItem('user');

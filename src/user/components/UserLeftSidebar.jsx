@@ -1,9 +1,9 @@
 // LeftSidebar 
 
 import React from 'react';
-import { MapPin, Award, Zap } from 'lucide-react';
+import { MapPin, Award, Zap, BadgeCheck } from 'lucide-react';
 
-export default function LeftSidebar({ user, userType, onOpenPremium, onOpenMyProfile }) {
+export default function LeftSidebar({ user, userType, onOpenPremium, onOpenMyProfile, onOpenProjects, onOpenSavedJobs, onOpenApplications }) {
   const displayName = user?.username || user?.name || 'User';
   const userInitial = displayName.charAt(0).toUpperCase();
   const profileImage = user?.profileImage || '';
@@ -56,9 +56,9 @@ export default function LeftSidebar({ user, userType, onOpenPremium, onOpenMyPro
             {userType === 'employee' ? (
               <>
                 <SidebarLink text="My Profile" onClick={onOpenMyProfile} />
-                <SidebarLink text="My Projects" />
-                <SidebarLink text="Saved Jobs" />
-                <SidebarLink text="Applications" />
+                <SidebarLink text="My Projects" onClick={onOpenProjects} />
+                <SidebarLink text="Saved Jobs" onClick={onOpenSavedJobs} />
+                <SidebarLink text="Applications" onClick={onOpenApplications} />
               </>
             ) : (
               <>
@@ -72,7 +72,7 @@ export default function LeftSidebar({ user, userType, onOpenPremium, onOpenMyPro
         </div>
       </div>
 
-      {!isPremium && (
+      {!isPremium ? (
         <div className="rounded-2xl border border-[#f2c84b] bg-[#fffdf5] p-4 shadow-[0_8px_24px_rgba(242,200,75,0.12)] dark:border-[#8a6a15] dark:bg-[#2b2206]">
           <div className="flex items-start gap-3">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#fff4cc] text-[#d69100] dark:bg-[#3a2f0d] dark:text-[#f5c84c]">
@@ -89,6 +89,22 @@ export default function LeftSidebar({ user, userType, onOpenPremium, onOpenMyPro
               >
                 Upgrade Now
               </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-[#bfd0af] bg-[linear-gradient(180deg,#f4f8f1,#ebf4e7)] p-4 shadow-[0_8px_24px_rgba(88,129,87,0.12)] dark:border-[#2f5a78] dark:bg-[linear-gradient(180deg,#14304d,#102138)]">
+          <div className="flex items-start gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#e8f5e9] text-[#3a8f52] dark:bg-[#183154] dark:text-[#7fd0ee]">
+              <BadgeCheck className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h4 className="font-semibold text-[#3a5a40] dark:text-white text-sm mb-1">You're in the Premium plan</h4>
+              <p className="text-xs text-[#344e41] dark:text-[#d5e6f5]">
+                {userType === 'employee'
+                  ? 'Your premium badge and premium visibility are active on this account.'
+                  : 'Your premium access is active for advanced hiring tools and priority visibility.'}
+              </p>
             </div>
           </div>
         </div>

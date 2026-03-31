@@ -60,6 +60,7 @@ const loginValidation = [
 ];
 
 const profileUpdateValidation = [
+  body('isPremium').optional().isBoolean().withMessage('Premium flag must be true or false'),
   body('username')
     .optional()
     .trim()

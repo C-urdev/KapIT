@@ -1,7 +1,7 @@
 import React from 'react';
-import { X, LogOut, HelpCircle, Settings, Zap, TrendingUp } from 'lucide-react';
+import { X, LogOut, HelpCircle, Settings, Zap, TrendingUp, BadgeCheck, User, FolderKanban, Bookmark, FileCheck2 } from 'lucide-react';
 
-export default function UserMobileMenuDrawer({ open, active, user, setMobileMenuOpen, onOpenSettings, onOpenPremium, onHelp, onLogout }) {
+export default function UserMobileMenuDrawer({ open, active, user, setMobileMenuOpen, onOpenMyProfile, onOpenProjects, onOpenSavedJobs, onOpenApplications, onOpenSettings, onOpenPremium, onHelp, onLogout }) {
   const displayName = user?.fullName || user?.username || user?.email || 'User';
   const profileImage = user?.profileImage || '';
   const initial = displayName.charAt(0).toUpperCase();
@@ -40,6 +40,13 @@ export default function UserMobileMenuDrawer({ open, active, user, setMobileMenu
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+          <div className="rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] p-2 dark:border-[#1e3a5f] dark:bg-[#102235]">
+            <MobileNavButton icon={User} label="My Profile" onClick={() => { setMobileMenuOpen(false); onOpenMyProfile?.(); }} />
+            <MobileNavButton icon={FolderKanban} label="My Projects" onClick={() => { setMobileMenuOpen(false); onOpenProjects?.(); }} />
+            <MobileNavButton icon={Bookmark} label="Saved Jobs" onClick={() => { setMobileMenuOpen(false); onOpenSavedJobs?.(); }} />
+            <MobileNavButton icon={FileCheck2} label="Applications" onClick={() => { setMobileMenuOpen(false); onOpenApplications?.(); }} />
+          </div>
+
           <button
             onClick={() => {
               setMobileMenuOpen(false);
@@ -96,7 +103,23 @@ export default function UserMobileMenuDrawer({ open, active, user, setMobileMenu
                 </div>
               </div>
             </div>
-          ) : null}
+          ) : (
+            <div className="pt-2 rounded-2xl border border-[#bfd0af] bg-[linear-gradient(180deg,#f4f8f1,#ebf4e7)] p-4 shadow-[0_8px_24px_rgba(88,129,87,0.12)] dark:border-[#2f5a78] dark:bg-[linear-gradient(180deg,#14304d,#102138)]">
+              <div className="flex items-start gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#e8f5e9] text-[#3a8f52] dark:bg-[#183154] dark:text-[#7fd0ee]">
+                  <BadgeCheck className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="mb-1 text-sm font-semibold text-[#3a5a40] dark:text-white">You're in the Premium plan</h4>
+                  <p className="text-xs text-[#344e41] dark:text-[#d5e6f5]">
+                    {userType === 'employee'
+                      ? 'Your premium badge and premium visibility are active on this account.'
+                      : 'Your premium access is active for advanced hiring tools and priority visibility.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="pt-2 rounded-2xl border border-[#c8d7f2] bg-[#f8fbff] p-4 shadow-[0_8px_24px_rgba(105,145,214,0.12)] dark:border-[#30538a] dark:bg-[#102235]">
             <div className="flex items-start gap-3">
@@ -118,5 +141,18 @@ export default function UserMobileMenuDrawer({ open, active, user, setMobileMenu
         </div>
       </div>
     </div>
+  );
+}
+
+function MobileNavButton({ icon: Icon, label, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-[#344e41] transition-colors hover:bg-white dark:text-white dark:hover:bg-[#16304d]"
+    >
+      <Icon className="h-5 w-5 text-[#588157] dark:text-[#7dc4ff]" />
+      {label}
+    </button>
   );
 }

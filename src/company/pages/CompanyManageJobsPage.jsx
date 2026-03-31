@@ -87,13 +87,17 @@ export default function ManageJobs() {
       }
 
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(repostDraft));
-      const paymentWindow = window.open(COMPANY_PATHS.postJobPayment, 'company-post-job-payment', 'width=760,height=860,resizable=yes,scrollbars=yes');
-      if (!paymentWindow) {
-        window.localStorage.removeItem(STORAGE_KEY);
-        throw new Error('The payment window was blocked. Please allow pop-ups and try again.');
+      const openInCurrentTab = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+      if (openInCurrentTab) {
+        navigate(COMPANY_PATHS.postJobPayment);
+      } else {
+        const paymentWindow = window.open(COMPANY_PATHS.postJobPayment, 'company-post-job-payment', 'width=760,height=860,resizable=yes,scrollbars=yes');
+        if (!paymentWindow) {
+          navigate(COMPANY_PATHS.postJobPayment);
+        } else {
+          paymentWindow.focus();
+        }
       }
-
-      paymentWindow.focus();
       setFeedback(`Reposting "${job.title}" requires payment again. Complete the merchant payment to publish it.`);
     } catch (err) {
       setFeedback(err?.message || 'Failed to start reposting job.');
@@ -122,12 +126,17 @@ export default function ManageJobs() {
       }
 
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draftPayload));
-      const paymentWindow = window.open(COMPANY_PATHS.postJobPayment, 'company-post-job-payment', 'width=760,height=860,resizable=yes,scrollbars=yes');
-      if (!paymentWindow) {
-        throw new Error('The payment window was blocked. Please allow pop-ups and try again.');
+      const openInCurrentTab = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+      if (openInCurrentTab) {
+        navigate(COMPANY_PATHS.postJobPayment);
+      } else {
+        const paymentWindow = window.open(COMPANY_PATHS.postJobPayment, 'company-post-job-payment', 'width=760,height=860,resizable=yes,scrollbars=yes');
+        if (!paymentWindow) {
+          navigate(COMPANY_PATHS.postJobPayment);
+        } else {
+          paymentWindow.focus();
+        }
       }
-
-      paymentWindow.focus();
       setFeedback(`Draft saved for "${job.title}". Complete payment in the merchant window to publish it.`);
     } catch (err) {
       setFeedback(err?.message || 'Failed to open payment for this draft job.');

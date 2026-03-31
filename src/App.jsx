@@ -10,6 +10,7 @@ import SelectAccountTypeModal from '@sharedComponents/auth/SelectAccountTypeModa
 const loadLandingPage = () => import('@sharedPages/landing/LandingPage');
 const loadAuthPage = () => import('@sharedPages/auth/AuthPage');
 const loadHomePage = () => import('@userPages/Home/UserHomePage');
+const loadUserPremiumPopup = () => import('@userPages/Premium/UserPremiumPopup');
 const loadHelpPage = () => import('@sharedPages/help/HelpPage');
 const loadCompleteProfilePage = () => import('@sharedPages/onboarding/UserCompleteProfilePage');
 const loadChooseAccountTypePage = () => import('@sharedPages/auth/ChooseAccountTypePage');
@@ -31,6 +32,7 @@ const loadCompanyPublicProfilePage = () => import('@companyPages/CompanyPublicPr
 const LandingPage = lazy(loadLandingPage);
 const AuthPage = lazy(loadAuthPage);
 const HomePage = lazy(loadHomePage);
+const UserPremiumPaymentWindow = lazy(async () => ({ default: (await loadUserPremiumPopup()).UserPremiumPaymentWindow }));
 const HelpPage = lazy(loadHelpPage);
 const CompleteProfilePage = lazy(loadCompleteProfilePage);
 const ChooseAccountTypePage = lazy(loadChooseAccountTypePage);
@@ -58,6 +60,8 @@ const ONBOARDING_PATHS = {
   developer: '/onboarding/developer-profile',
   company: '/onboarding/company-profile',
 };
+
+const USER_PREMIUM_PAYMENT_PATH = '/premium/payment';
 
 const getAccountTypeFromSearch = (search) => {
   try {
@@ -493,8 +497,12 @@ export default function KapIT() {
       const data = await updateMyProfile(updates);
       const savedUser = data?.user;
       if (savedUser) {
-        setUser(savedUser);
-        updateStoredUser(savedUser);
+        const mergedUser = {
+          ...optimisticUser,
+          ...savedUser,
+        };
+        setUser(mergedUser);
+        updateStoredUser(mergedUser);
       }
     } catch (error) {
       const isProfileImageUpdate = Object.prototype.hasOwnProperty.call(updates || {}, 'profileImage');
@@ -507,12 +515,14 @@ export default function KapIT() {
   };
 
   const isCompanyPaymentWindow = currentView === 'company' && isAuth && userType === 'company' && pathname === COMPANY_PATHS.postJobPayment;
+  const isUserPremiumPaymentWindow = currentView === 'home' && isAuth && userType !== 'company' && pathname === USER_PREMIUM_PAYMENT_PATH;
 
   return (
     <ThemeProvider>
       <div className="min-h-screen bg-white dark:bg-black transition-colors duration-300">
         <Suspense fallback={<AppShellLoader />}>
           {isCompanyPaymentWindow && <CompanyPostJobPayment />}
+          {isUserPremiumPaymentWindow && <UserPremiumPaymentWindow user={user} onUpgrade={handleUserUpdate} />}
 
           {currentView === 'company' && isAuth && userType === 'company' && !isCompanyPaymentWindow && (
             <CompanyLayout pathname={pathname} user={user} onLogout={handleLogout} onHelp={() => setCurrentView('help')}>
@@ -568,7 +578,7 @@ export default function KapIT() {
               onRegistered={handleLogin}
             />
           )}
-          {currentView === 'home' && isAuth && (
+          {currentView === 'home' && isAuth && !isUserPremiumPaymentWindow && (
             <HomePage
               user={user}
               userType={userType}

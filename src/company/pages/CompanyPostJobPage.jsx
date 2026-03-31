@@ -124,8 +124,18 @@ export default function PostJob() {
         jobId: data?.job?.id || null,
       };
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draftPayload));
+      const openInCurrentTab = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+      if (openInCurrentTab) {
+        setPaymentPending(true);
+        navigate(COMPANY_PATHS.postJobPayment);
+        return;
+      }
       const paymentWindow = window.open(COMPANY_PATHS.postJobPayment, 'company-post-job-payment', 'width=760,height=860,resizable=yes,scrollbars=yes');
-      if (!paymentWindow) return setError('The payment window was blocked. Please allow pop-ups and try again.');
+      if (!paymentWindow) {
+        setPaymentPending(true);
+        navigate(COMPANY_PATHS.postJobPayment);
+        return;
+      }
       setPaymentPending(true);
       paymentWindow.focus();
     } catch (err) {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Home, Briefcase, FolderKanban, MessageCircle, Bell, Moon, Sun, LogOut, HelpCircle, Settings } from 'lucide-react';
+import { Search, Home, Briefcase, FolderKanban, MessageCircle, Bell, Moon, Sun, LogOut, HelpCircle, Settings, Award } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
 
@@ -120,7 +120,15 @@ export default function UserDesktopNavbar({
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-[#3a5a40] dark:text-white truncate">{result.username || result.email}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-[#3a5a40] dark:text-white truncate">{result.username || result.email}</p>
+                          {result.isPremium ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[#f2b500] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white dark:bg-[#f5c84c] dark:text-[#0a1628]">
+                              <Award className="h-3 w-3" />
+                              Premium
+                            </span>
+                          ) : null}
+                        </div>
                         <p className="text-xs text-[#344e41] dark:text-[#b8d4e8]">{result.type === 'company' ? 'Company' : 'User'} - {result.email}</p>
                       </div>
                     </div>

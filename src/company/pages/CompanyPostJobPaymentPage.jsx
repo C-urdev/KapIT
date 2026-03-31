@@ -337,8 +337,8 @@ export default function CompanyPostJobPayment() {
             </div>
           </div>
 
-          <div className="grid gap-4 bg-[linear-gradient(180deg,rgba(255,255,255,0.24),rgba(245,247,240,0.08))] dark:bg-[linear-gradient(180deg,rgba(9,18,31,0.2),rgba(9,18,31,0))] p-4 sm:p-5 lg:grid-cols-[1.25fr_0.75fr]">
-            <div className="space-y-4 rounded-[24px] border border-[#d6d3c9] dark:border-[#1e3657] bg-white/90 dark:bg-[#0f1d30] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]">
+          <div className={`${completedCheckout ? 'flex justify-center' : 'grid gap-4 lg:grid-cols-[1.25fr_0.75fr]'} bg-[linear-gradient(180deg,rgba(255,255,255,0.24),rgba(245,247,240,0.08))] dark:bg-[linear-gradient(180deg,rgba(9,18,31,0.2),rgba(9,18,31,0))] p-4 sm:p-5`}>
+            <div className={`${completedCheckout ? 'hidden' : 'space-y-4'} rounded-[24px] border border-[#d6d3c9] dark:border-[#1e3657] bg-white/90 dark:bg-[#0f1d30] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]`}>
               <div className="flex items-center justify-between gap-4 border-b border-[#d6d3c9] dark:border-[#1e3657] pb-3">
                 <div>
                   <p className="text-sm text-[#5f6f52] dark:text-[#9db6d0]">Selected plan</p>
@@ -526,7 +526,7 @@ export default function CompanyPostJobPayment() {
             </div>
 
             {completedCheckout ? (
-              <div className="space-y-3 rounded-[24px] border border-[#d6d3c9] dark:border-[#1e3657] bg-white/92 dark:bg-[#0f1d30] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]">
+              <div className="w-full max-w-2xl space-y-3 rounded-[24px] border border-[#d6d3c9] dark:border-[#1e3657] bg-white/92 dark:bg-[#0f1d30] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#588157] dark:text-[#7dc4ff]">Merchant summary</p>
                   <h2 className="mt-1 text-xl font-semibold text-[#102a1b] dark:text-white">

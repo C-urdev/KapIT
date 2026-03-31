@@ -1,6 +1,8 @@
 import React from 'react';
-import { BadgeDollarSign, Brain, Check, Crown, Image as ImageIcon, Landmark, MessageCircle, QrCode, Sparkles, WalletCards, X } from 'lucide-react';
-import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
+import { BadgeCheck, Brain, Check, CheckCircle2, CreditCard, Crown, Image as ImageIcon, MessageCircle, Sparkles, X } from 'lucide-react';
+
+const USER_PREMIUM_PAYMENT_PATH = '/premium/payment';
+const USER_PREMIUM_PAYMENT_SUCCESS = 'user-premium-payment-success';
 
 const PREMIUM_PLAN = {
   id: 'premium',
@@ -37,61 +39,28 @@ const plans = [
   PREMIUM_PLAN,
 ];
 
-const DEFAULT_BANK = 'BDO Online Banking';
-
-const BANK_OPTIONS = [
-  'BDO Online Banking',
-  'BPI Online',
-  'UnionBank Online',
-  'Metrobank Online',
-  'Landbank iAccess',
-  'RCBC Pulz',
-  'Security Bank Online',
-  'PNB Digital',
-  'Chinabank Online',
-  'EastWest Online',
-];
-
 const PAYMENT_PROVIDERS = [
   {
-    id: 'gcash',
-    label: 'GCash',
-    merchantName: 'KapIT GCash Merchant',
-    merchantCode: 'KAPIT-GCASH-001',
-    accountHint: 'Merchant wallet ending in 2841',
-    description: 'Collect premium upgrades through a verified GCash merchant wallet.',
-    icon: WalletCards,
-  },
-  {
-    id: 'maya',
-    label: 'PayMaya',
-    merchantName: 'KapIT Maya Business',
-    merchantCode: 'KAPIT-MAYA-110',
-    accountHint: 'Business wallet ending in 5518',
-    description: 'Accept Maya wallet and card-backed payments in one flow.',
-    icon: QrCode,
+    id: 'stripe',
+    label: 'Stripe',
+    merchantName: 'KapIT Stripe Checkout',
+    merchantCode: 'KAPIT-STRIPE-201',
+    accountHint: 'Card checkout handled by Stripe',
+    description: 'Accept secure card payments through hosted Stripe Checkout.',
+    icon: CreditCard,
   },
   {
     id: 'paypal',
     label: 'PayPal',
     merchantName: 'KapIT PayPal Merchant',
-    merchantCode: 'KAPIT-PP-314',
-    accountHint: 'merchant@kapit.example',
-    description: 'Use PayPal checkout for local or international premium payments.',
-    icon: BadgeDollarSign,
-  },
-  {
-    id: 'bank',
-    label: 'PH Online Banks',
-    merchantName: 'KapIT Bank Collection',
-    merchantCode: 'KAPIT-BANK-808',
-    accountHint: 'Instapay / Pesonet merchant collection',
-    description: 'Route payment through supported Philippine online banking partners.',
-    icon: Landmark,
+    merchantCode: 'KAPIT-PAYPAL-314',
+    accountHint: 'merchant checkout via PayPal',
+    description: 'Accept PayPal wallet and supported guest checkout payments.',
+    icon: CreditCard,
   },
 ];
 
-function PlanCard({ plan, onUpgrade }) {
+function PlanCard({ plan, onUpgrade, buttonLabel, disabled = false }) {
   const highlighted = Boolean(plan.highlighted);
 
   return (
@@ -117,14 +86,17 @@ function PlanCard({ plan, onUpgrade }) {
 
       <button
         type="button"
-        onClick={highlighted ? onUpgrade : undefined}
+        onClick={highlighted && !disabled ? onUpgrade : undefined}
+        disabled={disabled}
         className={`mt-6 w-full rounded-full border px-5 py-3 text-sm font-medium transition-colors sm:mt-8 sm:px-6 ${
           highlighted
-            ? 'border-[#3a5a40] bg-[#3a5a40] text-white hover:bg-[#344e41] dark:border-[#3ba9d6] dark:bg-[#3ba9d6] dark:text-[#0a1628] dark:hover:bg-[#5bc0de]'
+            ? disabled
+              ? 'border-[#8ea786] bg-[#8ea786] text-white cursor-default dark:border-[#4d7296] dark:bg-[#4d7296] dark:text-white'
+              : 'border-[#3a5a40] bg-[#3a5a40] text-white hover:bg-[#344e41] dark:border-[#3ba9d6] dark:bg-[#3ba9d6] dark:text-[#0a1628] dark:hover:bg-[#5bc0de]'
             : 'border-[#a3b18a] bg-transparent text-[#344e41] hover:bg-[#eef6ee] hover:text-[#102a1b] dark:border-[#2a4a6f] dark:text-[#dcecff] dark:hover:bg-[#1e3a5f] dark:hover:text-white'
         }`}
       >
-        {plan.cta}
+        {buttonLabel || plan.cta}
       </button>
 
       <div className="mt-6 space-y-3.5 sm:mt-8 sm:space-y-4">
@@ -139,15 +111,26 @@ function PlanCard({ plan, onUpgrade }) {
   );
 }
 
-function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade }) {
-  const [paymentMethod, setPaymentMethod] = React.useState('gcash');
-  const [selectedBank, setSelectedBank] = React.useState(DEFAULT_BANK);
+const notifyOpener = (payload) => {
+  if (window.opener && !window.opener.closed) {
+    window.opener.postMessage({ type: USER_PREMIUM_PAYMENT_SUCCESS, ...payload }, window.location.origin);
+  }
+};
+
+function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone = false }) {
+  const [paymentMethod, setPaymentMethod] = React.useState('stripe');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState('');
+  const [completedCheckout, setCompletedCheckout] = React.useState(null);
 
   const selectedProvider = PAYMENT_PROVIDERS.find((provider) => provider.id === paymentMethod) || PAYMENT_PROVIDERS[0];
   const displayName = user?.fullName || user?.username || user?.name || 'User account';
+  const isLocalhostBypassAvailable =
+    ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname) &&
+    String(import.meta.env.VITE_ENABLE_LOCAL_PAYMENT_BYPASS || '').trim().toLowerCase() === 'true';
+  const stepState = success ? 3 : loading ? 2 : 1;
+  const completedProvider = PAYMENT_PROVIDERS.find((provider) => provider.id === completedCheckout?.providerId) || null;
 
   const handleConfirm = async () => {
     setLoading(true);
@@ -162,10 +145,25 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade }) {
         premiumBillingCycle: 'monthly',
         premiumPaymentMethod: selectedProvider.label,
       });
+      notifyOpener({
+        updates: {
+          isPremium: true,
+          premiumPlan: PREMIUM_PLAN.name,
+          premiumBillingAmount: PREMIUM_PLAN.amount,
+          premiumBillingCycle: 'monthly',
+          premiumPaymentMethod: selectedProvider.label,
+        },
+      });
+      setCompletedCheckout({
+        providerId: paymentMethod,
+        amount: PREMIUM_PLAN.amount,
+        planName: PREMIUM_PLAN.name,
+        billingCycle: 'monthly',
+        paymentMethod: selectedProvider.label,
+        reference: `premium-${Date.now()}`,
+        accountHint: selectedProvider.accountHint,
+      });
       setSuccess(`Payment confirmed via ${selectedProvider.label}. Your premium access is now active.`);
-      window.setTimeout(() => {
-        onClose?.();
-      }, 1000);
     } catch (upgradeError) {
       setError(upgradeError?.message || 'Payment was captured but premium could not be activated. Please try again.');
     } finally {
@@ -173,45 +171,138 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade }) {
     }
   };
 
+  const handleSampleSuccess = async () => {
+    if (!isLocalhostBypassAvailable) {
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      await onConfirmUpgrade?.({
+        isPremium: true,
+        premiumPlan: PREMIUM_PLAN.name,
+        premiumBillingAmount: PREMIUM_PLAN.amount,
+        premiumBillingCycle: 'monthly',
+        premiumPaymentMethod: `${selectedProvider.label} (Sample)`,
+      });
+      notifyOpener({
+        updates: {
+          isPremium: true,
+          premiumPlan: PREMIUM_PLAN.name,
+          premiumBillingAmount: PREMIUM_PLAN.amount,
+          premiumBillingCycle: 'monthly',
+          premiumPaymentMethod: `${selectedProvider.label} (Sample)`,
+        },
+      });
+      setCompletedCheckout({
+        providerId: paymentMethod,
+        amount: PREMIUM_PLAN.amount,
+        planName: PREMIUM_PLAN.name,
+        billingCycle: 'monthly',
+        paymentMethod: selectedProvider.label,
+        reference: `sample-${Date.now()}`,
+        accountHint: selectedProvider.accountHint,
+      });
+      setSuccess('Local sample payment completed and your premium access is now active.');
+    } catch (upgradeError) {
+      setError(upgradeError?.message || 'Unable to complete the local sample payment.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
-      <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr] lg:gap-5">
-        <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] p-4 shadow-lg shadow-black/5 dark:shadow-black/20 space-y-4 sm:p-5">
-          <div className="flex items-center justify-between gap-4 border-b border-[#d6d3c9] dark:border-[#2a4a6f] pb-4">
-            <div>
-              <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">Selected plan total</p>
-              <p className="text-3xl font-extrabold text-[#3a5a40] dark:text-white">PHP {PREMIUM_PLAN.amount}</p>
-              <p className="mt-1 text-sm text-[#4b5563] dark:text-[#b8d4e8]">Premium monthly subscription</p>
-            </div>
-            <div className="rounded-xl bg-[#eef6ee] dark:bg-[#102235] px-4 py-3 text-right">
-              <p className="text-xs uppercase tracking-[0.2em] text-[#588157] dark:text-[#7fd0ee]">Status</p>
-              <p className="text-sm font-semibold text-[#3a5a40] dark:text-white">Ready for checkout</p>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-[#f8fbf6] dark:bg-[#102235] p-4 space-y-2">
-            <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">Premium will be activated for</p>
-            <p className="text-xl font-bold text-[#3a5a40] dark:text-white">{displayName}</p>
-            <p className="text-sm text-[#344e41] dark:text-[#dcecff]">{user?.email || 'No email on file'}</p>
-            <p className="text-sm text-[#344e41] dark:text-[#dcecff]">{PREMIUM_PLAN.subtitle}</p>
-          </div>
-
-          <div className="rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-[#f8fbf6] dark:bg-[#102235] p-4">
-            <p className="text-sm font-semibold text-[#3a5a40] dark:text-white">Premium includes</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {PREMIUM_PLAN.features.map(({ text }) => (
-                <span
-                  key={text}
-                  className="rounded-full border border-[#bfd0af] bg-white px-3 py-1 text-xs font-medium text-[#344e41] dark:border-[#2a4a6f] dark:bg-[#0f2139] dark:text-[#dcecff]"
-                >
-                  {text}
+      <div className="mb-4 flex items-center gap-2">
+        {[
+          { key: 1, label: 'Plan' },
+          { key: 2, label: 'Payment' },
+          { key: 3, label: 'Done' },
+        ].map((step, index) => {
+          const active = stepState >= step.key;
+          const complete = stepState > step.key;
+          return (
+            <React.Fragment key={step.key}>
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold transition-colors ${
+                  active
+                    ? 'border-[#588157] bg-[#588157] text-white dark:border-[#63b3ff] dark:bg-[#63b3ff] dark:text-[#0c1728]'
+                    : 'border-[#c7d5c0] bg-white text-[#7b8a7f] dark:border-[#35506f] dark:bg-[#102139] dark:text-[#8fa8c4]'
+                }`}>
+                  {complete ? <CheckCircle2 className="h-4 w-4" /> : step.key}
                 </span>
-              ))}
+                <span className={`text-sm font-medium ${active ? 'text-[#16324f] dark:text-white' : 'text-[#8194a8] dark:text-[#88a3bf]'}`}>
+                  {step.label}
+                </span>
+              </div>
+              {index < 2 ? <div className={`h-px flex-1 min-w-6 ${stepState > step.key ? 'bg-[#588157] dark:bg-[#63b3ff]' : 'bg-[#d8ddd1] dark:bg-[#24415f]'}`} /> : null}
+            </React.Fragment>
+          );
+        })}
+      </div>
+
+      <div className={completedCheckout ? 'flex justify-center' : 'grid gap-4 lg:grid-cols-[1.25fr_0.75fr] lg:gap-5'}>
+        <div className={`${completedCheckout ? 'hidden' : 'space-y-4'} rounded-[24px] border border-[#d6d3c9] dark:border-[#1e3657] bg-white/90 dark:bg-[#0f1d30] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]`}>
+          <div className="flex items-center justify-between gap-4 border-b border-[#d6d3c9] dark:border-[#1e3657] pb-3">
+            <div>
+              <p className="text-sm text-[#5f6f52] dark:text-[#9db6d0]">Selected plan</p>
+              <p className="mt-1 text-2xl sm:text-[1.75rem] font-semibold tracking-tight text-[#102a1b] dark:text-white">PHP {PREMIUM_PLAN.amount.toLocaleString()}</p>
+              <p className="mt-1 text-sm text-[#5f6f52] dark:text-[#9db6d0]">Premium monthly subscription</p>
+            </div>
+            <div className="rounded-2xl border border-[#bfd0af] dark:border-[#284463] bg-[#f4f8f1] dark:bg-[#12233b] px-3 py-2.5 text-right">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-[#588157] dark:text-[#7dc4ff]">Status</p>
+              <p className="text-sm font-semibold text-[#102a1b] dark:text-white">{loading ? 'Processing payment' : success ? 'Activated' : 'Ready'}</p>
             </div>
           </div>
 
           <div className="space-y-3">
-            <p className="text-sm font-semibold text-[#3a5a40] dark:text-white">Choose merchant connection</p>
+            <div>
+              <h2 className="text-xl font-semibold text-[#102a1b] dark:text-white">Plan Summary</h2>
+              <p className="mt-1 text-sm text-[#5f6f52] dark:text-[#a6bfd8]">One clear subscription flow: premium access turns on only after payment is completed.</p>
+            </div>
+
+            <div className="rounded-[20px] border border-[#588157] bg-[linear-gradient(180deg,#f4f8f1,#eaf2e5)] p-3.5 text-left shadow-[0_16px_40px_rgba(88,129,87,0.16)] dark:border-[#63b3ff] dark:bg-[linear-gradient(180deg,#16304b,#102138)]">
+              <div className="flex items-center gap-2">
+                <Crown className="h-5 w-5 text-[#588157] dark:text-[#7dc4ff]" />
+                <p className="text-base font-semibold text-[#102a1b] dark:text-white">{PREMIUM_PLAN.name}</p>
+              </div>
+              <p className="mt-1.5 text-2xl font-semibold tracking-tight text-[#102a1b] dark:text-white">PHP {PREMIUM_PLAN.amount.toLocaleString()}</p>
+              <p className="mt-1.5 text-xs leading-5 text-[#5f6f52] dark:text-[#b0c8e0]">{PREMIUM_PLAN.subtitle}</p>
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#588157] dark:text-[#7dc4ff]">Billed monthly</span>
+                <span className="rounded-full bg-[#3a5a40] px-2.5 py-1 text-[11px] font-semibold text-white dark:bg-[#63b3ff] dark:text-[#0c1728]">Selected</span>
+              </div>
+            </div>
+
+            <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#24415f] bg-[#f8fbf6] dark:bg-[#102138] p-3.5">
+              <p className="text-sm font-semibold text-[#102a1b] dark:text-white">Premium includes</p>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {PREMIUM_PLAN.features.map(({ text }) => (
+                  <span
+                    key={text}
+                    className="rounded-full border border-[#bfd0af] bg-white px-2.5 py-1 text-[11px] font-medium text-[#344e41] dark:border-[#274463] dark:bg-[#0f2137] dark:text-[#dcecff]"
+                  >
+                    {text}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#24415f] bg-[#f8fbf6] dark:bg-[#102138] p-3.5 space-y-1">
+              <p className="text-sm text-[#5f6f52] dark:text-[#a6bfd8]">Premium will be activated for</p>
+              <p className="text-lg font-semibold text-[#102a1b] dark:text-white">{displayName}</p>
+              <p className="text-sm text-[#344e41] dark:text-[#dcecff]">{user?.email || 'No email on file'}</p>
+            </div>
+          </div>
+
+          <div className="space-y-2.5">
+            <div>
+              <h2 className="text-xl font-semibold text-[#102a1b] dark:text-white">Payment Methods</h2>
+              <p className="mt-1 text-sm text-[#5f6f52] dark:text-[#a6bfd8]">Choose the payment method you trust and complete the secure checkout.</p>
+            </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {PAYMENT_PROVIDERS.map((provider) => {
                 const Icon = provider.icon;
@@ -221,16 +312,29 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade }) {
                     key={provider.id}
                     type="button"
                     onClick={() => setPaymentMethod(provider.id)}
-                    className={`rounded-2xl border p-4 text-left transition-colors ${selected ? 'border-[#588157] bg-[#eef6ee] dark:border-[#3ba9d6] dark:bg-[#1e3a5f]' : 'border-[#d6d3c9] bg-[#fbfcfa] hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#102235] dark:hover:bg-[#132846]'}`}
+                    className={`rounded-[20px] border p-3.5 text-left transition-colors ${
+                      selected
+                        ? 'border-[#588157] bg-[#eef6ee] shadow-[0_12px_30px_rgba(88,129,87,0.1)] dark:border-[#63b3ff] dark:bg-[#14304d]'
+                        : 'border-[#d6d3c9] bg-[#fbfcfa] hover:bg-[#f5f5f2] dark:border-[#24415f] dark:bg-[#102138] dark:hover:bg-[#132844]'
+                    }`}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-white dark:bg-[#0f2139] p-2">
-                        <Icon className="h-5 w-5 text-[#3a5a40] dark:text-[#7fd0ee]" />
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className="rounded-xl border border-[#d6d3c9] dark:border-[#294664] bg-white dark:bg-[#0f2139] p-2">
+                          <Icon className="h-5 w-5 text-[#3a5a40] dark:text-[#7dc4ff]" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-[#102a1b] dark:text-white">{provider.id === 'stripe' ? 'Stripe (Card)' : 'PayPal'}</p>
+                          <p className="mt-1 text-xs leading-5 text-[#5f6f52] dark:text-[#a6bfd8]">{provider.description}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold text-[#3a5a40] dark:text-white">{provider.label}</p>
-                        <p className="mt-1 text-xs text-[#4b5563] dark:text-[#b8d4e8]">{provider.description}</p>
-                      </div>
+                      <span className={`mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border ${
+                        selected
+                          ? 'border-[#588157] bg-[#588157] text-white dark:border-[#63b3ff] dark:bg-[#63b3ff] dark:text-[#0c1728]'
+                          : 'border-[#c8d6e4] dark:border-[#345170]'
+                      }`}>
+                        {selected ? <BadgeCheck className="h-3.5 w-3.5" /> : null}
+                      </span>
                     </div>
                   </button>
                 );
@@ -238,90 +342,113 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade }) {
             </div>
           </div>
 
-          {paymentMethod === 'bank' && (
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-[#3a5a40] dark:text-white">Preferred PH online bank</label>
-              <SearchableSelect
-                value={selectedBank}
-                onChange={setSelectedBank}
-                options={BANK_OPTIONS}
-                placeholder="Select online bank"
-                searchPlaceholder="Search online banks"
-                disabled={loading}
-              />
-            </div>
-          )}
-
-          <div className="rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-[#f5f5f2] dark:bg-[#0f2139] p-4 text-sm text-[#344e41] dark:text-[#dcecff]">
-            Premium activates only after the merchant payment is confirmed. Closing this checkout before completion keeps your account on the free plan.
+          <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#24415f] bg-[#f5f5f2] dark:bg-[#0f2137] p-3.5 text-sm text-[#344e41] dark:text-[#d5e6f5]">
+            Premium activates only after payment is confirmed. If checkout is cancelled, your account stays on the free plan.
           </div>
 
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-          {success && <p className="text-sm text-emerald-700 dark:text-emerald-300">{success}</p>}
+          {success && (
+            <div className="rounded-[22px] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
+              {success}
+            </div>
+          )}
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 border-t border-[#e3ebf3] dark:border-[#1e3657] pt-3">
             <button
               type="button"
-              onClick={onBack}
-              className="px-4 py-2.5 rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+              onClick={standalone ? onClose : onBack}
+              className="px-5 py-3 rounded-2xl border border-[#a3b18a] dark:border-[#294664] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#17304d] transition-colors"
             >
-              Back to plans
+              {standalone ? 'Cancel' : 'Back to plans'}
             </button>
             <button
               type="button"
               onClick={handleConfirm}
               disabled={loading}
-              className="px-4 py-2.5 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold disabled:opacity-60 transition-colors"
+              className="min-w-[240px] px-6 py-3 rounded-2xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#63b3ff] dark:hover:bg-[#83c5ff] text-white dark:text-[#0c1728] font-semibold disabled:opacity-60 transition-colors"
             >
-              {loading ? 'Processing payment...' : `Proceed to payment for PHP ${PREMIUM_PLAN.amount}`}
+              {loading ? 'Processing payment...' : `Pay PHP ${PREMIUM_PLAN.amount.toLocaleString()} with ${selectedProvider.label}`}
             </button>
+            {isLocalhostBypassAvailable ? (
+              <button
+                type="button"
+                onClick={handleSampleSuccess}
+                disabled={loading}
+                className="px-5 py-3 rounded-2xl border border-dashed border-[#588157] bg-[#f4f8f1] text-[#3a5a40] hover:bg-[#ecf4e7] dark:border-[#63b3ff] dark:bg-[#102138] dark:text-[#9ed3ff] dark:hover:bg-[#16304b] font-semibold disabled:opacity-60 transition-colors"
+              >
+                Sample success
+              </button>
+            ) : null}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] p-4 shadow-lg shadow-black/5 dark:shadow-black/20 space-y-4 sm:p-5">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#588157] dark:text-[#7fd0ee]">Connected merchant</p>
-            <h2 className="mt-1 text-xl font-bold text-[#3a5a40] dark:text-white">{selectedProvider.merchantName}</h2>
-          </div>
+        {completedCheckout ? (
+          <div className="w-full max-w-2xl space-y-3 rounded-[24px] border border-[#d6d3c9] dark:border-[#1e3657] bg-white/92 dark:bg-[#0f1d30] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#588157] dark:text-[#7dc4ff]">Merchant summary</p>
+              <h2 className="mt-1 text-xl font-semibold text-[#102a1b] dark:text-white">
+                {completedProvider?.merchantName || 'KapIT Payment Receipt'}
+              </h2>
+              <p className="mt-2 text-sm text-[#5f6f52] dark:text-[#a6bfd8]">
+                Your payment is verified and premium access is now active under the paid plan below.
+              </p>
+            </div>
 
-          <div className="rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-[#f8fbf6] dark:bg-[#102235] p-4 space-y-3 text-sm">
-            <div>
-              <p className="text-[#4b5563] dark:text-[#b8d4e8]">Merchant code</p>
-              <p className="font-semibold text-[#3a5a40] dark:text-white">{selectedProvider.merchantCode}</p>
+            <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#24415f] bg-[#f8fbf6] dark:bg-[#102138] p-4 space-y-3 text-sm">
+              <div>
+                <p className="text-[#5f6f52] dark:text-[#a6bfd8]">Paid plan</p>
+                <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout.planName}</p>
+              </div>
+              <div>
+                <p className="text-[#5f6f52] dark:text-[#a6bfd8]">Plan amount</p>
+                <p className="font-semibold text-[#102a1b] dark:text-white">PHP {Number(completedCheckout.amount || 0).toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-[#5f6f52] dark:text-[#a6bfd8]">Billing cycle</p>
+                <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout.billingCycle}</p>
+              </div>
+              <div>
+                <p className="text-[#5f6f52] dark:text-[#a6bfd8]">Payment provider</p>
+                <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout.paymentMethod}</p>
+              </div>
+              <div>
+                <p className="text-[#5f6f52] dark:text-[#a6bfd8]">Payment status</p>
+                <p className="font-semibold text-emerald-700 dark:text-emerald-300">Verified and paid</p>
+              </div>
+              <div>
+                <p className="text-[#5f6f52] dark:text-[#a6bfd8]">Payment record</p>
+                <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout.reference}</p>
+              </div>
+              <div>
+                <p className="text-[#5f6f52] dark:text-[#a6bfd8]">Receiving account</p>
+                <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout.accountHint}</p>
+              </div>
+              <div>
+                <p className="text-[#5f6f52] dark:text-[#a6bfd8]">Activated for</p>
+                <p className="font-semibold text-[#102a1b] dark:text-white">{displayName}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[#4b5563] dark:text-[#b8d4e8]">Receiving account</p>
-              <p className="font-semibold text-[#3a5a40] dark:text-white">{paymentMethod === 'bank' ? selectedBank : selectedProvider.accountHint}</p>
-            </div>
-            <div>
-              <p className="text-[#4b5563] dark:text-[#b8d4e8]">Settlement route</p>
-              <p className="font-semibold text-[#3a5a40] dark:text-white">{selectedProvider.label}</p>
-            </div>
-            <div>
-              <p className="text-[#4b5563] dark:text-[#b8d4e8]">Subscription plan</p>
-              <p className="font-semibold text-[#3a5a40] dark:text-white">{PREMIUM_PLAN.name} - PHP {PREMIUM_PLAN.amount}</p>
-            </div>
-          </div>
 
-          <div className="rounded-xl border border-dashed border-[#a3b18a] dark:border-[#2a4a6f] p-4 text-sm text-[#344e41] dark:text-[#dcecff]">
-            Merchant connection UI is ready here for GCash, PayMaya, PayPal, and Philippine online banks. To make this fully live, the final provider API keys and webhook/server endpoints still need to be connected.
+            <div className="flex justify-end border-t border-[#e3ebf3] dark:border-[#1e3657] pt-3">
+              <button
+                type="button"
+                onClick={standalone ? onClose : onBack}
+                className="min-w-[150px] rounded-2xl bg-[#3a5a40] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#344e41] dark:bg-[#63b3ff] dark:text-[#0c1728] dark:hover:bg-[#83c5ff]"
+              >
+                Done
+              </button>
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
     </div>
   );
 }
 
-export default function PremiumPopup({ isOpen, onClose, user, onUpgrade }) {
-  const [showMerchantCheckout, setShowMerchantCheckout] = React.useState(false);
-
-  React.useEffect(() => {
-    if (!isOpen) {
-      setShowMerchantCheckout(false);
-    }
-  }, [isOpen]);
-
+export default function PremiumPopup({ isOpen, onClose, user, onOpenMerchantWindow }) {
   if (!isOpen) return null;
+
+  const isPremium = !!user?.isPremium;
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/55 backdrop-blur-sm">
@@ -331,13 +458,9 @@ export default function PremiumPopup({ isOpen, onClose, user, onUpgrade }) {
             <div>
               <h2 className="flex items-center gap-2 text-xl sm:text-2xl font-semibold text-[#102a1b] dark:text-white">
                 <Crown className="h-5 w-5 sm:h-6 sm:w-6 text-[#588157] dark:text-[#7fd0ee]" />
-                {showMerchantCheckout ? 'Complete premium payment' : 'Premium Plans'}
+                Premium Plans
               </h2>
-              <p className="mt-1 text-sm text-[#344e41] dark:text-[#b8d4e8]">
-                {showMerchantCheckout
-                  ? 'This merchant window matches the company payment flow so users can upgrade with the same checkout experience.'
-                  : 'Choose between Free Plan and Premium Plan.'}
-              </p>
+              <p className="mt-1 text-sm text-[#344e41] dark:text-[#b8d4e8]">Choose between Free Plan and Premium Plan.</p>
             </div>
             <button
               type="button"
@@ -349,24 +472,72 @@ export default function PremiumPopup({ isOpen, onClose, user, onUpgrade }) {
             </button>
           </div>
 
-          {showMerchantCheckout ? (
-            <MerchantCheckout
-              user={user}
-              onBack={() => setShowMerchantCheckout(false)}
-              onClose={onClose}
-              onConfirmUpgrade={onUpgrade}
-            />
-          ) : (
-            <div className="overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
-              <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
-                {plans.map((plan) => (
-                  <PlanCard key={plan.id} plan={plan} onUpgrade={() => setShowMerchantCheckout(true)} />
-                ))}
+          <div className="overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
+            {isPremium ? (
+              <div className="mb-4 rounded-[20px] border border-[#bfd0af] bg-[linear-gradient(180deg,#f4f8f1,#ebf4e7)] px-4 py-3 text-sm text-[#2f4e39] dark:border-[#2f5a78] dark:bg-[linear-gradient(180deg,#14304d,#102138)] dark:text-[#dcecff]">
+                You're already on the Premium plan. This also applies when premium was activated using the localhost sample access.
               </div>
+            ) : null}
+            <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
+              {plans.map((plan) => (
+                <PlanCard
+                  key={plan.id}
+                  plan={plan}
+                  onUpgrade={onOpenMerchantWindow}
+                  disabled={Boolean(isPremium && plan.highlighted)}
+                  buttonLabel={isPremium && plan.highlighted ? "You're on this plan" : plan.cta}
+                />
+              ))}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
+export function UserPremiumPaymentWindow({ user, onUpgrade }) {
+  const handleClose = () => {
+    if (window.opener && !window.opener.closed) {
+      window.close();
+      return;
+    }
+    window.history.back();
+  };
+
+  return (
+    <div className="min-h-screen bg-[#dad7cd] dark:bg-[#0a1628] px-3 py-3 text-[#344e41] dark:text-white transition-colors duration-300 sm:px-4 sm:py-4">
+      <div className="min-h-[calc(100vh-1.5rem)] flex items-center justify-center sm:min-h-[calc(100vh-2rem)]">
+        <div className="w-full max-w-6xl overflow-hidden rounded-[28px] border border-[#a3b18a] dark:border-[#1e3657] bg-[rgba(255,255,255,0.88)] dark:bg-[rgba(12,24,40,0.9)] backdrop-blur-2xl shadow-[0_30px_90px_rgba(58,90,64,0.14)] dark:shadow-[0_30px_90px_rgba(0,0,0,0.45)]">
+          <div className="border-b border-[#ccd5c0] dark:border-[#1f3857] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(245,247,240,0.78))] dark:bg-[linear-gradient(180deg,rgba(18,35,58,0.95),rgba(10,21,35,0.82))] px-5 py-4 sm:px-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#588157] dark:text-[#7dc4ff]">Secure checkout</p>
+                <h1 className="mt-1.5 text-2xl sm:text-[2rem] font-semibold tracking-tight text-[#102a1b] dark:text-white">Complete Premium Payment</h1>
+                <p className="mt-1.5 max-w-2xl text-sm text-[#5f6f52] dark:text-[#a6bfd8]">Choose a payment method and we'll activate premium only after payment is successfully confirmed.</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ccd5c0] dark:border-[#294664] bg-white/80 dark:bg-[#11233a] text-[#5f6f52] dark:text-[#d3e3f4] hover:bg-white dark:hover:bg-[#17304d] transition-colors"
+                aria-label="Close premium payment popup"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          <MerchantCheckout
+            user={user}
+            onBack={handleClose}
+            onClose={handleClose}
+            onConfirmUpgrade={onUpgrade}
+            standalone
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export { USER_PREMIUM_PAYMENT_PATH, USER_PREMIUM_PAYMENT_SUCCESS };

@@ -2,8 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Filter, MapPin, Building, Bookmark } from 'lucide-react';
 import { applyToJob, getJobsFeed } from '@sharedServices/authService';
 import { formatJobStatus, statusBadgeClass } from '@companyFeatures/companyUtils';
+import { isJobSavedForUser, saveApplicationForUser, syncApplicationsForUser, toggleSavedJobForUser } from '@userFeatures/activity/userActivityStorage';
 
-export default function JobsPage({ userType }) {
+export default function JobsPage({ userType, user }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -26,7 +27,9 @@ export default function JobsPage({ userType }) {
       try {
         const result = await getJobsFeed();
         if (!canceled) {
-          setJobs(Array.isArray(result) ? result : []);
+          const nextJobs = Array.isArray(result) ? result : [];
+          syncApplicationsForUser(user, nextJobs);
+          setJobs(nextJobs);
         }
       } catch (err) {
         if (!canceled) {
@@ -63,7 +66,7 @@ export default function JobsPage({ userType }) {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.clearInterval(intervalId);
     };
-  }, []);
+  }, [user]);
 
   const handleApply = async (job) => {
     if (!job?.id || job?.hasApplied) {
@@ -76,6 +79,16 @@ export default function JobsPage({ userType }) {
 
     try {
       await applyToJob(job.id);
+      saveApplicationForUser(user, {
+        jobId: job.id,
+        title: job?.title || 'Untitled job',
+        location: job?.location || '',
+        type: job?.type || '',
+        salary: job?.salary || '',
+        status: 'pending',
+        company: job?.company || {},
+        appliedAt: new Date().toISOString(),
+      });
       setJobs((currentJobs) =>
         currentJobs.map((currentJob) =>
           currentJob.id === job.id
@@ -89,6 +102,12 @@ export default function JobsPage({ userType }) {
     } finally {
       setApplyingJobId(null);
     }
+  };
+
+  const handleToggleSave = (job) => {
+    const nextSavedJobs = toggleSavedJobForUser(user, job);
+    const saved = nextSavedJobs.some((entry) => Number(entry?.id) === Number(job?.id));
+    setFeedback(saved ? `"${job.title}" was saved to your Saved Jobs.` : `"${job.title}" was removed from Saved Jobs.`);
   };
 
   const summaryText = useMemo(() => {
@@ -136,7 +155,14 @@ export default function JobsPage({ userType }) {
       ) : (
         <div className="space-y-4">
           {jobs.map((job) => (
-            <JobCard key={job.id} job={job} onApply={handleApply} applying={applyingJobId === job.id} />
+            <JobCard
+              key={job.id}
+              job={job}
+              user={user}
+              onApply={handleApply}
+              onToggleSave={handleToggleSave}
+              applying={applyingJobId === job.id}
+            />
           ))}
         </div>
       )}
@@ -144,13 +170,14 @@ export default function JobsPage({ userType }) {
   );
 }
 
-function JobCard({ job, onApply, applying }) {
+function JobCard({ job, user, onApply, onToggleSave, applying }) {
   const status = String(job?.status || 'open').toLowerCase();
   const isClosed = status === 'closed';
   const isFilled = status === 'filled';
   const hasApplied = Boolean(job?.hasApplied);
   const companyName = job?.company?.name || 'Company';
   const skills = Array.isArray(job?.skills) ? job.skills : [];
+  const isSaved = isJobSavedForUser(user, job?.id);
 
   return (
     <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-4 sm:p-6 hover:border-[#588157] dark:hover:border-[#3ba9d6] transition-colors">
@@ -209,8 +236,17 @@ function JobCard({ job, onApply, applying }) {
         >
           {isClosed ? 'Closed' : isFilled ? 'Filled' : hasApplied ? 'Applied' : applying ? 'Applying...' : 'Apply Now'}
         </button>
-        <button className="px-4 py-2 border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] rounded-lg transition-colors">
-          <Bookmark className="w-5 h-5" />
+        <button
+          type="button"
+          onClick={() => onToggleSave?.(job)}
+          className={`px-4 py-2 border rounded-lg transition-colors ${
+            isSaved
+              ? 'border-[#588157] bg-[#eef6ee] text-[#3a5a40] dark:border-[#3ba9d6] dark:bg-[#14304d] dark:text-[#dcecff]'
+              : 'border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f]'
+          }`}
+          aria-label={isSaved ? 'Remove from saved jobs' : 'Save job'}
+        >
+          <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
         </button>
       </div>
     </div>

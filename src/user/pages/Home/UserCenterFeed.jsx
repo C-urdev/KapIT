@@ -1,9 +1,10 @@
 // CenterFeed 
 
 import React from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Bookmark, Plus, Search } from 'lucide-react';
+import { isPostSavedForUser, toggleSavedPostForUser } from '@userFeatures/activity/userActivityStorage';
 
-export default function CenterFeed({ user, userType, onOpenComposer, posts = [] }) {
+export default function CenterFeed({ user, userType, onOpenComposer, posts = [], onToggleSavePost, onBrowsePeople, onExploreProjects }) {
   const displayName = user?.username || user?.name || 'User';
   const userInitial = displayName.charAt(0).toUpperCase();
   const profileImage = user?.profileImage || '';
@@ -39,7 +40,21 @@ export default function CenterFeed({ user, userType, onOpenComposer, posts = [] 
             <div key={post.id} className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-semibold text-[#3a5a40] dark:text-white">{displayName}</h4>
-                <span className="text-xs text-[#3a5a40] dark:text-[#7d9ab8]">{new Date(post.createdAt).toLocaleString()}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#3a5a40] dark:text-[#7d9ab8]">{new Date(post.createdAt).toLocaleString()}</span>
+                  <button
+                    type="button"
+                    onClick={() => onToggleSavePost?.(post)}
+                    className={`rounded-lg border p-2 transition-colors ${
+                      isPostSavedForUser(user, post.id)
+                        ? 'border-[#588157] bg-[#eef6ee] text-[#3a5a40] dark:border-[#3ba9d6] dark:bg-[#14304d] dark:text-[#dcecff]'
+                        : 'border-[#a3b18a] text-[#344e41] hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#1e3a5f]'
+                    }`}
+                    aria-label={isPostSavedForUser(user, post.id) ? 'Remove saved post' : 'Save post'}
+                  >
+                    <Bookmark className={`h-4 w-4 ${isPostSavedForUser(user, post.id) ? 'fill-current' : ''}`} />
+                  </button>
+                </div>
               </div>
               <p className="text-[#344e41] dark:text-[#b8d4e8] whitespace-pre-wrap">{post.content}</p>
             </div>
@@ -61,10 +76,18 @@ export default function CenterFeed({ user, userType, onOpenComposer, posts = [] 
             Discover IT professionals, companies, and projects in the Philippines
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button className="px-4 py-2 bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold rounded-lg transition-colors">
+            <button
+              type="button"
+              onClick={onBrowsePeople}
+              className="px-4 py-2 bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold rounded-lg transition-colors"
+            >
               Browse {userType === 'employee' ? 'Companies' : 'Developers'}
             </button>
-            <button className="px-4 py-2 border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] font-semibold rounded-lg transition-colors">
+            <button
+              type="button"
+              onClick={onExploreProjects}
+              className="px-4 py-2 border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] font-semibold rounded-lg transition-colors"
+            >
               Explore Projects
             </button>
           </div>

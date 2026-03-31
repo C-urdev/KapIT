@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ArrowLeft, Building2, Globe, Mail, MapPin, MessageCircle, User } from 'lucide-react';
+import { ArrowLeft, Award, Building2, Globe, Mail, MapPin, MessageCircle, User } from 'lucide-react';
 import { getPostsForUser } from '@userFeatures/posts/userPostStorage';
 
 export default function PublicProfilePage({ profile, onBack, onMessage, onMore }) {
@@ -45,7 +45,15 @@ export default function PublicProfilePage({ profile, onBack, onMessage, onMore }
               )}
             </div>
             <div className="space-y-1 min-w-0">
-              <h1 className="text-3xl font-bold text-[#1f3a2a] dark:text-white truncate">{displayName}</h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-3xl font-bold text-[#1f3a2a] dark:text-white truncate">{displayName}</h1>
+                {profile?.isPremium ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#f2b500] px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white dark:bg-[#f5c84c] dark:text-[#0a1628]">
+                    <Award className="h-3.5 w-3.5" />
+                    Premium
+                  </span>
+                ) : null}
+              </div>
               <p className="text-sm text-[#2f4e39] dark:text-[#b8d4e8]">{isCompany ? 'Company account' : (profile?.desiredJob || 'IT Professional')}</p>
               {(profile?.shortDescription || profile?.bio) && <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">{profile?.shortDescription || profile?.bio}</p>}
             </div>

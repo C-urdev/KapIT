@@ -587,6 +587,7 @@ const updateMyProfile = async (req, res) => {
     const updates = req.body || {};
 
     const fieldMap = {
+      isPremium: 'is_premium',
       username: 'username',
       bio: 'bio',
       socials: 'socials',
@@ -747,6 +748,77 @@ const getJobsFeed = async (req, res) => {
   }
 };
 
+// @desc    Get current user's submitted applications
+// @route   GET /api/auth/applications
+// @access  Private
+const getMyApplications = async (req, res) => {
+  let client;
+
+  try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
+    client = await pool.connect();
+
+    const result = await client.query(
+      `SELECT a.id,
+              a.status,
+              a.resume_url,
+              a.created_at,
+              a.updated_at,
+              j.id AS job_id,
+              j.title AS job_title,
+              j.location AS job_location,
+              j.type AS job_type,
+              j.salary AS job_salary,
+              COALESCE(c.name, u.company_name, u.username, 'Company') AS company_name,
+              COALESCE(c.logo, u.profile_image, '') AS company_logo
+       FROM applications a
+       JOIN jobs j ON j.id = a.job_id
+       LEFT JOIN companies c ON c.id = j.company_id
+       LEFT JOIN users u ON u.id = c.user_id
+       WHERE a.user_id = $1
+       ORDER BY a.created_at DESC
+       LIMIT 200`,
+      [req.user.id]
+    );
+
+    const applications = result.rows.map((row) => ({
+      id: row.id,
+      jobId: row.job_id,
+      title: row.job_title || 'Untitled job',
+      location: row.job_location || '',
+      type: row.job_type || '',
+      salary: row.job_salary || '',
+      status: row.status || 'pending',
+      resumeUrl: row.resume_url || '',
+      appliedAt: row.created_at,
+      updatedAt: row.updated_at,
+      company: {
+        name: row.company_name || 'Company',
+        logo: row.company_logo || '',
+      },
+    }));
+
+    return res.json({ success: true, applications });
+  } catch (error) {
+    console.error('Get my applications error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error while fetching your applications',
+      ...(isDev
+        ? {
+            errorDetail: error?.message || String(error),
+            errorCode: error?.code || '',
+          }
+        : {}),
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+};
+
 // @desc    Apply to a job
 // @route   POST /api/auth/jobs/:id/apply
 // @access  Private
@@ -894,6 +966,7 @@ module.exports = {
   getPublicProfile,
   updateMyProfile,
   getJobsFeed,
+  getMyApplications,
   applyToJob,
 };
 

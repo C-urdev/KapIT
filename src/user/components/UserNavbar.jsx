@@ -15,6 +15,10 @@ export default function Navbar({
   onOpenSettings,
   onOpenPremium,
   onOpenPublicProfile,
+  onOpenMyProfile,
+  onOpenProjects,
+  onOpenSavedJobs,
+  onOpenApplications,
   unreadNotificationCount = 0,
 }) {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -122,6 +126,10 @@ export default function Navbar({
         active={mobileMenuActive}
         user={user}
         setMobileMenuOpen={setMobileMenuOpen}
+        onOpenMyProfile={onOpenMyProfile}
+        onOpenProjects={onOpenProjects}
+        onOpenSavedJobs={onOpenSavedJobs}
+        onOpenApplications={onOpenApplications}
         onOpenSettings={onOpenSettings}
         onOpenPremium={onOpenPremium}
         onHelp={onHelp}
