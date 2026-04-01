@@ -126,9 +126,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
 
   const selectedProvider = PAYMENT_PROVIDERS.find((provider) => provider.id === paymentMethod) || PAYMENT_PROVIDERS[0];
   const displayName = user?.fullName || user?.username || user?.name || 'User account';
-  const isLocalhostBypassAvailable =
-    ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname) &&
-    String(import.meta.env.VITE_ENABLE_LOCAL_PAYMENT_BYPASS || '').trim().toLowerCase() === 'true';
+  const isLocalhostBypassAvailable = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
   const stepState = success ? 3 : loading ? 2 : 1;
   const completedProvider = PAYMENT_PROVIDERS.find((provider) => provider.id === completedCheckout?.providerId) || null;
 
@@ -216,7 +214,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
 
   return (
     <div className="overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2 sm:flex-nowrap">
         {[
           { key: 1, label: 'Plan' },
           { key: 2, label: 'Payment' },
@@ -234,7 +232,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
                 }`}>
                   {complete ? <CheckCircle2 className="h-4 w-4" /> : step.key}
                 </span>
-                <span className={`text-sm font-medium ${active ? 'text-[#16324f] dark:text-white' : 'text-[#8194a8] dark:text-[#88a3bf]'}`}>
+                <span className={`text-xs sm:text-sm font-medium ${active ? 'text-[#16324f] dark:text-white' : 'text-[#8194a8] dark:text-[#88a3bf]'}`}>
                   {step.label}
                 </span>
               </div>
@@ -246,7 +244,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
 
       <div className={completedCheckout ? 'flex justify-center' : 'grid gap-4 lg:grid-cols-[1.25fr_0.75fr] lg:gap-5'}>
         <div className={`${completedCheckout ? 'hidden' : 'space-y-4'} rounded-[24px] border border-[#d6d3c9] dark:border-[#1e3657] bg-white/90 dark:bg-[#0f1d30] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]`}>
-          <div className="flex items-center justify-between gap-4 border-b border-[#d6d3c9] dark:border-[#1e3657] pb-3">
+          <div className="flex flex-col gap-3 border-b border-[#d6d3c9] dark:border-[#1e3657] pb-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm text-[#5f6f52] dark:text-[#9db6d0]">Selected plan</p>
               <p className="mt-1 text-2xl sm:text-[1.75rem] font-semibold tracking-tight text-[#102a1b] dark:text-white">PHP {PREMIUM_PLAN.amount.toLocaleString()}</p>
@@ -271,7 +269,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
               </div>
               <p className="mt-1.5 text-2xl font-semibold tracking-tight text-[#102a1b] dark:text-white">PHP {PREMIUM_PLAN.amount.toLocaleString()}</p>
               <p className="mt-1.5 text-xs leading-5 text-[#5f6f52] dark:text-[#b0c8e0]">{PREMIUM_PLAN.subtitle}</p>
-              <div className="mt-3 flex items-center justify-between gap-2">
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#588157] dark:text-[#7dc4ff]">Billed monthly</span>
                 <span className="rounded-full bg-[#3a5a40] px-2.5 py-1 text-[11px] font-semibold text-white dark:bg-[#63b3ff] dark:text-[#0c1728]">Selected</span>
               </div>
@@ -353,11 +351,11 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
             </div>
           )}
 
-          <div className="flex flex-wrap gap-3 border-t border-[#e3ebf3] dark:border-[#1e3657] pt-3">
+          <div className="flex flex-col gap-3 border-t border-[#e3ebf3] dark:border-[#1e3657] pt-3 sm:flex-row sm:flex-wrap">
             <button
               type="button"
               onClick={standalone ? onClose : onBack}
-              className="px-5 py-3 rounded-2xl border border-[#a3b18a] dark:border-[#294664] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#17304d] transition-colors"
+              className="w-full rounded-2xl border border-[#a3b18a] px-5 py-3 text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#294664] dark:text-white dark:hover:bg-[#17304d] sm:w-auto"
             >
               {standalone ? 'Cancel' : 'Back to plans'}
             </button>
@@ -365,7 +363,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
               type="button"
               onClick={handleConfirm}
               disabled={loading}
-              className="min-w-[240px] px-6 py-3 rounded-2xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#63b3ff] dark:hover:bg-[#83c5ff] text-white dark:text-[#0c1728] font-semibold disabled:opacity-60 transition-colors"
+              className="w-full rounded-2xl bg-[#3a5a40] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#344e41] disabled:opacity-60 dark:bg-[#63b3ff] dark:text-[#0c1728] dark:hover:bg-[#83c5ff] sm:w-auto sm:min-w-[240px]"
             >
               {loading ? 'Processing payment...' : `Pay PHP ${PREMIUM_PLAN.amount.toLocaleString()} with ${selectedProvider.label}`}
             </button>
@@ -374,7 +372,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
                 type="button"
                 onClick={handleSampleSuccess}
                 disabled={loading}
-                className="px-5 py-3 rounded-2xl border border-dashed border-[#588157] bg-[#f4f8f1] text-[#3a5a40] hover:bg-[#ecf4e7] dark:border-[#63b3ff] dark:bg-[#102138] dark:text-[#9ed3ff] dark:hover:bg-[#16304b] font-semibold disabled:opacity-60 transition-colors"
+                className="w-full rounded-2xl border border-dashed border-[#588157] bg-[#f4f8f1] px-5 py-3 font-semibold text-[#3a5a40] transition-colors hover:bg-[#ecf4e7] disabled:opacity-60 dark:border-[#63b3ff] dark:bg-[#102138] dark:text-[#9ed3ff] dark:hover:bg-[#16304b] sm:w-auto"
               >
                 Sample success
               </button>
@@ -429,11 +427,11 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
               </div>
             </div>
 
-            <div className="flex justify-end border-t border-[#e3ebf3] dark:border-[#1e3657] pt-3">
+            <div className="flex border-t border-[#e3ebf3] pt-3 dark:border-[#1e3657]">
               <button
                 type="button"
                 onClick={standalone ? onClose : onBack}
-                className="min-w-[150px] rounded-2xl bg-[#3a5a40] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#344e41] dark:bg-[#63b3ff] dark:text-[#0c1728] dark:hover:bg-[#83c5ff]"
+                className="w-full rounded-2xl bg-[#3a5a40] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#344e41] dark:bg-[#63b3ff] dark:text-[#0c1728] dark:hover:bg-[#83c5ff] sm:ml-auto sm:w-auto sm:min-w-[150px]"
               >
                 Done
               </button>
@@ -510,7 +508,7 @@ export function UserPremiumPaymentWindow({ user, onUpgrade }) {
       <div className="min-h-[calc(100vh-1.5rem)] flex items-center justify-center sm:min-h-[calc(100vh-2rem)]">
         <div className="w-full max-w-6xl overflow-hidden rounded-[28px] border border-[#a3b18a] dark:border-[#1e3657] bg-[rgba(255,255,255,0.88)] dark:bg-[rgba(12,24,40,0.9)] backdrop-blur-2xl shadow-[0_30px_90px_rgba(58,90,64,0.14)] dark:shadow-[0_30px_90px_rgba(0,0,0,0.45)]">
           <div className="border-b border-[#ccd5c0] dark:border-[#1f3857] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(245,247,240,0.78))] dark:bg-[linear-gradient(180deg,rgba(18,35,58,0.95),rgba(10,21,35,0.82))] px-5 py-4 sm:px-6">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#588157] dark:text-[#7dc4ff]">Secure checkout</p>
                 <h1 className="mt-1.5 text-2xl sm:text-[2rem] font-semibold tracking-tight text-[#102a1b] dark:text-white">Complete Premium Payment</h1>
@@ -541,3 +539,5 @@ export function UserPremiumPaymentWindow({ user, onUpgrade }) {
 }
 
 export { USER_PREMIUM_PAYMENT_PATH, USER_PREMIUM_PAYMENT_SUCCESS };
+
+

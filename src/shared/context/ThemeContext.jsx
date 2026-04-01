@@ -5,13 +5,12 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('theme');
-      return saved || 'light'; 
-    }
-    return 'light';
-  });
+  const [theme, setTheme] = useState('light');
+
+  useEffect(() => {
+    const savedTheme = window.localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -24,7 +23,7 @@ export const ThemeProvider = ({ children }) => {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
   return (
@@ -41,5 +40,3 @@ export const useTheme = () => {
   }
   return context;
 };
-
-

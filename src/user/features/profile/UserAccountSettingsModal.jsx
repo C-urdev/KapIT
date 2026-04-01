@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Briefcase, Calendar, MapPin, Phone, Search, UserCircle, X } from 'lucide-react';
+import { Bookmark, Briefcase, Calendar, FileCheck2, FolderKanban, MapPin, Search, UserCircle, X } from 'lucide-react';
 import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
 import { loadAddressOptions } from '@sharedUtils/philippinesLocations';
 import { developerAPI } from '@userFeatures/developer/userDeveloperAPI';
@@ -70,10 +70,42 @@ const JOB_OPTIONS = [
 ];
 
 const SEX_OPTIONS = ['Male', 'Female', 'Prefer not to say'];
-export default function AccountSettingsModal({ isOpen, user, onClose, onSave }) {
+const PROFILE_CACHE_KEY = 'kapit_user_developer_profile';
+
+const readProfileCache = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(PROFILE_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeProfileCache = (profile) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    if (profile == null) {
+      window.sessionStorage.removeItem(PROFILE_CACHE_KEY);
+      return;
+    }
+
+    window.sessionStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile));
+  } catch {
+    // Ignore cache write failures.
+  }
+};
+export default function AccountSettingsModal({ isOpen, user, onClose, onSave, onOpenMyProfile, onOpenProjects, onOpenSavedJobs, onOpenApplications }) {
   const [activeSection, setActiveSection] = useState('profile');
+  const [cachedDeveloperProfile] = useState(() => readProfileCache());
   const [profileLoading, setProfileLoading] = useState(false);
-  const [developerProfile, setDeveloperProfile] = useState(null);
+  const [developerProfile, setDeveloperProfile] = useState(cachedDeveloperProfile);
   const [addressOptions, setAddressOptions] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
@@ -114,15 +146,19 @@ export default function AccountSettingsModal({ isOpen, user, onClose, onSave }) 
         return;
       }
 
-      setProfileLoading(true);
+      if (!developerProfile) {
+        setProfileLoading(true);
+      }
       try {
         const data = await developerAPI.getMyProfile();
+        const nextProfile = data?.profile || null;
+        writeProfileCache(nextProfile);
         if (!cancelled) {
-          setDeveloperProfile(data?.profile || null);
+          setDeveloperProfile(nextProfile);
         }
       } catch {
-        if (!cancelled) {
-          setDeveloperProfile(null);
+        if (!cancelled && !developerProfile) {
+          setDeveloperProfile(cachedDeveloperProfile);
         }
       } finally {
         if (!cancelled) {
@@ -206,6 +242,11 @@ export default function AccountSettingsModal({ isOpen, user, onClose, onSave }) 
     return null;
   }
 
+  const handleQuickOpen = (callback) => {
+    onClose?.();
+    callback?.();
+  };
+
   const handleSave = () => {
     onSave?.({
       name: formData.name,
@@ -261,6 +302,36 @@ export default function AccountSettingsModal({ isOpen, user, onClose, onSave }) 
                 active={activeSection === 'career'}
                 onClick={() => setActiveSection('career')}
               />
+            </div>
+
+            <div className="mt-6">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-[#6b7280] dark:text-[#7d9ab8]">Quick access</p>
+              <div className="space-y-3">
+                <NavCard
+                  title="My Profile"
+                  description="Open your public-facing profile workspace"
+                  icon={UserCircle}
+                  onClick={() => handleQuickOpen(onOpenMyProfile)}
+                />
+                <NavCard
+                  title="My Projects"
+                  description="Jump straight to your portfolio projects"
+                  icon={FolderKanban}
+                  onClick={() => handleQuickOpen(onOpenProjects)}
+                />
+                <NavCard
+                  title="Saved Jobs"
+                  description="Review everything you bookmarked"
+                  icon={Bookmark}
+                  onClick={() => handleQuickOpen(onOpenSavedJobs)}
+                />
+                <NavCard
+                  title="Applications"
+                  description="Check the jobs you already applied to"
+                  icon={FileCheck2}
+                  onClick={() => handleQuickOpen(onOpenApplications)}
+                />
+              </div>
             </div>
           </aside>
 
@@ -409,6 +480,7 @@ function SettingsCard({ title, icon: Icon, children }) {
     </section>
   );
 }
+
 
 
 

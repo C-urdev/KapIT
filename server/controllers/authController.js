@@ -1,10 +1,20 @@
-﻿const bcrypt = require('bcrypt');
+const bcrypt = require('bcrypt');
 const crypto = require('crypto');
-const jwt = require('jsonwebtoken');
 const pool = require('../config/database');
 const { createNotification, ensureNotificationsTable } = require('./notificationsController');
 const { ensureBaseUserSchemaReady, ensureHiringSchemaReady, ensureOnboardingSchemaReady } = require('../config/runtimeSchema');
+const {
+  attachSessionCookies,
+  clearSessionCookies,
+  verifyRefreshTokenSession,
+  revokeSessionById,
+  revokeSessionByToken,
+} = require('../services/authSessionService');
+const { clearLoginRateLimit } = require('../middleware/security');
 const isDev = process.env.NODE_ENV !== 'production';
+const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
+const PASSWORD_HASHER = process.env.PASSWORD_HASHER || 'bcrypt';
+const BCRYPT_HASH_PREFIX = /^\$2[aby]\$\d{2}\$/;
 const buildDevErrorMeta = (error) => (
   isDev
     ? {
@@ -46,6 +56,7 @@ const serializeUser = (user) => ({
   username: user.username,
   email: user.email,
   type: user.user_type,
+  role: user.role || user.user_type,
   accountType: user.account_type || (user.user_type === 'company' ? 'company' : 'developer'),
   isPremium: user.is_premium,
   profileCompleted: Boolean(user.profile_completed),
@@ -95,21 +106,6 @@ const computeProfileCompleted = (userType, merged, accountType) => {
   );
 };
 
-// Generate JWT token
-const generateToken = (user) => {
-  return jwt.sign(
-    { 
-      id: user.id, 
-      email: user.email, 
-      username: user.username,
-      userType: user.user_type,
-      accountType: user.account_type || (user.user_type === 'company' ? 'company' : 'developer'),
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRE }
-  );
-};
-
 // @desc    Register new user
 // @route   POST /api/auth/register
 // @access  Public
@@ -150,8 +146,7 @@ const register = async (req, res) => {
     }
 
     // Hash password
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
     // Insert new user
     const result = await client.query(
@@ -163,13 +158,18 @@ const register = async (req, res) => {
 
     const user = result.rows[0];
 
-    // Generate token
-    const token = generateToken(user);
+    const session = await attachSessionCookies(res, user, req);
 
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
-      token,
+      session: {
+        strategy: 'cookie',
+        accessTokenTtl: process.env.JWT_ACCESS_EXPIRE || '20m',
+        refreshTokenTtlDays: Number(process.env.JWT_REFRESH_EXPIRE_DAYS || 14),
+        passwordHasher: PASSWORD_HASHER,
+        csrfToken: session.csrfToken,
+      },
       user: serializeUser(user),
     });
   } catch (error) {
@@ -191,6 +191,23 @@ const register = async (req, res) => {
   }
 };
 
+const verifyPasswordWithCompatibility = async (plainPassword, storedPassword) => {
+  const normalizedStoredPassword = String(storedPassword || '');
+  const normalizedPlainPassword = String(plainPassword || '');
+
+  if (!normalizedStoredPassword) {
+    return { isValid: false, needsUpgrade: false };
+  }
+
+  if (BCRYPT_HASH_PREFIX.test(normalizedStoredPassword)) {
+    const isValid = await bcrypt.compare(normalizedPlainPassword, normalizedStoredPassword);
+    return { isValid, needsUpgrade: false };
+  }
+
+  const isValid = normalizedPlainPassword === normalizedStoredPassword;
+  return { isValid, needsUpgrade: isValid };
+};
+
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
@@ -201,35 +218,59 @@ const login = async (req, res) => {
     client = await pool.connect();
     const { email, password } = req.body;
 
-    // Find user by email
     const result = await client.query(
       `SELECT *
        FROM users
-       WHERE email = $1`,
+       WHERE email = $1 OR username = $1
+       LIMIT 1`,
       [email]
     );
 
     if (result.rows.length === 0) {
       return res.status(401).json({ 
         success: false, 
-        message: 'Invalid email or password' 
+        message: 'Invalid email or password',
+        ...(isDev ? { debugLogin: { stage: 'user_lookup', emailChecked: email, userFound: false } } : {})
       });
     }
 
     const user = result.rows[0];
 
-    // Compare passwords
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const passwordCheck = await verifyPasswordWithCompatibility(password, user.password);
 
-    if (!isPasswordValid) {
+    if (!passwordCheck.isValid) {
       return res.status(401).json({ 
         success: false, 
-        message: 'Invalid email or password' 
+        message: 'Invalid email or password',
+        ...(isDev ? {
+          debugLogin: {
+            stage: 'password_check',
+            emailChecked: email,
+            userFound: true,
+            username: user.username,
+            userType: user.user_type,
+            accountType: user.account_type || (user.user_type === 'company' ? 'company' : 'developer'),
+            passwordCheck: passwordCheck,
+            passwordPrefix: String(user.password || '').slice(0, 12),
+            submittedPasswordLength: String(password || '').length,
+            submittedPasswordPreview: String(password || '').slice(0, 20),
+            submittedPasswordCharCodes: Array.from(String(password || '')).map((char) => char.charCodeAt(0)),
+            hardcodedIlovenait1Matches: email === 'nait@gmail.com' ? await bcrypt.compare('Ilovenait1', user.password) : undefined,
+            hardcodedFoundit1Matches: email === 'founditcompany@gmail.com' ? await bcrypt.compare('Foundit1', user.password) : undefined,
+          }
+        } : {})
       });
     }
 
-    // Generate token
-    const token = generateToken(user);
+    if (passwordCheck.needsUpgrade) {
+      try {
+        const upgradedPasswordHash = await bcrypt.hash(password, SALT_ROUNDS);
+        await client.query('UPDATE users SET password = $1 WHERE id = $2', [upgradedPasswordHash, user.id]);
+        user.password = upgradedPasswordHash;
+      } catch (error) {
+        console.warn('Password hash upgrade skipped:', error?.message || error);
+      }
+    }
 
     const computedProfileCompleted = computeProfileCompleted(user.user_type, user, user.account_type);
     if (computedProfileCompleted !== Boolean(user.profile_completed)) {
@@ -241,10 +282,20 @@ const login = async (req, res) => {
       }
     }
 
+    clearLoginRateLimit(req);
+    const session = await attachSessionCookies(res, user, req);
+
     res.json({
       success: true,
       message: 'Login successful',
-      token,
+      ...(isDev ? { debugLogin: { stage: 'success', emailChecked: email, userFound: true, username: user.username } } : {}),
+      session: {
+        strategy: 'cookie',
+        accessTokenTtl: process.env.JWT_ACCESS_EXPIRE || '20m',
+        refreshTokenTtlDays: Number(process.env.JWT_REFRESH_EXPIRE_DAYS || 14),
+        passwordHasher: PASSWORD_HASHER,
+        csrfToken: session.csrfToken,
+      },
       user: serializeUser(user),
     });
   } catch (error) {
@@ -264,6 +315,70 @@ const login = async (req, res) => {
       client.release();
     }
   }
+};
+const refreshSession = async (req, res) => {
+  try {
+    const refreshCookieName = process.env.REFRESH_TOKEN_COOKIE_NAME || 'kapit_refresh_token';
+    const refreshToken = String(req.cookies?.[refreshCookieName] || '').trim();
+
+    if (!refreshToken) {
+      clearSessionCookies(res);
+      return res.status(401).json({
+        success: false,
+        message: 'Refresh token missing.',
+      });
+    }
+
+    const { user, session } = await verifyRefreshTokenSession(refreshToken);
+    const refreshed = await attachSessionCookies(res, user, req, session.id);
+
+    return res.json({
+      success: true,
+      message: 'Session refreshed.',
+      session: {
+        strategy: 'cookie',
+        accessTokenTtl: process.env.JWT_ACCESS_EXPIRE || '20m',
+        refreshTokenTtlDays: Number(process.env.JWT_REFRESH_EXPIRE_DAYS || 14),
+        passwordHasher: PASSWORD_HASHER,
+        csrfToken: refreshed.csrfToken,
+      },
+      user: serializeUser(user),
+    });
+  } catch (error) {
+    clearSessionCookies(res);
+    return res.status(401).json({
+      success: false,
+      message: 'Unable to refresh session.',
+      ...buildDevErrorMeta(error),
+    });
+  }
+};
+
+// @desc    Logout current session
+// @route   POST /api/auth/logout
+// @access  Private or public with cookie
+const logout = async (req, res) => {
+  try {
+    const refreshCookieName = process.env.REFRESH_TOKEN_COOKIE_NAME || 'kapit_refresh_token';
+    const refreshToken = String(req.cookies?.[refreshCookieName] || '').trim();
+
+    if (refreshToken) {
+      try {
+        const { session } = await verifyRefreshTokenSession(refreshToken);
+        await revokeSessionById(session.id);
+      } catch {
+        await revokeSessionByToken(refreshToken);
+      }
+    }
+  } catch (error) {
+    console.warn('Logout session cleanup warning:', error?.message || error);
+  }
+
+  clearSessionCookies(res);
+  return res.json({
+    success: true,
+    message: 'Logged out successfully.',
+  });
 };
 
 // @desc    Get current user
@@ -961,6 +1076,8 @@ const applyToJob = async (req, res) => {
 module.exports = {
   register,
   login,
+  refreshSession,
+  logout,
   getCurrentUser,
   searchUsers,
   getPublicProfile,

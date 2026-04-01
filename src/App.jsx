@@ -268,7 +268,7 @@ export default function KapIT() {
 
       const storedUser = getStoredUser();
       if (!storedUser) {
-        logoutUser();
+        void logoutUser();
         return;
       }
 
@@ -281,10 +281,6 @@ export default function KapIT() {
         if (!isCompanyRoute(window.location.pathname)) {
           navigate(COMPANY_PATHS.dashboard);
         }
-      } else if (initialView === 'onboarding-company-profile') {
-        navigate(ONBOARDING_PATHS.company);
-      } else if (initialView === 'onboarding-developer-profile') {
-        navigate(ONBOARDING_PATHS.developer);
       }
 
       try {
@@ -376,14 +372,21 @@ export default function KapIT() {
 
   const handleLogin = async (userData) => {
     setPendingSignup(null);
-    preloadRouteForUser(userData);
 
-    setUser(userData);
-    setUserType(userData.type);
+    let resolvedUser = userData;
+    try {
+      resolvedUser = await syncCachedProfileIfNeeded(userData);
+    } catch {
+      // Keep the optimistic session active if follow-up syncing is slow or unavailable.
+    }
+
+    preloadRouteForUser(resolvedUser);
+    setUser(resolvedUser);
+    setUserType(resolvedUser.type);
     setIsAuth(true);
 
-    updateStoredUser(userData);
-    const nextView = routeForUser(userData);
+    updateStoredUser(resolvedUser);
+    const nextView = routeForUser(resolvedUser);
     startTransition(() => {
       setCurrentView(nextView);
     });
@@ -396,15 +399,6 @@ export default function KapIT() {
     } else if (nextView === 'onboarding-developer-profile') {
       navigate(ONBOARDING_PATHS.developer);
     }
-
-    try {
-      const syncedUser = await syncCachedProfileIfNeeded(userData);
-      setUser(syncedUser);
-      setUserType(syncedUser.type);
-      updateStoredUser(syncedUser);
-    } catch {
-      // Keep the optimistic session active if follow-up syncing is slow or unavailable.
-    }
   };
 
   const handleLogout = () => {
@@ -413,7 +407,7 @@ export default function KapIT() {
 
   const confirmLogout = () => {
     setLogoutConfirmOpen(false);
-    logoutUser();
+    void logoutUser();
     setUser(null);
     setUserType(null);
     setIsAuth(false);

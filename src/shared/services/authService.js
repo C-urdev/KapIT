@@ -1,5 +1,7 @@
-const API_URL = import.meta.env.VITE_API_URL || '/api/auth';
+import { authRequest } from './apiClient';
+
 const PROFILE_CACHE_KEY = 'kapit_profile_cache_by_email';
+const USER_STORAGE_KEY = 'user';
 const SERVER_COOLDOWN_MS = 60 * 1000;
 const endpointCooldowns = new Map();
 const getSessionStorage = () => window.sessionStorage;
@@ -8,63 +10,19 @@ if (typeof window !== 'undefined') {
   window.localStorage.removeItem('token');
   window.localStorage.removeItem('user');
   window.localStorage.removeItem(PROFILE_CACHE_KEY);
+  window.sessionStorage.removeItem('token');
 }
 
-const getErrorMessage = (data, fallbackMessage) => {
-  if (data?.errors?.length) {
-    return data.errors.map((err) => err.message).join(', ');
-  }
-
-  return data?.message || fallbackMessage;
-};
-
-const isServerFailure = (response) => response.status >= 500;
-
-const isEndpointCoolingDown = (key) => {
-  const until = endpointCooldowns.get(key) || 0;
-  return until > Date.now();
-};
-
+const getErrorMessage = (error, fallbackMessage) => error?.message || fallbackMessage;
+const isEndpointCoolingDown = (key) => (endpointCooldowns.get(key) || 0) > Date.now();
 const markEndpointFailed = (key) => {
   endpointCooldowns.set(key, Date.now() + SERVER_COOLDOWN_MS);
 };
 
-const parseApiResponse = async (response, fallbackMessage) => {
-  const contentType = response.headers.get('content-type') || '';
-  const rawText = await response.text();
-
-  if (!rawText) {
-    return {};
-  }
-
-  if (contentType.includes('application/json')) {
-    try {
-      return JSON.parse(rawText);
-    } catch {
-      throw new Error(fallbackMessage);
-    }
-  }
-
-  const normalizedText = rawText.trim();
-
-  if (normalizedText.startsWith('<!DOCTYPE') || normalizedText.startsWith('<html')) {
-    throw new Error('API returned HTML instead of JSON. Check your Vercel API deployment and environment variables.');
-  }
-
-  try {
-    return JSON.parse(normalizedText);
-  } catch {
-    throw new Error(normalizedText || fallbackMessage);
-  }
-};
-
 const getStoredUserSafe = () => {
   try {
-    const raw = getSessionStorage().getItem('user');
-    if (!raw) {
-      return null;
-    }
-    return JSON.parse(raw);
+    const raw = getSessionStorage().getItem(USER_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
@@ -73,10 +31,7 @@ const getStoredUserSafe = () => {
 const readProfileCache = () => {
   try {
     const raw = getSessionStorage().getItem(PROFILE_CACHE_KEY);
-    if (!raw) {
-      return {};
-    }
-    return JSON.parse(raw);
+    return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
   }
@@ -165,6 +120,17 @@ const mergeWithProfileCache = (user) => {
   };
 };
 
+const persistUser = (user) => {
+  if (!user) {
+    return null;
+  }
+
+  const mergedUser = mergeWithProfileCache(user);
+  getSessionStorage().setItem(USER_STORAGE_KEY, JSON.stringify(mergedUser));
+  saveProfileCacheForUser(mergedUser);
+  return mergedUser;
+};
+
 export const getCachedProfileForEmail = (email) => {
   const emailKey = typeof email === 'string' ? email.trim().toLowerCase() : '';
   if (!emailKey) {
@@ -176,237 +142,122 @@ export const getCachedProfileForEmail = (email) => {
 };
 
 export const registerUser = async (userData) => {
-  try {
-    const payload = { ...(userData || {}) };
-    const accountType = String(payload.accountType || payload.account_type || '').trim().toLowerCase();
-    const legacyUserType = String(payload.userType || '').trim().toLowerCase();
+  const payload = { ...(userData || {}) };
+  const accountType = String(payload.accountType || payload.account_type || '').trim().toLowerCase();
+  const legacyUserType = String(payload.userType || '').trim().toLowerCase();
 
-    if (accountType === 'developer') {
-      payload.userType = 'employee';
-      payload.accountType = 'developer';
-    } else if (accountType === 'company') {
-      payload.userType = 'company';
-      payload.accountType = 'company';
-    } else if (legacyUserType === 'employee') {
-      payload.userType = 'employee';
-      payload.accountType = 'developer';
-    } else if (legacyUserType === 'company') {
-      payload.userType = 'company';
-      payload.accountType = 'company';
-    }
-
-    const response = await fetch(`${API_URL}/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await parseApiResponse(response, 'Registration failed');
-
-    if (!response.ok) {
-      throw new Error(getErrorMessage(data, 'Registration failed'));
-    }
-
-    if (data.token) {
-      const existingUser = getStoredUserSafe() || {};
-      const mergedUser = mergeWithProfileCache({ ...existingUser, ...data.user });
-      getSessionStorage().setItem('token', data.token);
-      getSessionStorage().setItem('user', JSON.stringify(mergedUser));
-      saveProfileCacheForUser(mergedUser);
-      data.user = mergedUser;
-    }
-
-    return data;
-  } catch (error) {
-    throw error;
+  if (accountType === 'developer') {
+    payload.userType = 'employee';
+    payload.accountType = 'developer';
+  } else if (accountType === 'company') {
+    payload.userType = 'company';
+    payload.accountType = 'company';
+  } else if (legacyUserType === 'employee') {
+    payload.userType = 'employee';
+    payload.accountType = 'developer';
+  } else if (legacyUserType === 'company') {
+    payload.userType = 'company';
+    payload.accountType = 'company';
   }
+
+  const data = await authRequest('/register', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    retryOnUnauthorized: false,
+  });
+
+  if (data?.user) {
+    data.user = persistUser(data.user);
+  }
+
+  return data;
 };
 
 export const loginUser = async (credentials) => {
-  try {
-    const response = await fetch(`${API_URL}/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(credentials),
-    });
+  const data = await authRequest('/login', {
+    method: 'POST',
+    body: JSON.stringify(credentials),
+    retryOnUnauthorized: false,
+  });
 
-    const data = await parseApiResponse(response, 'Login failed');
-
-    if (!response.ok) {
-      throw new Error(getErrorMessage(data, 'Login failed'));
-    }
-
-    if (data.token) {
-      const existingUser = getStoredUserSafe() || {};
-      const mergedUser = mergeWithProfileCache({ ...existingUser, ...data.user });
-      getSessionStorage().setItem('token', data.token);
-      getSessionStorage().setItem('user', JSON.stringify(mergedUser));
-      saveProfileCacheForUser(mergedUser);
-      data.user = mergedUser;
-    }
-
-    return data;
-  } catch (error) {
-    throw error;
+  if (data?.user) {
+    data.user = persistUser(data.user);
   }
+
+  return data;
+};
+
+export const refreshCurrentSession = async () => {
+  const data = await authRequest('/refresh', {
+    method: 'POST',
+    retryOnUnauthorized: false,
+  });
+
+  if (data?.user) {
+    data.user = persistUser(data.user);
+  }
+
+  return data;
 };
 
 export const getCurrentUser = async () => {
-  try {
-    const token = getSessionStorage().getItem('token');
-
-    if (!token) {
-      throw new Error('No token found');
-    }
-
-    const response = await fetch(`${API_URL}/me`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const data = await parseApiResponse(response, 'Failed to get user');
-
-    if (!response.ok) {
-      throw new Error(getErrorMessage(data, 'Failed to get user'));
-    }
-
-    return data;
-  } catch (error) {
-    throw error;
+  const data = await authRequest('/me');
+  if (data?.user) {
+    data.user = persistUser(data.user);
   }
+  return data;
 };
 
 export const updateMyProfile = async (updates) => {
-  const token = getSessionStorage().getItem('token');
-  if (!token) {
-    throw new Error('No token found');
-  }
-
-  const response = await fetch(`${API_URL}/profile`, {
+  const data = await authRequest('/profile', {
     method: 'PATCH',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(updates || {}),
   });
 
-  const data = await parseApiResponse(response, 'Failed to update profile');
-  if (!response.ok) {
-    throw new Error(getErrorMessage(data, 'Failed to update profile'));
+  if (data?.user) {
+    data.user = persistUser(data.user);
   }
-
-  const existingUser = getStoredUserSafe() || {};
-  const mergedUser = mergeWithProfileCache({ ...existingUser, ...(data.user || {}) });
-  getSessionStorage().setItem('user', JSON.stringify(mergedUser));
-  saveProfileCacheForUser(mergedUser);
-  data.user = mergedUser;
 
   return data;
 };
 
 export const getMyApplications = async () => {
-  const token = getSessionStorage().getItem('token');
-  if (!token) {
-    throw new Error('No token found');
-  }
-
-  const response = await fetch(`${API_URL}/applications`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  const data = await parseApiResponse(response, 'Failed to load applications');
-  if (!response.ok) {
-    throw new Error(getErrorMessage(data, 'Failed to load applications'));
-  }
-
+  const data = await authRequest('/applications');
   return Array.isArray(data?.applications) ? data.applications : [];
 };
 
-export const logoutUser = () => {
-  getSessionStorage().removeItem('token');
-  getSessionStorage().removeItem('user');
-};
-
-export const isAuthenticated = () => {
-  const token = getSessionStorage().getItem('token');
-  return !!token;
-};
-
-export const getStoredUser = () => {
-  const user = getSessionStorage().getItem('user');
-  if (!user) {
-    return null;
-  }
-
+export const logoutUser = async () => {
   try {
-    return JSON.parse(user);
+    await authRequest('/logout', {
+      method: 'POST',
+      retryOnUnauthorized: false,
+    });
   } catch {
-    return null;
+    // Clear local user state even if the server cookie is already gone.
   }
+
+  getSessionStorage().removeItem(USER_STORAGE_KEY);
 };
+
+export const isAuthenticated = () => Boolean(getStoredUserSafe());
+export const getStoredUser = () => getStoredUserSafe();
 
 export const updateStoredUser = (updates) => {
-  const currentUser = getStoredUser() || {};
+  const currentUser = getStoredUserSafe() || {};
   const nextUser = { ...currentUser, ...updates };
-  getSessionStorage().setItem('user', JSON.stringify(nextUser));
+  getSessionStorage().setItem(USER_STORAGE_KEY, JSON.stringify(nextUser));
   saveProfileCacheForUser(nextUser);
   return nextUser;
 };
 
 export const searchAccounts = async (query) => {
-  const token = getSessionStorage().getItem('token');
-  if (!token) {
-    throw new Error('No token found');
-  }
-
-  const response = await fetch(`${API_URL}/search?q=${encodeURIComponent(query)}`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  const data = await parseApiResponse(response, 'Search failed');
-  if (!response.ok) {
-    throw new Error(getErrorMessage(data, 'Search failed'));
-  }
-
-  return Array.isArray(data.results) ? data.results : [];
+  const data = await authRequest(`/search?q=${encodeURIComponent(query)}`);
+  return Array.isArray(data?.results) ? data.results : [];
 };
 
 export const getPublicProfile = async (userId) => {
-  const token = getSessionStorage().getItem('token');
-  if (!token) {
-    throw new Error('No token found');
-  }
-
-  const response = await fetch(`${API_URL}/profile/${encodeURIComponent(userId)}`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  const data = await parseApiResponse(response, 'Failed to load profile');
-  if (!response.ok) {
-    throw new Error(getErrorMessage(data, 'Failed to load profile'));
-  }
-
-  return data.profile || null;
+  const data = await authRequest(`/profile/${encodeURIComponent(userId)}`);
+  return data?.profile || null;
 };
 
 export const getJobsFeed = async () => {
@@ -414,52 +265,17 @@ export const getJobsFeed = async () => {
     return [];
   }
 
-  const token = getSessionStorage().getItem('token');
-  if (!token) {
-    throw new Error('No token found');
+  try {
+    const data = await authRequest('/jobs');
+    return Array.isArray(data?.jobs) ? data.jobs : [];
+  } catch (error) {
+    markEndpointFailed('auth:jobs-feed');
+    throw new Error(getErrorMessage(error, 'Failed to load jobs'));
   }
-
-  const response = await fetch(`${API_URL}/jobs`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  const data = await parseApiResponse(response, 'Failed to load jobs');
-  if (!response.ok) {
-    if (isServerFailure(response)) {
-      markEndpointFailed('auth:jobs-feed');
-      return [];
-    }
-    throw new Error(getErrorMessage(data, 'Failed to load jobs'));
-  }
-
-  return Array.isArray(data.jobs) ? data.jobs : [];
 };
 
 export const applyToJob = async (jobId) => {
-  const token = getSessionStorage().getItem('token');
-  if (!token) {
-    throw new Error('No token found');
-  }
-
-  const response = await fetch(`${API_URL}/jobs/${encodeURIComponent(jobId)}/apply`, {
+  return authRequest(`/jobs/${encodeURIComponent(jobId)}/apply`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
   });
-
-  const data = await parseApiResponse(response, 'Failed to apply to job');
-  if (!response.ok) {
-    throw new Error(getErrorMessage(data, 'Failed to apply to job'));
-  }
-
-  return data;
 };
-
-
-

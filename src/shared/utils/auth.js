@@ -1,29 +1,19 @@
-// Get token from sessionStorage
-export const getToken = () => {
-  return sessionStorage.getItem('token');
-};
+import { getStoredUser, isAuthenticated, logoutUser } from '@sharedServices/authService';
+import { getSessionSnapshot } from '@sharedServices/apiClient';
 
-// Set token in sessionStorage
-export const setToken = (token) => {
-  sessionStorage.setItem('token', token);
-};
-
-// Remove token from sessionStorage
+export const getToken = () => '';
+export const setToken = () => {};
 export const removeToken = () => {
-  sessionStorage.removeItem('token');
-  sessionStorage.removeItem('user');
+  logoutUser();
 };
-
-// Check if user is authenticated
-export const isAuth = () => {
-  const token = getToken();
-  return !!token;
-};
-
-// Get Authorization header
+export const isAuth = () => isAuthenticated();
 export const getAuthHeader = () => {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  const session = getSessionSnapshot();
+  const user = getStoredUser();
+
+  if (!user) {
+    return {};
+  }
+
+  return session.csrfToken ? { 'X-CSRF-Token': session.csrfToken } : {};
 };
-
-

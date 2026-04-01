@@ -1,5 +1,6 @@
 import React from 'react';
 import { Award, TrendingUp } from 'lucide-react';
+import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
 
 export default function RightSidebar({ userType }) {
   return (
@@ -74,14 +75,12 @@ function RecommendationItem({ name, subtitle, isPremium, skills }) {
         <div className="w-10 h-10 bg-gradient-to-br from-[#588157] to-[#3a5a40] dark:from-[#2d8bb8] dark:to-[#3ba9d6] rounded-full flex items-center justify-center flex-shrink-0">
           <span className="text-white font-semibold text-sm">{name.charAt(0)}</span>
         </div>
-        {isPremium ? (
-          <div className="absolute -bottom-1 -right-1 bg-yellow-500 dark:bg-yellow-400 rounded-full p-0.5">
-            <Award className="w-3 h-3 text-white" />
-          </div>
-        ) : null}
       </div>
       <div className="flex-1 min-w-0">
-        <h4 className="font-medium text-[#3a5a40] dark:text-white text-sm truncate">{name}</h4>
+        <div className="flex items-center gap-2 flex-wrap">
+          <h4 className="font-medium text-[#3a5a40] dark:text-white text-sm truncate">{name}</h4>
+          {isPremium ? <PremiumBadge compact /> : null}
+        </div>
         <p className="text-xs text-[#344e41] dark:text-[#b8d4e8] truncate">{subtitle}</p>
         {skills ? (
           <div className="flex gap-1 mt-1">

@@ -1,5 +1,5 @@
 const express = require('express');
-const { verifyToken } = require('../middleware/auth');
+const { verifyToken, requireCsrfForCookieAuth } = require('../middleware/auth');
 const { getMyDeveloperProfile, upsertMyDeveloperProfile } = require('../controllers/developerController');
 
 const router = express.Router();
@@ -14,7 +14,6 @@ const requireDeveloperAccount = (req, res, next) => {
 router.use(verifyToken, requireDeveloperAccount);
 
 router.get('/profile', getMyDeveloperProfile);
-router.put('/profile', upsertMyDeveloperProfile);
+router.put('/profile', requireCsrfForCookieAuth, upsertMyDeveloperProfile);
 
 module.exports = router;
-

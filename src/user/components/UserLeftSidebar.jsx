@@ -1,7 +1,8 @@
 // LeftSidebar 
 
 import React from 'react';
-import { MapPin, Award, Zap, BadgeCheck } from 'lucide-react';
+import { MapPin, Zap } from 'lucide-react';
+import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
 
 export default function LeftSidebar({ user, userType, onOpenPremium, onOpenMyProfile, onOpenProjects, onOpenSavedJobs, onOpenApplications }) {
   const displayName = user?.username || user?.name || 'User';
@@ -24,14 +25,12 @@ export default function LeftSidebar({ user, userType, onOpenPremium, onOpenMyPro
                 <span className="text-2xl font-bold text-white">{userInitial}</span>
               )}
             </div>
-            {isPremium && (
-              <div className="absolute -bottom-1 -right-1 bg-yellow-500 dark:bg-yellow-400 rounded-full p-1">
-                <Award className="w-4 h-4 text-white" />
-              </div>
-            )}
           </div>
           
-          <h3 className="font-bold text-[#3a5a40] dark:text-white text-lg">{displayName}</h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-bold text-[#3a5a40] dark:text-white text-lg">{displayName}</h3>
+            {isPremium ? <PremiumBadge compact /> : null}
+          </div>
           {userType === 'employee' ? (
             <>
               <p className="text-sm text-[#344e41] dark:text-[#b8d4e8] mb-1">{desiredJob}</p>
@@ -93,14 +92,14 @@ export default function LeftSidebar({ user, userType, onOpenPremium, onOpenMyPro
           </div>
         </div>
       ) : (
-        <div className="rounded-2xl border border-[#bfd0af] bg-[linear-gradient(180deg,#f4f8f1,#ebf4e7)] p-4 shadow-[0_8px_24px_rgba(88,129,87,0.12)] dark:border-[#2f5a78] dark:bg-[linear-gradient(180deg,#14304d,#102138)]">
+        <div className="rounded-2xl border border-[#f2c84b] bg-[linear-gradient(180deg,#fff9df,#fff1b8)] p-4 shadow-[0_8px_24px_rgba(242,200,75,0.16)] dark:border-[#8a6a15] dark:bg-[linear-gradient(180deg,#4a3908,#2f2405)]">
           <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#e8f5e9] text-[#3a8f52] dark:bg-[#183154] dark:text-[#7fd0ee]">
-              <BadgeCheck className="h-4 w-4" />
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#fff4cc] text-[#d69100] dark:bg-[#3a2f0d] dark:text-[#f5c84c]">
+              <PremiumBadge compact className="border-0 bg-transparent px-0 py-0" iconClassName="h-4 w-4" label="" />
             </div>
             <div className="min-w-0 flex-1">
-              <h4 className="font-semibold text-[#3a5a40] dark:text-white text-sm mb-1">You're in the Premium plan</h4>
-              <p className="text-xs text-[#344e41] dark:text-[#d5e6f5]">
+              <h4 className="font-semibold text-[#7a5200] dark:text-[#ffe08a] text-sm mb-1">You're in the Premium plan</h4>
+              <p className="text-xs text-[#8a6100] dark:text-[#f3d57b]">
                 {userType === 'employee'
                   ? 'Your premium badge and premium visibility are active on this account.'
                   : 'Your premium access is active for advanced hiring tools and priority visibility.'}
@@ -123,6 +122,3 @@ function SidebarLink({ text, onClick }) {
     </button>
   );
 }
-
-
-

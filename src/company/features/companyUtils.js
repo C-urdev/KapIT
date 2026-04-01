@@ -25,14 +25,16 @@ export const navigate = (to) => {
   if (typeof window === 'undefined') {
     return;
   }
+
   const nextUrl = new URL(next, window.location.origin);
   const currentPathWithSearch = `${window.location.pathname}${window.location.search}`;
   const nextPathWithSearch = `${nextUrl.pathname}${nextUrl.search}`;
+
   if (currentPathWithSearch === nextPathWithSearch) {
     return;
   }
-  window.history.pushState({}, '', nextPathWithSearch);
-  window.dispatchEvent(new PopStateEvent('popstate'));
+
+  window.location.assign(nextPathWithSearch);
 };
 
 export const formatSkills = (skills) => {
@@ -70,6 +72,3 @@ export const formatJobStatus = (status) => {
   if (!value) return 'Unknown';
   return value.charAt(0).toUpperCase() + value.slice(1);
 };
-
-
-

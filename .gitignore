@@ -1,6 +1,10 @@
 node_modules
 .env
 .env.local
+**/.env.local
 .next
 dist
 .vercel
+apps/web-next/.next
+.venv
+services/ai-fastapi/.venv

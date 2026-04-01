@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Navbar from '@userComponents/UserNavbar';
 import LeftSidebar from '@userComponents/UserLeftSidebar';
 import RightSidebar from '@userComponents/UserRightSidebar';
@@ -17,16 +17,47 @@ import UserMobileBottomNav from '@userComponents/navigation/mobile/UserMobileBot
 import { addPostForUser, getPostsForUser } from '@userFeatures/posts/userPostStorage';
 import { getMyApplications, getPublicProfile } from '@sharedServices/authService';
 import { getUnreadNotificationCount } from '@sharedServices/notificationsService';
-import { useEffect } from 'react';
-import { BadgeCheck, Bookmark, FileCheck2, FolderKanban } from 'lucide-react';
+import { ArrowLeft, Bookmark, FileCheck2 } from 'lucide-react';
 import { getApplicationsForUser, getSavedJobsForUser, getSavedPostsForUser, toggleSavedPostForUser } from '@userFeatures/activity/userActivityStorage';
 
+const USER_NAV_QUERY_KEY = 'tab';
+const USER_NAV_TABS = new Set(['home', 'jobs', 'projects', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile']);
+
+const getUserNavFromUrl = () => {
+  if (typeof window === 'undefined') {
+    return 'home';
+  }
+
+  const nextTab = String(new URLSearchParams(window.location.search).get(USER_NAV_QUERY_KEY) || '').trim().toLowerCase();
+  return USER_NAV_TABS.has(nextTab) ? nextTab : 'home';
+};
+
+const syncUserNavToUrl = (nextNav) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const url = new URL(window.location.href);
+  if (USER_NAV_TABS.has(nextNav) && nextNav !== 'home') {
+    url.searchParams.set(USER_NAV_QUERY_KEY, nextNav);
+  } else {
+    url.searchParams.delete(USER_NAV_QUERY_KEY);
+  }
+
+  const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+  const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  if (nextUrl !== currentUrl) {
+    window.history.replaceState({}, '', nextUrl);
+  }
+};
+
 export default function HomePage({ user, userType, onOpenHelp, onLogout, onUpdateUser }) {
-  const [activeNav, setActiveNav] = useState('home');
+  const [activeNav, setActiveNav] = useState(() => getUserNavFromUrl());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [premiumPopupOpen, setPremiumPopupOpen] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [canReturnToSettings, setCanReturnToSettings] = useState(false);
   const [posts, setPosts] = useState([]);
   const [publicProfile, setPublicProfile] = useState(null);
   const [messageTargetId, setMessageTargetId] = useState('');
@@ -35,6 +66,33 @@ export default function HomePage({ user, userType, onOpenHelp, onLogout, onUpdat
   const [savedPosts, setSavedPosts] = useState([]);
   const [applications, setApplications] = useState([]);
   const isMobileViewport = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+
+  const updateActiveNav = (nextNav, options = {}) => {
+    setActiveNav(nextNav);
+    syncUserNavToUrl(nextNav);
+
+    if (options.fromSettings) {
+      setCanReturnToSettings(true);
+      return;
+    }
+
+    if (!options.preserveSettingsReturn) {
+      setCanReturnToSettings(false);
+    }
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveNav(getUserNavFromUrl());
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    syncUserNavToUrl(activeNav);
+  }, [activeNav]);
 
   useEffect(() => {
     setPosts(getPostsForUser(user));
@@ -175,14 +233,14 @@ export default function HomePage({ user, userType, onOpenHelp, onLogout, onUpdat
       return;
     }
     setMessageTargetId(profile.id);
-    setActiveNav('messages');
+    updateActiveNav('messages');
   };
 
   return (
     <div className="min-h-screen bg-[#dad7cd] dark:bg-[#0a1628]">
       <Navbar
         activeNav={activeNav}
-        setActiveNav={setActiveNav}
+        setActiveNav={updateActiveNav}
         user={user}
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
@@ -191,14 +249,29 @@ export default function HomePage({ user, userType, onOpenHelp, onLogout, onUpdat
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenPremium={() => setPremiumPopupOpen(true)}
         onOpenPublicProfile={handleOpenPublicProfile}
-        onOpenMyProfile={() => setActiveNav('my-profile')}
-        onOpenProjects={() => setActiveNav('projects')}
-        onOpenSavedJobs={() => setActiveNav('saved-jobs')}
-        onOpenApplications={() => setActiveNav('applications')}
+        onOpenMyProfile={() => updateActiveNav('my-profile')}
+        onOpenProjects={() => updateActiveNav('projects')}
+        onOpenSavedJobs={() => updateActiveNav('saved-jobs')}
+        onOpenApplications={() => updateActiveNav('applications')}
         unreadNotificationCount={unreadNotificationCount}
       />
 
       <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 py-6 pb-24 md:pb-8">
+        {canReturnToSettings && ['my-profile', 'projects', 'saved-jobs', 'applications'].includes(activeNav) && (
+          <div className="mb-4">
+            <button
+              type="button"
+              onClick={() => {
+                setCanReturnToSettings(false);
+                setSettingsOpen(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-lg border border-[#a3b18a] bg-white px-3.5 py-2 text-sm font-semibold text-[#3a5a40] shadow-sm transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#162842] dark:text-white dark:hover:bg-[#102235]"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </button>
+          </div>
+        )}
         {activeNav === 'home' && (
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 2xl:gap-8">
             <aside className="hidden xl:block xl:col-span-3">
@@ -206,10 +279,10 @@ export default function HomePage({ user, userType, onOpenHelp, onLogout, onUpdat
                 user={user}
                 userType={userType}
                 onOpenPremium={() => setPremiumPopupOpen(true)}
-                onOpenMyProfile={() => setActiveNav('my-profile')}
-                onOpenProjects={() => setActiveNav('projects')}
-                onOpenSavedJobs={() => setActiveNav('saved-jobs')}
-                onOpenApplications={() => setActiveNav('applications')}
+                onOpenMyProfile={() => updateActiveNav('my-profile')}
+                onOpenProjects={() => updateActiveNav('projects')}
+                onOpenSavedJobs={() => updateActiveNav('saved-jobs')}
+                onOpenApplications={() => updateActiveNav('applications')}
               />
             </aside>
             <main className="xl:col-span-9 2xl:col-span-6">
@@ -219,8 +292,8 @@ export default function HomePage({ user, userType, onOpenHelp, onLogout, onUpdat
                 onOpenComposer={() => setComposerOpen(true)}
                 posts={posts}
                 onToggleSavePost={handleToggleSavePost}
-                onBrowsePeople={() => setActiveNav('jobs')}
-                onExploreProjects={() => setActiveNav('projects')}
+                onBrowsePeople={() => updateActiveNav('jobs')}
+                onExploreProjects={() => updateActiveNav('projects')}
               />
             </main>
             <aside className="hidden 2xl:block 2xl:col-span-3">
@@ -254,7 +327,7 @@ export default function HomePage({ user, userType, onOpenHelp, onLogout, onUpdat
         {activeNav === 'messages' && <MessagesPage user={user} initialContactId={messageTargetId} />}
         {activeNav === 'notifications' && <NotificationsPage user={user} onReadAll={() => setUnreadNotificationCount(0)} />}
         {activeNav === 'public-profile' && (
-          <PublicProfilePage profile={publicProfile} onBack={() => setActiveNav('home')} onMessage={handleMessageProfile} />
+          <PublicProfilePage profile={publicProfile} onBack={() => updateActiveNav('home')} onMessage={handleMessageProfile} />
         )}
       </div>
 
@@ -265,10 +338,19 @@ export default function HomePage({ user, userType, onOpenHelp, onLogout, onUpdat
         onOpenMerchantWindow={handleOpenPremiumMerchantWindow}
       />
       <PostComposerModal isOpen={composerOpen} user={user} onClose={() => setComposerOpen(false)} onSubmit={handleCreatePost} />
-      <AccountSettingsModal isOpen={settingsOpen} user={user} onClose={() => setSettingsOpen(false)} onSave={onUpdateUser} />
+      <AccountSettingsModal
+        isOpen={settingsOpen}
+        user={user}
+        onClose={() => setSettingsOpen(false)}
+        onSave={onUpdateUser}
+        onOpenMyProfile={() => updateActiveNav('my-profile', { fromSettings: true })}
+        onOpenProjects={() => updateActiveNav('projects', { fromSettings: true })}
+        onOpenSavedJobs={() => updateActiveNav('saved-jobs', { fromSettings: true })}
+        onOpenApplications={() => updateActiveNav('applications', { fromSettings: true })}
+      />
       <UserMobileBottomNav
         activeNav={activeNav}
-        setActiveNav={setActiveNav}
+        setActiveNav={updateActiveNav}
         unreadNotificationCount={unreadNotificationCount}
       />
     </div>
@@ -369,6 +451,3 @@ function SavedJobsPanel({ savedJobs, savedPosts }) {
     </div>
   );
 }
-
-
-

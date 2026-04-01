@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { BadgeCheck, Edit3, GraduationCap, Instagram, MapPin, Mail, Pencil, Phone, User } from 'lucide-react';
+import { Edit3, GraduationCap, Instagram, MapPin, Mail, Pencil, Phone, User } from 'lucide-react';
+import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
 
 const readFileAsDataUrl = (file) =>
   new Promise((resolve, reject) => {
@@ -120,7 +121,7 @@ export default function MyProfilePage({ user, posts = [], onUpdateUser, onOpenCo
         <div className="h-16 sm:h-20 bg-gradient-to-r from-[#588157] to-[#3a5a40] dark:from-[#2d8bb8] dark:to-[#3ba9d6]" />
         <div className="px-6 sm:px-8 py-6 min-h-[170px]">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-            <div className="flex items-center gap-4 sm:gap-5">
+            <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-5">
               <div className="relative w-28 h-28 sm:w-32 sm:h-32">
                 <div className="w-full h-full rounded-full border-4 border-white dark:border-[#162842] bg-[#588157] dark:bg-[#3ba9d6] text-white flex items-center justify-center text-4xl font-bold overflow-hidden">
                 {profileImage ? (
@@ -134,15 +135,10 @@ export default function MyProfilePage({ user, posts = [], onUpdateUser, onOpenCo
                   <input type="file" accept="image/*" onChange={handleProfileImageSelect} className="hidden" />
                 </label>
               </div>
-              <div className="space-y-0.5 max-w-[460px] -mt-2 sm:-mt-1">
+              <div className="space-y-0.5 max-w-[460px]">
                 <div className="mb-2 sm:mb-2.5 flex flex-wrap items-center gap-2">
                   <h1 className="text-[2rem] sm:text-[2.2rem] font-bold text-[#1f3a2a] dark:text-white leading-[1.05] -mt-1 sm:-mt-1.5">{displayName}</h1>
-                  {user?.isPremium ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#bfd0af] bg-[#eef6ee] px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#3a5a40] dark:border-[#2f5a78] dark:bg-[#14304d] dark:text-[#dcecff]">
-                      <BadgeCheck className="h-3.5 w-3.5 text-[#588157] dark:text-[#7dc4ff]" />
-                      Premium
-                    </span>
-                  ) : null}
+                  {user?.isPremium ? <PremiumBadge /> : null}
                 </div>
                 <p className="text-[1rem] sm:text-[1.05rem] leading-[1.15] font-medium text-[#2f4e39] dark:text-[#b8d4e8]">{profileSubtitle}</p>
                 <p className="text-[0.92rem] sm:text-[0.95rem] leading-[1.15] text-[#2f4e39] dark:text-[#b8d4e8]">
@@ -158,10 +154,10 @@ export default function MyProfilePage({ user, posts = [], onUpdateUser, onOpenCo
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex w-full items-center gap-2 sm:w-auto">
                 <button
                   onClick={() => setEditing(true)}
-                  className="px-4 py-2 rounded-lg bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold flex items-center gap-2 transition-colors"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#3a5a40] px-4 py-2 text-white font-semibold transition-colors hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] sm:w-auto"
                 >
                   <Edit3 className="w-4 h-4" />
                   Edit Profile
@@ -245,6 +241,4 @@ function InfoRow({ icon: Icon, text }) {
     </div>
   );
 }
-
-
 

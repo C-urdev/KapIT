@@ -1,5 +1,6 @@
 import React from 'react';
-import { MapPin, Star, MessageCircle } from 'lucide-react';
+import { MapPin, MessageCircle } from 'lucide-react';
+import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
 
 export default function DeveloperCard({ developer, onViewProfile, onMessage }) {
   const name = developer?.username || developer?.email || 'Developer';
@@ -25,12 +26,7 @@ export default function DeveloperCard({ developer, onViewProfile, onMessage }) {
                 {developer.address}
               </p>
             )}
-            {developer?.isPremium && (
-              <p className="mt-1 text-xs inline-flex items-center gap-1 text-amber-700 dark:text-amber-200">
-                <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                Premium
-              </p>
-            )}
+            {developer?.isPremium && <PremiumBadge className="mt-1" />}
           </div>
         </div>
 
@@ -56,6 +52,3 @@ export default function DeveloperCard({ developer, onViewProfile, onMessage }) {
     </div>
   );
 }
-
-
-

@@ -1,25 +1,12 @@
-const API_URL = import.meta.env.VITE_API_BASE || '/api';
+import { apiRequest } from './apiClient';
+
+const API_URL =
+  (typeof process !== 'undefined' && process?.env?.NEXT_PUBLIC_EXPRESS_API_URL) ||
+  ((typeof process !== 'undefined' && process?.env?.VITE_API_BASE) || '/api');
 const SERVER_COOLDOWN_MS = 60 * 1000;
 const endpointCooldowns = new Map();
 
-const getToken = () => sessionStorage.getItem('token');
-
-const getErrorMessage = (data, fallback) => data?.message || fallback;
-const isServerFailure = (response) => response.status >= 500;
-
-const safeJson = async (response) => {
-  try {
-    return await response.json();
-  } catch {
-    return {};
-  }
-};
-
-const isEndpointCoolingDown = (key) => {
-  const until = endpointCooldowns.get(key) || 0;
-  return until > Date.now();
-};
-
+const isEndpointCoolingDown = (key) => (endpointCooldowns.get(key) || 0) > Date.now();
 const markEndpointFailed = (key) => {
   endpointCooldowns.set(key, Date.now() + SERVER_COOLDOWN_MS);
 };
@@ -29,28 +16,13 @@ export const listConversations = async () => {
     return [];
   }
 
-  const token = getToken();
-  if (!token) {
-    throw new Error('No token found');
+  try {
+    const data = await apiRequest(`${API_URL}/messages/conversations`);
+    return data.conversations || [];
+  } catch {
+    markEndpointFailed('messages:conversations');
+    return [];
   }
-
-  const response = await fetch(`${API_URL}/messages/conversations`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  const data = await safeJson(response);
-  if (!response.ok) {
-    if (isServerFailure(response)) {
-      markEndpointFailed('messages:conversations');
-      return [];
-    }
-    throw new Error(getErrorMessage(data, 'Failed to load conversations'));
-  }
-
-  return data.conversations || [];
 };
 
 export const getMessages = async (contactId) => {
@@ -59,52 +31,20 @@ export const getMessages = async (contactId) => {
     return [];
   }
 
-  const token = getToken();
-  if (!token) {
-    throw new Error('No token found');
+  try {
+    const data = await apiRequest(`${API_URL}/messages/${encodeURIComponent(contactId)}`);
+    return data.messages || [];
+  } catch {
+    markEndpointFailed(cooldownKey);
+    return [];
   }
-
-  const response = await fetch(`${API_URL}/messages/${encodeURIComponent(contactId)}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  const data = await safeJson(response);
-  if (!response.ok) {
-    if (isServerFailure(response)) {
-      markEndpointFailed(cooldownKey);
-      return [];
-    }
-    throw new Error(getErrorMessage(data, 'Failed to load messages'));
-  }
-
-  return data.messages || [];
 };
 
 export const sendMessage = async (contactId, text) => {
-  const token = getToken();
-  if (!token) {
-    throw new Error('No token found');
-  }
-
-  const response = await fetch(`${API_URL}/messages/${encodeURIComponent(contactId)}`, {
+  const data = await apiRequest(`${API_URL}/messages/${encodeURIComponent(contactId)}`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify({ text }),
   });
 
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(getErrorMessage(data, 'Failed to send message'));
-  }
-
   return data.message;
 };
-
-
-

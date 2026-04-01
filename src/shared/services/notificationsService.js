@@ -1,81 +1,70 @@
-const API_URL = import.meta.env.VITE_API_BASE || '/api';
+import { apiRequest } from './apiClient';
+
+const API_URL =
+  (typeof process !== 'undefined' && process?.env?.NEXT_PUBLIC_EXPRESS_API_URL) ||
+  ((typeof process !== 'undefined' && process?.env?.VITE_API_BASE) || '/api');
 const SERVER_COOLDOWN_MS = 60 * 1000;
 const endpointCooldowns = new Map();
+const readCache = (key, fallback) => {
+  if (typeof window === 'undefined') {
+    return fallback;
+  }
 
-const getToken = () => sessionStorage.getItem('token');
-
-const getErrorMessage = (data, fallback) => data?.message || fallback;
-const isServerFailure = (response) => response.status >= 500;
-
-const safeJson = async (response) => {
   try {
-    return await response.json();
+    const raw = window.sessionStorage.getItem(key);
+    return raw == null ? fallback : JSON.parse(raw);
   } catch {
-    return {};
+    return fallback;
   }
 };
 
-const isEndpointCoolingDown = (key) => {
-  const until = endpointCooldowns.get(key) || 0;
-  return until > Date.now();
+const writeCache = (key, value) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore cache write failures
+  }
 };
 
+const isEndpointCoolingDown = (key) => (endpointCooldowns.get(key) || 0) > Date.now();
 const markEndpointFailed = (key) => {
   endpointCooldowns.set(key, Date.now() + SERVER_COOLDOWN_MS);
 };
 
-const getHeaders = () => {
-  const token = getToken();
-  if (!token) {
-    throw new Error('No token found');
-  }
-
-  return {
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  };
-};
-
 export const getNotifications = async () => {
   if (isEndpointCoolingDown('notifications:list')) {
-    return [];
+    return readCache('kapit_notifications_list', []);
   }
 
-  const response = await fetch(`${API_URL}/notifications`, {
-    headers: getHeaders(),
-  });
-
-  const data = await safeJson(response);
-  if (!response.ok) {
-    if (isServerFailure(response)) {
-      markEndpointFailed('notifications:list');
-      return [];
-    }
-    throw new Error(getErrorMessage(data, 'Failed to load notifications'));
+  try {
+    const data = await apiRequest(`${API_URL}/notifications`);
+    const notifications = Array.isArray(data.notifications) ? data.notifications : [];
+    writeCache('kapit_notifications_list', notifications);
+    return notifications;
+  } catch {
+    markEndpointFailed('notifications:list');
+    return readCache('kapit_notifications_list', []);
   }
-
-  return Array.isArray(data.notifications) ? data.notifications : [];
 };
 
 export const getUnreadNotificationCount = async () => {
   if (isEndpointCoolingDown('notifications:unread-count')) {
-    return 0;
+    return readCache('kapit_notifications_unread_count', 0);
   }
 
-  const response = await fetch(`${API_URL}/notifications/unread-count`, {
-    headers: getHeaders(),
-  });
-
-  const data = await safeJson(response);
-  if (!response.ok) {
-    if (isServerFailure(response)) {
-      markEndpointFailed('notifications:unread-count');
-      return 0;
-    }
-    throw new Error(getErrorMessage(data, 'Failed to load unread notifications'));
+  try {
+    const data = await apiRequest(`${API_URL}/notifications/unread-count`);
+    const count = Number(data.unreadCount || 0);
+    writeCache('kapit_notifications_unread_count', count);
+    return count;
+  } catch {
+    markEndpointFailed('notifications:unread-count');
+    return readCache('kapit_notifications_unread_count', 0);
   }
-
-  return Number(data.unreadCount || 0);
 };
 
 export const markNotificationsRead = async () => {
@@ -83,19 +72,14 @@ export const markNotificationsRead = async () => {
     return 0;
   }
 
-  const response = await fetch(`${API_URL}/notifications/read`, {
-    method: 'PATCH',
-    headers: getHeaders(),
-  });
-
-  const data = await safeJson(response);
-  if (!response.ok) {
-    if (isServerFailure(response)) {
-      markEndpointFailed('notifications:mark-read');
-      return 0;
-    }
-    throw new Error(getErrorMessage(data, 'Failed to mark notifications as read'));
+  try {
+    const data = await apiRequest(`${API_URL}/notifications/read`, {
+      method: 'PATCH',
+    });
+    writeCache('kapit_notifications_unread_count', 0);
+    return Number(data.updatedCount || 0);
+  } catch {
+    markEndpointFailed('notifications:mark-read');
+    return 0;
   }
-
-  return Number(data.updatedCount || 0);
 };

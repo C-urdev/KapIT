@@ -1,6 +1,7 @@
 import React from 'react';
 import { Moon, Sun, Menu } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
+import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
 
 export default function CompanyMobileHeader({ title, user, onOpenMobileNav }) {
   const { theme, toggleTheme } = useTheme();
@@ -19,7 +20,7 @@ export default function CompanyMobileHeader({ title, user, onOpenMobileNav }) {
           </button>
           <button
             type="button"
-            onClick={() => window.location.assign('/company/dashboard')}
+            onClick={() => navigate(COMPANY_PATHS.dashboard)}
             className="flex items-center gap-2 shrink-0 min-w-0"
             aria-label="Go to dashboard"
           >
@@ -46,6 +47,7 @@ export default function CompanyMobileHeader({ title, user, onOpenMobileNav }) {
     </div>
   );
 }
+
 
 
 

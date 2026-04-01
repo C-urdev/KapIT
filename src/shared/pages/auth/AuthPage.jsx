@@ -58,7 +58,7 @@ export default function AuthPage({
             accountType,
           });
 
-          onLogin(
+          await onLogin?.(
             {
               ...data.user,
               type: data.user?.type || userType,
@@ -67,7 +67,7 @@ export default function AuthPage({
             { isNewUser: true }
           );
         } else {
-          onBeginSignup?.({
+          await onBeginSignup?.({
             username: formData.username,
             email: formData.email,
             password: formData.password,
@@ -80,7 +80,7 @@ export default function AuthPage({
           password: formData.password,
         });
 
-        onLogin(
+        await onLogin?.(
           {
             ...data.user,
             type: data.user?.type || userType,

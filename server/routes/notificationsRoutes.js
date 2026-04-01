@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('../middleware/auth');
+const { verifyToken, requireCsrfForCookieAuth } = require('../middleware/auth');
 const {
   listNotifications,
   getUnreadNotificationCount,
@@ -9,6 +9,6 @@ const {
 
 router.get('/', verifyToken, listNotifications);
 router.get('/unread-count', verifyToken, getUnreadNotificationCount);
-router.patch('/read', verifyToken, markNotificationsRead);
+router.patch('/read', requireCsrfForCookieAuth, verifyToken, markNotificationsRead);
 
 module.exports = router;

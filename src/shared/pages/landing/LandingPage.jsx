@@ -41,10 +41,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
   const { theme, toggleTheme } = useTheme();
   const [query, setQuery] = useState('');
   const [highlightGetStarted, setHighlightGetStarted] = useState(false);
-  const [isDesktopCarousel, setIsDesktopCarousel] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(min-width: 1024px)').matches;
-  });
+  const [isDesktopCarousel, setIsDesktopCarousel] = useState(false);
   const topRef = useRef(null);
   const categoriesRef = useRef(null);
 
@@ -105,7 +102,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
     <div className="min-h-screen flex flex-col bg-white dark:bg-gradient-to-b dark:from-[#0a1628] dark:via-[#0f2139] dark:to-[#162842]">
       <div ref={topRef} />
       <header className="sticky top-0 z-30 bg-white/75 dark:bg-[#0f2139]/75 backdrop-blur">
-        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 py-4 flex justify-between items-center">
+        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 py-4 flex flex-wrap justify-between items-center gap-3">
           <button
             type="button"
             onClick={scrollToTop}
@@ -116,7 +113,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
             <h1 className="text-xl sm:text-2xl font-bold text-[#3a5a40] dark:text-white">KapIT</h1>
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"
               onClick={onSignIn}
@@ -197,7 +194,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
 
               <form onSubmit={handleSearch} className="mt-16 sm:mt-20">
                 <div className="mx-auto max-w-5xl">
-                  <div className="flex items-stretch gap-2 rounded-2xl bg-white/85 dark:bg-[#0f2139]/85 border border-[#a3b18a] dark:border-[#2a4a6f] shadow-lg shadow-black/5 dark:shadow-[#3ba9d6]/10 p-2 backdrop-blur">
+                  <div className="flex flex-col gap-2 rounded-2xl bg-white/85 dark:bg-[#0f2139]/85 border border-[#a3b18a] dark:border-[#2a4a6f] shadow-lg shadow-black/5 dark:shadow-[#3ba9d6]/10 p-2 backdrop-blur sm:flex-row sm:items-stretch">
                     <div className="flex min-w-0 flex-1 items-center pl-3">
                       <Search className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 text-[#588157] dark:text-[#3ba9d6]" />
                       <input
@@ -878,6 +875,7 @@ function StepCard({ step, title, description, icon: Icon }) {
     </div>
   );
 }
+
 
 
 

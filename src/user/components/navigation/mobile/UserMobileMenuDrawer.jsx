@@ -1,5 +1,6 @@
 import React from 'react';
-import { X, LogOut, HelpCircle, Settings, Zap, TrendingUp, BadgeCheck, User, FolderKanban, Bookmark, FileCheck2 } from 'lucide-react';
+import { X, LogOut, HelpCircle, Settings, Zap, TrendingUp } from 'lucide-react';
+import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
 
 export default function UserMobileMenuDrawer({ open, active, user, setMobileMenuOpen, onOpenMyProfile, onOpenProjects, onOpenSavedJobs, onOpenApplications, onOpenSettings, onOpenPremium, onHelp, onLogout }) {
   const displayName = user?.fullName || user?.username || user?.email || 'User';
@@ -26,7 +27,10 @@ export default function UserMobileMenuDrawer({ open, active, user, setMobileMenu
               )}
             </div>
             <div className="min-w-0">
-              <div className="truncate text-base font-bold text-[#3a5a40] dark:text-white">{displayName}</div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="truncate text-base font-bold text-[#3a5a40] dark:text-white">{displayName}</div>
+                {isPremium ? <PremiumBadge compact /> : null}
+              </div>
               <div className="truncate text-xs text-[#4b5563] dark:text-[#b8d4e8]">User account</div>
             </div>
           </div>
@@ -40,12 +44,6 @@ export default function UserMobileMenuDrawer({ open, active, user, setMobileMenu
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
-          <div className="rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] p-2 dark:border-[#1e3a5f] dark:bg-[#102235]">
-            <MobileNavButton icon={User} label="My Profile" onClick={() => { setMobileMenuOpen(false); onOpenMyProfile?.(); }} />
-            <MobileNavButton icon={FolderKanban} label="My Projects" onClick={() => { setMobileMenuOpen(false); onOpenProjects?.(); }} />
-            <MobileNavButton icon={Bookmark} label="Saved Jobs" onClick={() => { setMobileMenuOpen(false); onOpenSavedJobs?.(); }} />
-            <MobileNavButton icon={FileCheck2} label="Applications" onClick={() => { setMobileMenuOpen(false); onOpenApplications?.(); }} />
-          </div>
 
           <button
             onClick={() => {
@@ -104,14 +102,14 @@ export default function UserMobileMenuDrawer({ open, active, user, setMobileMenu
               </div>
             </div>
           ) : (
-            <div className="pt-2 rounded-2xl border border-[#bfd0af] bg-[linear-gradient(180deg,#f4f8f1,#ebf4e7)] p-4 shadow-[0_8px_24px_rgba(88,129,87,0.12)] dark:border-[#2f5a78] dark:bg-[linear-gradient(180deg,#14304d,#102138)]">
+            <div className="pt-2 rounded-2xl border border-[#f2c84b] bg-[linear-gradient(180deg,#fff9df,#fff1b8)] p-4 shadow-[0_8px_24px_rgba(242,200,75,0.16)] dark:border-[#8a6a15] dark:bg-[linear-gradient(180deg,#4a3908,#2f2405)]">
               <div className="flex items-start gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#e8f5e9] text-[#3a8f52] dark:bg-[#183154] dark:text-[#7fd0ee]">
-                  <BadgeCheck className="h-4 w-4" />
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#fff4cc] text-[#d69100] dark:bg-[#3a2f0d] dark:text-[#f5c84c]">
+                  <PremiumBadge compact className="border-0 bg-transparent px-0 py-0" iconClassName="h-4 w-4" label="" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h4 className="mb-1 text-sm font-semibold text-[#3a5a40] dark:text-white">You're in the Premium plan</h4>
-                  <p className="text-xs text-[#344e41] dark:text-[#d5e6f5]">
+                  <h4 className="mb-1 text-sm font-semibold text-[#7a5200] dark:text-[#ffe08a]">You're in the Premium plan</h4>
+                  <p className="text-xs text-[#8a6100] dark:text-[#f3d57b]">
                     {userType === 'employee'
                       ? 'Your premium badge and premium visibility are active on this account.'
                       : 'Your premium access is active for advanced hiring tools and priority visibility.'}

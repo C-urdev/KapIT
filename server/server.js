@@ -1,18 +1,34 @@
 const { createApp, ensureSchemaReady } = require('./app');
 
 const PORT = process.env.PORT || 5000;
+const HOST = process.env.HOST;
+const QUIET_STARTUP = process.env.QUIET_STARTUP === 'true';
 const app = createApp();
 
 (async () => {
   try {
     await ensureSchemaReady();
-    console.log('Runtime schema warmup complete');
+    if (!QUIET_STARTUP) {
+      console.log('Runtime schema warmup complete');
+    }
   } catch (error) {
     console.warn('Continuing without schema bootstrap (profile saving may fail).');
     console.warn(error?.message || error);
   }
 
-  app.listen(PORT, () => {
+  const onListen = () => {
+    if (HOST) {
+      console.log(`Server running on http://${HOST}:${PORT}`);
+      return;
+    }
+
     console.log(`Server running on port ${PORT}`);
-  });
+  };
+
+  if (HOST) {
+    app.listen(PORT, HOST, onListen);
+    return;
+  }
+
+  app.listen(PORT, onListen);
 })();

@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@shared/*": ["../../src/shared/*"],
+      "@sharedComponents/*": ["../../src/shared/components/*"],
+      "@sharedPages/*": ["../../src/shared/pages/*"],
+      "@sharedContext/*": ["../../src/shared/context/*"],
+      "@sharedServices/*": ["../../src/shared/services/*"],
+      "@sharedUtils/*": ["../../src/shared/utils/*"],
+      "@user/*": ["../../src/user/*"],
+      "@userComponents/*": ["../../src/user/components/*"],
+      "@userPages/*": ["../../src/user/pages/*"],
+      "@userFeatures/*": ["../../src/user/features/*"],
+      "@userLayouts/*": ["../../src/user/layouts/*"],
+      "@company/*": ["../../src/company/*"],
+      "@companyComponents/*": ["../../src/company/components/*"],
+      "@companyPages/*": ["../../src/company/pages/*"],
+      "@companyFeatures/*": ["../../src/company/features/*"],
+      "@companyLayouts/*": ["../../src/company/layouts/*"]
+    }
+  }
+}

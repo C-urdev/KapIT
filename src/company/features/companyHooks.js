@@ -1,24 +1,56 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { companyAPI } from './companyAPI';
 
-const useAsyncResource = (fetcher, deps = []) => {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+const EMPTY_LIST = [];
+const readCache = (key, fallback) => {
+  if (typeof window === 'undefined' || !key) {
+    return fallback;
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const writeCache = (key, value) => {
+  if (typeof window === 'undefined' || !key) {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Ignore storage failures.
+  }
+};
+
+const useAsyncResource = (fetcher, deps = [], { cacheKey = '', fallbackData = null } = {}) => {
+  const cachedData = useMemo(() => readCache(cacheKey, fallbackData), [cacheKey, fallbackData]);
+  const [data, setData] = useState(cachedData);
+  const [loading, setLoading] = useState(cachedData == null);
   const [error, setError] = useState('');
 
   const refetch = useCallback(async () => {
-    setLoading(true);
+    if (data == null) {
+      setLoading(true);
+    }
     setError('');
     try {
       const result = await fetcher();
       setData(result);
+      writeCache(cacheKey, result);
     } catch (err) {
-      setData(null);
+      if (data == null) {
+        setData(cachedData);
+      }
       setError(err?.message || 'Request failed');
     } finally {
       setLoading(false);
     }
-  }, [fetcher]);
+  }, [cacheKey, cachedData, data, fetcher]);
 
   useEffect(() => {
     refetch();
@@ -29,19 +61,37 @@ const useAsyncResource = (fetcher, deps = []) => {
 
 export const useCompanyJobs = () => {
   const fetchJobs = useCallback(() => companyAPI.getJobs(), []);
-  const { data, loading, error, refetch } = useAsyncResource(fetchJobs, []);
-  return { jobs: data?.jobs || [], loading, error, refetch };
+  const { data, loading, error, refetch } = useAsyncResource(fetchJobs, [], {
+    cacheKey: 'kapit_company_jobs',
+    fallbackData: { jobs: [] },
+  });
+  const jobs = useMemo(() => (Array.isArray(data?.jobs) ? data.jobs : EMPTY_LIST), [data]);
+  return { jobs, loading, error, refetch };
 };
 
 export const useCompanyApplicants = () => {
   const fetchApplicants = useCallback(() => companyAPI.getApplicants(), []);
-  const { data, loading, error, refetch } = useAsyncResource(fetchApplicants, []);
-  return { applicants: data?.applicants || [], loading, error, refetch };
+  const { data, loading, error, refetch } = useAsyncResource(fetchApplicants, [], {
+    cacheKey: 'kapit_company_applicants',
+    fallbackData: { applicants: [] },
+  });
+  const applicants = useMemo(() => (Array.isArray(data?.applicants) ? data.applicants : EMPTY_LIST), [data]);
+  return { applicants, loading, error, refetch };
 };
 
 export const useCompanyAnalytics = () => {
   const fetchAnalytics = useCallback(() => companyAPI.getAnalytics(), []);
-  const { data, loading, error, refetch } = useAsyncResource(fetchAnalytics, []);
+  const { data, loading, error, refetch } = useAsyncResource(fetchAnalytics, [], {
+    cacheKey: 'kapit_company_analytics',
+    fallbackData: {
+      analytics: {
+        totalJobs: 0,
+        totalApplicants: 0,
+        jobsByStatus: {},
+        applicantsByStatus: {},
+      },
+    },
+  });
   return { analytics: data?.analytics || null, loading, error, refetch };
 };
 
@@ -61,8 +111,6 @@ export const useDeveloperSearch = (query) => {
   const deps = useMemo(() => [JSON.stringify(normalized)], [normalized]);
   const fetchDevelopers = useCallback(() => companyAPI.searchDevelopers(normalized), [normalized]);
   const { data, loading, error, refetch } = useAsyncResource(fetchDevelopers, deps);
-  return { developers: data?.developers || [], loading, error, refetch };
+  const developers = useMemo(() => (Array.isArray(data?.developers) ? data.developers : EMPTY_LIST), [data]);
+  return { developers, loading, error, refetch };
 };
-
-
-

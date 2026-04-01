@@ -26,7 +26,7 @@ function OverviewTab({ active, label, count, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl border px-4 py-2 text-sm font-semibold transition-colors ${active ? 'border-[#3a5a40] bg-[#3a5a40] text-white dark:border-[#3ba9d6] dark:bg-[#3ba9d6] dark:text-[#0a1628]' : 'border-[#d6d3c9] bg-white text-[#3a5a40] hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#162842] dark:text-white dark:hover:bg-[#1e3a5f]'}`}
+      className={`whitespace-nowrap rounded-xl border px-4 py-2 text-sm font-semibold transition-colors ${active ? 'border-[#3a5a40] bg-[#3a5a40] text-white dark:border-[#3ba9d6] dark:bg-[#3ba9d6] dark:text-[#0a1628]' : 'border-[#d6d3c9] bg-white text-[#3a5a40] hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#162842] dark:text-white dark:hover:bg-[#1e3a5f]'}`}
     >
       {label} ({count})
     </button>
@@ -35,7 +35,7 @@ function OverviewTab({ active, label, count, onClick }) {
 
 function FilterInput({ icon: Icon, value, onChange, placeholder }) {
   return (
-    <label className="flex items-center gap-3 rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-white dark:bg-[#162842] px-4 py-3 shadow-sm shadow-black/5 transition-colors focus-within:border-[#588157] dark:focus-within:border-[#3ba9d6]">
+    <label className="flex min-w-0 items-center gap-3 rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-white dark:bg-[#162842] px-4 py-3 shadow-sm shadow-black/5 transition-colors focus-within:border-[#588157] dark:focus-within:border-[#3ba9d6]">
       <Icon className="h-4 w-4 shrink-0 text-[#588157] dark:text-[#7fd0ee]" />
       <input
         value={value}
@@ -49,10 +49,10 @@ function FilterInput({ icon: Icon, value, onChange, placeholder }) {
 
 function FilterSelect({ icon: Icon, label, value, onChange, children }) {
   return (
-    <label className="flex items-center gap-3 rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-white dark:bg-[#162842] px-4 py-3 shadow-sm shadow-black/5 transition-colors focus-within:border-[#588157] dark:focus-within:border-[#3ba9d6]">
+    <label className="flex min-w-0 items-center gap-3 rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-white dark:bg-[#162842] px-4 py-3 shadow-sm shadow-black/5 transition-colors focus-within:border-[#588157] dark:focus-within:border-[#3ba9d6]">
       <Icon className="h-4 w-4 shrink-0 text-[#588157] dark:text-[#7fd0ee]" />
       <span className="shrink-0 text-sm font-semibold text-[#3a5a40] dark:text-white">{label}</span>
-      <select value={value} onChange={onChange} className="w-full bg-transparent text-sm text-[#344e41] outline-none dark:text-white">
+      <select value={value} onChange={onChange} className="min-w-0 w-full bg-transparent text-sm text-[#344e41] outline-none dark:text-white">
         {children}
       </select>
     </label>
@@ -208,7 +208,7 @@ export default function CompanyDashboard() {
       </div>
 
       <section className="space-y-4">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1">
           <OverviewTab active={statusTab === 'open'} label="Open" count={openJobs.length} onClick={() => setStatusTab('open')} />
           <OverviewTab active={statusTab === 'draft'} label="Draft" count={draftJobs.length} onClick={() => setStatusTab('draft')} />
           <OverviewTab active={statusTab === 'closed'} label="Closed" count={closedJobs.length} onClick={() => setStatusTab('closed')} />
@@ -253,6 +253,7 @@ export default function CompanyDashboard() {
     </div>
   );
 }
+
 
 
 

@@ -2,6 +2,7 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 const isSupabaseHost = (host) => typeof host === 'string' && host.includes('supabase.co');
+const shouldLogStartup = process.env.QUIET_STARTUP !== 'true';
 
 const createPoolConfig = () => {
   if (process.env.DATABASE_URL) {
@@ -27,7 +28,9 @@ const createPoolConfig = () => {
 const pool = new Pool(createPoolConfig());
 
 pool.on('connect', () => {
-  console.log('Connected to PostgreSQL database');
+  if (shouldLogStartup) {
+    console.log('Connected to PostgreSQL database');
+  }
 });
 
 pool.on('error', (err) => {

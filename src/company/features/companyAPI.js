@@ -1,17 +1,12 @@
+import { apiRequest } from '@sharedServices/apiClient';
+
 const API_BASE = '/api/company';
 const SERVER_COOLDOWN_MS = 60 * 1000;
 const endpointCooldowns = new Map();
 
-const getToken = () => sessionStorage.getItem('token');
-const isServerFailure = (response) => response.status >= 500;
-
+const isServerFailure = (error) => /request failed/i.test(String(error?.message || ''));
 const getCooldownKey = (path, method) => `${String(method || 'GET').toUpperCase()}:${path}`;
-
-const isEndpointCoolingDown = (key) => {
-  const until = endpointCooldowns.get(key) || 0;
-  return until > Date.now();
-};
-
+const isEndpointCoolingDown = (key) => (endpointCooldowns.get(key) || 0) > Date.now();
 const markEndpointFailed = (key) => {
   endpointCooldowns.set(key, Date.now() + SERVER_COOLDOWN_MS);
 };
@@ -22,30 +17,18 @@ const request = async (path, { method = 'GET', body, fallbackData } = {}) => {
     return fallbackData;
   }
 
-  const token = getToken();
-  if (!token) {
-    throw new Error('No token found');
-  }
-
-  const response = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: body == null ? undefined : JSON.stringify(body),
-  });
-
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    if (fallbackData !== undefined && isServerFailure(response)) {
+  try {
+    return await apiRequest(`${API_BASE}${path}`, {
+      method,
+      body: body == null ? undefined : JSON.stringify(body),
+    });
+  } catch (error) {
+    if (fallbackData !== undefined && isServerFailure(error)) {
       markEndpointFailed(cooldownKey);
       return fallbackData;
     }
-    throw new Error(data?.message || 'Request failed');
+    throw error;
   }
-
-  return data;
 };
 
 export const companyAPI = {
@@ -95,6 +78,3 @@ export const companyAPI = {
 };
 
 export const saveCompanyProfileOnboarding = (profileInput) => companyAPI.saveOnboardingProfile(profileInput);
-
-
-

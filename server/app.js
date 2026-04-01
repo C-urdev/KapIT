@@ -1,4 +1,5 @@
 const express = require('express');
+const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
@@ -7,7 +8,9 @@ const messagesRoutes = require('./routes/messagesRoutes');
 const notificationsRoutes = require('./routes/notificationsRoutes');
 const companyRoutes = require('./routes/companyRoutes');
 const developerRoutes = require('./routes/developerRoutes');
+const publicRoutes = require('./routes/publicRoutes');
 const { warmRuntimeSchemas } = require('./config/runtimeSchema');
+const { securityHeaders } = require('./middleware/security');
 
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 dotenv.config({ path: path.resolve(__dirname, '..', '.env.local'), override: true });
@@ -21,12 +24,18 @@ const createApp = () => {
 
   const allowedOrigins = [
     process.env.CLIENT_URL,
+    process.env.NEXT_PUBLIC_SITE_URL,
     'https://kapit-website.vercel.app',
     'http://localhost:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173',
   ]
     .map(normalizeOrigin)
     .filter(Boolean);
 
+  app.disable('x-powered-by');
+  app.use(securityHeaders);
   app.use(
     cors({
       origin: (origin, callback) => {
@@ -48,6 +57,8 @@ const createApp = () => {
     })
   );
 
+  app.set('trust proxy', 1);
+  app.use(cookieParser());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
@@ -63,6 +74,7 @@ const createApp = () => {
   });
 
   app.use('/api/auth', authRoutes);
+  app.use('/api/public', publicRoutes);
   app.use('/api/messages', messagesRoutes);
   app.use('/api/notifications', notificationsRoutes);
   app.use('/api/company', companyRoutes);

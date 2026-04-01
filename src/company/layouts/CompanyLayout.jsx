@@ -27,11 +27,13 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
   const [mobileNavActive, setMobileNavActive] = useState(false);
   const [premiumOpen, setPremiumOpen] = useState(false);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem('companySidebarCollapsed') === 'true';
-  });
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const title = useMemo(() => TITLES[pathname] || 'Company', [pathname]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setSidebarCollapsed(window.localStorage.getItem('companySidebarCollapsed') === 'true');
+  }, []);
 
   useEffect(() => {
     if (pathname === COMPANY_PATHS.premium) {
@@ -94,13 +96,13 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
         onLogout={onLogout}
         onOpenMobileNav={() => setMobileNavOpen(true)}
         sidebarCollapsed={sidebarCollapsed}
+        onToggleSidebarCollapsed={() => setSidebarCollapsed((value) => !value)}
         unreadNotificationCount={unreadNotificationCount}
       />
 
       <CompanySidebar
         activePath={pathname}
         collapsed={sidebarCollapsed}
-        onToggleCollapsed={() => setSidebarCollapsed((value) => !value)}
         unreadNotificationCount={unreadNotificationCount}
       />
 
@@ -170,6 +172,3 @@ function CompanyMobileBottomNav({ pathname, unreadNotificationCount = 0 }) {
     </div>
   );
 }
-
-
-
