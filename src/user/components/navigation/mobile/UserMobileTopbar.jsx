@@ -1,8 +1,8 @@
 import React from 'react';
-import { Menu, Moon, Sun } from 'lucide-react';
+import { Menu, Moon, Search, Sun } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 
-export default function UserMobileTopbar({ setActiveNav, mobileMenuOpen, setMobileMenuOpen }) {
+export default function UserMobileTopbar({ setActiveNav, mobileMenuOpen, setMobileMenuOpen, onOpenSearch }) {
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -33,6 +33,14 @@ export default function UserMobileTopbar({ setActiveNav, mobileMenuOpen, setMobi
       </div>
 
       <div className="flex items-center gap-1.5 shrink-0">
+        <button
+          type="button"
+          onClick={onOpenSearch}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-xl hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+          aria-label="Search users and companies"
+        >
+          <Search className="w-5 h-5 text-[#344e41] dark:text-white" />
+        </button>
         <button
           type="button"
           onClick={toggleTheme}

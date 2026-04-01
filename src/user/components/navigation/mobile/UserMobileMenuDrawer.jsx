@@ -141,16 +141,3 @@ export default function UserMobileMenuDrawer({ open, active, user, setMobileMenu
     </div>
   );
 }
-
-function MobileNavButton({ icon: Icon, label, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-[#344e41] transition-colors hover:bg-white dark:text-white dark:hover:bg-[#16304d]"
-    >
-      <Icon className="h-5 w-5 text-[#588157] dark:text-[#7dc4ff]" />
-      {label}
-    </button>
-  );
-}
