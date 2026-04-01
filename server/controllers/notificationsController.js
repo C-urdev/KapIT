@@ -1,10 +1,15 @@
 const pool = require('../config/database');
 const { ensureBaseUserSchemaReady } = require('../config/runtimeSchema');
+const { useMigrationManagedSchema } = require('../config/schemaManagementMode');
 
 let notificationsTableReady = false;
 let notificationsTablePromise = null;
 
 const ensureNotificationsTable = async (client) => {
+  if (useMigrationManagedSchema) {
+    return;
+  }
+
   if (notificationsTableReady) {
     return;
   }

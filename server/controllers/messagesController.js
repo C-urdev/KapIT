@@ -1,6 +1,29 @@
 const pool = require('../config/database');
 const { createNotification, ensureNotificationsTable } = require('./notificationsController');
-const { ensureBaseUserSchemaReady } = require('../config/runtimeSchema');
+const { ensureBaseUserSchemaReady, ensureMessagingSchemaReady } = require('../config/runtimeSchema');
+const { useMigrationManagedSchema } = require('../config/schemaManagementMode');
+const {
+  ensureDirectConversation,
+  insertConversationMessage,
+  upsertMessageReadState,
+  getUserConversations,
+  getConversationMessagesByParticipantIds,
+} = require('../services/conversationService');
+const {
+  getLegacyConversationList,
+  getLegacyThreadMessages,
+} = require('../services/messagingMigrationMonitor');
+const {
+  getConversationReadDecision,
+  shouldShadowCompareConversationReads,
+  recordConversationReadDecision,
+  recordConversationReadServed,
+  recordConversationReadFallback,
+  recordEmptyConversationThread,
+  recordConversationListCountMismatch,
+  recordConversationThreadCountMismatch,
+  recordDualWriteFailure,
+} = require('../services/messagingRolloutService');
 
 let messagesTableReady = false;
 let messagesTablePromise = null;
@@ -8,6 +31,10 @@ let messageMaintenanceComplete = false;
 let messageMaintenancePromise = null;
 
 const ensureMessagesTable = async (client) => {
+  if (useMigrationManagedSchema) {
+    return;
+  }
+
   if (!messagesTableReady) {
     if (!messagesTablePromise) {
       messagesTablePromise = (async () => {
@@ -179,13 +206,55 @@ const buildDevErrorMeta = (error) => (
     : {}
 );
 
+const shouldLogMessagingMigration = () => String(process.env.LOG_MESSAGING_MIGRATION || '').trim().toLowerCase() === 'true';
+
+const logMessagingMigrationEvent = (event, payload) => {
+  if (!shouldLogMessagingMigration()) {
+    return;
+  }
+
+  console.info(`[messaging-migration] ${event}`, payload);
+};
+
 const listConversations = async (req, res) => {
   let client;
 
   try {
     await ensureBaseUserSchemaReady();
+    await ensureMessagingSchemaReady();
     client = await pool.connect();
     await ensureMessagesTable(client);
+
+    const readDecision = getConversationReadDecision(req, req.user);
+    recordConversationReadDecision(readDecision);
+
+    if (readDecision.enabled) {
+      const conversations = await getUserConversations(client, req.user.id);
+      if (conversations.length > 0) {
+        if (shouldShadowCompareConversationReads()) {
+          const legacyConversations = await getLegacyConversationList(client, req.user.id);
+          if (legacyConversations.length !== conversations.length) {
+            recordConversationListCountMismatch();
+            logMessagingMigrationEvent('conversation_list_count_mismatch', {
+              userId: req.user.id,
+              conversationCount: conversations.length,
+              legacyCount: legacyConversations.length,
+              reason: readDecision.reason,
+            });
+          }
+        }
+
+        recordConversationReadServed();
+        return res.json({ success: true, conversations, source: 'conversations' });
+      }
+
+      recordConversationReadFallback('no_conversation_rows');
+      logMessagingMigrationEvent('conversation_list_fallback', {
+        userId: req.user.id,
+        reason: 'no_conversation_rows',
+        rolloutReason: readDecision.reason,
+      });
+    }
 
     const result = await client.query(
       `WITH conversation_rows AS (
@@ -236,7 +305,7 @@ const listConversations = async (req, res) => {
       createdAt: row.created_at,
     }));
 
-    res.json({ success: true, conversations });
+    res.json({ success: true, conversations, source: 'legacy' });
   } catch (error) {
     console.error('List conversations error:', error);
     res.json({
@@ -257,12 +326,55 @@ const listMessages = async (req, res) => {
 
   try {
     await ensureBaseUserSchemaReady();
+    await ensureMessagingSchemaReady();
     client = await pool.connect();
     await ensureMessagesTable(client);
 
     const contactId = String(req.params.contact || '').trim();
     if (!contactId) {
       return res.status(400).json({ success: false, message: 'Contact id is required' });
+    }
+
+    const readDecision = getConversationReadDecision(req, req.user);
+    recordConversationReadDecision(readDecision);
+
+    if (readDecision.enabled) {
+      const conversationResult = await getConversationMessagesByParticipantIds(client, req.user.id, contactId);
+      if (conversationResult.messages.length > 0) {
+        if (shouldShadowCompareConversationReads()) {
+          const legacyMessages = await getLegacyThreadMessages(client, req.user.id, contactId);
+          if (legacyMessages.length !== conversationResult.messages.length) {
+            recordConversationThreadCountMismatch();
+            logMessagingMigrationEvent('conversation_thread_count_mismatch', {
+              userId: req.user.id,
+              contactId,
+              conversationCount: conversationResult.messages.length,
+              legacyCount: legacyMessages.length,
+              reason: readDecision.reason,
+            });
+          }
+        }
+
+        recordConversationReadServed();
+        return res.json({
+          success: true,
+          messages: conversationResult.messages,
+          source: 'conversations',
+          conversationId: conversationResult.conversation.id,
+        });
+      }
+
+      const fallbackReason = conversationResult.conversation ? 'empty_conversation_messages' : 'conversation_missing';
+      recordConversationReadFallback(fallbackReason);
+      if (fallbackReason === 'empty_conversation_messages') {
+        recordEmptyConversationThread();
+      }
+      logMessagingMigrationEvent('conversation_thread_fallback', {
+        userId: req.user.id,
+        contactId,
+        reason: fallbackReason,
+        rolloutReason: readDecision.reason,
+      });
     }
 
     const result = await client.query(
@@ -300,7 +412,7 @@ const listMessages = async (req, res) => {
       });
     }
 
-    res.json({ success: true, messages });
+    res.json({ success: true, messages, source: 'legacy' });
   } catch (error) {
     console.error('List messages error:', error);
     res.json({
@@ -318,9 +430,18 @@ const listMessages = async (req, res) => {
 
 const sendMessage = async (req, res) => {
   let client;
+  let sendPhase = 'init';
+  let sendMeta = {
+    userId: req.user?.id || null,
+    contactId: null,
+    legacyMessageId: null,
+    conversationId: null,
+    conversationMessageId: null,
+  };
 
   try {
     await ensureBaseUserSchemaReady();
+    await ensureMessagingSchemaReady();
     client = await pool.connect();
     await ensureMessagesTable(client);
     await client.query('BEGIN');
@@ -332,6 +453,8 @@ const sendMessage = async (req, res) => {
       await client.query('ROLLBACK');
       return res.status(400).json({ success: false, message: 'Contact id is required' });
     }
+
+    sendMeta.contactId = contactId;
 
     if (!text) {
       await client.query('ROLLBACK');
@@ -370,6 +493,7 @@ const sendMessage = async (req, res) => {
     }
 
     await ensureNotificationsTable(client);
+    sendPhase = 'legacy_write';
 
     const result = await client.query(
       `INSERT INTO messages (sender_user_id, recipient_user_id, user_id, contact_user_id, contact_name, sender_type, body)
@@ -377,11 +501,42 @@ const sendMessage = async (req, res) => {
        RETURNING id, sender_type, body, created_at`,
       [req.user.id, contactId, text]
     );
+    sendMeta.legacyMessageId = result.rows[0]?.id || null;
 
     await client.query(
       `INSERT INTO messages (sender_user_id, recipient_user_id, user_id, contact_user_id, contact_name, sender_type, body)
        VALUES ($1, $2, $2, $1, '', 'them', $3)`,
       [req.user.id, contactId, text]
+    );
+
+    sendPhase = 'conversation_write';
+    const conversation = await ensureDirectConversation(client, req.user.id, contactId, req.user.id);
+    sendMeta.conversationId = conversation.id;
+    const conversationMessage = await insertConversationMessage(client, {
+      conversationId: conversation.id,
+      senderUserId: req.user.id,
+      body: text,
+      createdAt: result.rows[0]?.created_at || null,
+      legacyMessageId: result.rows[0]?.id || null,
+      metadata: {
+        migratedFromLegacy: false,
+        writeMode: 'dual',
+      },
+    });
+    sendMeta.conversationMessageId = conversationMessage.id;
+
+    await upsertMessageReadState(client, {
+      conversationId: conversation.id,
+      userId: req.user.id,
+      lastReadMessageId: conversationMessage.id,
+      lastReadAt: conversationMessage.created_at,
+    });
+
+    await client.query(
+      `INSERT INTO message_read_state (conversation_id, user_id)
+       VALUES ($1, $2)
+       ON CONFLICT (conversation_id, user_id) DO NOTHING`,
+      [conversation.id, contactId]
     );
 
     const senderLabel = getAccountLabel(senderResult.rows[0]);
@@ -399,6 +554,7 @@ const sendMessage = async (req, res) => {
       },
     });
 
+    sendPhase = 'commit';
     await client.query('COMMIT');
 
     const row = result.rows[0];
@@ -415,6 +571,13 @@ const sendMessage = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
+    recordDualWriteFailure();
+    logMessagingMigrationEvent('send_failure', {
+      phase: sendPhase,
+      ...sendMeta,
+      errorMessage: error?.message || String(error),
+      errorCode: error?.code || '',
+    });
     console.error('Send message error:', error);
     res.status(500).json({ success: false, message: 'Server error while sending message' });
   } finally {

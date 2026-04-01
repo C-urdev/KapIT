@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/database');
+const { useMigrationManagedSchema } = require('../config/schemaManagementMode');
 
 const ACCESS_TOKEN_TTL = process.env.JWT_ACCESS_EXPIRE || '20m';
 const REFRESH_TOKEN_TTL_DAYS = Number(process.env.JWT_REFRESH_EXPIRE_DAYS || 14);
@@ -68,6 +69,10 @@ const signRefreshToken = (user, sessionId) =>
 const hashToken = (value) => crypto.createHash('sha256').update(String(value || '')).digest('hex');
 
 const ensureRefreshSessionsTable = async () => {
+  if (useMigrationManagedSchema) {
+    return;
+  }
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS auth_refresh_sessions (
       id UUID PRIMARY KEY,
