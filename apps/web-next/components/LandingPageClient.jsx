@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import LandingPage from '@sharedPages/landing/LandingPage';
+import SelectAccountTypeModal from '@sharedComponents/auth/SelectAccountTypeModal';
 import { getCurrentUser, getStoredUser } from '@sharedServices/authService';
 
 const resolveDashboardPath = (user) => (
@@ -13,6 +14,7 @@ const resolveDashboardPath = (user) => (
 
 export default function LandingPageClient() {
   const router = useRouter();
+  const [isAccountTypeModalOpen, setIsAccountTypeModalOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,10 +45,34 @@ export default function LandingPageClient() {
   }, [router]);
 
   return (
-    <LandingPage
-      onGetStarted={() => router.push('/auth/register')}
-      onJoinDeveloper={() => router.push('/auth/register?type=developer')}
-      onSignIn={() => router.push('/auth/login')}
-    />
+    <>
+      <LandingPage
+        onGetStarted={() => setIsAccountTypeModalOpen(true)}
+        onJoinDeveloper={() => router.push('/auth/register?type=developer')}
+        onSignIn={() => router.push('/auth/login')}
+      />
+
+      <SelectAccountTypeModal
+        open={isAccountTypeModalOpen}
+        onClose={() => setIsAccountTypeModalOpen(false)}
+        onSelect={(type) => {
+          setIsAccountTypeModalOpen(false);
+
+          if (type === 'login') {
+            router.push('/auth/login');
+            return;
+          }
+
+          if (type === 'developer') {
+            router.push('/auth/register?type=developer');
+            return;
+          }
+
+          if (type === 'company') {
+            router.push('/auth/register?type=company');
+          }
+        }}
+      />
+    </>
   );
 }

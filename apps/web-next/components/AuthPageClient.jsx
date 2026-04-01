@@ -3,6 +3,18 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import AuthPage from '@sharedPages/auth/AuthPage';
 
+const resolvePostAuthPath = (user) => {
+  if (!user?.profileCompleted) {
+    return user?.accountType === 'company' || user?.type === 'company'
+      ? '/onboarding/company-profile'
+      : '/onboarding/developer-profile';
+  }
+
+  return user?.accountType === 'company' || user?.type === 'company'
+    ? '/company/dashboard'
+    : '/dashboard/user';
+};
+
 export default function AuthPageClient({ initialMode = 'login' }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -13,7 +25,7 @@ export default function AuthPageClient({ initialMode = 'login' }) {
       accountType={accountType}
       initialMode={initialMode}
       onBack={() => router.push('/')}
-      onRequestAccountType={() => router.push('/auth/register')}
+      onRequestAccountType={() => router.push('/')}
       onBeginSignup={(signupData) => {
         const query = new URLSearchParams();
         if (signupData?.email) query.set('email', signupData.email);
@@ -21,7 +33,7 @@ export default function AuthPageClient({ initialMode = 'login' }) {
         router.push(`/auth/register${query.toString() ? `?${query.toString()}` : ''}`);
       }}
       onLogin={(user) => {
-        router.push('/');
+        router.replace(resolvePostAuthPath(user));
       }}
       onWarmRoute={() => {}}
     />

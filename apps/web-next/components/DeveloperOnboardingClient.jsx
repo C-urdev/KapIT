@@ -1,0 +1,54 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import ConfirmModal from '@sharedComponents/ui/ConfirmModal';
+import DeveloperProfile from '@sharedPages/onboarding/DeveloperProfileOnboardingPage';
+import { logoutUser, updateStoredUser } from '@sharedServices/authService';
+import { saveDeveloperProfile } from '@userFeatures/developer/userDeveloperAPI';
+import SessionGate from './SessionGate';
+
+export default function DeveloperOnboardingClient() {
+  const router = useRouter();
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+
+  const confirmLogout = async () => {
+    setLogoutConfirmOpen(false);
+    await logoutUser();
+    router.replace('/');
+  };
+
+  return (
+    <>
+      <SessionGate requiredAccountType="developer" redirectTo="/" allowIncompleteProfile>
+        {({ user, setUser }) => (
+          <DeveloperProfile
+            user={user}
+            onLogout={() => setLogoutConfirmOpen(true)}
+            onSubmit={async (profileData) => {
+              const data = await saveDeveloperProfile(profileData);
+              const updatedUser = data?.user
+                ? { ...data.user, ...profileData, profileCompleted: true, accountType: 'developer' }
+                : { ...user, ...profileData, profileCompleted: true, accountType: 'developer' };
+
+              updateStoredUser(updatedUser);
+              setUser(updatedUser);
+              router.replace('/dashboard/user');
+            }}
+          />
+        )}
+      </SessionGate>
+
+      <ConfirmModal
+        open={logoutConfirmOpen}
+        title="Log out?"
+        message="Are you sure to log out?"
+        confirmLabel="Log out"
+        cancelLabel="Stay signed in"
+        tone="danger"
+        onCancel={() => setLogoutConfirmOpen(false)}
+        onConfirm={confirmLogout}
+      />
+    </>
+  );
+}

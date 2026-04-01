@@ -69,7 +69,14 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
   };
 
   const handleJoinDeveloperClick = () => {
+    onJoinDeveloper?.();
+  };
+
+  const handleOpenAccountChoice = () => {
     highlightTopGetStarted();
+    window.setTimeout(() => {
+      onGetStarted?.();
+    }, 120);
   };
 
   useEffect(() => {
@@ -231,7 +238,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
                   <div className="mt-14 flex flex-col sm:flex-row items-center justify-center gap-5">
                     <button
                       type="button"
-                      onClick={highlightTopGetStarted}
+                      onClick={handleOpenAccountChoice}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl bg-white/85 dark:bg-[#162842]/70 border border-[#a3b18a] dark:border-[#2a4a6f] text-[#102a1b] dark:text-white text-base sm:text-lg font-semibold hover:bg-white dark:hover:bg-[#1e3a5f] transition-colors backdrop-blur"
                     >
                       Find Developers <ArrowRight className="w-4 h-4" />
@@ -287,9 +294,9 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
 
           <div className="mt-8">
             {isDesktopCarousel ? (
-              <CategoryOrbitRow categories={CATEGORIES} onCategoryClick={highlightTopGetStarted} />
+              <CategoryOrbitRow categories={CATEGORIES} onCategoryClick={handleOpenAccountChoice} />
             ) : (
-              <MobileCategoryCarousel categories={CATEGORIES} onCategoryClick={highlightTopGetStarted} />
+              <MobileCategoryCarousel categories={CATEGORIES} onCategoryClick={handleOpenAccountChoice} />
             )}
           </div>
       </div>
@@ -344,7 +351,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto lg:shrink-0">
               <button
                 type="button"
-                onClick={highlightTopGetStarted}
+                onClick={handleOpenAccountChoice}
                 className="w-full sm:w-auto inline-flex min-h-[54px] items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#2a4a6f] text-[#102a1b] dark:text-white font-semibold hover:bg-white/90 dark:hover:bg-[#1e3a5f] transition-colors"
               >
                 Find Developers <ArrowRight className="w-4 h-4" />
@@ -875,6 +882,8 @@ function StepCard({ step, title, description, icon: Icon }) {
     </div>
   );
 }
+
+
 
 
 

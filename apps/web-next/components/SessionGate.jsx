@@ -4,7 +4,20 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser, getStoredUser, logoutUser, updateStoredUser } from '@sharedServices/authService';
 
-export default function SessionGate({ children, redirectTo = '/auth/login', requiredAccountType = null }) {
+const resolveDashboardPath = (user) =>
+  user?.accountType === 'company' || user?.type === 'company' ? '/company/dashboard' : '/dashboard/user';
+
+const resolveOnboardingPath = (user) =>
+  user?.accountType === 'company' || user?.type === 'company'
+    ? '/onboarding/company-profile'
+    : '/onboarding/developer-profile';
+
+export default function SessionGate({
+  children,
+  redirectTo = '/auth/login',
+  requiredAccountType = null,
+  allowIncompleteProfile = false,
+}) {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -16,6 +29,12 @@ export default function SessionGate({ children, redirectTo = '/auth/login', requ
       const storedUser = getStoredUser();
       if (!cancelled && storedUser) {
         setUser(storedUser);
+
+        if (!allowIncompleteProfile && storedUser.profileCompleted === false) {
+          router.replace(resolveOnboardingPath(storedUser));
+          setLoading(false);
+          return;
+        }
       }
 
       try {
@@ -35,7 +54,12 @@ export default function SessionGate({ children, redirectTo = '/auth/login', requ
         }
 
         if (requiredAccountType && nextUser.accountType !== requiredAccountType && nextUser.type !== requiredAccountType) {
-          router.replace(nextUser.accountType === 'company' || nextUser.type === 'company' ? '/company/dashboard' : '/dashboard/user');
+          router.replace(resolveDashboardPath(nextUser));
+          return;
+        }
+
+        if (!allowIncompleteProfile && nextUser.profileCompleted === false) {
+          router.replace(resolveOnboardingPath(nextUser));
           return;
         }
 
@@ -60,7 +84,7 @@ export default function SessionGate({ children, redirectTo = '/auth/login', requ
     return () => {
       cancelled = true;
     };
-  }, [redirectTo, requiredAccountType, router]);
+  }, [allowIncompleteProfile, redirectTo, requiredAccountType, router]);
 
   if (loading) {
     return (

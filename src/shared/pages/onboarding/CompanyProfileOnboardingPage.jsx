@@ -184,18 +184,18 @@ export default function CompanyProfile({ user, onSubmit, onLogout }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-200">
-      <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-900/80 backdrop-blur">
+    <div className="min-h-screen bg-[#f5f5f2] text-[#344e41] dark:bg-[#0a1628] dark:text-slate-200">
+      <header className="sticky top-0 z-30 border-b border-[#a3b18a] bg-white dark:border-[#1e3a5f] dark:bg-[#0a1628]">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
           <button
             type="button"
             onClick={() => navigate('/')}
-            className="inline-flex items-center gap-2 text-slate-200 hover:text-white"
+            className="inline-flex items-center gap-2 text-[#344e41] hover:text-[#3a5a40] dark:text-slate-200 dark:hover:text-white"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="h-5 w-5" />
             <span className="inline-flex items-center gap-3">
-              <KapITLogo className="w-9 h-9 rounded-lg object-contain bg-white" />
-              <span className="text-xl font-bold">KapIT</span>
+              <KapITLogo className="h-9 w-9 rounded-lg object-contain bg-white" />
+              <span className="text-xl font-bold text-[#3a5a40] dark:text-white">KapIT</span>
             </span>
           </button>
 
@@ -203,17 +203,17 @@ export default function CompanyProfile({ user, onSubmit, onLogout }) {
             <button
               type="button"
               onClick={toggleTheme}
-              className="rounded-lg p-2 transition-colors hover:bg-slate-800"
+              className="rounded-lg p-2 transition-colors hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f]"
               aria-label="Toggle theme"
             >
-              {theme === 'light' ? <Moon className="w-5 h-5 text-slate-200" /> : <Sun className="w-5 h-5 text-slate-200" />}
+              {theme === 'light' ? <Moon className="h-5 w-5 text-[#344e41]" /> : <Sun className="h-5 w-5 text-white" />}
             </button>
             <button
               type="button"
               onClick={onLogout}
-              className="inline-flex items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-rose-200 hover:bg-rose-500/15"
+              className="inline-flex items-center gap-2 rounded-lg border border-red-300 px-3 py-2 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/30"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="h-4 w-4" />
               Log out
             </button>
           </div>
@@ -221,14 +221,14 @@ export default function CompanyProfile({ user, onSubmit, onLogout }) {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-10">
-        <div className="rounded-xl border border-slate-800 bg-slate-800/60 p-6 shadow-lg shadow-black/30">
+        <div className="rounded-2xl border border-[#a3b18a] bg-white p-6 shadow-lg shadow-black/5 dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-black/30 sm:p-8">
           <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-700 bg-slate-900">
-              <Building2 className="w-6 h-6 text-blue-400" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#a3b18a] bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#0f2139]">
+              <Building2 className="h-6 w-6 text-[#588157] dark:text-[#3ba9d6]" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-2xl font-extrabold text-white sm:text-3xl">Complete your company profile</h1>
-              <p className="mt-1 text-sm text-slate-400">Set up your company details so developers can recognize and trust your brand.</p>
+              <h1 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white sm:text-3xl">Complete your company profile</h1>
+              <p className="mt-1 text-sm text-[#344e41] dark:text-[#b8d4e8]">Set up your company details so developers can recognize and trust your brand.</p>
             </div>
           </div>
 
@@ -333,7 +333,7 @@ export default function CompanyProfile({ user, onSubmit, onLogout }) {
               <button
                 type="submit"
                 disabled={!isComplete || saving}
-                className="rounded-xl border border-blue-500/30 bg-blue-500/15 px-5 py-3 font-semibold text-blue-200 shadow-lg shadow-black/30 hover:bg-blue-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-xl bg-[#3a5a40] px-5 py-3 font-semibold text-white hover:bg-[#344e41] disabled:cursor-not-allowed disabled:opacity-60 dark:border dark:border-[#3ba9d6]/30 dark:bg-[#1e3a5f] dark:text-[#dcecff] dark:hover:bg-[#24496d]"
               >
                 {saving ? 'Saving...' : 'Save company profile'}
               </button>
@@ -348,7 +348,7 @@ export default function CompanyProfile({ user, onSubmit, onLogout }) {
 function Section({ title, children }) {
   return (
     <section>
-      <h2 className="text-lg font-bold text-white">{title}</h2>
+      <h2 className="text-lg font-bold text-[#2f3e2f] dark:text-white">{title}</h2>
       <div className="mt-4">{children}</div>
     </section>
   );
@@ -357,12 +357,8 @@ function Section({ title, children }) {
 function Field({ label, full = false, children }) {
   return (
     <div className={full ? 'md:col-span-2' : ''}>
-      <label className="mb-1 block text-sm font-semibold text-slate-200">{label}</label>
+      <label className="mb-1 block text-sm font-semibold text-[#3a5a40] dark:text-slate-200">{label}</label>
       {children}
     </div>
   );
 }
-
-
-
-
