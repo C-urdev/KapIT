@@ -32,11 +32,14 @@ if (scriptName === 'dev' || scriptName === 'start') {
 }
 
 const { PORT: _ignoredPort, HOST: _ignoredHost, ...forwardedEnv } = process.env;
+const normalizedNodeEnv =
+  scriptName === 'build' ? 'production' : scriptName === 'dev' ? 'development' : process.env.NODE_ENV;
 
 const child = spawn(command, args, {
   cwd: appDirectory,
   env: {
     ...forwardedEnv,
+    ...(normalizedNodeEnv ? { NODE_ENV: normalizedNodeEnv } : {}),
     PORT: nextPort,
     HOST: nextHost,
     INIT_CWD: appDirectory,
@@ -104,3 +107,4 @@ if (hideNetworkLine || quietStartup) {
 child.on('exit', (code) => {
   process.exit(code ?? 0);
 });
+

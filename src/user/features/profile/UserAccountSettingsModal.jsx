@@ -304,9 +304,12 @@ export default function AccountSettingsModal({ isOpen, user, onClose, onSave, on
               />
             </div>
 
-            <div className="mt-6">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-[#6b7280] dark:text-[#7d9ab8]">Quick access</p>
-              <div className="space-y-3">
+            <section className="xl:hidden mt-6 border-t border-[#e5e7eb] dark:border-[#2a4a6f] pt-5">
+              <div className="flex items-center gap-2 mb-3">
+                <FolderKanban className="w-4 h-4 text-[#588157] dark:text-[#3ba9d6]" />
+                <h5 className="font-semibold text-[#3a5a40] dark:text-white">Quick access</h5>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
                 <NavCard
                   title="My Profile"
                   description="Open your public-facing profile workspace"
@@ -332,7 +335,8 @@ export default function AccountSettingsModal({ isOpen, user, onClose, onSave, on
                   onClick={() => handleQuickOpen(onOpenApplications)}
                 />
               </div>
-            </div>
+            </section>
+
           </aside>
 
           <main className="p-5 sm:p-6 overflow-y-auto">
