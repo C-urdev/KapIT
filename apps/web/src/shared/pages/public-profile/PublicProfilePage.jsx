@@ -1,14 +1,59 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Building2, Globe, Mail, MapPin, MessageCircle, User } from 'lucide-react';
-import { getPostsForUser } from '@userFeatures/posts/userPostStorage';
+import { addCommentToPostForUser, getPostsForUser, reactToCommentOnPostForUser, reactToPostForUser, toggleSharePostForUser } from '@userFeatures/posts/userPostStorage';
 import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
+import FeedPostCard from '@userPages/home/FeedPostCard';
 
-export default function PublicProfilePage({ profile, onBack, onMessage, onMore }) {
-  const displayName = profile?.username || profile?.name || 'User';
+export default function PublicProfilePage({ profile, onBack, onMessage, onMore, viewer, onToggleSavePost, onReactToPost, onAddComment, onReactToComment, onToggleSharePost }) {
+  const displayName = profile?.companyName || profile?.fullName || profile?.username || profile?.name || 'User';
   const initial = displayName.charAt(0).toUpperCase();
-  const posts = useMemo(() => getPostsForUser(profile), [profile]);
+  const [posts, setPosts] = useState(() => getPostsForUser(profile, viewer || profile));
   const isCompany = profile?.type === 'company';
   const relatedCompanies = Array.isArray(profile?.relatedCompanies) ? profile.relatedCompanies : [];
+
+  useEffect(() => {
+    setPosts(getPostsForUser(profile, viewer || profile));
+  }, [profile, viewer]);
+
+  const handleReactToProfilePost = (postId, reactionType) => {
+    if (!viewer) {
+      onReactToPost?.(postId, reactionType);
+      return;
+    }
+    reactToPostForUser(viewer, postId, reactionType);
+    setPosts(getPostsForUser(profile, viewer || profile));
+  };
+
+  const handleAddCommentToProfilePost = (postId, commentInput) => {
+    if (!viewer) {
+      onAddComment?.(postId, commentInput);
+      return;
+    }
+    addCommentToPostForUser(viewer, postId, commentInput);
+    setPosts(getPostsForUser(profile, viewer || profile));
+  };
+
+  const handleShareProfilePost = (postId, shareInput) => {
+    if (!viewer) {
+      onToggleSharePost?.(postId, shareInput);
+      return;
+    }
+    if (onToggleSharePost) {
+      onToggleSharePost(postId, shareInput);
+    } else {
+      toggleSharePostForUser(viewer, postId, shareInput);
+    }
+    setPosts(getPostsForUser(profile, viewer || profile));
+  };
+
+  const handleReactToProfileComment = (postId, commentId, reactionType, parentCommentId = null) => {
+    if (!viewer) {
+      onReactToComment?.(postId, commentId, reactionType, parentCommentId);
+      return;
+    }
+    reactToCommentOnPostForUser(viewer, postId, commentId, reactionType, parentCommentId);
+    setPosts(getPostsForUser(profile, viewer || profile));
+  };
 
   return (
     <div className="w-full max-w-[1300px] mx-auto space-y-6">
@@ -124,10 +169,24 @@ export default function PublicProfilePage({ profile, onBack, onMessage, onMore }
             ) : (
               <div className="space-y-3">
                 {posts.map((post) => (
-                  <article key={post.id} className="border border-[#a3b18a] dark:border-[#2a4a6f] rounded-lg p-3">
-                    <p className="text-sm text-[#344e41] dark:text-[#b8d4e8] whitespace-pre-wrap">{post.content}</p>
-                    <p className="text-xs mt-2 text-[#3a5a40] dark:text-[#7d9ab8]">{new Date(post.createdAt).toLocaleString()}</p>
-                  </article>
+                  <FeedPostCard
+                    key={post.id}
+                    post={post}
+                    user={viewer || profile}
+                    displayName={displayName}
+                    profileImage={profile?.profileImage || ''}
+                    userInitial={initial}
+                    isMenuOpen={false}
+                    onOpenMenu={() => {}}
+                    onCloseMenu={() => {}}
+                    onToggleSavePost={onToggleSavePost}
+                    onReactToPost={handleReactToProfilePost}
+                    onAddComment={handleAddCommentToProfilePost}
+                    onReactToComment={handleReactToProfileComment}
+                    onToggleSharePost={handleShareProfilePost}
+                    onHidePost={() => {}}
+                    enableMenu={false}
+                  />
                 ))}
               </div>
             )}

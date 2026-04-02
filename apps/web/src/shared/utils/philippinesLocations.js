@@ -2,9 +2,9 @@ const NCR_PROVINCE_CODE = 'metro-manila';
 const NCR_COMPONENT_CODES = ['1339', '1374', '1375', '1376'];
 const EXCLUDED_PROVINCE_CODES = new Set(['0997', '1298']);
 
-let philModulePromise;
 let addressOptionsPromise;
 let provinceCityDataPromise;
+let locationDatasetPromise;
 
 const titleCase = (value) =>
   String(value || '')
@@ -18,21 +18,38 @@ export const cleanPlaceName = (value) =>
     .replace(/\s+City$/i, '')
     .trim();
 
-const loadPhilModule = async () => {
-  if (!philModulePromise) {
-    philModulePromise = import('phil-reg-prov-mun-brgy').then((module) => module.default || module);
+const loadLocationDataset = async () => {
+  if (!locationDatasetPromise) {
+    locationDatasetPromise = Promise.all([
+      fetch('/data/philippineProvinces.json').then((response) => {
+        if (!response.ok) {
+          throw new Error('Failed to load province data');
+        }
+        return response.json();
+      }),
+      fetch('/data/philippineCityMunicipalities.json').then((response) => {
+        if (!response.ok) {
+          throw new Error('Failed to load city and municipality data');
+        }
+        return response.json();
+      }),
+    ]).then(([provinces, cityMunicipalities]) => ({
+      provinces: Array.isArray(provinces) ? provinces : [],
+      cityMunicipalities: Array.isArray(cityMunicipalities) ? cityMunicipalities : [],
+    }));
   }
-  return philModulePromise;
+
+  return locationDatasetPromise;
 };
 
 export const loadAddressOptions = async () => {
   if (!addressOptionsPromise) {
-    addressOptionsPromise = loadPhilModule().then((phil) => {
-      const provinceMap = new Map((phil.provinces || []).map((item) => [item.prov_code, cleanPlaceName(item.name)]));
+    addressOptionsPromise = loadLocationDataset().then(({ provinces, cityMunicipalities }) => {
+      const provinceMap = new Map((provinces || []).map((item) => [item.prov_code, cleanPlaceName(item.name)]));
       const labels = new Set();
       const options = [];
 
-      for (const record of phil.city_mun || []) {
+      for (const record of cityMunicipalities || []) {
         if (EXCLUDED_PROVINCE_CODES.has(record.prov_code)) continue;
 
         const municipalityOrCity = cleanPlaceName(record.name);
@@ -54,10 +71,10 @@ export const loadAddressOptions = async () => {
 
 export const loadProvinceCityData = async () => {
   if (!provinceCityDataPromise) {
-    provinceCityDataPromise = loadPhilModule().then((phil) => {
+    provinceCityDataPromise = loadLocationDataset().then(({ provinces, cityMunicipalities }) => {
       const unique = new Map();
 
-      for (const province of phil.provinces || []) {
+      for (const province of provinces || []) {
         if (EXCLUDED_PROVINCE_CODES.has(province.prov_code) || NCR_COMPONENT_CODES.includes(province.prov_code)) {
           continue;
         }
@@ -79,7 +96,7 @@ export const loadProvinceCityData = async () => {
       const seen = new Set(['Manila']);
       const ncrCityOptions = [{ name: 'Manila' }];
 
-      for (const record of phil.city_mun || []) {
+      for (const record of cityMunicipalities || []) {
         if (!NCR_COMPONENT_CODES.includes(record.prov_code)) {
           continue;
         }
@@ -104,7 +121,7 @@ export const loadProvinceCityData = async () => {
           return ncrCityOptions;
         }
 
-        const result = phil.getCityMunByProvince(provinceCode) || [];
+        const result = (cityMunicipalities || []).filter((record) => record.prov_code == provinceCode);
         return result
           .map((record) => ({ name: cleanPlaceName(record.name) }))
           .filter((record, index, arr) => record.name && arr.findIndex((item) => item.name === record.name) === index)

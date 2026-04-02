@@ -1,7 +1,7 @@
 import React from 'react';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
 import PublicProfilePage from '@sharedPages/public-profile/PublicProfilePage';
-import { getPublicProfile } from '@sharedServices/authService';
+import { getPublicProfile, getStoredUser } from '@sharedServices/authService';
 
 const getSearchParam = (key) => {
   try {
@@ -13,6 +13,7 @@ const getSearchParam = (key) => {
 };
 
 export default function CompanyPublicProfilePage() {
+  const viewer = getStoredUser();
   const [profile, setProfile] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
@@ -83,5 +84,5 @@ export default function CompanyPublicProfilePage() {
     );
   }
 
-  return <PublicProfilePage profile={profile} onBack={handleBack} onMessage={handleMessage} />;
+  return <PublicProfilePage profile={profile} onBack={handleBack} onMessage={handleMessage} viewer={viewer} />;
 }

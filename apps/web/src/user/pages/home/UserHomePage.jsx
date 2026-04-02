@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import UserNavbar from '@userComponents/UserNavbar';
 import UserLeftSidebar from '@userComponents/UserLeftSidebar';
 import UserRightSidebar from '@userComponents/UserRightSidebar';
@@ -15,14 +15,23 @@ import PostComposerModal from '@userFeatures/posts/UserPostComposerModal';
 import UserMyProfilePage from '@userFeatures/profile/UserMyProfilePage';
 import UserAccountSettingsModal from '@userFeatures/profile/UserAccountSettingsModal';
 import UserMobileBottomNav from '@userComponents/navigation/mobile/UserMobileBottomNav';
-import { addPostForUser, getPostsForUser } from '@userFeatures/posts/userPostStorage';
+import {
+  addCommentToPostForUser,
+  addPostForUser,
+  deletePostForUser,
+  getFeedPostsForViewer,
+  getPostsForUser,
+  reactToCommentOnPostForUser,
+  reactToPostForUser,
+  toggleSharePostForUser,
+} from '@userFeatures/posts/userPostStorage';
 import { getMyApplications, getPublicProfile } from '@sharedServices/authService';
 import { getUnreadNotificationCount } from '@sharedServices/notificationsService';
-import { ArrowLeft, Bookmark, FileCheck2 } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Bookmark, Building2, FileCheck2, Lightbulb, Sparkles, UserCircle } from 'lucide-react';
 import { getApplicationsForUser, getSavedJobsForUser, getSavedPostsForUser, toggleSavedPostForUser } from '@userFeatures/activity/userActivityStorage';
 
 const USER_NAV_QUERY_KEY = 'tab';
-const USER_NAV_TABS = new Set(['home', 'jobs', 'projects', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'help']);
+const USER_NAV_TABS = new Set(['home', 'jobs', 'projects', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'help', 'tips', 'verified']);
 
 const getUserNavFromUrl = () => {
   if (typeof window === 'undefined') {
@@ -60,13 +69,27 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [canReturnToSettings, setCanReturnToSettings] = useState(false);
   const [posts, setPosts] = useState([]);
+  const [feedPosts, setFeedPosts] = useState([]);
   const [publicProfile, setPublicProfile] = useState(null);
   const [messageTargetId, setMessageTargetId] = useState('');
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [savedJobs, setSavedJobs] = useState([]);
   const [savedPosts, setSavedPosts] = useState([]);
   const [applications, setApplications] = useState([]);
-  const isMobileViewport = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [isMobileShellViewport, setIsMobileShellViewport] = useState(false);
+  const [mobileChromeHidden, setMobileChromeHidden] = useState(false);
+  const lastScrollYRef = useRef(0);
+  const mobileSafeAreaBottomPadding = isMobileShellViewport
+    ? mobileChromeHidden
+      ? 'max(1.75rem, calc(env(safe-area-inset-bottom) + 1rem))'
+      : 'max(7rem, calc(env(safe-area-inset-bottom) + 5.75rem))'
+    : undefined;
+
+  const syncPostState = (nextUser = user) => {
+    setPosts(getPostsForUser(nextUser));
+    setFeedPosts(getFeedPostsForViewer(nextUser));
+  };
 
   const updateActiveNav = (nextNav, options = {}) => {
     setActiveNav(nextNav);
@@ -96,7 +119,30 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   }, [activeNav]);
 
   useEffect(() => {
-    setPosts(getPostsForUser(user));
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const mediaQueryMobile = window.matchMedia('(max-width: 767px)');
+    const mediaQueryShell = window.matchMedia('(max-width: 1279px)');
+
+    const syncViewportState = () => {
+      setIsMobileViewport(mediaQueryMobile.matches);
+      setIsMobileShellViewport(mediaQueryShell.matches);
+    };
+
+    syncViewportState();
+    mediaQueryMobile.addEventListener('change', syncViewportState);
+    mediaQueryShell.addEventListener('change', syncViewportState);
+
+    return () => {
+      mediaQueryMobile.removeEventListener('change', syncViewportState);
+      mediaQueryShell.removeEventListener('change', syncViewportState);
+    };
+  }, []);
+
+  useEffect(() => {
+    syncPostState(user);
     setSavedJobs(getSavedJobsForUser(user));
     setSavedPosts(getSavedPostsForUser(user));
     setApplications(getApplicationsForUser(user));
@@ -171,19 +217,52 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   }, []);
 
   useEffect(() => {
-    const handleMessage = async (event) => {
+    const handleMessage = (event) => {
       if (event.origin !== window.location.origin) return;
       if (event.data?.type !== USER_PREMIUM_PAYMENT_SUCCESS) return;
 
-      setPremiumPopupOpen(false);
-      if (event.data?.updates) {
-        await onUpdateUser?.(event.data.updates);
-      }
+      const syncPremiumState = async () => {
+        setPremiumPopupOpen(false);
+        if (event.data?.updates) {
+          await onUpdateUser?.(event.data.updates);
+        }
+      };
+
+      Promise.resolve(syncPremiumState()).catch((error) => {
+        console.error('User premium payment message handling failed:', error);
+      });
     };
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   }, [onUpdateUser]);
+
+  useEffect(() => {
+    if (!isMobileShellViewport || activeNav !== 'home') {
+      setMobileChromeHidden(false);
+      return undefined;
+    }
+
+    lastScrollYRef.current = window.scrollY;
+
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      const delta = currentY - lastScrollYRef.current;
+
+      if (currentY <= 24) {
+        setMobileChromeHidden(false);
+      } else if (delta > 12) {
+        setMobileChromeHidden(true);
+      } else if (delta < -8) {
+        setMobileChromeHidden(false);
+      }
+
+      lastScrollYRef.current = currentY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [activeNav, isMobileShellViewport]);
 
   const handleOpenPremiumMerchantWindow = () => {
     if (isMobileViewport) {
@@ -203,12 +282,37 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   };
 
   const handleCreatePost = (postInput) => {
-    const nextPosts = addPostForUser(user, postInput);
-    setPosts(nextPosts);
+    addPostForUser(user, postInput);
+    syncPostState(user);
   };
 
   const handleToggleSavePost = (post) => {
     setSavedPosts(toggleSavedPostForUser(user, post));
+  };
+
+  const handleReactToPost = (postId, reactionType) => {
+    reactToPostForUser(user, postId, reactionType);
+    syncPostState(user);
+  };
+
+  const handleAddComment = (postId, content) => {
+    addCommentToPostForUser(user, postId, content);
+    syncPostState(user);
+  };
+
+  const handleReactToComment = (postId, commentId, reactionType, parentCommentId = null) => {
+    reactToCommentOnPostForUser(user, postId, commentId, reactionType, parentCommentId);
+    syncPostState(user);
+  };
+
+  const handleToggleSharePost = (postId, shareInput) => {
+    toggleSharePostForUser(user, postId, shareInput);
+    syncPostState(user);
+  };
+
+  const handleDeletePost = (postId) => {
+    deletePostForUser(user, postId);
+    syncPostState(user);
   };
 
   const handleOpenPublicProfile = async (result) => {
@@ -243,11 +347,14 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
         activeNav={activeNav}
         setActiveNav={updateActiveNav}
         user={user}
+        mobileHidden={mobileChromeHidden}
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
         onHelp={() => updateActiveNav('help', { preserveSettingsReturn: true })}
         onLogout={onLogout}
         onOpenSettings={() => setSettingsOpen(true)}
+        onOpenTips={() => updateActiveNav('tips')}
+        onOpenVerifiedDirectory={() => updateActiveNav('verified')}
         onOpenPremium={() => setPremiumPopupOpen(true)}
         onOpenPublicProfile={handleOpenPublicProfile}
         onOpenMyProfile={() => updateActiveNav('my-profile')}
@@ -257,7 +364,10 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
         unreadNotificationCount={unreadNotificationCount}
       />
 
-      <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 py-6 pb-24 md:pb-8">
+      <div
+        className="mx-auto w-full max-w-[1700px] px-3 pb-28 pt-4 sm:px-6 lg:px-8 2xl:px-12 xl:py-6 xl:pb-8"
+        style={{ paddingBottom: mobileSafeAreaBottomPadding }}
+      >
         {canReturnToSettings && ['my-profile', 'projects', 'saved-jobs', 'applications'].includes(activeNav) && (
           <div className="mb-4">
             <button
@@ -291,8 +401,13 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
                 user={user}
                 userType={userType}
                 onOpenComposer={() => setComposerOpen(true)}
-                posts={posts}
+                posts={feedPosts}
                 onToggleSavePost={handleToggleSavePost}
+                onReactToPost={handleReactToPost}
+                onAddComment={handleAddComment}
+                onReactToComment={handleReactToComment}
+                onToggleSharePost={handleToggleSharePost}
+                onDeletePost={handleDeletePost}
                 onBrowsePeople={() => updateActiveNav('jobs')}
                 onExploreProjects={() => updateActiveNav('projects')}
               />
@@ -309,6 +424,12 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
             posts={posts}
             onUpdateUser={onUpdateUser}
             onOpenComposer={() => setComposerOpen(true)}
+            onToggleSavePost={handleToggleSavePost}
+            onReactToPost={handleReactToPost}
+            onAddComment={handleAddComment}
+            onReactToComment={handleReactToComment}
+            onToggleSharePost={handleToggleSharePost}
+            onDeletePost={handleDeletePost}
           />
         )}
 
@@ -328,8 +449,20 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
         {activeNav === 'messages' && <UserMessagesPage user={user} initialContactId={messageTargetId} />}
         {activeNav === 'notifications' && <UserNotificationsPage user={user} onReadAll={() => setUnreadNotificationCount(0)} />}
         {activeNav === 'help' && <HelpPage onBack={() => updateActiveNav('home')} />}
+        {activeNav === 'tips' && <TipsPanel />}
+        {activeNav === 'verified' && <VerifiedProfilesPanel />}
         {activeNav === 'public-profile' && (
-          <PublicProfilePage profile={publicProfile} onBack={() => updateActiveNav('home')} onMessage={handleMessageProfile} />
+          <PublicProfilePage
+            profile={publicProfile}
+            viewer={user}
+            onBack={() => updateActiveNav('home')}
+            onMessage={handleMessageProfile}
+            onToggleSavePost={handleToggleSavePost}
+            onReactToPost={handleReactToPost}
+            onAddComment={handleAddComment}
+            onReactToComment={handleReactToComment}
+            onToggleSharePost={handleToggleSharePost}
+          />
         )}
       </div>
 
@@ -353,6 +486,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
       <UserMobileBottomNav
         activeNav={activeNav}
         setActiveNav={updateActiveNav}
+        hiddenOnScroll={mobileChromeHidden}
         unreadNotificationCount={unreadNotificationCount}
       />
     </div>
@@ -449,6 +583,123 @@ function SavedJobsPanel({ savedJobs, savedPosts }) {
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function TipsPanel() {
+  const tips = [
+    {
+      title: 'Keep your profile headline specific',
+      description: 'Use your role, years of experience, and strongest stack so recruiters can quickly understand where you fit.',
+    },
+    {
+      title: 'Show proof of work',
+      description: 'Add project links, GitHub repositories, screenshots, or demos so companies can verify your skills faster.',
+    },
+    {
+      title: 'Write measurable achievements',
+      description: 'Replace generic task lists with outcomes like performance improvements, launches, user growth, or systems you owned.',
+    },
+    {
+      title: 'Stay active and updated',
+      description: 'Refresh your skills, preferred role, and recent work regularly so your profile stays competitive in search results.',
+    },
+  ];
+
+  return (
+    <div className="mx-auto max-w-5xl space-y-5">
+      <div className="rounded-[24px] border border-[#a3b18a] bg-white p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#14304d] dark:text-[#7dc4ff]">
+            <Lightbulb className="h-6 w-6" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Tips</h2>
+            <p className="mt-2 max-w-2xl text-sm text-[#344e41] dark:text-[#b8d4e8]">
+              Practical tips to improve your profile, stand out in search, and make a stronger impression on recruiters and companies.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {tips.map((tip) => (
+          <div key={tip.title} className="rounded-[24px] border border-[#bfd0af] bg-white p-5 shadow-[0_12px_32px_rgba(58,90,64,0.06)] dark:border-[#2a4a6f] dark:bg-[#162842] dark:shadow-[0_12px_32px_rgba(0,0,0,0.18)]">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#588157] dark:bg-[#14304d] dark:text-[#7dc4ff]">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <h3 className="text-lg font-semibold text-[#3a5a40] dark:text-white">{tip.title}</h3>
+            </div>
+            <p className="mt-3 text-sm leading-7 text-[#344e41] dark:text-[#d5e6f5]">{tip.description}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function VerifiedProfilesPanel() {
+  const verifiedGroups = [
+    {
+      title: 'Verified Users',
+      icon: UserCircle,
+      items: [
+        'Developers with a completed profile and visible portfolio links.',
+        'Profiles that consistently keep skills, experience, and contact details updated.',
+        'Candidates with stronger trust signals for companies reviewing applications.',
+      ],
+    },
+    {
+      title: 'Verified Companies',
+      icon: Building2,
+      items: [
+        'Companies with a completed hiring profile and clear company details.',
+        'Organizations that present more trustworthy hiring information to applicants.',
+        'Businesses with stronger visibility for serious developer outreach.',
+      ],
+    },
+  ];
+
+  return (
+    <div className="mx-auto max-w-5xl space-y-5">
+      <div className="rounded-[24px] border border-[#a3b18a] bg-white p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#14304d] dark:text-[#7dc4ff]">
+            <BadgeCheck className="h-6 w-6" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Verified Users & Companies</h2>
+            <p className="mt-2 max-w-2xl text-sm text-[#344e41] dark:text-[#b8d4e8]">
+              A dedicated view explaining what verified profiles represent for both developers and companies on KapIT.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {verifiedGroups.map((group) => {
+          const Icon = group.icon;
+          return (
+            <div key={group.title} className="rounded-[24px] border border-[#bfd0af] bg-white p-5 shadow-[0_12px_32px_rgba(58,90,64,0.06)] dark:border-[#2a4a6f] dark:bg-[#162842] dark:shadow-[0_12px_32px_rgba(0,0,0,0.18)]">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#588157] dark:bg-[#14304d] dark:text-[#7dc4ff]">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="text-lg font-semibold text-[#3a5a40] dark:text-white">{group.title}</h3>
+              </div>
+              <div className="mt-4 space-y-3">
+                {group.items.map((item) => (
+                  <div key={item} className="rounded-2xl bg-[#f8fbf6] px-4 py-3 text-sm leading-7 text-[#344e41] dark:bg-[#102235] dark:text-[#d5e6f5]">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
