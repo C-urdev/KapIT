@@ -20,17 +20,24 @@ export default function CompanyManageJobsPage() {
   }, [jobs]);
 
   useEffect(() => {
-    const handleMessage = async (event) => {
+    const handleMessage = (event) => {
       if (event.origin !== window.location.origin) return;
-      if (event.data?.type === PAYMENT_MESSAGE_TYPE) {
-        window.localStorage.removeItem(STORAGE_KEY);
-        setFeedback('Payment confirmed and the job was published successfully.');
-        await refetch();
-        return;
-      }
-      if (event.data?.type === PAYMENT_CANCEL_MESSAGE_TYPE) {
-        setFeedback('Payment was canceled or closed. The saved draft is still unpublished so you can retry anytime.');
-      }
+
+      const syncPaymentState = async () => {
+        if (event.data?.type === PAYMENT_MESSAGE_TYPE) {
+          window.localStorage.removeItem(STORAGE_KEY);
+          setFeedback('Payment confirmed and the job was published successfully.');
+          await refetch();
+          return;
+        }
+        if (event.data?.type === PAYMENT_CANCEL_MESSAGE_TYPE) {
+          setFeedback('Payment was canceled or closed. The saved draft is still unpublished so you can retry anytime.');
+        }
+      };
+
+      Promise.resolve(syncPaymentState()).catch((error) => {
+        console.error('Company payment message handling failed:', error);
+      });
     };
 
     window.addEventListener('message', handleMessage);

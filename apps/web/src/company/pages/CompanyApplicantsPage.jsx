@@ -3,10 +3,11 @@ import ApplicantCard from '@companyComponents/CompanyApplicantCard';
 import { companyAPI } from '@companyFeatures/companyAPI';
 import { useCompanyAnalytics, useCompanyApplicants } from '@companyFeatures/companyHooks';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
-import { getPublicProfile } from '@sharedServices/authService';
+import { getPublicProfile, getStoredUser } from '@sharedServices/authService';
 import PublicProfilePage from '@sharedPages/public-profile/PublicProfilePage';
 
 export default function CompanyApplicantsPage() {
+  const viewer = getStoredUser();
   const { applicants, loading, error, refetch } = useCompanyApplicants();
   const { analytics, loading: analyticsLoading, error: analyticsError, refetch: refetchAnalytics } = useCompanyAnalytics();
   const [profile, setProfile] = useState(null);
@@ -154,6 +155,7 @@ export default function CompanyApplicantsPage() {
                 profile={profile}
                 onBack={() => setProfile(null)}
                 onMessage={handleMessage}
+                viewer={viewer}
                 onMore={(currentProfile) => {
                   if (!currentProfile?.id) return;
                   setProfile(null);

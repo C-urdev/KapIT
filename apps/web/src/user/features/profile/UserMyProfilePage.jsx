@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Edit3, GraduationCap, Instagram, MapPin, Mail, Pencil, Phone, User } from 'lucide-react';
 import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
+import { Avatar } from '@userPages/home/CenterFeedPostShared';
+import FeedPostCard from '@userPages/home/FeedPostCard';
 
 const readFileAsDataUrl = (file) =>
   new Promise((resolve, reject) => {
@@ -50,7 +52,7 @@ const downscaleImageDataUrl = (dataUrl, { maxSize = 320, quality = 0.85 } = {}) 
     image.src = dataUrl;
   });
 
-export default function UserMyProfilePage({ user, posts = [], onUpdateUser, onOpenComposer }) {
+export default function UserMyProfilePage({ user, posts = [], onUpdateUser, onOpenComposer, onToggleSavePost, onReactToPost, onAddComment, onReactToComment, onToggleSharePost, onDeletePost }) {
   const displayName = user?.username || user?.name || 'User';
   const initial = displayName.charAt(0).toUpperCase();
   const profileImage = user?.profileImage || '';
@@ -60,6 +62,7 @@ export default function UserMyProfilePage({ user, posts = [], onUpdateUser, onOp
       ? Number(user.projectCount)
       : 0;
   const [editing, setEditing] = useState(false);
+  const [menuPostId, setMenuPostId] = useState(null);
   const [formData, setFormData] = useState({
     username: user?.username || '',
     bio: user?.bio || '',
@@ -193,13 +196,25 @@ export default function UserMyProfilePage({ user, posts = [], onUpdateUser, onOp
 
           {posts.length > 0 ? (
             posts.map((post) => (
-              <div key={post.id} className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-semibold text-[#3a5a40] dark:text-white">{displayName}</h4>
-                  <span className="text-xs text-[#3a5a40] dark:text-[#7d9ab8]">{new Date(post.createdAt).toLocaleString()}</span>
-                </div>
-                <p className="text-[#344e41] dark:text-[#b8d4e8] whitespace-pre-wrap">{post.content}</p>
-              </div>
+              <FeedPostCard
+                key={post.id}
+                post={post}
+                user={user}
+                displayName={displayName}
+                profileImage={profileImage}
+                userInitial={initial}
+                isMenuOpen={menuPostId === post.id}
+                onOpenMenu={() => setMenuPostId(post.id)}
+                onCloseMenu={() => setMenuPostId(null)}
+                onToggleSavePost={onToggleSavePost}
+                onReactToPost={onReactToPost}
+                onAddComment={onAddComment}
+                onReactToComment={onReactToComment}
+                onToggleSharePost={onToggleSharePost}
+                onDeletePost={onDeletePost}
+                onHidePost={() => setMenuPostId(null)}
+                onHideAuthor={() => setMenuPostId(null)}
+              />
             ))
           ) : (
             <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-16 text-center min-h-[280px] flex items-center justify-center">

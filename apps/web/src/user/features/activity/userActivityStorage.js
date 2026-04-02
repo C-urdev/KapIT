@@ -153,6 +153,7 @@ export const toggleSavedPostForUser = (user, post) => {
         {
           id: postId,
           content: String(post?.content || '').trim(),
+          imageUrl: String(post?.imageUrl || '').trim(),
           createdAt: post?.createdAt || new Date().toISOString(),
           visibility: String(post?.visibility || '').trim(),
           savedAt: new Date().toISOString(),

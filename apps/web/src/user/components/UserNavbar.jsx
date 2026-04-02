@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { searchAccounts } from '@sharedServices/authService';
 import UserDesktopNavbar from './navigation/desktop/UserDesktopNavbar';
 import UserMobileTopbar from './navigation/mobile/UserMobileTopbar';
@@ -9,11 +9,14 @@ export default function UserNavbar({
   activeNav,
   setActiveNav,
   user,
+  mobileHidden = false,
   mobileMenuOpen,
   setMobileMenuOpen,
   onHelp,
   onLogout,
   onOpenSettings,
+  onOpenTips,
+  onOpenVerifiedDirectory,
   onOpenPremium,
   onOpenPublicProfile,
   onOpenMyProfile,
@@ -25,6 +28,7 @@ export default function UserNavbar({
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
   const searchRef = useRef(null);
+  const mobileSearchInputRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -44,7 +48,11 @@ export default function UserNavbar({
     };
 
     document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+    };
   }, []);
 
   useEffect(() => {
@@ -75,6 +83,7 @@ export default function UserNavbar({
 
   useEffect(() => {
     if (mobileMenuOpen) {
+      setSearchOpen(false);
       setMobileMenuVisible(true);
       const frame = window.requestAnimationFrame(() => setMobileMenuActive(true));
       return () => window.cancelAnimationFrame(frame);
@@ -85,79 +94,122 @@ export default function UserNavbar({
     return () => window.clearTimeout(timeout);
   }, [mobileMenuOpen]);
 
-  return (
-    <nav className="sticky top-0 z-50 bg-white dark:bg-[#0a1628] border-b border-[#a3b18a] dark:border-[#1e3a5f] shadow-sm">
-      <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12">
-        <div className="hidden xl:flex items-center h-16 gap-6">
-          <UserDesktopNavbar
-            activeNav={activeNav}
-            setActiveNav={setActiveNav}
-            user={user}
-            profileMenuOpen={profileMenuOpen}
-            setProfileMenuOpen={setProfileMenuOpen}
-            profileMenuRef={profileMenuRef}
-            searchRef={searchRef}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            searchOpen={searchOpen}
-            setSearchOpen={setSearchOpen}
-            searchLoading={searchLoading}
-            searchError={searchError}
-            searchResults={searchResults}
-            onHelp={onHelp}
-            onLogout={onLogout}
-            onOpenSettings={onOpenSettings}
-            onOpenPublicProfile={onOpenPublicProfile}
-            unreadNotificationCount={unreadNotificationCount}
-          />
-        </div>
+  useEffect(() => {
+    if (!searchOpen) {
+      return undefined;
+    }
 
-        <div className="xl:hidden" ref={searchRef}>
-          <div className="flex items-center justify-between h-16 gap-4">
-            <UserMobileTopbar
-              user={user}
+    const focusTimer = window.setTimeout(() => {
+      mobileSearchInputRef.current?.focus();
+    }, 0);
+
+    return () => window.clearTimeout(focusTimer);
+  }, [searchOpen]);
+
+  const handleMobileSearchToggle = () => {
+    setMobileMenuOpen(false);
+    setSearchOpen((prev) => !prev);
+  };
+
+  const shouldKeepNavbarVisible = searchOpen || mobileMenuVisible;
+
+  return (
+    <>
+      <nav
+        className={`sticky top-0 z-50 border-b border-[#a3b18a] bg-white shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] dark:border-white/10 dark:bg-[#1c1f24] dark:shadow-[0_6px_24px_rgba(0,0,0,0.18)] xl:border-[#a3b18a] xl:bg-white xl:shadow-sm dark:xl:border-[#1e3a5f] dark:xl:bg-[#0a1628] ${
+          mobileHidden && !shouldKeepNavbarVisible ? '-translate-y-full xl:translate-y-0' : 'translate-y-0'
+        }`}
+      >
+        <div className="mx-auto w-full max-w-[1700px] px-3 sm:px-6 lg:px-8 2xl:px-12">
+          <div className="hidden xl:flex items-center h-16 gap-6">
+            <UserDesktopNavbar
+              activeNav={activeNav}
               setActiveNav={setActiveNav}
-              mobileMenuOpen={mobileMenuOpen}
-              setMobileMenuOpen={setMobileMenuOpen}
-              onOpenSearch={() => setSearchOpen((prev) => !prev)}
+              user={user}
+              profileMenuOpen={profileMenuOpen}
+              setProfileMenuOpen={setProfileMenuOpen}
+              profileMenuRef={profileMenuRef}
+              searchRef={searchRef}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              searchOpen={searchOpen}
+              setSearchOpen={setSearchOpen}
+              searchLoading={searchLoading}
+              searchError={searchError}
+              searchResults={searchResults}
+              onHelp={onHelp}
+              onLogout={onLogout}
+              onOpenSettings={onOpenSettings}
+              onOpenPublicProfile={onOpenPublicProfile}
+              unreadNotificationCount={unreadNotificationCount}
             />
           </div>
 
-          {searchOpen && (
-            <div className="pb-3">
-              <div className="rounded-2xl border border-[#a3b18a] bg-white p-3 shadow-lg dark:border-[#1e3a5f] dark:bg-[#162842]">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#344e41] dark:text-[#7d9ab8]" />
+          <div className="xl:hidden">
+            <div className="flex items-center justify-between gap-4">
+              <UserMobileTopbar
+                user={user}
+                setActiveNav={setActiveNav}
+                mobileMenuOpen={mobileMenuOpen}
+                setMobileMenuOpen={setMobileMenuOpen}
+                onOpenSearch={handleMobileSearchToggle}
+              />
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {searchOpen && (
+        <div className="xl:hidden fixed inset-0 z-[80]">
+          <div
+            className="absolute inset-0 flex flex-col bg-[#dad7cd] dark:bg-[#1f2125]"
+            style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+            ref={searchRef}
+          >
+            <div className="border-b border-[#c7ceba] bg-white px-4 pb-4 pt-3 dark:border-white/10 dark:bg-[#1f2125]">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen(false)}
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:text-white dark:hover:bg-white/10"
+                  aria-label="Close search"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+                <div className="relative flex-1">
+                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5f6f52] dark:text-white/45" />
                   <input
+                    ref={mobileSearchInputRef}
                     type="text"
-                    placeholder="Search users or companies..."
+                    placeholder="Search users or companies"
                     value={searchQuery}
                     onChange={(event) => setSearchQuery(event.target.value)}
-                    autoFocus
-                    className="w-full rounded-xl border border-[#a3b18a] bg-[#f5f5f2] py-3 pl-10 pr-4 text-sm text-[#344e41] outline-none transition-colors focus:ring-2 focus:ring-[#588157] dark:border-[#2a4a6f] dark:bg-[#0f2139] dark:text-white dark:focus:ring-[#3ba9d6]"
+                    onFocus={() => setSearchOpen(true)}
+                    className="w-full rounded-full border border-[#b8c4a4] bg-[#f1f3ec] py-3 pl-11 pr-4 text-base text-[#344e41] outline-none transition-colors placeholder:text-[#6b7280] focus:ring-2 focus:ring-[#588157] dark:border-white/10 dark:bg-[#3a3d42] dark:text-white dark:placeholder:text-white/40 dark:focus:ring-[#4c8dff]"
                   />
                 </div>
+              </div>
+            </div>
 
-                <div className="mt-3 max-h-80 overflow-y-auto rounded-xl border border-[#e5e7eb] dark:border-[#1e3a5f]">
-                  {searchLoading && (
-                    <p className="px-4 py-3 text-sm text-[#344e41] dark:text-[#b8d4e8]">Searching...</p>
-                  )}
+            <div className="min-h-0 flex-1 overflow-y-auto bg-[#dad7cd] px-4 py-4 dark:bg-[#24272b]">
+              {!searchQuery.trim() && (
+                <div className="mb-6 flex items-center justify-between">
+                  <h2 className="text-[1.7rem] font-extrabold text-[#3a5a40] dark:text-white">Recent</h2>
+                  <button type="button" className="text-sm font-semibold text-[#588157] dark:text-[#6aa8ff]">See all</button>
+                </div>
+              )}
 
-                  {!searchLoading && searchError && (
-                    <p className="px-4 py-3 text-sm text-red-600 dark:text-red-400">{searchError}</p>
-                  )}
+              {searchLoading && (
+                <p className="px-1 py-3 text-sm text-[#344e41] dark:text-white/75">Searching...</p>
+              )}
 
-                  {!searchLoading && !searchError && !searchQuery.trim() && (
-                    <p className="px-4 py-3 text-sm text-[#344e41] dark:text-[#b8d4e8]">
-                      Search for developers, users, or companies.
-                    </p>
-                  )}
+              {!searchLoading && searchError && (
+                <p className="px-1 py-3 text-sm text-red-600 dark:text-red-400">{searchError}</p>
+              )}
 
-                  {!searchLoading && !searchError && searchQuery.trim() && searchResults.length === 0 && (
-                    <p className="px-4 py-3 text-sm text-[#344e41] dark:text-[#b8d4e8]">No users or companies found.</p>
-                  )}
-
-                  {!searchLoading && !searchError && searchResults.map((result) => (
+              {!searchLoading && !searchError && !searchQuery.trim() && (
+                <div className="space-y-1">
+                  {searchResults.slice(0, 5).map((result) => (
                     <button
                       key={result.id}
                       type="button"
@@ -166,37 +218,81 @@ export default function UserNavbar({
                         setSearchOpen(false);
                         onOpenPublicProfile?.(result);
                       }}
-                      className="w-full border-b border-[#e5e7eb] px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-[#f5f5f2] dark:border-[#1e3a5f] dark:hover:bg-[#1e3a5f]"
+                      className="flex w-full items-center gap-3 rounded-2xl px-1 py-3 text-left transition-colors hover:bg-[#f1f3ec] dark:hover:bg-white/5"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#588157] font-bold text-white dark:bg-[#3ba9d6]">
-                          {result.profileImage ? (
-                            <img
-                              src={result.profileImage}
-                              alt={`${result.username || result.email || 'Account'} profile`}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            (result.username || result.email || 'A').charAt(0).toUpperCase()
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-[#3a5a40] dark:text-white">
-                            {result.username || result.email}
-                          </p>
-                          <p className="text-xs text-[#344e41] dark:text-[#b8d4e8]">
-                            {result.type === 'company' ? 'Company' : 'User'} - {result.email}
-                          </p>
-                        </div>
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#588157] font-bold text-white dark:bg-[#4c8dff]">
+                        {result.profileImage ? (
+                          <img
+                            src={result.profileImage}
+                            alt={`${result.username || result.email || 'Account'} profile`}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          (result.username || result.email || 'A').charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-base font-semibold text-[#3a5a40] dark:text-white">
+                          {result.username || result.email}
+                        </p>
+                        <p className="text-sm text-[#5f6f52] dark:text-white/65">
+                          {result.type === 'company' ? 'Company' : 'User'}{result.email ? ` • ${result.email}` : ''}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                  {searchResults.length === 0 ? (
+                    <p className="px-1 py-3 text-sm text-[#5f6f52] dark:text-white/65">
+                      Start typing to search for users or companies.
+                    </p>
+                  ) : null}
+                </div>
+              )}
+
+              {!searchLoading && !searchError && searchQuery.trim() && searchResults.length === 0 && (
+                <p className="px-1 py-3 text-sm text-[#344e41] dark:text-white/75">No users or companies found.</p>
+              )}
+
+              {!searchLoading && !searchError && searchQuery.trim() && searchResults.length > 0 && (
+                <div className="space-y-1">
+                  {searchResults.map((result) => (
+                    <button
+                      key={result.id}
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery(result.username || result.email || '');
+                        setSearchOpen(false);
+                        onOpenPublicProfile?.(result);
+                      }}
+                      className="flex w-full items-center gap-3 rounded-2xl px-1 py-3 text-left transition-colors hover:bg-[#f1f3ec] dark:hover:bg-white/5"
+                    >
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#588157] font-bold text-white dark:bg-[#4c8dff]">
+                        {result.profileImage ? (
+                          <img
+                            src={result.profileImage}
+                            alt={`${result.username || result.email || 'Account'} profile`}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          (result.username || result.email || 'A').charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-base font-semibold text-[#3a5a40] dark:text-white">
+                          {result.username || result.email}
+                        </p>
+                        <p className="text-sm text-[#5f6f52] dark:text-white/65">
+                          {result.type === 'company' ? 'Company' : 'User'}{result.email ? ` • ${result.email}` : ''}
+                        </p>
                       </div>
                     </button>
                   ))}
                 </div>
-              </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       <UserMobileMenuDrawer
         open={mobileMenuVisible}
@@ -208,11 +304,13 @@ export default function UserNavbar({
         onOpenSavedJobs={onOpenSavedJobs}
         onOpenApplications={onOpenApplications}
         onOpenSettings={onOpenSettings}
+        onOpenTips={onOpenTips}
+        onOpenVerifiedDirectory={onOpenVerifiedDirectory}
         onOpenPremium={onOpenPremium}
         onHelp={onHelp}
         onLogout={onLogout}
       />
-    </nav>
+    </>
   );
 }
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Bookmark, Briefcase, Calendar, FileCheck2, FolderKanban, MapPin, Search, UserCircle, X } from 'lucide-react';
+import { Briefcase, Calendar, MapPin, Search, UserCircle, X } from 'lucide-react';
 import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
 import { loadAddressOptions } from '@sharedUtils/philippinesLocations';
 import { developerAPI } from '@userFeatures/developer/userDeveloperAPI';
@@ -101,7 +101,7 @@ const writeProfileCache = (profile) => {
     // Ignore cache write failures.
   }
 };
-export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave, onOpenMyProfile, onOpenProjects, onOpenSavedJobs, onOpenApplications }) {
+export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave }) {
   const [activeSection, setActiveSection] = useState('profile');
   const [cachedDeveloperProfile] = useState(() => readProfileCache());
   const [profileLoading, setProfileLoading] = useState(false);
@@ -242,11 +242,6 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
     return null;
   }
 
-  const handleQuickOpen = (callback) => {
-    onClose?.();
-    callback?.();
-  };
-
   const handleSave = () => {
     onSave?.({
       name: formData.name,
@@ -303,40 +298,6 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                 onClick={() => setActiveSection('career')}
               />
             </div>
-
-            <section className="xl:hidden mt-6 border-t border-[#e5e7eb] dark:border-[#2a4a6f] pt-5">
-              <div className="flex items-center gap-2 mb-3">
-                <FolderKanban className="w-4 h-4 text-[#588157] dark:text-[#3ba9d6]" />
-                <h5 className="font-semibold text-[#3a5a40] dark:text-white">Quick access</h5>
-              </div>
-              <div className="grid grid-cols-1 gap-3">
-                <NavCard
-                  title="My Profile"
-                  description="Open your public-facing profile workspace"
-                  icon={UserCircle}
-                  onClick={() => handleQuickOpen(onOpenMyProfile)}
-                />
-                <NavCard
-                  title="My Projects"
-                  description="Jump straight to your portfolio projects"
-                  icon={FolderKanban}
-                  onClick={() => handleQuickOpen(onOpenProjects)}
-                />
-                <NavCard
-                  title="Saved Jobs"
-                  description="Review everything you bookmarked"
-                  icon={Bookmark}
-                  onClick={() => handleQuickOpen(onOpenSavedJobs)}
-                />
-                <NavCard
-                  title="Applications"
-                  description="Check the jobs you already applied to"
-                  icon={FileCheck2}
-                  onClick={() => handleQuickOpen(onOpenApplications)}
-                />
-              </div>
-            </section>
-
           </aside>
 
           <main className="p-5 sm:p-6 overflow-y-auto">

@@ -5,7 +5,7 @@ import { useDeveloperSearch } from '@companyFeatures/companyHooks';
 import { TECH_SKILL_OPTIONS, OTHER_SKILL_VALUE } from '@companyFeatures/companySkillOptions';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
 import PublicProfilePage from '@sharedPages/public-profile/PublicProfilePage';
-import { getPublicProfile } from '@sharedServices/authService';
+import { getPublicProfile, getStoredUser } from '@sharedServices/authService';
 import { loadProvinceCityData } from '@sharedUtils/philippinesLocations';
 
 const EMPTY_FILTERS = {
@@ -28,6 +28,7 @@ const EXPERIENCE_OPTIONS = [
 ];
 
 export default function CompanySearchDevelopersPage() {
+  const viewer = getStoredUser();
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -243,7 +244,7 @@ export default function CompanySearchDevelopersPage() {
             <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">Loading profile...</p>
           ) : (
             <div className="rounded-xl border border-[#a3b18a] bg-white p-4 transition-colors duration-300 dark:border-[#2a4a6f] dark:bg-[#0f2139]">
-              <PublicProfilePage profile={profile} onBack={() => setProfile(null)} onMessage={handleMessage} />
+              <PublicProfilePage profile={profile} onBack={() => setProfile(null)} onMessage={handleMessage} viewer={viewer} />
             </div>
           )}
         </Modal>
