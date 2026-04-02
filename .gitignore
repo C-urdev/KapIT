@@ -5,6 +5,6 @@ node_modules
 .next
 dist
 .vercel
-apps/web-next/.next
+apps/web/.next
 .venv
 services/ai-fastapi/.venv
