@@ -88,11 +88,8 @@ export default function SessionGate({
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#dad7cd] dark:bg-[#0a1628] px-6 transition-colors duration-300">
-        <div className="relative h-14 w-14">
-          <div className="absolute inset-0 rounded-full border-4 border-[#d6d3c9] dark:border-[#24405d]" />
-          <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#3a5a40] border-r-[#588157] dark:border-t-[#7fd0ee] dark:border-r-[#3ba9d6] animate-spin" />
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-white px-6">
+        <p className="text-base font-semibold text-[#344e41]">Loading</p>
       </div>
     );
   }

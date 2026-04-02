@@ -8,6 +8,7 @@ import ProjectsPage from '@userPages/Projects/UserProjectsPage';
 import MessagesPage from '@userPages/Messages/UserMessagesPage';
 import NotificationsPage from '@userPages/Notifications/UserNotificationsPage';
 import PublicProfilePage from '@sharedPages/public-profile/PublicProfilePage';
+import HelpPage from '@sharedPages/help/HelpPage';
 import PremiumPopup from '@userPages/Premium/UserPremiumPopup';
 import { USER_PREMIUM_PAYMENT_PATH, USER_PREMIUM_PAYMENT_SUCCESS } from '@userPages/Premium/UserPremiumPopup';
 import PostComposerModal from '@userFeatures/posts/UserPostComposerModal';
@@ -21,7 +22,7 @@ import { ArrowLeft, Bookmark, FileCheck2 } from 'lucide-react';
 import { getApplicationsForUser, getSavedJobsForUser, getSavedPostsForUser, toggleSavedPostForUser } from '@userFeatures/activity/userActivityStorage';
 
 const USER_NAV_QUERY_KEY = 'tab';
-const USER_NAV_TABS = new Set(['home', 'jobs', 'projects', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile']);
+const USER_NAV_TABS = new Set(['home', 'jobs', 'projects', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'help']);
 
 const getUserNavFromUrl = () => {
   if (typeof window === 'undefined') {
@@ -244,7 +245,7 @@ export default function HomePage({ user, userType, onOpenHelp, onLogout, onUpdat
         user={user}
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
-        onHelp={onOpenHelp}
+        onHelp={() => updateActiveNav('help', { preserveSettingsReturn: true })}
         onLogout={onLogout}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenPremium={() => setPremiumPopupOpen(true)}
@@ -326,6 +327,7 @@ export default function HomePage({ user, userType, onOpenHelp, onLogout, onUpdat
         )}
         {activeNav === 'messages' && <MessagesPage user={user} initialContactId={messageTargetId} />}
         {activeNav === 'notifications' && <NotificationsPage user={user} onReadAll={() => setUnreadNotificationCount(0)} />}
+        {activeNav === 'help' && <HelpPage onBack={() => updateActiveNav('home')} />}
         {activeNav === 'public-profile' && (
           <PublicProfilePage profile={publicProfile} onBack={() => updateActiveNav('home')} onMessage={handleMessageProfile} />
         )}

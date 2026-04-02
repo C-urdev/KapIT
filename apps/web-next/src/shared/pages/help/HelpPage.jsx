@@ -6,16 +6,16 @@ export default function HelpPage({ onBack }) {
 
   return (
     <div className="min-h-screen bg-[#dad7cd] dark:bg-[#0a1628]">
-      <header className="sticky top-0 z-40 bg-white dark:bg-[#0a1628] border-b border-[#a3b18a] dark:border-[#1e3a5f] shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+      <header className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6">
+        <div className="py-3 sm:py-4">
           <div className="flex items-start justify-between gap-3 sm:items-center">
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex w-fit shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+              className="inline-flex w-fit shrink-0 items-center gap-2 rounded-xl border border-[#a3b18a] bg-white px-3 py-2 text-sm font-semibold text-[#344e41] shadow-sm hover:bg-[#f8f7f2] dark:border-[#2a4a6f] dark:bg-[#162842] dark:text-white dark:hover:bg-[#1e3a5f] transition-colors"
             >
               <ArrowLeft className="h-4 w-4 shrink-0" />
-              <span className="truncate">Back to Home</span>
+              <span className="truncate">Back</span>
             </button>
 
             <div className="min-w-0 flex-1 text-right">

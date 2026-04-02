@@ -562,7 +562,7 @@ const getPublicProfile = async (req, res) => {
           actorUserId: req.user.id,
           type: 'profile_view',
           title: 'Profile viewed',
-          message: `${viewerLabel} viewed your profile.`,
+          message: 'A user viewed your company profile.',
           metadata: {
             actorLabel: viewerLabel,
             viewerUserId: req.user.id,
@@ -963,8 +963,13 @@ const applyToJob = async (req, res) => {
     await client.query('BEGIN');
 
     const jobResult = await client.query(
-      `SELECT id, company_id, status
+      `SELECT j.id,
+              j.company_id,
+              j.status,
+              j.title,
+              c.user_id AS company_user_id
        FROM jobs
+       LEFT JOIN companies c ON c.id = j.company_id
        WHERE id = $1
          AND COALESCE(posting_payment_status, 'paid') = 'paid'
        LIMIT 1`,
@@ -1037,6 +1042,24 @@ const applyToJob = async (req, res) => {
        RETURNING id, status, resume_url, created_at, updated_at`,
       [jobId, req.user.id, resumeUrl]
     );
+
+    if (job.company_user_id) {
+      await ensureNotificationsTable(client);
+      await createNotification(client, {
+        userId: job.company_user_id,
+        actorUserId: req.user.id,
+        type: 'job_application',
+        title: 'New applicant',
+        message: 'A user applied to your job listing.',
+        metadata: {
+          actorLabel: 'A user',
+          applicantUserId: req.user.id,
+          jobId: job.id,
+          jobTitle: job.title || 'Job listing',
+          eventAt: new Date().toISOString(),
+        },
+      });
+    }
 
     await client.query('COMMIT');
 

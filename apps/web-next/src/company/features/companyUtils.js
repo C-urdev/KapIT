@@ -34,7 +34,13 @@ export const navigate = (to) => {
     return;
   }
 
-  window.location.assign(nextPathWithSearch);
+  if (nextUrl.origin !== window.location.origin) {
+    window.location.assign(nextPathWithSearch);
+    return;
+  }
+
+  window.history.pushState({}, '', nextPathWithSearch);
+  window.dispatchEvent(new PopStateEvent('popstate'));
 };
 
 export const formatSkills = (skills) => {

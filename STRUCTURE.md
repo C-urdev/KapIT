@@ -4,7 +4,7 @@ This project is organized into three main code areas so it is easier to find wha
 
 ## Main Folders
 
-### `src/shared`
+### `apps/web-next/src/shared`
 Use this for code that is used by both user and company flows.
 
 Examples:
@@ -16,7 +16,7 @@ Examples:
 - shared onboarding pages
 - shared public profile pages
 
-### `src/user`
+### `apps/web-next/src/user`
 Use this for user-only code.
 
 Examples:
@@ -26,7 +26,7 @@ Examples:
 - user post features
 - user-only components
 
-### `src/company`
+### `apps/web-next/src/company`
 Use this for company-only code.
 
 Examples:
@@ -54,31 +54,31 @@ Examples:
 ## Folder Guidelines
 
 ### Shared
-- `src/shared/components`
-- `src/shared/pages`
-- `src/shared/context`
-- `src/shared/services`
-- `src/shared/utils`
+- `apps/web-next/src/shared/components`
+- `apps/web-next/src/shared/pages`
+- `apps/web-next/src/shared/context`
+- `apps/web-next/src/shared/services`
+- `apps/web-next/src/shared/utils`
 
 ### User
-- `src/user/components`
-- `src/user/components/navigation/desktop`
-- `src/user/components/navigation/mobile`
-- `src/user/components/desktop`
-- `src/user/components/mobile`
-- `src/user/features`
-- `src/user/pages`
-- `src/user/layouts`
+- `apps/web-next/src/user/components`
+- `apps/web-next/src/user/components/navigation/desktop`
+- `apps/web-next/src/user/components/navigation/mobile`
+- `apps/web-next/src/user/components/desktop`
+- `apps/web-next/src/user/components/mobile`
+- `apps/web-next/src/user/features`
+- `apps/web-next/src/user/pages`
+- `apps/web-next/src/user/layouts`
 
 ### Company
-- `src/company/components`
-- `src/company/components/layout/desktop`
-- `src/company/components/layout/mobile`
-- `src/company/components/desktop`
-- `src/company/components/mobile`
-- `src/company/features`
-- `src/company/pages`
-- `src/company/layouts`
+- `apps/web-next/src/company/components`
+- `apps/web-next/src/company/components/layout/desktop`
+- `apps/web-next/src/company/components/layout/mobile`
+- `apps/web-next/src/company/components/desktop`
+- `apps/web-next/src/company/components/mobile`
+- `apps/web-next/src/company/features`
+- `apps/web-next/src/company/pages`
+- `apps/web-next/src/company/layouts`
 
 ## View Requirements
 
@@ -100,24 +100,24 @@ Recommended organization:
 
 Use this rule:
 
-- If both user and company use it, put it in `src/shared`
-- If only the user side uses it, put it in `src/user`
-- If only the company side uses it, put it in `src/company`
+- If both user and company use it, put it in `apps/web-next/src/shared`
+- If only the user side uses it, put it in `apps/web-next/src/user`
+- If only the company side uses it, put it in `apps/web-next/src/company`
 
 ## Quick Examples
 
-- A reusable modal for both sides: `src/shared/components`
-- User account settings: `src/user/features`
-- User account settings mobile UI: `src/user/components/mobile`
-- User account settings desktop UI: `src/user/components/desktop`
-- User mobile navigation: `src/user/components/navigation/mobile`
-- User desktop navigation: `src/user/components/navigation/desktop`
-- Company job posting page: `src/company/pages`
-- Company job posting mobile UI: `src/company/components/mobile`
-- Company job posting desktop UI: `src/company/components/desktop`
-- Company mobile layout pieces: `src/company/components/layout/mobile`
-- Company desktop layout pieces: `src/company/components/layout/desktop`
-- Shared auth logic: `src/shared/services`
+- A reusable modal for both sides: `apps/web-next/src/shared/components`
+- User account settings: `apps/web-next/src/user/features`
+- User account settings mobile UI: `apps/web-next/src/user/components/mobile`
+- User account settings desktop UI: `apps/web-next/src/user/components/desktop`
+- User mobile navigation: `apps/web-next/src/user/components/navigation/mobile`
+- User desktop navigation: `apps/web-next/src/user/components/navigation/desktop`
+- Company job posting page: `apps/web-next/src/company/pages`
+- Company job posting mobile UI: `apps/web-next/src/company/components/mobile`
+- Company job posting desktop UI: `apps/web-next/src/company/components/desktop`
+- Company mobile layout pieces: `apps/web-next/src/company/components/layout/mobile`
+- Company desktop layout pieces: `apps/web-next/src/company/components/layout/desktop`
+- Shared auth logic: `apps/web-next/src/shared/services`
 
 ## Goal
 
