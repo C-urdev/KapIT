@@ -13,9 +13,9 @@
     "migrate:messages:verify": "node server/scripts/backfillLegacyMessagesToConversations.js --verify",
     "migrate:messages:parity": "node server/scripts/verifyMessagingParity.js",
     "migrate:messages:parity:strict": "node server/scripts/verifyMessagingParity.js --fail-on-mismatch",
-    "build": "node scripts/run-web-next.js build",
-    "next:dev": "node scripts/run-web-next.js dev",
-    "next:build": "node scripts/run-web-next.js build",
+    "build": "node scripts/run-web.js build",
+    "next:dev": "node scripts/run-web.js dev",
+    "next:build": "node scripts/run-web.js build",
     "fastapi:dev": "cd services/ai-fastapi && uvicorn main:app --reload --port 8000"
   },
   "dependencies": {

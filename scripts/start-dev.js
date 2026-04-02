@@ -15,7 +15,7 @@ const FRONTEND_SCRIPT = process.env.FRONTEND_SCRIPT || 'dev';
 const REUSE_EXISTING_BACKEND = process.env.REUSE_EXISTING_BACKEND === 'true';
 const nodeCommand = process.execPath;
 const serverEntry = path.resolve(process.cwd(), 'server/server.js');
-const webEntry = path.resolve(process.cwd(), 'scripts/run-web-next.js');
+const webEntry = path.resolve(process.cwd(), 'scripts/run-web.js');
 const isWindows = process.platform === 'win32';
 
 const runNodeScript = (entry, args = []) => {

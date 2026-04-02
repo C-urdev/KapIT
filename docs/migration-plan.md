@@ -4,7 +4,7 @@
 
 ```text
 apps/
-  web-next/
+  web/
     app/
       (public)/
       auth/
@@ -25,7 +25,7 @@ services/
 database/
   init.sql
 apps/
-  web-next/
+  web/
     src/
       shared/
       user/
@@ -38,7 +38,7 @@ apps/
 2. Move token transport from browser storage to HTTP-only cookies with refresh tokens.
 3. Keep session user data in sessionStorage only as UI cache, not as a credential store.
 4. Add CSRF validation for cookie-authenticated write requests.
-5. Introduce the Next.js app in `apps/web-next` and reuse existing React components through path aliases.
+5. Introduce the Next.js app in `apps/web` and reuse existing React components through path aliases.
 6. Migrate public SEO pages first: landing page, jobs, company profiles.
 7. Move private dashboards to Next route entrypoints while keeping existing React components.
 8. Move page-level metadata into Next route segments with `generateMetadata`.
