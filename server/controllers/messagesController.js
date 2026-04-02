@@ -545,7 +545,7 @@ const sendMessage = async (req, res) => {
       actorUserId: req.user.id,
       type: 'message',
       title: 'New message',
-      message: `${senderLabel} messaged you.`,
+      message: 'A user messaged you.',
       metadata: {
         actorLabel: senderLabel,
         contactUserId: req.user.id,

@@ -1,20 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import HomePage from '@userPages/Home/UserHomePage';
 import { logoutUser } from '@sharedServices/authService';
 import ConfirmModal from '@sharedComponents/ui/ConfirmModal';
 import SessionGate from './SessionGate';
 
 export default function UserDashboardClient() {
-  const router = useRouter();
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
   const confirmLogout = async () => {
     setLogoutConfirmOpen(false);
     await logoutUser();
-    router.push('/');
+
+    if (typeof window !== 'undefined') {
+      window.location.replace('/');
+    }
   };
 
   return (
@@ -24,7 +25,7 @@ export default function UserDashboardClient() {
           <HomePage
             user={user}
             userType={user?.type}
-            onOpenHelp={() => {}}
+            onOpenHelp={null}
             onLogout={() => setLogoutConfirmOpen(true)}
             onUpdateUser={async (updates) => updateUser(updates)}
           />

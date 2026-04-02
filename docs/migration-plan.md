@@ -24,10 +24,12 @@ services/
       routers/
 database/
   init.sql
-src/
-  shared/
-  user/
-  company/
+apps/
+  web-next/
+    src/
+      shared/
+      user/
+      company/
 ```
 
 ## Step-by-step migration

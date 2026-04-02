@@ -35,6 +35,11 @@ const getNotificationPresentation = (type) => {
         icon: MessageCircle,
         iconClass: 'bg-[#eef6ee] dark:bg-[#1e3a5f] text-[#588157] dark:text-[#3ba9d6]',
       };
+    case 'job_application':
+      return {
+        icon: Bell,
+        iconClass: 'bg-[#eef6ee] dark:bg-[#1e3a5f] text-[#588157] dark:text-[#3ba9d6]',
+      };
     case 'profile_view':
       return {
         icon: Eye,
@@ -124,6 +129,7 @@ export default function CompanyNotificationsPage({ onReadAll }) {
           {items.map((item) => (
             <NotificationItem
               key={item.id}
+              type={item.type}
               icon={item.icon}
               iconClass={item.iconClass}
               title={item.title}
@@ -158,11 +164,23 @@ function StateCard({ children, tone = 'default' }) {
   );
 }
 
-function NotificationItem({ icon: Icon, iconClass, title, message, time, exactTime, unread, metadata, expanded, onToggle }) {
-  const actorLabel = metadata?.actorLabel || 'Someone';
+function NotificationItem({ type, icon: Icon, iconClass, title, message, time, exactTime, unread, metadata, expanded, onToggle }) {
   const messageCount = Number(metadata?.messageCount || 0);
   const viewCount = Number(metadata?.viewCount || 0);
-  const summaryMessage = messageCount > 1 ? `${actorLabel} messaged you (${messageCount} messages).` : message;
+  const jobTitle = metadata?.jobTitle || '';
+
+  const summaryMessage =
+    type === 'message'
+      ? messageCount > 1
+        ? `A user messaged you (${messageCount} messages).`
+        : 'A user messaged you.'
+      : type === 'profile_view'
+        ? viewCount > 1
+          ? `${viewCount} users viewed your company profile.`
+          : 'A user viewed your company profile.'
+        : type === 'job_application'
+          ? 'A user applied to your job listing.'
+          : message;
 
   return (
     <button
@@ -191,11 +209,13 @@ function NotificationItem({ icon: Icon, iconClass, title, message, time, exactTi
           {expanded ? (
             <div className="mt-3 space-y-1 rounded-lg border border-[#d6d3c9] bg-white/70 p-3 dark:border-[#2a4a6f] dark:bg-[#0f2139]">
               <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">
-                <span className="font-semibold text-[#3a5a40] dark:text-white">Who:</span> {actorLabel}
-              </p>
-              <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">
                 <span className="font-semibold text-[#3a5a40] dark:text-white">When:</span> {exactTime || 'Unknown time'}
               </p>
+              {jobTitle ? (
+                <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">
+                  <span className="font-semibold text-[#3a5a40] dark:text-white">Job listing:</span> {jobTitle}
+                </p>
+              ) : null}
               {messageCount > 0 ? (
                 <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">
                   <span className="font-semibold text-[#3a5a40] dark:text-white">Messages:</span> {messageCount}

@@ -10,6 +10,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env.local'), override: true 
 
 const SERVER_PORT = Number(process.env.PORT || 5000);
 const SERVER_HOST = process.env.HOST || '127.0.0.1';
+const FRONTEND_PORT = Number(process.env.NEXTJS_PORT || 3000);
 const FRONTEND_SCRIPT = process.env.FRONTEND_SCRIPT || 'dev';
 const REUSE_EXISTING_BACKEND = process.env.REUSE_EXISTING_BACKEND === 'true';
 const nodeCommand = process.execPath;
@@ -76,6 +77,21 @@ const stopNodeProcessOnPort = async (port) => {
 const isPortOpen = () =>
   new Promise((resolve) => {
     const socket = net.createConnection({ port: SERVER_PORT, host: SERVER_HOST });
+
+    socket.once('connect', () => {
+      socket.end();
+      resolve(true);
+    });
+
+    socket.once('error', () => {
+      socket.destroy();
+      resolve(false);
+    });
+  });
+
+const isFrontendPortOpen = () =>
+  new Promise((resolve) => {
+    const socket = net.createConnection({ port: FRONTEND_PORT, host: SERVER_HOST });
 
     socket.once('connect', () => {
       socket.end();
@@ -182,6 +198,17 @@ const bootstrap = async () => {
     if (!stopped && (await isPortOpen())) {
       console.error(`Port ${SERVER_PORT} is already in use. Stop the old backend first, then run npm start again.`);
       process.exit(1);
+    }
+  }
+
+  if (FRONTEND_PORT !== SERVER_PORT) {
+    const frontendPortOpen = await isFrontendPortOpen();
+    if (frontendPortOpen) {
+      const stopped = await stopNodeProcessOnPort(FRONTEND_PORT);
+      if (!stopped && (await isFrontendPortOpen())) {
+        console.error(`Port ${FRONTEND_PORT} is already in use. Stop the old frontend first, then run npm start again.`);
+        process.exit(1);
+      }
     }
   }
 
