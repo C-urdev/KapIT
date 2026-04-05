@@ -137,7 +137,7 @@ const MOBILE_NAV_ITEMS = [
   { path: COMPANY_PATHS.dashboard, label: 'Home', icon: LayoutDashboard },
   { path: COMPANY_PATHS.jobs, label: 'Jobs', icon: Briefcase },
   { path: COMPANY_PATHS.messages, label: 'Messages', icon: MessageCircle },
-  { path: COMPANY_PATHS.notifications, label: 'Alerts', icon: Bell },
+  { path: COMPANY_PATHS.notifications, label: 'Notifications', icon: Bell },
   { path: COMPANY_PATHS.applicants, label: 'Applicants', icon: Users },
 ];
 

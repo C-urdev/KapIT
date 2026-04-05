@@ -11,15 +11,18 @@ function PostActionSheet({ sections, onClose }) {
     <div className="fixed inset-0 z-[90] flex items-end bg-[#344e41]/28 backdrop-blur-[6px] dark:bg-black/45" onClick={onClose}>
       <div className="max-h-[85vh] w-full overflow-y-auto rounded-t-[1.8rem] border-t border-[#bfd0af] bg-[#dad7cd] px-4 pb-6 pt-3 text-[#344e41] shadow-[0_-18px_42px_rgba(58,90,64,0.18)] dark:border-[#2a4a6f] dark:bg-[#1c2431] dark:text-white dark:shadow-[0_-18px_42px_rgba(0,0,0,0.35)]" style={{ paddingBottom: 'max(1.5rem, calc(env(safe-area-inset-bottom) + 1rem))' }} onClick={(event) => event.stopPropagation()}>
         <div className="mx-auto mb-4 h-1.5 w-14 rounded-full bg-[#9caf88] dark:bg-white/28" />
-        <div className="space-y-4">
+        <div className="pt-1">
           {sections.map((section, sectionIndex) => (
-            <div key={sectionIndex} className="overflow-hidden rounded-[1.45rem] border border-[#bfd0af] bg-white/88 shadow-[0_10px_24px_rgba(58,90,64,0.08)] backdrop-blur-sm dark:border-[#314a68] dark:bg-[#243244]/92 dark:shadow-none">
+            <div key={sectionIndex} className={sectionIndex > 0 ? 'border-t border-[#ccd7bf] pt-2 dark:border-[#36506f]' : ''}>
               {section.map((item, itemIndex) => {
                 const Icon = item.icon;
                 return (
-                  <button key={item.label} type="button" onClick={item.onClick} className={`flex w-full items-start gap-4 px-5 py-4 text-left transition-colors hover:bg-[#f1f5eb] dark:hover:bg-[#2b3c52] ${itemIndex > 0 ? 'border-t border-[#d9dfcf] dark:border-[#36506f]' : ''}`}>
-                    <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#bfd0af] bg-[#eef6ee] text-[#3a5a40] dark:border-[#3f5977] dark:bg-[#16314d] dark:text-[#8dccff]"><Icon className="h-5 w-5" /></span>
-                    <span className="min-w-0"><span className="block text-[1.05rem] font-semibold text-[#3a5a40] dark:text-white">{item.label}</span>{item.description ? <span className="mt-1 block text-sm leading-6 text-[#5f6f52] dark:text-[#b8d4e8]">{item.description}</span> : null}</span>
+                  <button key={item.label} type="button" onClick={item.onClick} className={`flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-transparent dark:hover:bg-transparent ${itemIndex > 0 ? 'border-t border-[#d9dfcf] dark:border-[#36506f]' : ''}`}>
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#bfd0af] bg-[#eef6ee] text-[#3a5a40] dark:border-[#3f5977] dark:bg-[#16314d] dark:text-[#8dccff]"><Icon className="h-5 w-5" /></span>
+                    <span className="min-w-0">
+                      <span className="block text-[1.05rem] font-semibold text-[#3a5a40] dark:text-white">{item.label}</span>
+                      {item.label === 'Delete post' && item.description ? <span className="mt-1 block text-sm leading-6 text-[#5f6f52] dark:text-[#b8d4e8]">{item.description}</span> : null}
+                    </span>
                   </button>
                 );
               })}
@@ -48,7 +51,7 @@ const getResolvedPostOwnerName = (post, fallbackDisplayName = '') => {
   return fallbackDisplayName || 'User';
 };
 
-export default function FeedPostCard({ post, user, displayName, profileImage, userInitial, isMenuOpen, onOpenMenu, onCloseMenu, onToggleSavePost, onReactToPost, onAddComment, onReactToComment, onToggleSharePost, onDeletePost, onHidePost, onHideAuthor, enableMenu = true }) {
+export default function FeedPostCard({ post, user, displayName, profileImage, userInitial, isMenuOpen, onOpenMenu, onCloseMenu, onToggleSavePost, onReactToPost, onAddComment, onReactToComment, onToggleSharePost, onDeletePost, isHidden = false, onHidePost, onUndoHidePost, onHideAuthor, enableMenu = true }) {
   const actorKey = getActorKey(user);
   const authorDisplayName = getResolvedPostOwnerName(post, displayName);
   const authorInitial = String(authorDisplayName || 'U').charAt(0).toUpperCase();
@@ -77,6 +80,7 @@ export default function FeedPostCard({ post, user, displayName, profileImage, us
   const shareCount = shares.length;
   const hasShared = shares.some((entry) => entry.userKey === actorKey);
   const formattedDate = new Date(post.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const hiddenFeedbackOptions = ['Doesn\'t match my interests', 'Scam', 'Sexual', 'Disturbing', 'I don\'t like the creator', 'Other'];
 
   useEffect(() => {
     if (!reactionPickerOpen) return undefined;
@@ -136,11 +140,16 @@ export default function FeedPostCard({ post, user, displayName, profileImage, us
     onCloseMenu?.();
   };
 
+  const handleHidePost = () => {
+    onHidePost?.();
+    onCloseMenu?.();
+  };
+
   const menuSections = isOwner
     ? [
         [
           { label: isSaved ? 'Saved post' : 'Save post', icon: Bookmark, onClick: () => { onToggleSavePost?.(post); onCloseMenu?.(); } },
-          { label: 'Hide post', description: 'See fewer posts like this.', icon: EyeOff, onClick: onHidePost },
+          { label: 'Hide post', description: 'See fewer posts like this.', icon: EyeOff, onClick: handleHidePost },
           { label: 'Report post', description: "We won't let others know who reported this.", icon: AlertTriangle, onClick: handleReportPost },
           { label: `Block ${authorDisplayName}`, description: "You won't be able to see or contact each other.", icon: UserX, onClick: handleBlockAuthor },
         ],
@@ -154,7 +163,7 @@ export default function FeedPostCard({ post, user, displayName, profileImage, us
     : [
         [
           { label: isSaved ? 'Saved post' : 'Save post', icon: Bookmark, onClick: () => { onToggleSavePost?.(post); onCloseMenu?.(); } },
-          { label: 'Hide post', description: 'See fewer posts like this.', icon: EyeOff, onClick: onHidePost },
+          { label: 'Hide post', description: 'See fewer posts like this.', icon: EyeOff, onClick: handleHidePost },
           { label: 'Report post', description: "We won't let others know who reported this.", icon: AlertTriangle, onClick: handleReportPost },
           { label: `Block ${authorDisplayName}`, description: "You won't be able to see or contact each other.", icon: UserX, onClick: handleBlockAuthor },
         ],
@@ -162,6 +171,68 @@ export default function FeedPostCard({ post, user, displayName, profileImage, us
           { label: `Hide all from ${authorDisplayName}`, description: 'Stop seeing posts from this person.', icon: X, onClick: () => { onHideAuthor?.(); onCloseMenu?.(); } },
         ],
       ];
+
+  if (isHidden) {
+    return (
+      <article className="overflow-hidden rounded-[1.4rem] border border-[#bfd0af] bg-white text-[#344e41] shadow-[0_16px_36px_rgba(58,90,64,0.1)] dark:border-[#2f3438] dark:bg-[#23272b] dark:text-white dark:shadow-[0_16px_36px_rgba(0,0,0,0.24)]">
+        <div className="flex items-start justify-between gap-4 px-6 pb-5 pt-6">
+          <div>
+            <div className="flex items-center gap-2 text-[#6b7dbb] dark:text-[#9fb4ff]">
+              <EyeOff className="h-5 w-5" />
+              <span className="text-sm font-medium text-[#5f6f52] dark:text-[#b9c0c7]">Hidden</span>
+            </div>
+            <p className="mt-3 max-w-[28rem] text-[1.05rem] font-medium leading-8 text-[#203a28] dark:text-white">Hiding posts helps us personalize your feed.</p>
+          </div>
+          <button
+            type="button"
+            onClick={onUndoHidePost}
+            className="rounded-2xl bg-[#eef6ee] px-5 py-3 text-sm font-semibold text-[#3a5a40] transition-colors hover:bg-[#e2eedf] dark:bg-[#3a3f45] dark:text-white dark:hover:bg-[#4a5057]"
+          >
+            Undo
+          </button>
+        </div>
+
+        <div className="space-y-1 px-6 pb-6">
+          <button
+            type="button"
+            onClick={onHideAuthor}
+            className="flex w-full items-center gap-4 rounded-2xl px-0 py-3 text-left transition-colors hover:bg-transparent dark:hover:bg-white/[0.04]"
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#f7e7a8] text-sm font-semibold text-[#203a28]">
+              {authorProfileImage ? <img src={authorProfileImage} alt={authorDisplayName} className="h-full w-full object-cover" /> : authorInitial}
+            </div>
+            <span className="text-[1.05rem] text-[#203a28] dark:text-white">Snooze {authorDisplayName} for 30 days</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleReportPost}
+            className="flex w-full items-center gap-4 rounded-2xl px-0 py-3 text-left transition-colors hover:bg-transparent dark:hover:bg-white/[0.04]"
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#203a28] dark:bg-white dark:text-[#23272b]">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <span className="text-[1.05rem] text-[#203a28] dark:text-white">Report post</span>
+          </button>
+
+          <div className="border-t border-[#bfd0af] pt-5 dark:border-white/12">
+            <p className="text-[1.05rem] font-medium text-[#203a28] dark:text-white">Why aren&apos;t you interested?</p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              {hiddenFeedbackOptions.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className="rounded-full border border-[#bfd0af] bg-[#eef6ee] px-4 py-2.5 text-sm font-medium text-[#344e41] transition-colors hover:bg-[#e2eedf] dark:border-transparent dark:bg-[#3a3f45] dark:text-white dark:hover:bg-[#4a5057]"
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <>

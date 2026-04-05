@@ -11,11 +11,15 @@ export default function CenterFeed(props) {
   const [menuPostId, setMenuPostId] = useState(null);
   const [hiddenPostIds, setHiddenPostIds] = useState([]);
   const [hiddenAuthorKeys, setHiddenAuthorKeys] = useState([]);
-  const visiblePosts = useMemo(() => posts.filter((post) => !hiddenPostIds.includes(post.id) && !hiddenAuthorKeys.includes(post.ownerKey)), [hiddenAuthorKeys, hiddenPostIds, posts]);
+  const visiblePosts = useMemo(() => posts.filter((post) => !hiddenAuthorKeys.includes(post.ownerKey)), [hiddenAuthorKeys, posts]);
 
   const handleHidePost = (postId) => {
     setHiddenPostIds((current) => (current.includes(postId) ? current : [...current, postId]));
     setMenuPostId(null);
+  };
+
+  const handleUndoHidePost = (postId) => {
+    setHiddenPostIds((current) => current.filter((id) => id !== postId));
   };
 
   const handleHideAuthor = (authorKey) => {
@@ -53,6 +57,8 @@ export default function CenterFeed(props) {
           onToggleSharePost={onToggleSharePost}
           onDeletePost={onDeletePost}
           onHidePost={handleHidePost}
+          hiddenPostIds={hiddenPostIds}
+          onUndoHidePost={handleUndoHidePost}
           onHideAuthor={handleHideAuthor}
         />
       ) : (

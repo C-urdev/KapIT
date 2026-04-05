@@ -228,7 +228,6 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
             </div>
             <div className="min-w-0">
               <h1 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white sm:text-3xl">Complete your company profile</h1>
-              <p className="mt-1 text-sm text-[#344e41] dark:text-[#b8d4e8]">Set up your company details so developers can recognize and trust your brand.</p>
             </div>
           </div>
 

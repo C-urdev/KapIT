@@ -1,7 +1,7 @@
 import React from 'react';
 import FeedPostCard from './FeedPostCard';
 
-export default function CenterFeedPosts({ posts, user, displayName, profileImage, userInitial, menuPostId, setMenuPostId, onToggleSavePost, onReactToPost, onAddComment, onReactToComment, onToggleSharePost, onDeletePost, onHidePost, onHideAuthor }) {
+export default function CenterFeedPosts({ posts, user, displayName, profileImage, userInitial, menuPostId, setMenuPostId, onToggleSavePost, onReactToPost, onAddComment, onReactToComment, onToggleSharePost, onDeletePost, onHidePost, hiddenPostIds = [], onUndoHidePost, onHideAuthor }) {
   return (
     <div className="space-y-4">
       {posts.map((post) => (
@@ -21,7 +21,9 @@ export default function CenterFeedPosts({ posts, user, displayName, profileImage
           onReactToComment={onReactToComment}
           onToggleSharePost={onToggleSharePost}
           onDeletePost={onDeletePost}
+          isHidden={hiddenPostIds.includes(post.id)}
           onHidePost={() => onHidePost(post.id)}
+          onUndoHidePost={() => onUndoHidePost?.(post.id)}
           onHideAuthor={() => onHideAuthor(post.ownerKey)}
         />
       ))}

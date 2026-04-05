@@ -280,7 +280,6 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
             <div className="p-4 border-b border-[#a3b18a] dark:border-[#2a4a6f] space-y-3">
               <div>
                 <h2 className="text-xl font-bold text-[#3a5a40] dark:text-white">Messages</h2>
-                <p className="mt-1 text-sm text-[#344e41] dark:text-[#b8d4e8]">Search people or companies you already messaged.</p>
               </div>
 
               <div className="relative">

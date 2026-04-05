@@ -45,12 +45,6 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
   const topRef = useRef(null);
   const categoriesRef = useRef(null);
 
-  const heroSubtitle = useMemo(
-    () =>
-      'The platform where companies find skilled Filipino developers and IT professionals showcase their portfolios.',
-    []
-  );
-
   const scrollTo = (ref) => {
     ref?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -195,9 +189,6 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
               <h2 className="mt-8 text-5xl sm:text-6xl lg:text-7xl xl:text-[5.5rem] font-extrabold tracking-tight text-[#102a1b] dark:text-white max-w-6xl mx-auto">
                 Connect Filipino IT Talent with Opportunity
               </h2>
-              <p className="mt-8 text-xl sm:text-2xl text-[#344e41] dark:text-[#b8d4e8] max-w-4xl mx-auto leading-relaxed">
-                {heroSubtitle}
-              </p>
 
               <form onSubmit={handleSearch} className="mt-16 sm:mt-20">
                 <div className="mx-auto max-w-5xl">
@@ -287,9 +278,6 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
         <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 pt-14 pb-10 min-h-[360px] sm:min-h-[400px]">
           <div className="max-w-3xl">
             <h3 className="text-3xl font-bold text-[#102a1b] dark:text-white">Explore categories</h3>
-            <p className="mt-2 text-[#344e41] dark:text-[#b8d4e8]">
-              Browse popular areas and find specialists with portfolios you can verify.
-            </p>
           </div>
 
           <div className="mt-8">
@@ -299,7 +287,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
               <MobileCategoryCarousel categories={CATEGORIES} onCategoryClick={handleOpenAccountChoice} />
             )}
           </div>
-      </div>
+        </div>
         <ThinSectionLine className="bottom-0" />
       </section>
 
@@ -307,30 +295,30 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
         <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 pt-10 pb-10 min-h-[360px] sm:min-h-[400px]">
           <div className="max-w-3xl">
             <h3 className="text-3xl font-bold text-[#102a1b] dark:text-white">How KapIT works</h3>
-            <p className="mt-2 text-[#344e41] dark:text-[#b8d4e8]">
-              A simple workflow designed for graduates, developers, and hiring teams.
-            </p>
           </div>
 
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-5 xl:gap-6">
-            <StepCard
-              step="Step 1"
-              title="Create your profile"
-              description="Create your developer profile or company account."
-              icon={Users}
-            />
-            <StepCard
-              step="Step 2"
-              title="Showcase work"
-              description="Showcase portfolios or post IT projects with clear requirements."
-              icon={Code2}
-            />
-            <StepCard
-              step="Step 3"
-              title="Connect & collaborate"
-              description="Connect and collaborate with Filipino IT talent."
-              icon={ArrowRight}
-            />
+          <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-3 md:gap-10">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#588157] dark:text-[#7fd0ee]">Step 1</p>
+              <h4 className="mt-3 text-2xl font-bold text-[#102a1b] dark:text-white">Create your profile</h4>
+              <p className="mt-3 max-w-sm text-base leading-relaxed text-[#344e41] dark:text-[#b8d4e8]">
+                Create your developer profile or company account.
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#588157] dark:text-[#7fd0ee]">Step 2</p>
+              <h4 className="mt-3 text-2xl font-bold text-[#102a1b] dark:text-white">Showcase work</h4>
+              <p className="mt-3 max-w-sm text-base leading-relaxed text-[#344e41] dark:text-[#b8d4e8]">
+                Showcase portfolios or post IT projects with clear requirements.
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#588157] dark:text-[#7fd0ee]">Step 3</p>
+              <h4 className="mt-3 text-2xl font-bold text-[#102a1b] dark:text-white">Connect & collaborate</h4>
+              <p className="mt-3 max-w-sm text-base leading-relaxed text-[#344e41] dark:text-[#b8d4e8]">
+                Connect and collaborate with Filipino IT talent.
+              </p>
+            </div>
           </div>
         </div>
         <ThinSectionLine className="bottom-0 z-10" />
@@ -338,14 +326,11 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
 
       <section className="relative bg-gradient-to-b from-[#f8f4ec] via-[#eee9de] via-[8%] to-[#e2ddcf] dark:bg-gradient-to-b dark:from-[#0f2139] dark:via-[#0d1d33] dark:to-[#0a1628]">
         <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 py-10 min-h-[360px] sm:min-h-[400px] flex items-center">
-          <div className="w-full rounded-[2rem] border border-white/50 dark:border-[#2a4a6f] bg-white/70 dark:bg-[linear-gradient(180deg,rgba(20,42,70,0.94),rgba(13,30,51,0.96))] backdrop-blur px-8 py-8 sm:px-10 sm:py-10 lg:px-12 lg:py-11 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-10 shadow-lg shadow-black/5 dark:shadow-[0_20px_50px_rgba(0,0,0,0.34)]">
+          <div className="w-full px-2 sm:px-0 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-10">
             <div className="max-w-2xl">
               <h3 className="text-3xl sm:text-4xl font-extrabold text-[#102a1b] dark:text-white">
                 Start building with Filipino IT Talent
               </h3>
-              <p className="mt-3 text-[#344e41] dark:text-[#b8d4e8]">
-                From capstone-ready graduates to experienced developers, find the right match, faster.
-              </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto lg:shrink-0">
@@ -774,7 +759,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
     moveDrag(event.clientX);
   };
 
-  const handlePointerUp = (event) => {
+  const handlePointerUp = () => {
     const track = trackRef.current;
     if (track && dragStateRef.current.pointerId !== null) {
       track.releasePointerCapture?.(dragStateRef.current.pointerId);
@@ -866,21 +851,6 @@ function ThinSectionLine({ className = '' }) {
         aria-hidden="true"
       />
     );
-}
-
-function StepCard({ step, title, description, icon: Icon }) {
-  return (
-    <div className="flex min-h-[184px] flex-col rounded-2xl border border-[#a3b18a] bg-[#f5f5f2] p-6 shadow-sm dark:border-[#1e3a5f] dark:bg-[#162842] lg:min-h-[214px] lg:rounded-[1.75rem] lg:p-7">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold tracking-wide text-[#588157] dark:text-[#3ba9d6]">{step}</p>
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#a3b18a] bg-white dark:border-[#2a4a6f] dark:bg-[#0f2139] lg:h-12 lg:w-12 lg:rounded-2xl">
-          <Icon className="h-5 w-5 text-[#588157] dark:text-[#3ba9d6] lg:h-6 lg:w-6" />
-        </div>
-      </div>
-      <h4 className="mt-5 text-lg font-bold text-[#102a1b] dark:text-white lg:text-[1.4rem]">{title}</h4>
-      <p className="mt-3 text-sm leading-relaxed text-[#344e41] dark:text-[#b8d4e8] lg:text-[0.98rem]">{description}</p>
-    </div>
-  );
 }
 
 

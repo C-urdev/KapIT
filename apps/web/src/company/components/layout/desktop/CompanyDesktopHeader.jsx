@@ -26,7 +26,7 @@ export default function CompanyDesktopHeader({ title, user, onLogout, onHelp, si
     <div className={`hidden xl:grid h-20 items-center transition-[grid-template-columns] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? 'grid-cols-[4.5rem_minmax(0,1fr)]' : 'grid-cols-[18rem_minmax(0,1fr)]'}`}>
       <div className={`h-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-6'}`}>
         {sidebarCollapsed ? (
-          <div className="w-10 h-10 rounded-xl shrink-0 bg-[#f5f5f2] dark:bg-[#1e3a5f] border border-[#a3b18a]/60 dark:border-[#2a4a6f] flex items-center justify-center overflow-hidden relative">
+          <div className="w-10 h-10 shrink-0 flex items-center justify-center overflow-hidden relative">
             <img
               src="/kapit-logo.png"
               alt="KapIT"
@@ -43,7 +43,7 @@ export default function CompanyDesktopHeader({ title, user, onLogout, onHelp, si
           </div>
         ) : (
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl shrink-0 bg-[#f5f5f2] dark:bg-[#1e3a5f] border border-[#a3b18a]/60 dark:border-[#2a4a6f] flex items-center justify-center overflow-hidden relative">
+            <div className="w-10 h-10 shrink-0 flex items-center justify-center overflow-hidden relative">
               <img
                 src="/kapit-logo.png"
                 alt="KapIT"
@@ -60,7 +60,6 @@ export default function CompanyDesktopHeader({ title, user, onLogout, onHelp, si
             </div>
             <div className="min-w-0">
               <div className="text-base font-bold text-[#3a5a40] dark:text-white leading-tight truncate">KapIT</div>
-              <div className="text-xs text-[#4b5563] dark:text-[#b8d4e8] leading-tight truncate">Company Dashboard</div>
             </div>
           </div>
         )}
@@ -69,7 +68,6 @@ export default function CompanyDesktopHeader({ title, user, onLogout, onHelp, si
       <div className="h-full px-4 sm:px-6 xl:px-10 flex items-center justify-between gap-4 min-w-0">
         <div className="min-w-0 pr-2">
           <h1 className="text-lg xl:text-xl font-bold text-[#3a5a40] dark:text-white truncate leading-tight">{title}</h1>
-          <p className="hidden 2xl:block text-xs text-[#4b5563] dark:text-[#b8d4e8] truncate leading-tight">Manage hiring, jobs, and candidates</p>
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">

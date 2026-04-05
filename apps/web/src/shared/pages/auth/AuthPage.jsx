@@ -95,13 +95,6 @@ export default function AuthPage({
     }
   };
 
-  const authSubtitle = (() => {
-    const resolved = accountType || userType;
-    if (resolved === 'developer' || resolved === 'employee') return 'IT Professional / Developer';
-    if (resolved === 'company') return 'Company / Client';
-    return 'Sign in or create a new account';
-  })();
-
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
@@ -128,9 +121,6 @@ export default function AuthPage({
               <h2 className="text-3xl font-bold text-[#3a5a40] dark:text-white mb-2">
                 {authMode === 'login' ? 'Welcome Back' : 'Create Account'}
               </h2>
-              <p className="text-[#344e41] dark:text-[#b8d4e8]">
-                {authSubtitle}
-              </p>
             </div>
 
             {/* Error Message */}

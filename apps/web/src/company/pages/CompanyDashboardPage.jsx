@@ -178,7 +178,6 @@ export default function CompanyDashboardPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-[#3a5a40] dark:text-white">Overview</h2>
-          <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">Track jobs, applicants, and hiring performance.</p>
         </div>
         <div className="flex w-full sm:w-auto flex-col min-[420px]:flex-row flex-wrap items-stretch sm:items-center justify-end gap-3 ml-auto">
           <OverviewIconAction icon={PlusCircle} label="Post a job" variant="primary" onClick={() => navigate(COMPANY_PATHS.postJob)} />

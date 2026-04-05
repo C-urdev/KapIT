@@ -434,7 +434,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
         )}
 
         {activeNav === 'jobs' && <UserJobsPage userType={userType} user={user} />}
-        {activeNav === 'projects' && <UserProjectsPage userType={userType} />}
+        {activeNav === 'projects' && <UserProjectsPage userType={userType} user={user} onUpdateUser={onUpdateUser} />}
         {activeNav === 'saved-jobs' && (
           <SavedJobsPanel
             savedJobs={savedJobs}
