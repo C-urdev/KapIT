@@ -126,7 +126,6 @@ export default function UserJobsPage({ userType, user }) {
         <h1 className="text-3xl font-bold text-[#3a5a40] dark:text-white mb-2">
           {userType === 'employee' ? 'Browse Jobs' : 'Posted Jobs'}
         </h1>
-        <p className="text-[#344e41] dark:text-[#b8d4e8]">{summaryText}</p>
       </div>
 
       <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-4 mb-6">

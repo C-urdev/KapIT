@@ -15,7 +15,6 @@ export default function AppProviders({ children }) {
         return;
       }
 
-      console.error('Suppressed unhandled Event rejection:', reason);
       event.preventDefault();
     };
 

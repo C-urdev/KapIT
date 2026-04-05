@@ -156,7 +156,6 @@ export default function CompanyProfilePage({ user, onUpdated }) {
     <div className="max-w-5xl mx-auto space-y-6">
       <div>
         <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Company profile</h2>
-        <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">Update your branding, company summary, and related companies shown on your public profile.</p>
       </div>
 
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
@@ -167,7 +166,6 @@ export default function CompanyProfilePage({ user, onUpdated }) {
           <section className="space-y-4 rounded-2xl border border-[#d8dfc9] dark:border-[#2a4a6f] bg-[#f8faf5] dark:bg-[#102235] p-5">
             <div>
               <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Company onboarding details</h3>
-              <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">Saved from your complete company profile flow.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -232,7 +230,6 @@ export default function CompanyProfilePage({ user, onUpdated }) {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Related companies</h3>
-              <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">Add partner, sister, or affiliated companies tied to your account.</p>
             </div>
             <button type="button" onClick={addRelatedCompany} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors">
               <Plus className="w-4 h-4" />

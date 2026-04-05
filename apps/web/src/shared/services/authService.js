@@ -82,6 +82,12 @@ const pickLocalProfileFields = (user) => ({
   workPreference: user?.workPreference || '',
   aboutMe: user?.aboutMe || '',
   resume: user?.resume || '',
+  projects: Array.isArray(user?.projects) ? user.projects : [],
+  projectCount: Number.isFinite(Number(user?.projectCount))
+    ? Number(user.projectCount)
+    : Array.isArray(user?.projects)
+      ? user.projects.length
+      : 0,
   logoUrl: user?.logoUrl || '',
   description: user?.description || '',
   contactEmail: user?.contactEmail || '',

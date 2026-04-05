@@ -173,7 +173,6 @@ export default function CompanyManageJobsPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Manage jobs</h2>
-          <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">All posted jobs here are loaded from your database records, and deleting one removes it there too.</p>
         </div>
         <div className="flex items-center gap-2">
           <button

@@ -35,7 +35,7 @@ export default function UserMobileBottomNav({ activeNav, setActiveNav, unreadNot
         <MobileBottomNavButton label="Projects" icon={FolderKanban} active={activeNav === 'projects'} onClick={() => setActiveNav('projects')} />
         <MobileBottomNavButton label="Messages" icon={MessageCircle} active={activeNav === 'messages'} onClick={() => setActiveNav('messages')} />
         <MobileBottomNavButton
-          label="Alerts"
+          label="Notifications"
           icon={Bell}
           active={activeNav === 'notifications'}
           onClick={() => setActiveNav('notifications')}

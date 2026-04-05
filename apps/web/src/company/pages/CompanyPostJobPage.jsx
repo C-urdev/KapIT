@@ -147,7 +147,6 @@ export default function CompanyPostJobPage() {
     <div className="max-w-5xl mx-auto space-y-6">
       <div>
         <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Post a job</h2>
-        <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">Choose the role, complete payment, and then publish the listing.</p>
       </div>
 
       <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[linear-gradient(135deg,#f8fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#16304a,#102235)] p-5 shadow-lg shadow-black/5 dark:shadow-black/20">

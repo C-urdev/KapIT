@@ -11,7 +11,7 @@ export default function UserMobileTopbar({ setActiveNav, mobileMenuOpen, setMobi
         <button
           type="button"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#a3b18a] bg-white text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 shrink-0"
+          className="inline-flex h-11 w-11 items-center justify-center text-[#344e41] transition-colors hover:text-[#3a5a40] dark:text-white dark:hover:text-[#b8d4e8] shrink-0"
           aria-label="Open menu"
         >
           <Menu className="w-6 h-6" />
@@ -36,7 +36,7 @@ export default function UserMobileTopbar({ setActiveNav, mobileMenuOpen, setMobi
         <button
           type="button"
           onClick={onOpenSearch}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#a3b18a] bg-white text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+          className="inline-flex h-11 w-11 items-center justify-center text-[#344e41] transition-colors hover:text-[#3a5a40] dark:text-white dark:hover:text-[#b8d4e8]"
           aria-label="Search users and companies"
         >
           <Search className="w-5 h-5" />
@@ -44,7 +44,7 @@ export default function UserMobileTopbar({ setActiveNav, mobileMenuOpen, setMobi
         <button
           type="button"
           onClick={toggleTheme}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#a3b18a] bg-white text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+          className="inline-flex h-11 w-11 items-center justify-center text-[#344e41] transition-colors hover:text-[#3a5a40] dark:text-white dark:hover:text-[#b8d4e8]"
           aria-label="Toggle theme"
         >
           {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}

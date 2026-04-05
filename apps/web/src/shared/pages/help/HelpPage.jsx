@@ -12,7 +12,7 @@ export default function HelpPage({ onBack }) {
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex w-fit shrink-0 items-center gap-2 rounded-xl border border-[#a3b18a] bg-white px-3 py-2 text-sm font-semibold text-[#344e41] shadow-sm hover:bg-[#f8f7f2] dark:border-[#2a4a6f] dark:bg-[#162842] dark:text-white dark:hover:bg-[#1e3a5f] transition-colors"
+              className="inline-flex w-fit shrink-0 items-center gap-2 px-1 py-1 text-sm font-semibold text-[#344e41] hover:text-[#3a5a40] dark:text-white dark:hover:text-[#b8d4e8] transition-colors"
             >
               <ArrowLeft className="h-4 w-4 shrink-0" />
               <span className="truncate">Back</span>
@@ -20,9 +20,6 @@ export default function HelpPage({ onBack }) {
 
             <div className="min-w-0 flex-1 text-right">
               <h1 className="text-lg font-semibold text-[#3a5a40] dark:text-white">Help</h1>
-              <p className="text-[11px] leading-tight text-[#5f6f52] dark:text-[#9fb3c8] sm:text-xs">
-                Support for account and platform questions
-              </p>
             </div>
           </div>
         </div>
@@ -31,15 +28,8 @@ export default function HelpPage({ onBack }) {
       <main className="max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-10">
         <div className="mx-auto w-full max-w-[860px] bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-2xl p-4 sm:p-8 shadow-[0_18px_45px_rgba(16,42,27,0.08)] dark:shadow-[0_18px_45px_rgba(0,0,0,0.28)]">
           <div className="flex items-start gap-3 mb-4 sm:mb-5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f5f5f2] dark:bg-[#1e3a5f]">
-              <HelpCircle className="w-5 h-5 text-[#588157] dark:text-[#3ba9d6]" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-lg sm:text-xl font-bold text-[#3a5a40] dark:text-white">Need Help?</h2>
-              <p className="mt-1 text-sm leading-relaxed text-[#344e41] dark:text-[#b8d4e8]">
-                Tell us your concern and we will guide you as soon as possible.
-              </p>
-            </div>
+            <HelpCircle className="mt-0.5 h-5 w-5 shrink-0 text-[#588157] dark:text-[#3ba9d6]" />
+            <h2 className="min-w-0 text-lg sm:text-xl font-bold text-[#3a5a40] dark:text-white">Need Help?</h2>
           </div>
 
           <div className="grid gap-3 grid-cols-1 sm:grid-cols-3 mb-5 sm:mb-6">
@@ -87,8 +77,8 @@ export default function HelpPage({ onBack }) {
 
 function InfoCard({ icon: Icon, title, text }) {
   return (
-    <div className="rounded-2xl border border-[#d7d2c4] dark:border-[#2a4a6f] bg-[#f8f7f2] dark:bg-[#102235] p-3.5 sm:p-4 min-h-[124px] sm:min-h-[156px]">
-      <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-white dark:bg-[#16304a]">
+    <div className="p-3.5 sm:p-4 min-h-[124px] sm:min-h-[156px]">
+      <div className="mb-2 flex h-9 w-9 items-center justify-center">
         <Icon className="h-4 w-4 text-[#588157] dark:text-[#3ba9d6]" />
       </div>
       <h3 className="text-sm font-semibold text-[#3a5a40] dark:text-white">{title}</h3>

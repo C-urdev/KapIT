@@ -13,7 +13,7 @@ export default function CompanyMobileHeader({ title, user, onOpenMobileNav }) {
           <button
             type="button"
             onClick={onOpenMobileNav}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors shrink-0"
+            className="inline-flex h-10 w-10 items-center justify-center text-[#344e41] dark:text-white hover:text-[#3a5a40] dark:hover:text-[#b8d4e8] transition-colors shrink-0"
             aria-label="Open menu"
           >
             <Menu className="w-5 h-5" />
@@ -37,7 +37,7 @@ export default function CompanyMobileHeader({ title, user, onOpenMobileNav }) {
           <button
             type="button"
             onClick={toggleTheme}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+            className="inline-flex h-10 w-10 items-center justify-center text-[#344e41] dark:text-white hover:text-[#3a5a40] dark:hover:text-[#b8d4e8] transition-colors"
             aria-label="Toggle theme"
           >
             {theme === 'light' ? <Moon className="w-5 h-5 text-[#344e41]" /> : <Sun className="w-5 h-5 text-white" />}

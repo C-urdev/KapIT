@@ -154,7 +154,6 @@ export default function CompanySearchDevelopersPage() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Search developers</h2>
-        <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">Use a quick keyword search, then open more filters only when you need extra details.</p>
       </div>
 
       <form

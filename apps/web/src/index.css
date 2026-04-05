@@ -3,8 +3,51 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --font-mobile: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-desktop: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-weight-body: 400;
+    --font-weight-button: 500;
+    --font-weight-heading: 600;
+  }
+
   html {
-    font-family: Inter, Poppins, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: var(--font-mobile);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    font-weight: var(--font-weight-body);
+  }
+
+  body,
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: var(--font-weight-heading);
+    letter-spacing: -0.01em;
+  }
+
+  button {
+    font-weight: var(--font-weight-button);
+  }
+
+  @media (min-width: 1024px) {
+    html {
+      font-family: var(--font-desktop);
+    }
   }
 }
 

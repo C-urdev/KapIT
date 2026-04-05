@@ -83,7 +83,6 @@ export default function ChooseAccountTypePage({ pendingSignup, onBack, onRegiste
           <div className="bg-white dark:bg-[#162842] rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] p-5 sm:p-8 shadow-lg dark:shadow-[#3ba9d6]/10">
             <div className="text-center mb-7">
               <h2 className="text-3xl font-bold text-[#3a5a40] dark:text-white mb-2">Choose Account Type</h2>
-              <p className="text-[#344e41] dark:text-[#b8d4e8]">This helps us show you the right profile form.</p>
             </div>
 
             {error && (

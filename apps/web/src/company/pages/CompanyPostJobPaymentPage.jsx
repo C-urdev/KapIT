@@ -322,7 +322,6 @@ export default function CompanyPostJobPaymentPage() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#588157] dark:text-[#7dc4ff]">Secure checkout</p>
               <h1 className="mt-1.5 text-2xl sm:text-[2rem] font-semibold tracking-tight text-[#102a1b] dark:text-white">Complete Payment to Publish Job</h1>
-              <p className="mt-1.5 max-w-2xl text-sm text-[#5f6f52] dark:text-[#a6bfd8]">Choose a plan, select Stripe or PayPal, and we'll only publish the job after payment is successfully verified.</p>
             </div>
             <button
               type="button"
@@ -352,7 +351,6 @@ export default function CompanyPostJobPaymentPage() {
               <div className="space-y-3">
                 <div>
                   <h2 className="text-xl font-semibold text-[#102a1b] dark:text-white">Plan Summary</h2>
-                  <p className="mt-1 text-sm text-[#5f6f52] dark:text-[#a6bfd8]">Simple pricing with one clear outcome: the job only goes live after payment is completed.</p>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

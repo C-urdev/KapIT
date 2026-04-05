@@ -55,7 +55,6 @@ export default function CompanyApplicantsPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Applicants</h2>
-          <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">Review candidates and manage hiring for roles that were successfully published.</p>
         </div>
         <button
           type="button"
@@ -87,7 +86,6 @@ export default function CompanyApplicantsPage() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Pipeline overview</h3>
-            <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">Counts across all applications in your hiring flow.</p>
           </div>
           {statusEntries.length > 0 ? (
             <div className="flex flex-wrap gap-2">

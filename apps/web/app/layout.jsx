@@ -34,14 +34,12 @@ export default function RootLayout({ children }) {
                   if (!isEventLike(event && event.reason)) return;
                   event.preventDefault();
                   event.stopImmediatePropagation();
-                  console.error('Suppressed early unhandled Event rejection:', event.reason);
                 });
 
                 window.addEventListener('error', function (event) {
                   if (!isEventLike(event && event.error)) return;
                   event.preventDefault();
                   event.stopImmediatePropagation();
-                  console.error('Suppressed early Event error:', event.error);
                 }, true);
               })();
             `,

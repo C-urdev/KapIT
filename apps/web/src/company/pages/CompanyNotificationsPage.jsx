@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Bell, ChevronDown, Eye, MessageCircle } from 'lucide-react';
+import { AlertCircle, Bell, Eye, MessageCircle, MoreHorizontal, Trash2, X } from 'lucide-react';
 import { getNotifications, markNotificationsRead } from '@sharedServices/notificationsService';
 
 const formatNotificationTime = (value) => {
@@ -14,9 +14,12 @@ const formatNotificationTime = (value) => {
   const day = 24 * hour;
 
   if (diffMs < minute) return 'Just now';
-  if (diffMs < hour) return `${Math.max(1, Math.floor(diffMs / minute))}m ago`;
-  if (diffMs < day) return `${Math.max(1, Math.floor(diffMs / hour))}h ago`;
-  if (diffMs < 7 * day) return `${Math.max(1, Math.floor(diffMs / day))}d ago`;
+  if (diffMs < hour) return `${Math.max(1, Math.floor(diffMs / minute))}m`;
+  if (diffMs < day) return `${Math.max(1, Math.floor(diffMs / hour))}h`;
+  if (diffMs < 7 * day) return `${Math.max(1, Math.floor(diffMs / day))}d`;
+
+  const weeks = Math.floor(diffMs / (7 * day));
+  if (weeks < 5) return `${Math.max(1, weeks)}w`;
 
   return new Date(value).toLocaleDateString();
 };
@@ -33,24 +36,52 @@ const getNotificationPresentation = (type) => {
     case 'message':
       return {
         icon: MessageCircle,
-        iconClass: 'bg-[#eef6ee] dark:bg-[#1e3a5f] text-[#588157] dark:text-[#3ba9d6]',
+        badgeClass: 'bg-[#588157] text-white dark:bg-[#3ba9d6]',
       };
     case 'job_application':
       return {
         icon: Bell,
-        iconClass: 'bg-[#eef6ee] dark:bg-[#1e3a5f] text-[#588157] dark:text-[#3ba9d6]',
+        badgeClass: 'bg-[#3a5a40] text-white dark:bg-[#3ba9d6]',
       };
     case 'profile_view':
       return {
         icon: Eye,
-        iconClass: 'bg-[#f7f0dd] dark:bg-yellow-950/40 text-[#c58b00] dark:text-yellow-400',
+        badgeClass: 'bg-[#d4a373] text-white dark:bg-yellow-500',
       };
     default:
       return {
         icon: Bell,
-        iconClass: 'bg-[#f5f5f2] dark:bg-[#1e3a5f] text-[#588157] dark:text-[#3ba9d6]',
+        badgeClass: 'bg-[#3a5a40] text-white dark:bg-[#3ba9d6]',
       };
   }
+};
+
+const getActorInitials = (metadata, title) => {
+  const source = String(metadata?.actorLabel || title || 'K').trim();
+  const words = source.split(/\s+/).filter(Boolean);
+  if (words.length >= 2) {
+    return `${words[0][0] || ''}${words[1][0] || ''}`.toUpperCase();
+  }
+  return source.slice(0, 2).toUpperCase();
+};
+
+const buildSummaryMessage = (type, message, metadata) => {
+  const messageCount = Number(metadata?.messageCount || 0);
+  const viewCount = Number(metadata?.viewCount || 0);
+
+  if (type === 'message') {
+    return messageCount > 1 ? `A user messaged you (${messageCount} messages).` : 'A user messaged you.';
+  }
+
+  if (type === 'profile_view') {
+    return viewCount > 1 ? `${viewCount} users viewed your company profile.` : 'A user viewed your company profile.';
+  }
+
+  if (type === 'job_application') {
+    return 'A user applied to your job listing.';
+  }
+
+  return message;
 };
 
 export default function CompanyNotificationsPage({ onReadAll }) {
@@ -58,6 +89,7 @@ export default function CompanyNotificationsPage({ onReadAll }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expandedId, setExpandedId] = useState(null);
+  const [actionMenuItem, setActionMenuItem] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -109,54 +141,89 @@ export default function CompanyNotificationsPage({ onReadAll }) {
         ...getNotificationPresentation(item.type),
         timeLabel: formatNotificationTime(item.createdAt),
         exactTimeLabel: formatExactTime(item.createdAt),
+        initials: getActorInitials(item.metadata, item.title),
+        summaryMessage: buildSummaryMessage(item.type, item.message, item.metadata),
       })),
     [notifications]
   );
 
+  const recentItems = items.filter((item) => !item.isRead);
+  const earlierItems = items.filter((item) => item.isRead);
+
+  const handleDeleteNotification = () => {
+    if (!actionMenuItem) {
+      return;
+    }
+
+    setNotifications((current) => current.filter((item) => item.id !== actionMenuItem.id));
+    setExpandedId((current) => (current === actionMenuItem.id ? null : current));
+    setActionMenuItem(null);
+  };
+
+  const handleReportNotification = () => {
+    if (typeof window !== 'undefined' && actionMenuItem) {
+      const subject = encodeURIComponent('Notification issue report');
+      const body = encodeURIComponent(
+        `Please review this notification:\n\nTitle: ${actionMenuItem.title}\nMessage: ${actionMenuItem.summaryMessage}\nTime: ${actionMenuItem.exactTimeLabel || actionMenuItem.timeLabel}`
+      );
+      window.location.href = `mailto:support@kapit.dev?subject=${subject}&body=${body}`;
+    }
+    setActionMenuItem(null);
+  };
+
   return (
     <div className="mx-auto w-full max-w-4xl">
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#3a5a40] dark:text-white mb-2">Notifications</h1>
-        <p className="text-[#344e41] dark:text-[#b8d4e8]">Keep up with developer messages, profile views, and company activity.</p>
+      <div className="mb-4 px-1 sm:mb-5">
+        <h1 className="text-[2rem] leading-none text-[#183622] dark:text-white sm:text-[2.35rem]">Notifications</h1>
       </div>
 
       {loading ? (
-        <StateCard>Loading notifications...</StateCard>
+        <StateBlock>Loading notifications...</StateBlock>
       ) : error ? (
-        <StateCard tone="error">{error}</StateCard>
+        <StateBlock tone="error">{error}</StateBlock>
       ) : items.length > 0 ? (
-        <div className="space-y-3">
-          {items.map((item) => (
-            <NotificationItem
-              key={item.id}
-              type={item.type}
-              icon={item.icon}
-              iconClass={item.iconClass}
-              title={item.title}
-              message={item.message}
-              time={item.timeLabel}
-              exactTime={item.exactTimeLabel}
-              unread={!item.isRead}
-              metadata={item.metadata}
-              expanded={expandedId === item.id}
-              onToggle={() => setExpandedId((current) => (current === item.id ? null : item.id))}
+        <div className="overflow-hidden rounded-[28px] border border-[#c9d2bc] bg-[#f6f5ef] shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.24)]">
+          {recentItems.length > 0 ? (
+            <NotificationSection
+              title="New"
+              items={recentItems}
+              expandedId={expandedId}
+              onToggle={(id) => setExpandedId((current) => (current === id ? null : id))}
+              onOpenMenu={(item) => setActionMenuItem(item)}
             />
-          ))}
+          ) : null}
+          {earlierItems.length > 0 ? (
+            <NotificationSection
+              title={recentItems.length > 0 ? 'Earlier' : 'All notifications'}
+              items={earlierItems}
+              expandedId={expandedId}
+              onToggle={(id) => setExpandedId((current) => (current === id ? null : id))}
+              onOpenMenu={(item) => setActionMenuItem(item)}
+              withTopDivider={recentItems.length > 0}
+            />
+          ) : null}
         </div>
       ) : (
-        <StateCard>No notifications yet.</StateCard>
+        <StateBlock>No notifications yet.</StateBlock>
       )}
+
+      <NotificationActionSheet
+        item={actionMenuItem}
+        onClose={() => setActionMenuItem(null)}
+        onDelete={handleDeleteNotification}
+        onReport={handleReportNotification}
+      />
     </div>
   );
 }
 
-function StateCard({ children, tone = 'default' }) {
+function StateBlock({ children, tone = 'default' }) {
   return (
     <div
-      className={`rounded-xl border p-10 text-center ${
+      className={`rounded-[28px] border px-6 py-12 text-center sm:px-8 ${
         tone === 'error'
-          ? 'bg-white dark:bg-[#162842] border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400'
-          : 'bg-white dark:bg-[#162842] border-[#a3b18a] dark:border-[#1e3a5f] text-[#344e41] dark:text-[#b8d4e8]'
+          ? 'border-red-200 bg-white text-red-600 dark:border-red-900/50 dark:bg-[#162842] dark:text-red-400'
+          : 'border-[#c9d2bc] bg-white text-[#344e41] dark:border-[#1e3a5f] dark:bg-[#162842] dark:text-[#b8d4e8]'
       }`}
     >
       <p>{children}</p>
@@ -164,72 +231,197 @@ function StateCard({ children, tone = 'default' }) {
   );
 }
 
-function NotificationItem({ type, icon: Icon, iconClass, title, message, time, exactTime, unread, metadata, expanded, onToggle }) {
+function NotificationSection({ title, items, expandedId, onToggle, onOpenMenu, withTopDivider = false }) {
+  return (
+    <section className={withTopDivider ? 'border-t border-[#d8decf] dark:border-[#254567]' : ''}>
+      <div className="px-5 pb-3 pt-5 sm:px-7">
+        <h2 className="text-xl text-[#183622] dark:text-white">{title}</h2>
+      </div>
+      <div>
+        {items.map((item, index) => (
+          <NotificationRow
+            key={item.id}
+            item={item}
+            expanded={expandedId === item.id}
+            onToggle={() => onToggle(item.id)}
+            onOpenMenu={() => onOpenMenu(item)}
+            showDivider={index !== items.length - 1}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function NotificationRow({ item, expanded, onToggle, onOpenMenu, showDivider }) {
+  const {
+    icon: Icon,
+    badgeClass,
+    title,
+    summaryMessage,
+    timeLabel,
+    exactTimeLabel,
+    isRead,
+    metadata,
+    initials,
+  } = item;
+
   const messageCount = Number(metadata?.messageCount || 0);
   const viewCount = Number(metadata?.viewCount || 0);
   const jobTitle = metadata?.jobTitle || '';
 
-  const summaryMessage =
-    type === 'message'
-      ? messageCount > 1
-        ? `A user messaged you (${messageCount} messages).`
-        : 'A user messaged you.'
-      : type === 'profile_view'
-        ? viewCount > 1
-          ? `${viewCount} users viewed your company profile.`
-          : 'A user viewed your company profile.'
-        : type === 'job_application'
-          ? 'A user applied to your job listing.'
-          : message;
-
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      className={`w-full rounded-xl border p-4 text-left transition-colors ${
-        unread
-          ? 'bg-[#f5f5f2] dark:bg-[#1e3a5f] border-[#588157] dark:border-[#3ba9d6]'
-          : 'bg-white dark:bg-[#162842] border-[#a3b18a] dark:border-[#1e3a5f]'
+    <div
+      className={`px-4 sm:px-5 ${
+        !isRead ? 'bg-[#eef3ea] dark:bg-[#1b314c]' : 'bg-transparent'
       }`}
     >
-      <div className="flex gap-4">
-        <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full ${iconClass}`}>
-          <Icon className="h-6 w-6" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="mb-1 flex items-start justify-between gap-2">
-            <h4 className="font-semibold text-[#3a5a40] dark:text-white">{title}</h4>
-            <div className="flex items-center gap-2">
-              {unread ? <div className="h-2 w-2 flex-shrink-0 rounded-full bg-[#588157] dark:bg-[#3ba9d6]" /> : null}
-              <ChevronDown className={`h-4 w-4 text-[#3a5a40] dark:text-[#7d9ab8] transition-transform ${expanded ? 'rotate-180' : ''}`} />
+      <div className={`py-4 ${showDivider ? 'border-b border-[#dde4d4] dark:border-[#223d5c]' : ''}`}>
+        <div className="flex items-start gap-3">
+          <div className="relative flex-shrink-0">
+            <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-[#dfe8d8] text-lg font-semibold text-[#2f4f39] dark:bg-[#24425d] dark:text-white">
+              {initials}
+            </div>
+            <div className={`absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#f6f5ef] dark:border-[#162842] ${badgeClass}`}>
+              <Icon className="h-4 w-4" />
             </div>
           </div>
-          <p className="mb-1 text-sm text-[#344e41] dark:text-[#b8d4e8]">{summaryMessage}</p>
-          <span className="text-xs text-[#3a5a40] dark:text-[#7d9ab8]">{time}</span>
-          {expanded ? (
-            <div className="mt-3 space-y-1 rounded-lg border border-[#d6d3c9] bg-white/70 p-3 dark:border-[#2a4a6f] dark:bg-[#0f2139]">
-              <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">
-                <span className="font-semibold text-[#3a5a40] dark:text-white">When:</span> {exactTime || 'Unknown time'}
+
+          <div className="min-w-0 flex-1">
+            <button type="button" onClick={onToggle} className="block w-full text-left">
+              <p className="pr-3 text-[1.04rem] leading-7 text-[#203a28] dark:text-white">
+                <span className="font-semibold">{title}</span>{' '}
+                <span className="font-normal text-[#344e41] dark:text-[#d5e6f5]">{summaryMessage}</span>
               </p>
-              {jobTitle ? (
-                <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">
-                  <span className="font-semibold text-[#3a5a40] dark:text-white">Job listing:</span> {jobTitle}
+              <p className="mt-1 text-sm font-medium text-[#6b7c63] dark:text-[#8fb5d1]">{timeLabel}</p>
+            </button>
+
+            {expanded ? (
+              <div className="mt-3 rounded-2xl border border-[#d8decf] bg-white/70 p-3 dark:border-[#2a4a6f] dark:bg-[#102235]">
+                <p className="text-sm text-[#344e41] dark:text-[#d5e6f5]">
+                  <span className="font-semibold text-[#203a28] dark:text-white">When:</span> {exactTimeLabel || 'Unknown time'}
                 </p>
-              ) : null}
-              {messageCount > 0 ? (
-                <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">
-                  <span className="font-semibold text-[#3a5a40] dark:text-white">Messages:</span> {messageCount}
-                </p>
-              ) : null}
-              {viewCount > 0 ? (
-                <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">
-                  <span className="font-semibold text-[#3a5a40] dark:text-white">Profile views:</span> {viewCount}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
+                {jobTitle ? (
+                  <p className="mt-1 text-sm text-[#344e41] dark:text-[#d5e6f5]">
+                    <span className="font-semibold text-[#203a28] dark:text-white">Job listing:</span> {jobTitle}
+                  </p>
+                ) : null}
+                {messageCount > 0 ? (
+                  <p className="mt-1 text-sm text-[#344e41] dark:text-[#d5e6f5]">
+                    <span className="font-semibold text-[#203a28] dark:text-white">Messages:</span> {messageCount}
+                  </p>
+                ) : null}
+                {viewCount > 0 ? (
+                  <p className="mt-1 text-sm text-[#344e41] dark:text-[#d5e6f5]">
+                    <span className="font-semibold text-[#203a28] dark:text-white">Profile views:</span> {viewCount}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flex flex-col items-end gap-3">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onOpenMenu();
+              }}
+              className="rounded-full p-1.5 text-[#50644f] transition-colors hover:bg-[#e7ede1] dark:text-[#8fb5d1] dark:hover:bg-[#223d5c]"
+              aria-label="Open notification actions"
+            >
+              <MoreHorizontal className="h-5 w-5" />
+            </button>
+            {!isRead ? <div className="h-3 w-3 rounded-full bg-[#588157] dark:bg-[#3ba9d6]" /> : null}
+          </div>
         </div>
       </div>
-    </button>
+    </div>
+  );
+}
+
+function NotificationActionSheet({ item, onClose, onDelete, onReport }) {
+  useEffect(() => {
+    if (!item) {
+      return undefined;
+    }
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [item, onClose]);
+
+  if (!item) {
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-0 z-[120]">
+      <button
+        type="button"
+        aria-label="Close notification actions"
+        className="absolute inset-0 bg-black/42 xl:bg-black/45"
+        onClick={onClose}
+      />
+      <div className="absolute inset-x-0 bottom-0 flex items-end justify-center px-0 pb-0 xl:inset-0 xl:px-6 xl:pb-6">
+        <div className="w-screen max-w-none rounded-t-[32px] border-t border-[#bfd0af] bg-[#dad7cd] px-4 pb-6 pt-3 text-[#344e41] shadow-[0_-18px_42px_rgba(58,90,64,0.18)] xl:w-full xl:max-w-md xl:rounded-[32px] xl:border xl:shadow-[0_24px_80px_rgba(58,90,64,0.2)] dark:border-[#2a4a6f] dark:bg-[#1c2431] dark:text-white">
+          <div className="flex justify-center">
+            <div className="h-1.5 w-12 rounded-full bg-[#b9c3b2] dark:bg-white/34 xl:hidden" />
+          </div>
+
+          <div className="px-6 pb-6 pt-5 text-center xl:px-8 xl:pb-5 xl:pt-4">
+            <div className="mx-auto relative flex h-20 w-20 items-center justify-center overflow-visible rounded-full bg-[#dfe8d8] text-[1.75rem] font-semibold text-[#2f4f39] dark:bg-[#24425d] dark:text-white">
+              {item.initials}
+              <div className={`absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#f6f5ef] dark:border-[#162842] ${item.badgeClass}`}>
+                <item.icon className="h-3.5 w-3.5" />
+              </div>
+            </div>
+            <p className="mt-5 text-[1.02rem] leading-8 text-[#203a28] xl:text-[1.6rem] xl:leading-10 dark:text-white">
+              <span className="font-medium xl:font-semibold">{item.title}</span>{' '}
+              <span className="font-normal text-[#344e41] dark:text-[#d5e6f5]">{item.summaryMessage}</span>
+            </p>
+          </div>
+
+          <div className="border-t border-[#ccd7bf] px-5 pb-[calc(1.25rem+max(env(safe-area-inset-bottom),5rem))] pt-5 dark:border-[#254567]">
+            <button
+              type="button"
+              onClick={onDelete}
+              className="flex w-full items-center gap-4 py-4 text-left transition-colors hover:bg-transparent dark:hover:bg-transparent"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#bfd0af] bg-[#eef6ee] text-[#3a5a40] dark:border-[#3f5977] dark:bg-[#16314d] dark:text-[#8dccff]">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              <span className="text-[1.05rem] font-semibold text-[#3a5a40] dark:text-white">Delete this notification</span>
+            </button>
+            <button
+              type="button"
+              onClick={onReport}
+              className="flex w-full items-center gap-4 border-t border-[#d9dfcf] py-4 text-left transition-colors hover:bg-transparent dark:border-[#36506f] dark:hover:bg-transparent"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#bfd0af] bg-[#eef6ee] text-[#3a5a40] dark:border-[#3f5977] dark:bg-[#16314d] dark:text-[#8dccff]">
+                <AlertCircle className="h-5 w-5" />
+              </div>
+              <span className="text-[1.05rem] font-semibold text-[#3a5a40] dark:text-white">Report issue to Notifications Team</span>
+            </button>
+          </div>
+
+          <div className="hidden px-4 pb-4 pt-1 xl:block xl:px-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[#bfd0af] bg-white/88 px-4 py-3 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#f1f5eb] dark:border-[#314a68] dark:bg-[#243244]/92 dark:text-[#d5e6f5] dark:hover:bg-[#2b3c52]"
+            >
+              <X className="h-4 w-4" />
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
