@@ -121,7 +121,7 @@ export default function CompanyApplicantsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="hidden xl:grid xl:grid-cols-[minmax(0,1.8fr)_minmax(0,0.95fr)_0.9fr_0.95fr_minmax(0,1.5fr)] gap-8 rounded-2xl bg-[#f5f5f2] dark:bg-[#102235] px-6 py-4 text-sm font-semibold text-[#344e41] dark:text-[#dcecff]">
+          <div className="hidden xl:grid xl:grid-cols-[minmax(0,1.7fr)_minmax(0,0.95fr)_0.9fr_0.95fr_minmax(19rem,1.8fr)] gap-6 rounded-2xl bg-[#f5f5f2] dark:bg-[#102235] px-6 py-4 text-sm font-semibold text-[#344e41] dark:text-[#dcecff]">
             <div>Candidate</div>
             <div>Applied To</div>
             <div>Job Status</div>

@@ -2,22 +2,22 @@
   "compilerOptions": {
     "paths": {
       "@/*": ["./*"],
-      "@shared/*": ["./src/shared/*"],
-      "@sharedComponents/*": ["./src/shared/components/*"],
-      "@sharedPages/*": ["./src/shared/pages/*"],
-      "@sharedContext/*": ["./src/shared/context/*"],
-      "@sharedServices/*": ["./src/shared/services/*"],
-      "@sharedUtils/*": ["./src/shared/utils/*"],
-      "@user/*": ["./src/user/*"],
-      "@userComponents/*": ["./src/user/components/*"],
-      "@userPages/*": ["./src/user/pages/*"],
-      "@userFeatures/*": ["./src/user/features/*"],
-      "@userLayouts/*": ["./src/user/layouts/*"],
-      "@company/*": ["./src/company/*"],
-      "@companyComponents/*": ["./src/company/components/*"],
-      "@companyPages/*": ["./src/company/pages/*"],
-      "@companyFeatures/*": ["./src/company/features/*"],
-      "@companyLayouts/*": ["./src/company/layouts/*"]
+      "@shared/*": ["./modules/shared/*"],
+      "@sharedComponents/*": ["./modules/shared/components/*"],
+      "@sharedPages/*": ["./modules/shared/pages/*"],
+      "@sharedContext/*": ["./modules/shared/context/*"],
+      "@sharedServices/*": ["./modules/shared/services/*"],
+      "@sharedUtils/*": ["./modules/shared/utils/*"],
+      "@user/*": ["./modules/user/*"],
+      "@userComponents/*": ["./modules/user/components/*"],
+      "@userPages/*": ["./modules/user/pages/*"],
+      "@userFeatures/*": ["./modules/user/features/*"],
+      "@userLayouts/*": ["./modules/user/layouts/*"],
+      "@company/*": ["./modules/company/*"],
+      "@companyComponents/*": ["./modules/company/components/*"],
+      "@companyPages/*": ["./modules/company/pages/*"],
+      "@companyFeatures/*": ["./modules/company/features/*"],
+      "@companyLayouts/*": ["./modules/company/layouts/*"]
     }
   }
 }
