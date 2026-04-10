@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { normalizeOrigin, isKapitVercelOrigin, getAllowedOrigins } = require('../config/origins');
 const {
   ACCESS_COOKIE_NAME,
   REFRESH_COOKIE_NAME,
@@ -6,22 +7,6 @@ const {
   signAccessToken,
   verifyRefreshTokenSession,
 } = require('../services/authSessionService');
-
-const normalizeOrigin = (value) => String(value || '').trim().replace(/\/+$/, '');
-const isKapitVercelOrigin = (origin) => /^https:\/\/kapit-website(?:-[a-z0-9-]+)?\.vercel\.app$/i.test(origin);
-
-const getAllowedOrigins = () =>
-  [
-    process.env.CLIENT_URL,
-    process.env.NEXT_PUBLIC_SITE_URL,
-    'https://kapit-website.vercel.app',
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:5173',
-  ]
-    .map(normalizeOrigin)
-    .filter(Boolean);
 
 const normalizeDecodedUser = (decoded) => {
   const normalizedUserType = String(decoded?.userType || decoded?.type || '').trim().toLowerCase();

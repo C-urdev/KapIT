@@ -1,8 +1,6 @@
 import { apiRequest } from './apiClient';
 
-const API_URL =
-  (typeof process !== 'undefined' && process?.env?.NEXT_PUBLIC_EXPRESS_API_URL) ||
-  ((typeof process !== 'undefined' && process?.env?.VITE_API_BASE) || '/api');
+const API_URL = ((typeof process !== 'undefined' && process?.env?.VITE_API_BASE) || '/api');
 const SERVER_COOLDOWN_MS = 60 * 1000;
 const endpointCooldowns = new Map();
 
