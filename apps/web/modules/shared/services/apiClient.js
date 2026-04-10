@@ -2,7 +2,11 @@ const NEXT_PUBLIC_EXPRESS_API_URL = process.env.NEXT_PUBLIC_EXPRESS_API_URL || '
 const NEXT_PUBLIC_FASTAPI_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || '';
 const NEXT_PUBLIC_CSRF_COOKIE_NAME = process.env.NEXT_PUBLIC_CSRF_COOKIE_NAME || '';
 
-const API_BASE = (NEXT_PUBLIC_EXPRESS_API_URL || '/api').replace(/\/$/, '');
+const API_BASE = (
+  typeof window !== 'undefined'
+    ? '/api'
+    : (NEXT_PUBLIC_EXPRESS_API_URL || '/api')
+).replace(/\/$/, '');
 const AUTH_BASE = `${API_BASE}/auth`;
 const FASTAPI_BASE = (NEXT_PUBLIC_FASTAPI_URL || '').replace(/\/$/, '');
 const CSRF_COOKIE_NAME = NEXT_PUBLIC_CSRF_COOKIE_NAME || 'kapit_csrf_token';
