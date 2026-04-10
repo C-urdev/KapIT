@@ -28,6 +28,7 @@ const cleanupExpiredEntries = (store) => {
 };
 
 const getClientIdentity = (req) => normalizeKey(req.user?.id || req.ip || 'anonymous');
+const isNonActionableRequest = (req) => ['HEAD', 'OPTIONS'].includes(String(req.method || '').toUpperCase());
 
 const setRateLimitHeaders = (res, { max, remaining, resetAt }) => {
   const retryAfterSeconds = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000));
@@ -162,6 +163,7 @@ const authApiRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: Number(process.env.AUTH_API_RATE_LIMIT_MAX || 120),
   message: 'Too many authentication requests. Please try again later.',
+  skip: isNonActionableRequest,
 });
 
 const publicApiRateLimiter = createRateLimiter({
@@ -169,6 +171,7 @@ const publicApiRateLimiter = createRateLimiter({
   windowMs: 60 * 1000,
   max: Number(process.env.PUBLIC_API_RATE_LIMIT_MAX || 180),
   message: 'Too many public requests. Please slow down and try again shortly.',
+  skip: isNonActionableRequest,
 });
 
 const messagesReadRateLimiter = createRateLimiter({
@@ -192,6 +195,7 @@ const notificationsRateLimiter = createRateLimiter({
   windowMs: 60 * 1000,
   max: Number(process.env.NOTIFICATIONS_RATE_LIMIT_MAX || 90),
   message: 'Too many notification requests. Please try again shortly.',
+  skip: isNonActionableRequest,
 });
 
 const companyApiRateLimiter = createRateLimiter({
@@ -199,6 +203,7 @@ const companyApiRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: Number(process.env.COMPANY_API_RATE_LIMIT_MAX || 180),
   message: 'Too many company requests. Please try again later.',
+  skip: isNonActionableRequest,
 });
 
 const companyWriteRateLimiter = createRateLimiter({
@@ -214,6 +219,7 @@ const developerApiRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: Number(process.env.DEVELOPER_API_RATE_LIMIT_MAX || 90),
   message: 'Too many developer requests. Please try again later.',
+  skip: isNonActionableRequest,
 });
 
 module.exports = {
