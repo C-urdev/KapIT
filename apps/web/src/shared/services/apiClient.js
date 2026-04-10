@@ -1,12 +1,11 @@
-const VITE_API_BASE = process.env.VITE_API_BASE || '';
-const VITE_API_URL = process.env.VITE_API_URL || '';
-const VITE_CSRF_COOKIE_NAME = process.env.VITE_CSRF_COOKIE_NAME || '';
-const CSRF_COOKIE_NAME_ENV = process.env.CSRF_COOKIE_NAME || '';
 const NEXT_PUBLIC_EXPRESS_API_URL = process.env.NEXT_PUBLIC_EXPRESS_API_URL || '';
+const NEXT_PUBLIC_FASTAPI_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || '';
+const NEXT_PUBLIC_CSRF_COOKIE_NAME = process.env.NEXT_PUBLIC_CSRF_COOKIE_NAME || '';
 
-const API_BASE = (NEXT_PUBLIC_EXPRESS_API_URL || VITE_API_BASE || '/api').replace(/\/$/, '');
-const AUTH_BASE = (NEXT_PUBLIC_EXPRESS_API_URL ? `${API_BASE}/auth` : (VITE_API_URL || `${API_BASE}/auth`)).replace(/\/$/, '');
-const CSRF_COOKIE_NAME = VITE_CSRF_COOKIE_NAME || CSRF_COOKIE_NAME_ENV || 'kapit_csrf_token';
+const API_BASE = (NEXT_PUBLIC_EXPRESS_API_URL || '/api').replace(/\/$/, '');
+const AUTH_BASE = `${API_BASE}/auth`;
+const FASTAPI_BASE = (NEXT_PUBLIC_FASTAPI_URL || '').replace(/\/$/, '');
+const CSRF_COOKIE_NAME = NEXT_PUBLIC_CSRF_COOKIE_NAME || 'kapit_csrf_token';
 
 let refreshRequest = null;
 
@@ -27,28 +26,6 @@ const readCookie = (name) => {
 };
 
 const getCsrfToken = () => readCookie(CSRF_COOKIE_NAME);
-
-const isHtmlDocument = (value) => /<!doctype html>|<html[\s>]/i.test(String(value || ''));
-
-const getResponseErrorMessage = ({ response, data, resolvedPath }) => {
-  const message = String(data?.message || '').trim();
-  const apiConfigHint =
-    'API is not configured correctly. Set a public backend URL for the deployed app.';
-
-  if (isHtmlDocument(message)) {
-    if (response.status === 404 && /^\/api(\/|$)/.test(resolvedPath)) {
-      return `${apiConfigHint} The app requested ${resolvedPath}, but no API route was found.`;
-    }
-
-    return apiConfigHint;
-  }
-
-  if (response.status === 404 && /^\/api(\/|$)/.test(resolvedPath)) {
-    return `${apiConfigHint} The app requested ${resolvedPath}, but no API route was found.`;
-  }
-
-  return message || 'Request failed';
-};
 
 const safeParseResponse = async (response) => {
   const rawText = await response.text();
@@ -147,7 +124,7 @@ export const apiRequest = async (path, options = {}) => {
   }
 
   if (!response.ok) {
-    throw new Error(getResponseErrorMessage({ response, data, resolvedPath }));
+    throw new Error(data?.message || 'Request failed');
   }
 
   return data;
@@ -163,4 +140,5 @@ export const getSessionSnapshot = () => ({
   csrfToken: getCsrfToken(),
   apiBase: API_BASE,
   authBase: AUTH_BASE,
+  fastApiBase: FASTAPI_BASE,
 });
