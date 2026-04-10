@@ -28,6 +28,28 @@ const readCookie = (name) => {
 
 const getCsrfToken = () => readCookie(CSRF_COOKIE_NAME);
 
+const isHtmlDocument = (value) => /<!doctype html>|<html[\s>]/i.test(String(value || ''));
+
+const getResponseErrorMessage = ({ response, data, resolvedPath }) => {
+  const message = String(data?.message || '').trim();
+  const apiConfigHint =
+    'API is not configured correctly. Set a public backend URL for the deployed app.';
+
+  if (isHtmlDocument(message)) {
+    if (response.status === 404 && /^\/api(\/|$)/.test(resolvedPath)) {
+      return `${apiConfigHint} The app requested ${resolvedPath}, but no API route was found.`;
+    }
+
+    return apiConfigHint;
+  }
+
+  if (response.status === 404 && /^\/api(\/|$)/.test(resolvedPath)) {
+    return `${apiConfigHint} The app requested ${resolvedPath}, but no API route was found.`;
+  }
+
+  return message || 'Request failed';
+};
+
 const safeParseResponse = async (response) => {
   const rawText = await response.text();
   if (!rawText) {
@@ -125,7 +147,7 @@ export const apiRequest = async (path, options = {}) => {
   }
 
   if (!response.ok) {
-    throw new Error(data?.message || 'Request failed');
+    throw new Error(getResponseErrorMessage({ response, data, resolvedPath }));
   }
 
   return data;
