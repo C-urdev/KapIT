@@ -1,13 +1,10 @@
-const NEXT_PUBLIC_EXPRESS_API_URL = process.env.NEXT_PUBLIC_EXPRESS_API_URL || '';
-const NEXT_PUBLIC_FASTAPI_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || '';
 const VITE_API_BASE = process.env.VITE_API_BASE || '';
 const VITE_API_URL = process.env.VITE_API_URL || '';
 const VITE_CSRF_COOKIE_NAME = process.env.VITE_CSRF_COOKIE_NAME || '';
 const CSRF_COOKIE_NAME_ENV = process.env.CSRF_COOKIE_NAME || '';
 
-const API_BASE = (VITE_API_BASE || NEXT_PUBLIC_EXPRESS_API_URL || '/api').replace(/\/$/, '');
+const API_BASE = (VITE_API_BASE || '/api').replace(/\/$/, '');
 const AUTH_BASE = (VITE_API_URL || `${API_BASE}/auth`).replace(/\/$/, '');
-const FASTAPI_BASE = (NEXT_PUBLIC_FASTAPI_URL || '').replace(/\/$/, '');
 const CSRF_COOKIE_NAME = VITE_CSRF_COOKIE_NAME || CSRF_COOKIE_NAME_ENV || 'kapit_csrf_token';
 
 let refreshRequest = null;
@@ -141,7 +138,6 @@ export const authRequest = (path, options = {}) =>
 
 export const getSessionSnapshot = () => ({
   csrfToken: getCsrfToken(),
-  apiBase: API_BASE,
-  authBase: AUTH_BASE,
-  fastApiBase: FASTAPI_BASE,
+  apiBase: '/api',
+  authBase: '/api/auth',
 });

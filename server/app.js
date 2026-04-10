@@ -10,7 +10,18 @@ const companyRoutes = require('./routes/companyRoutes');
 const developerRoutes = require('./routes/developerRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const { warmRuntimeSchemas } = require('./config/runtimeSchema');
-const { securityHeaders } = require('./middleware/security');
+const { normalizeOrigin, isKapitVercelOrigin, getAllowedOrigins } = require('./config/origins');
+const {
+  securityHeaders,
+  authApiRateLimiter,
+  publicApiRateLimiter,
+  messagesReadRateLimiter,
+  messagesWriteRateLimiter,
+  notificationsRateLimiter,
+  companyApiRateLimiter,
+  companyWriteRateLimiter,
+  developerApiRateLimiter,
+} = require('./middleware/security');
 
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 dotenv.config({ path: path.resolve(__dirname, '..', '.env.local'), override: true });
@@ -19,20 +30,7 @@ const ensureSchemaReady = async () => warmRuntimeSchemas();
 
 const createApp = () => {
   const app = express();
-  const normalizeOrigin = (value) => String(value || '').trim().replace(/\/+$/, '');
-  const isKapitVercelOrigin = (origin) => /^https:\/\/kapit-website(?:-[a-z0-9-]+)?\.vercel\.app$/i.test(origin);
-
-  const allowedOrigins = [
-    process.env.CLIENT_URL,
-    process.env.NEXT_PUBLIC_SITE_URL,
-    'https://kapit-website.vercel.app',
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:5173',
-  ]
-    .map(normalizeOrigin)
-    .filter(Boolean);
+  const allowedOrigins = getAllowedOrigins();
 
   app.disable('x-powered-by');
   app.use(securityHeaders);
@@ -59,8 +57,14 @@ const createApp = () => {
 
   app.set('trust proxy', 1);
   app.use(cookieParser());
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '200kb' }));
+  app.use(
+    express.urlencoded({
+      extended: true,
+      limit: process.env.URLENCODED_BODY_LIMIT || '200kb',
+      parameterLimit: Number(process.env.URLENCODED_PARAMETER_LIMIT || 200),
+    })
+  );
 
   app.use(async (req, res, next) => {
     try {
@@ -73,18 +77,25 @@ const createApp = () => {
     next();
   });
 
-  app.use('/api/auth', authRoutes);
-  app.use('/api/public', publicRoutes);
-  app.use('/api/messages', messagesRoutes);
-  app.use('/api/notifications', notificationsRoutes);
-  app.use('/api/company', companyRoutes);
-  app.use('/api/developer', developerRoutes);
+  app.use('/api/auth', authApiRateLimiter, authRoutes);
+  app.use('/api/public', publicApiRateLimiter, publicRoutes);
+  app.use('/api/messages', messagesReadRateLimiter, messagesWriteRateLimiter, messagesRoutes);
+  app.use('/api/notifications', notificationsRateLimiter, notificationsRoutes);
+  app.use('/api/company', companyApiRateLimiter, companyWriteRateLimiter, companyRoutes);
+  app.use('/api/developer', developerApiRateLimiter, developerRoutes);
 
   app.get('/api/health', (req, res) => {
     res.json({ success: true, message: 'Server is running' });
   });
 
   app.use((err, req, res, next) => {
+    if (err?.type === 'entity.too.large') {
+      return res.status(413).json({
+        success: false,
+        message: 'Request body too large.',
+      });
+    }
+
     console.error(err.stack);
     res.status(500).json({
       success: false,
