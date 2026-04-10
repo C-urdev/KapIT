@@ -27,6 +27,26 @@ const readCookie = (name) => {
 
 const getCsrfToken = () => readCookie(CSRF_COOKIE_NAME);
 
+const isHtmlDocument = (value) => /<!doctype html>|<html[\s>]/i.test(String(value || ''));
+
+const getResponseErrorMessage = ({ response, data, resolvedPath }) => {
+  const message = String(data?.message || '').trim();
+
+  if (isHtmlDocument(message)) {
+    if (response.status === 404) {
+      return `Request failed: ${resolvedPath} was not found. Check your deployed API URL configuration.`;
+    }
+
+    return 'Request failed because the server returned an unexpected HTML page instead of API JSON.';
+  }
+
+  if (response.status === 404) {
+    return `Request failed: ${resolvedPath} was not found.`;
+  }
+
+  return message || 'Request failed';
+};
+
 const safeParseResponse = async (response) => {
   const rawText = await response.text();
   if (!rawText) {
@@ -124,7 +144,7 @@ export const apiRequest = async (path, options = {}) => {
   }
 
   if (!response.ok) {
-    throw new Error(data?.message || 'Request failed');
+    throw new Error(getResponseErrorMessage({ response, data, resolvedPath }));
   }
 
   return data;
