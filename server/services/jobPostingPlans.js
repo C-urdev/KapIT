@@ -6,7 +6,7 @@ const JOB_POST_PLANS = [
     description: 'Best for urgent hiring',
     durationLabel: '1 week',
     durationDays: 7,
-    features: ['AI Candidate Matching', 'Smart Filtering', 'Resume Insights', 'Priority Visibility'],
+    features: ['Verified payment before publishing', 'Timed job visibility', 'Basic applicant intake', 'Saved draft and reopen support'],
   },
   {
     id: '1-month',
@@ -16,7 +16,7 @@ const JOB_POST_PLANS = [
     durationLabel: '1 month',
     durationDays: 30,
     badge: 'Most Popular',
-    features: ['AI Candidate Matching', 'Smart Filtering', 'Resume Insights', 'Priority Visibility'],
+    features: ['Verified payment before publishing', 'Timed job visibility', 'Basic applicant intake', 'Saved draft and reopen support'],
   },
   {
     id: '3-months',
@@ -25,7 +25,7 @@ const JOB_POST_PLANS = [
     description: 'Great for ongoing recruitment',
     durationLabel: '3 months',
     durationDays: 90,
-    features: ['AI Candidate Matching', 'Smart Filtering', 'Resume Insights', 'Priority Visibility'],
+    features: ['Verified payment before publishing', 'Timed job visibility', 'Basic applicant intake', 'Saved draft and reopen support'],
   },
   {
     id: '6-months',
@@ -34,7 +34,7 @@ const JOB_POST_PLANS = [
     description: 'Best value for long-term hiring',
     durationLabel: '6 months',
     durationDays: 180,
-    features: ['AI Candidate Matching', 'Smart Filtering', 'Resume Insights', 'Priority Visibility'],
+    features: ['Verified payment before publishing', 'Timed job visibility', 'Basic applicant intake', 'Saved draft and reopen support'],
   },
 ];
 

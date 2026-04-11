@@ -10,9 +10,9 @@ const plans = [
     subtitle: 'Create listings and manage applicants without a monthly subscription.',
     cta: 'Included by default',
     features: [
-      { icon: Briefcase, text: 'Post and manage job listings for free' },
-      { icon: Check, text: 'Review applicants and shortlist candidates' },
-      { icon: RotateCcw, text: 'Reopen closed jobs using the same saved details' },
+      { icon: Briefcase, text: 'Create a draft job and prepare it before checkout' },
+      { icon: Check, text: 'Receive applications and review the basic applicant list' },
+      { icon: RotateCcw, text: 'Reuse saved role details when posting or reopening later' },
       { icon: WalletCards, text: 'No monthly billing required' },
     ],
   },
@@ -25,10 +25,11 @@ const plans = [
     cta: 'Charged only when used',
     highlighted: true,
     features: [
-      { icon: BadgeCheck, text: 'Publish each role after the selected posting plan is confirmed' },
+      { icon: BadgeCheck, text: 'Publish each role only after the selected posting payment is verified' },
+      { icon: Briefcase, text: 'Keep the job live for the duration you selected at checkout' },
+      { icon: Check, text: 'Collect applicants and manage their statuses inside the dashboard' },
       { icon: WalletCards, text: 'No monthly subscription required' },
-      { icon: RotateCcw, text: 'Reopen the same role later without rebuilding the form' },
-      { icon: Briefcase, text: 'Best fit for occasional or flexible hiring' },
+      { icon: RotateCcw, text: 'Reopen the same role later without rebuilding the form from scratch' },
     ],
   },
 ];
@@ -92,7 +93,7 @@ export default function CompanyPremiumPopup({ isOpen, onClose }) {
               <Crown className="h-5 w-5 sm:h-6 sm:w-6 text-[#588157] dark:text-[#7fd0ee]" />
               Usage Pricing
             </h2>
-            <p className="mt-1 text-sm text-[#344e41] dark:text-[#b8d4e8]">Company hiring now uses a pay-before-posting flow instead of a monthly posting plan.</p>
+            <p className="mt-1 text-sm text-[#344e41] dark:text-[#b8d4e8]">Company hiring currently uses a pay-before-posting flow, so the benefits shown here reflect the live publish-and-manage workflow in the app today.</p>
           </div>
           <button
             type="button"

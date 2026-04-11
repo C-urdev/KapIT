@@ -13,13 +13,14 @@ const nextHost = process.env.NEXTJS_HOST;
 const nextPort = process.env.NEXTJS_PORT || '3000';
 const hideNetworkLine = process.env.HIDE_NEXT_NETWORK_LINE === 'true';
 const quietStartup = process.env.QUIET_STARTUP === 'true';
+const forceCleanNextDev = process.env.FORCE_CLEAN_NEXT_DEV === 'true';
 const isWindows = process.platform === 'win32';
 const command = isWindows ? 'cmd.exe' : 'npm';
 const args = isWindows
   ? ['/c', 'npm', '--silent', 'run', scriptName]
   : ['--silent', 'run', scriptName];
 
-if (scriptName === 'dev') {
+if (scriptName === 'dev' && forceCleanNextDev) {
   fs.rmSync(path.join(appDirectory, '.next'), { recursive: true, force: true });
 }
 

@@ -1,6 +1,11 @@
 import { BadgeDollarSign, CreditCard } from 'lucide-react';
 
-export const PLAN_FEATURES = ['AI Candidate Matching', 'Smart Filtering', 'Resume Insights', 'Priority Visibility'];
+export const PLAN_FEATURES = [
+  'Verified payment before publishing',
+  'Timed job visibility',
+  'Basic applicant intake',
+  'Saved draft and reopen support',
+];
 
 export const JOB_POST_PLANS = [
   {

@@ -102,6 +102,23 @@ const serializeSavedJobRow = (row) => ({
   },
 });
 
+const normalizeJobFeedFilters = (query = {}) => {
+  const keyword = String(query.q || '').trim();
+  const location = String(query.location || '').trim();
+  const type = String(query.type || '').trim();
+  const skill = String(query.skill || '').trim();
+  const rawStatus = String(query.status || '').trim().toLowerCase();
+  const allowedStatuses = new Set(['open', 'filled', 'closed']);
+
+  return {
+    keyword,
+    location,
+    type,
+    skill,
+    status: allowedStatuses.has(rawStatus) ? rawStatus : '',
+  };
+};
+
 const upsertJobMatchScore = async (client, { userId, jobId, match }) => {
   await client.query(
     `INSERT INTO job_match_scores (
@@ -852,6 +869,54 @@ const getJobsFeed = async (req, res) => {
     client = await pool.connect();
     await closeExpiredJobs(client);
     const plan = await getPremiumStateForUser(client, req.user.id);
+    const filters = normalizeJobFeedFilters(req.query);
+    const values = [req.user.id];
+    const conditions = [`COALESCE(j.posting_payment_status, 'paid') = 'paid'`];
+
+    if (filters.status) {
+      values.push(filters.status);
+      conditions.push(`j.status = $${values.length}`);
+    }
+
+    if (filters.location) {
+      values.push(`%${filters.location}%`);
+      conditions.push(`COALESCE(j.location, '') ILIKE $${values.length}`);
+    }
+
+    if (filters.type) {
+      values.push(filters.type);
+      conditions.push(`COALESCE(j.type, '') ILIKE $${values.length}`);
+    }
+
+    if (filters.skill) {
+      values.push(`%${filters.skill}%`);
+      conditions.push(
+        `EXISTS (
+           SELECT 1
+           FROM unnest(COALESCE(j.skills, ARRAY[]::text[])) AS skill_name
+           WHERE skill_name ILIKE $${values.length}
+         )`
+      );
+    }
+
+    if (filters.keyword) {
+      values.push(`%${filters.keyword}%`);
+      const keywordParam = `$${values.length}`;
+      conditions.push(
+        `(
+          COALESCE(j.title, '') ILIKE ${keywordParam}
+          OR COALESCE(j.description, '') ILIKE ${keywordParam}
+          OR COALESCE(j.location, '') ILIKE ${keywordParam}
+          OR COALESCE(j.type, '') ILIKE ${keywordParam}
+          OR COALESCE(c.name, u.company_name, u.username, '') ILIKE ${keywordParam}
+          OR EXISTS (
+            SELECT 1
+            FROM unnest(COALESCE(j.skills, ARRAY[]::text[])) AS keyword_skill
+            WHERE keyword_skill ILIKE ${keywordParam}
+          )
+        )`
+      );
+    }
 
     const result = await client.query(
       `SELECT j.id,
@@ -875,7 +940,7 @@ const getJobsFeed = async (req, res) => {
        FROM jobs j
        LEFT JOIN companies c ON c.id = j.company_id
        LEFT JOIN users u ON u.id = c.user_id
-       WHERE COALESCE(j.posting_payment_status, 'paid') = 'paid'
+       WHERE ${conditions.join('\n         AND ')}
        ORDER BY
          CASE j.status
            WHEN 'open' THEN 0
@@ -884,7 +949,7 @@ const getJobsFeed = async (req, res) => {
            ELSE 3
          END,
          j.created_at DESC`,
-      [req.user.id]
+      values
     );
 
     let jobs = result.rows

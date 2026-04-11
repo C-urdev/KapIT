@@ -66,17 +66,6 @@ const createApp = () => {
     })
   );
 
-  app.use(async (req, res, next) => {
-    try {
-      await ensureSchemaReady();
-    } catch (error) {
-      console.warn('Continuing without schema bootstrap (profile saving may fail).');
-      console.warn(error?.message || error);
-    }
-
-    next();
-  });
-
   app.use('/api/auth', authApiRateLimiter, authRoutes);
   app.use('/api/public', publicApiRateLimiter, publicRoutes);
   app.use('/api/messages', messagesReadRateLimiter, messagesWriteRateLimiter, messagesRoutes);

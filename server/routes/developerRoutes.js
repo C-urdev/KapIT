@@ -1,8 +1,12 @@
 const express = require('express');
 const { verifyToken, requireCsrfForCookieAuth } = require('../middleware/auth');
-const { getMyDeveloperProfile, upsertMyDeveloperProfile, analyzeMyResume } = require('../controllers/developerController');
+const { getMyDeveloperProfile, upsertMyDeveloperProfile, uploadMyResume, downloadResume, analyzeMyResume } = require('../controllers/developerController');
 
 const router = express.Router();
+const resumeUploadParser = express.raw({
+  type: ['application/pdf', 'application/octet-stream'],
+  limit: process.env.RESUME_UPLOAD_MAX_BYTES || '5mb',
+});
 
 const requireDeveloperAccount = (req, res, next) => {
   if (req.user?.userType !== 'employee' && req.user?.accountType !== 'developer') {
@@ -11,10 +15,13 @@ const requireDeveloperAccount = (req, res, next) => {
   return next();
 };
 
+router.get('/resumes/:storedName', verifyToken, downloadResume);
+
 router.use(verifyToken, requireDeveloperAccount);
 
 router.get('/profile', getMyDeveloperProfile);
 router.put('/profile', requireCsrfForCookieAuth, upsertMyDeveloperProfile);
+router.post('/resume', requireCsrfForCookieAuth, resumeUploadParser, uploadMyResume);
 router.post('/ai/resume-analysis', requireCsrfForCookieAuth, analyzeMyResume);
 
 module.exports = router;

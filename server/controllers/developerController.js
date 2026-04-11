@@ -1,7 +1,13 @@
 const pool = require('../config/database');
+const fs = require('fs/promises');
 const { ensureBaseUserSchemaReady, ensureOnboardingSchemaReady } = require('../config/runtimeSchema');
 const { getPremiumStateForUser, requirePremiumApplicantFeature } = require('../services/planAccessService');
 const { isAiConfigured, analyzeResumeProfile } = require('../services/aiService');
+const {
+  getResumeDownloadName,
+  getStoredResumePath,
+  storeResumeUpload,
+} = require('../services/resumeStorageService');
 
 const normalizeSkills = (skills) => {
   if (!skills) return [];
@@ -53,6 +59,70 @@ const buildDevErrorMeta = (error) => (
       }
     : {}
 );
+
+const getResumeAccessState = async (client, { requester, resumeUrl }) => {
+  const normalizedResumeUrl = String(resumeUrl || '').trim();
+  if (!normalizedResumeUrl) {
+    return { allowed: false };
+  }
+
+  const ownerResult = await client.query(
+    `SELECT user_id
+     FROM developer_profiles
+     WHERE resume_url = $1
+     LIMIT 1`,
+    [normalizedResumeUrl]
+  );
+
+  const ownerUserId = ownerResult.rows[0]?.user_id || null;
+  if (ownerUserId && ownerUserId === requester.id) {
+    return { allowed: true, ownerUserId };
+  }
+
+  const ownApplicationResult = await client.query(
+    `SELECT a.user_id
+     FROM applications a
+     WHERE a.resume_url = $1
+       AND a.user_id = $2
+     LIMIT 1`,
+    [normalizedResumeUrl, requester.id]
+  );
+
+  if (ownApplicationResult.rows.length) {
+    return { allowed: true, ownerUserId: ownApplicationResult.rows[0].user_id };
+  }
+
+  if (requester.accountType === 'company' || requester.userType === 'company') {
+    const companyResult = await client.query(
+      `SELECT c.id
+       FROM companies c
+       WHERE c.user_id = $1
+       LIMIT 1`,
+      [requester.id]
+    );
+
+    const companyId = companyResult.rows[0]?.id || null;
+    if (!companyId) {
+      return { allowed: false };
+    }
+
+    const applicantResult = await client.query(
+      `SELECT a.user_id
+       FROM applications a
+       JOIN jobs j ON j.id = a.job_id
+       WHERE a.resume_url = $1
+         AND j.company_id = $2
+       LIMIT 1`,
+      [normalizedResumeUrl, companyId]
+    );
+
+    if (applicantResult.rows.length) {
+      return { allowed: true, ownerUserId: applicantResult.rows[0].user_id };
+    }
+  }
+
+  return { allowed: false, ownerUserId };
+};
 
 // GET /api/developer/profile
 const getMyDeveloperProfile = async (req, res) => {
@@ -252,6 +322,114 @@ const upsertMyDeveloperProfile = async (req, res) => {
   }
 };
 
+// POST /api/developer/resume
+const uploadMyResume = async (req, res) => {
+  let client;
+
+  try {
+    await ensureBaseUserSchemaReady();
+    await ensureOnboardingSchemaReady();
+
+    const contentType = String(req.get('content-type') || '').toLowerCase();
+    if (!contentType.includes('application/pdf')) {
+      return res.status(400).json({ success: false, message: 'Resume upload must be a PDF.' });
+    }
+
+    const originalName = String(req.get('x-upload-filename') || 'resume.pdf').trim();
+    const stored = await storeResumeUpload({
+      buffer: req.body,
+      originalName,
+    });
+
+    client = await pool.connect();
+    const profileResult = await client.query(
+      `SELECT resume_url
+       FROM developer_profiles
+       WHERE user_id = $1
+       LIMIT 1`,
+      [req.user.id]
+    );
+
+    if (profileResult.rows.length) {
+      await client.query(
+        `UPDATE developer_profiles
+         SET resume_url = $1,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE user_id = $2`,
+        [stored.url, req.user.id]
+      );
+    } else {
+      await client.query(
+        `INSERT INTO developer_profiles (user_id, resume_url, updated_at)
+         VALUES ($1, $2, CURRENT_TIMESTAMP)
+         ON CONFLICT (user_id) DO UPDATE SET
+           resume_url = EXCLUDED.resume_url,
+           updated_at = CURRENT_TIMESTAMP`,
+        [req.user.id, stored.url]
+      );
+    }
+
+    return res.status(201).json({
+      success: true,
+      resumeUrl: stored.url,
+      fileName: stored.originalName,
+      size: stored.size,
+    });
+  } catch (error) {
+    console.error('Upload resume error:', error);
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error?.message || 'Server error while uploading resume.',
+    });
+  } finally {
+    client?.release();
+  }
+};
+
+// GET /api/developer/resumes/:storedName
+const downloadResume = async (req, res) => {
+  let client;
+
+  try {
+    await ensureBaseUserSchemaReady();
+    await ensureOnboardingSchemaReady();
+
+    const storedName = String(req.params.storedName || '').trim();
+    const absolutePath = getStoredResumePath(storedName);
+    if (!absolutePath) {
+      return res.status(404).json({ success: false, message: 'Resume not found.' });
+    }
+
+    const resumeUrl = `/api/developer/resumes/${encodeURIComponent(storedName)}`;
+    client = await pool.connect();
+    const access = await getResumeAccessState(client, { requester: req.user, resumeUrl });
+
+    if (!access.allowed) {
+      return res.status(403).json({ success: false, message: 'You do not have permission to access this resume.' });
+    }
+
+    await fs.access(absolutePath);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Content-Disposition', `inline; filename="${getResumeDownloadName(storedName)}"`);
+    return res.sendFile(absolutePath);
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      return res.status(404).json({ success: false, message: 'Resume file is no longer available.' });
+    }
+
+    console.error('Download resume error:', error);
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error?.message || 'Server error while downloading resume.',
+    });
+  } finally {
+    client?.release();
+  }
+};
+
 // POST /api/developer/ai/resume-analysis
 const analyzeMyResume = async (req, res) => {
   let client;
@@ -314,5 +492,7 @@ const analyzeMyResume = async (req, res) => {
 module.exports = {
   getMyDeveloperProfile,
   upsertMyDeveloperProfile,
+  uploadMyResume,
+  downloadResume,
   analyzeMyResume,
 };

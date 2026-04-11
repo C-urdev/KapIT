@@ -1,6 +1,5 @@
 import { apiRequest } from './apiClient';
 
-const API_URL = ((typeof process !== 'undefined' && process?.env?.NEXT_PUBLIC_EXPRESS_API_URL) || '/api');
 const SERVER_COOLDOWN_MS = 60 * 1000;
 const endpointCooldowns = new Map();
 
@@ -11,35 +10,35 @@ const markEndpointFailed = (key) => {
 
 export const listConversations = async () => {
   if (isEndpointCoolingDown('messages:conversations')) {
-    return [];
+    throw new Error('Messages are temporarily unavailable. Please try again in a minute.');
   }
 
   try {
-    const data = await apiRequest(`${API_URL}/messages/conversations`);
+    const data = await apiRequest('/messages/conversations');
     return data.conversations || [];
-  } catch {
+  } catch (error) {
     markEndpointFailed('messages:conversations');
-    return [];
+    throw new Error(error?.message || 'Failed to load conversations');
   }
 };
 
 export const getMessages = async (contactId) => {
   const cooldownKey = `messages:thread:${String(contactId || '')}`;
   if (isEndpointCoolingDown(cooldownKey)) {
-    return [];
+    throw new Error('Messages are temporarily unavailable. Please try again in a minute.');
   }
 
   try {
-    const data = await apiRequest(`${API_URL}/messages/${encodeURIComponent(contactId)}`);
+    const data = await apiRequest(`/messages/${encodeURIComponent(contactId)}`);
     return data.messages || [];
-  } catch {
+  } catch (error) {
     markEndpointFailed(cooldownKey);
-    return [];
+    throw new Error(error?.message || 'Failed to load messages');
   }
 };
 
 export const sendMessage = async (contactId, text) => {
-  const data = await apiRequest(`${API_URL}/messages/${encodeURIComponent(contactId)}`, {
+  const data = await apiRequest(`/messages/${encodeURIComponent(contactId)}`, {
     method: 'POST',
     body: JSON.stringify({ text }),
   });

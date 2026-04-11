@@ -266,13 +266,23 @@ export const getPublicProfile = async (userId) => {
   return data?.profile || null;
 };
 
-export const getJobsFeed = async () => {
+export const getJobsFeed = async (filters = {}) => {
   if (isEndpointCoolingDown('auth:jobs-feed')) {
     return { jobs: [], plan: { isPremium: false } };
   }
 
   try {
-    const data = await authRequest('/jobs');
+    const params = new URLSearchParams();
+    if (filters && typeof filters === 'object') {
+      if (filters.q) params.set('q', String(filters.q).trim());
+      if (filters.location) params.set('location', String(filters.location).trim());
+      if (filters.type) params.set('type', String(filters.type).trim());
+      if (filters.skill) params.set('skill', String(filters.skill).trim());
+      if (filters.status) params.set('status', String(filters.status).trim());
+    }
+
+    const query = params.toString();
+    const data = await authRequest(`/jobs${query ? `?${query}` : ''}`);
     return {
       jobs: Array.isArray(data?.jobs) ? data.jobs : [],
       plan: data?.plan || { isPremium: false },

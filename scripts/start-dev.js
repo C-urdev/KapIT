@@ -17,12 +17,19 @@ const nodeCommand = process.execPath;
 const serverEntry = path.resolve(process.cwd(), 'server/server.js');
 const webEntry = path.resolve(process.cwd(), 'scripts/run-web.js');
 const isWindows = process.platform === 'win32';
+const quietStartup = process.env.QUIET_STARTUP !== 'false';
+const hideNextNetworkLine = process.env.HIDE_NEXT_NETWORK_LINE !== 'false';
 
 const runNodeScript = (entry, args = []) => {
   return spawn(nodeCommand, [entry, ...args], {
     stdio: 'inherit',
     shell: false,
-    env: process.env,
+    env: {
+      ...process.env,
+      QUIET_STARTUP: quietStartup ? 'true' : String(process.env.QUIET_STARTUP || ''),
+      HIDE_NEXT_NETWORK_LINE: hideNextNetworkLine ? 'true' : String(process.env.HIDE_NEXT_NETWORK_LINE || ''),
+      NEXT_TELEMETRY_DISABLED: process.env.NEXT_TELEMETRY_DISABLED || '1',
+    },
   });
 };
 
@@ -131,6 +138,7 @@ const isHealthyServerRunning = () =>
 
 let shuttingDown = false;
 let frontendStarted = false;
+let serverReadyLogged = false;
 let serverProcess = null;
 let frontendProcess = null;
 
@@ -166,7 +174,7 @@ const startFrontend = () => {
 };
 
 const waitForServer = () => {
-  if (shuttingDown || frontendStarted) {
+  if (shuttingDown || serverReadyLogged) {
     return;
   }
 
@@ -174,7 +182,8 @@ const waitForServer = () => {
 
   socket.once('connect', () => {
     socket.end();
-    startFrontend();
+    serverReadyLogged = true;
+    console.log(`API ready at http://${SERVER_HOST}:${SERVER_PORT}`);
   });
 
   socket.once('error', () => {
@@ -187,7 +196,8 @@ const bootstrap = async () => {
   const healthyServerRunning = await isHealthyServerRunning();
 
   if (healthyServerRunning && REUSE_EXISTING_BACKEND) {
-    console.log(`Reusing existing backend on http://${SERVER_HOST}:${SERVER_PORT}`);
+    serverReadyLogged = true;
+    console.log(`API ready at http://${SERVER_HOST}:${SERVER_PORT}`);
     startFrontend();
     return;
   }
@@ -213,12 +223,8 @@ const bootstrap = async () => {
   }
 
   serverProcess = runNodeScript(serverEntry);
+  startFrontend();
   serverProcess.on('exit', async (code) => {
-    if (!frontendStarted && (await isHealthyServerRunning())) {
-      startFrontend();
-      return;
-    }
-
     shutdown(code ?? 0);
   });
 
