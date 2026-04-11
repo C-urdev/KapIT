@@ -8,6 +8,10 @@ const {
   serializeJobRow,
 } = require('../services/companyService');
 const { createDraftJobForCompany } = require('../services/jobService');
+const { assertCompanyCanCreateDraftJob, getPremiumStateForCompanyUser, requirePremiumEmployerFeature } = require('../services/planAccessService');
+const { withJobAvailability, closeExpiredJobs, normalizeDeadlineInput } = require('../services/jobAvailabilityService');
+const { isAiConfigured, rankCandidatesForJob } = require('../services/aiService');
+const { sendApplicationStatusEmail } = require('../services/emailService');
 
 const serializeUser = (user) => ({
   id: user.id,
@@ -40,6 +44,40 @@ const serializeUser = (user) => ({
 });
 
 const getAccountLabel = (row) => row?.company_name || row?.username || row?.email || 'Company';
+
+const upsertApplicantAiScore = async (client, { applicationId, jobId, candidateUserId, score }) => {
+  await client.query(
+    `INSERT INTO applicant_ai_scores (
+       application_id,
+       job_id,
+       candidate_user_id,
+       match_percentage,
+       ats_score,
+       metadata,
+       updated_at
+     )
+     VALUES ($1, $2, $3, $4, $5, $6::jsonb, CURRENT_TIMESTAMP)
+     ON CONFLICT (application_id) DO UPDATE SET
+       match_percentage = EXCLUDED.match_percentage,
+       ats_score = EXCLUDED.ats_score,
+       metadata = EXCLUDED.metadata,
+       updated_at = CURRENT_TIMESTAMP`,
+    [
+      applicationId,
+      jobId,
+      candidateUserId,
+      Number(score?.match_percentage || 0),
+      Number(score?.ats_score || 0),
+      JSON.stringify({
+        matchedSkills: score?.matched_skills || [],
+        missingSkills: score?.missing_skills || [],
+        strengths: score?.strengths || [],
+        concerns: score?.concerns || [],
+        keywordOverlap: score?.keyword_overlap || [],
+      }),
+    ]
+  );
+};
 
 // GET /api/company/profile
 const getCompanyProfile = async (req, res) => {
@@ -158,10 +196,18 @@ const createDraftJob = async (req, res) => {
     await client.query('BEGIN');
 
     const company = await getOrCreateCompanyForUserId(client, req.user.id);
+    const plan = await assertCompanyCanCreateDraftJob(client, { userId: req.user.id, companyId: company.id });
     const draftJob = await createDraftJobForCompany(client, company.id, req.body || {});
 
     await client.query('COMMIT');
-    return res.status(201).json({ success: true, job: draftJob });
+    return res.status(201).json({
+      success: true,
+      job: withJobAvailability(draftJob),
+      plan: {
+        isPremium: plan.isPremium,
+        freeCompanyActiveJobLimit: plan.freeCompanyActiveJobLimit || null,
+      },
+    });
   } catch (error) {
     if (client) {
       await client.query('ROLLBACK');
@@ -181,6 +227,7 @@ const getJobs = async (req, res) => {
     await ensureBaseUserSchemaReady();
     await ensureHiringSchemaReady();
     client = await pool.connect();
+    await closeExpiredJobs(client);
     const company = await getOrCreateCompanyForUserId(client, req.user.id);
 
     const result = await client.query(
@@ -198,7 +245,14 @@ const getJobs = async (req, res) => {
       [company.id]
     );
 
-    return res.json({ success: true, jobs: result.rows.map(serializeJobRow) });
+    const plan = await getPremiumStateForCompanyUser(client, req.user.id, company.id);
+    return res.json({
+      success: true,
+      jobs: result.rows.map((row) => withJobAvailability(serializeJobRow(row))),
+      plan: {
+        isPremium: plan.isPremium,
+      },
+    });
   } catch (error) {
     console.error('Get jobs error:', error);
     return res.status(500).json({ success: false, message: 'Server error while fetching jobs' });
@@ -215,7 +269,9 @@ const getApplicants = async (req, res) => {
     await ensureBaseUserSchemaReady();
     await ensureHiringSchemaReady();
     client = await pool.connect();
+    await closeExpiredJobs(client);
     const company = await getOrCreateCompanyForUserId(client, req.user.id);
+    const plan = await getPremiumStateForCompanyUser(client, req.user.id, company.id);
 
     const result = await client.query(
       `SELECT a.id,
@@ -231,10 +287,14 @@ const getApplicants = async (req, res) => {
               u.email,
               u.desired_job,
               u.address,
-              u.profile_image
+              u.profile_image,
+              score.match_percentage AS ai_match_percentage,
+              score.ats_score AS ai_ats_score,
+              score.metadata AS ai_metadata
        FROM applications a
        JOIN jobs j ON j.id = a.job_id
        JOIN users u ON u.id = a.user_id
+       LEFT JOIN applicant_ai_scores score ON score.application_id = a.id
        WHERE j.company_id = $1
        ORDER BY a.created_at DESC
        LIMIT 200`,
@@ -256,9 +316,22 @@ const getApplicants = async (req, res) => {
         address: row.address || '',
         profileImage: row.profile_image || '',
       },
+      ai: plan.isPremium && row.ai_match_percentage != null
+        ? {
+            matchPercentage: Number(row.ai_match_percentage || 0),
+            atsScore: Number(row.ai_ats_score || 0),
+            details: row.ai_metadata || {},
+          }
+        : null,
     }));
 
-    return res.json({ success: true, applicants });
+    return res.json({
+      success: true,
+      applicants,
+      plan: {
+        isPremium: plan.isPremium,
+      },
+    });
   } catch (error) {
     console.error('Get applicants error:', error);
     return res.status(500).json({ success: false, message: 'Server error while fetching applicants' });
@@ -357,9 +430,10 @@ const updateApplicantStatus = async (req, res) => {
       );
 
       const affectedApplicants = await client.query(
-        `SELECT a.id, a.user_id, a.status, j.title AS job_title
+        `SELECT a.id, a.user_id, a.status, j.title AS job_title, u.email, u.username
          FROM applications a
          JOIN jobs j ON j.id = a.job_id
+         JOIN users u ON u.id = a.user_id
          WHERE a.job_id = $1`,
         [application.job_id]
       );
@@ -381,6 +455,14 @@ const updateApplicantStatus = async (req, res) => {
             eventAt: new Date().toISOString(),
           },
         });
+
+        await sendApplicationStatusEmail({
+          to: item.email,
+          candidateName: item.username,
+          jobTitle: item.job_title,
+          companyLabel: actorLabel,
+          status: isAcceptedApplicant ? 'accepted' : 'rejected',
+        }).catch(() => null);
       }
     }
 
@@ -403,6 +485,21 @@ const updateApplicantStatus = async (req, res) => {
           eventAt: new Date().toISOString(),
         },
       });
+
+      const candidateResult = await client.query(
+        `SELECT email, username
+         FROM users
+         WHERE id = $1
+         LIMIT 1`,
+        [application.user_id]
+      );
+      await sendApplicationStatusEmail({
+        to: candidateResult.rows[0]?.email || '',
+        candidateName: candidateResult.rows[0]?.username || '',
+        jobTitle,
+        companyLabel: actorLabel,
+        status,
+      }).catch(() => null);
     }
 
     const refreshed = await client.query(
@@ -602,10 +699,20 @@ const getDevelopers = async (req, res) => {
     const q = String(req.query.q || '').trim();
     const skill = String(req.query.skill || '').trim();
     const location = String(req.query.location || '').trim();
+    const jobId = req.query.jobId == null ? null : Number(req.query.jobId);
     const minExperienceRaw = String(req.query.minExperience || '').trim();
     const minExperience = minExperienceRaw === '' ? null : Number(minExperienceRaw);
 
     client = await pool.connect();
+    const company = await getOrCreateCompanyForUserId(client, req.user.id);
+    const plan = await getPremiumStateForCompanyUser(client, req.user.id, company.id);
+
+    if (!plan.isPremium && (skill || location || Number.isFinite(minExperience))) {
+      return res.status(403).json({
+        success: false,
+        message: 'Advanced developer filters are available for premium employers only.',
+      });
+    }
 
     const conditions = [`u.user_type = 'employee'`, `u.profile_completed = true`];
     const values = [];
@@ -673,12 +780,174 @@ const getDevelopers = async (req, res) => {
       isPremium: row.is_premium,
       experienceYears: row.experience_years == null ? null : row.experience_years,
       skills: Array.isArray(row.skills) ? row.skills : [],
+      aboutMe: '',
     }));
 
-    return res.json({ success: true, developers });
+    if (plan.isPremium && isAiConfigured() && Number.isInteger(jobId) && jobId > 0 && developers.length) {
+      const jobResult = await client.query(
+        `SELECT id, title, description, location, type, skills
+         FROM jobs
+         WHERE id = $1
+           AND company_id = $2
+         LIMIT 1`,
+        [jobId, company.id]
+      );
+
+      if (jobResult.rows.length) {
+        const aiResult = await rankCandidatesForJob({
+          job: jobResult.rows[0],
+          candidates: developers.map((developer) => ({
+            id: developer.id,
+            username: developer.username,
+            desiredJob: developer.desiredJob,
+            address: developer.address,
+            skills: developer.skills,
+          })),
+        }).catch(() => null);
+
+        const rankingMap = new Map((aiResult?.rankings || []).map((item) => [String(item.candidate_id), item]));
+        for (const developer of developers) {
+          const ranking = rankingMap.get(String(developer.id));
+          if (ranking) {
+            developer.ai = {
+              matchPercentage: Number(ranking.match_percentage || 0),
+              atsScore: Number(ranking.ats_score || 0),
+              details: {
+                matchedSkills: ranking.matched_skills || [],
+                missingSkills: ranking.missing_skills || [],
+                strengths: ranking.strengths || [],
+                concerns: ranking.concerns || [],
+              },
+            };
+          }
+        }
+
+        developers.sort((left, right) => Number(right?.ai?.matchPercentage || 0) - Number(left?.ai?.matchPercentage || 0));
+      }
+    }
+
+    return res.json({
+      success: true,
+      developers,
+      plan: {
+        isPremium: plan.isPremium,
+      },
+    });
   } catch (error) {
     console.error('Get developers error:', error);
     return res.status(500).json({ success: false, message: 'Server error while searching developers' });
+  } finally {
+    client?.release();
+  }
+};
+
+// GET /api/company/jobs/:jobId/ai/rank-applicants
+const rankApplicantsForJob = async (req, res) => {
+  let client;
+
+  try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
+    await ensureOnboardingSchemaReady();
+    client = await pool.connect();
+    const company = await getOrCreateCompanyForUserId(client, req.user.id);
+    const plan = await getPremiumStateForCompanyUser(client, req.user.id, company.id);
+    requirePremiumEmployerFeature(plan, 'Applicant AI ranking');
+
+    if (!isAiConfigured()) {
+      return res.status(503).json({ success: false, message: 'AI service is not configured.' });
+    }
+
+    const jobId = Number(req.params.jobId);
+    if (!Number.isInteger(jobId) || jobId <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid job id.' });
+    }
+
+    const jobResult = await client.query(
+      `SELECT id, title, description, location, type, skills
+       FROM jobs
+       WHERE id = $1
+         AND company_id = $2
+       LIMIT 1`,
+      [jobId, company.id]
+    );
+
+    if (!jobResult.rows.length) {
+      return res.status(404).json({ success: false, message: 'Job not found.' });
+    }
+
+    const applicantsResult = await client.query(
+      `SELECT a.id AS application_id,
+              a.user_id,
+              u.username,
+              u.email,
+              u.desired_job,
+              u.address,
+              COALESCE(dp.bio, u.bio, '') AS bio,
+              COALESCE(dp.resume_url, '') AS resume_url,
+              COALESCE(dp.skills, ARRAY[]::text[]) AS skills,
+              COALESCE(dp.experience_years, 0) AS experience_years
+       FROM applications a
+       JOIN users u ON u.id = a.user_id
+       LEFT JOIN developer_profiles dp ON dp.user_id = u.id
+       WHERE a.job_id = $1
+       ORDER BY a.created_at DESC`,
+      [jobId]
+    );
+
+    const aiResult = await rankCandidatesForJob({
+      job: jobResult.rows[0],
+      candidates: applicantsResult.rows.map((row) => ({
+        id: row.user_id,
+        username: row.username,
+        desiredJob: row.desired_job,
+        bio: row.bio,
+        resume: row.resume_url,
+        address: row.address,
+        skills: row.skills,
+        yearsOfExperience: row.experience_years,
+      })),
+    });
+
+    const rankingMap = new Map((aiResult?.rankings || []).map((item) => [String(item.candidate_id), item]));
+    const rankings = [];
+
+    for (const applicant of applicantsResult.rows) {
+      const score = rankingMap.get(String(applicant.user_id));
+      if (!score) {
+        continue;
+      }
+
+      await upsertApplicantAiScore(client, {
+        applicationId: applicant.application_id,
+        jobId,
+        candidateUserId: applicant.user_id,
+        score,
+      }).catch(() => null);
+
+      rankings.push({
+        applicationId: applicant.application_id,
+        candidateUserId: applicant.user_id,
+        candidateName: applicant.username || applicant.email || 'Candidate',
+        matchPercentage: Number(score.match_percentage || 0),
+        atsScore: Number(score.ats_score || 0),
+        details: {
+          matchedSkills: score.matched_skills || [],
+          missingSkills: score.missing_skills || [],
+          strengths: score.strengths || [],
+          concerns: score.concerns || [],
+        },
+      });
+    }
+
+    rankings.sort((left, right) => right.matchPercentage - left.matchPercentage);
+    return res.json({ success: true, rankings });
+  } catch (error) {
+    console.error('Rank applicants for job error:', error);
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error?.message || 'Server error while ranking applicants.',
+    });
   } finally {
     client?.release();
   }
@@ -982,6 +1251,7 @@ module.exports = {
   reopenJob,
   deleteJob,
   getDevelopers,
+  rankApplicantsForJob,
   getAnalytics,
   updateCompanyProfile,
   updateCompanyOnboardingProfile,

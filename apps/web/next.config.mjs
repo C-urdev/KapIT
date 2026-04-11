@@ -6,11 +6,11 @@ const normalizeUrl = (value) => String(value || '').trim().replace(/\/$/, '');
 
 const isLocalUrl = (value) => /^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?(?:\/|$)/i.test(value);
 
-const resolveServiceUrl = ({ serverEnvKey, publicEnvKey, devFallback, label }) => {
+const resolveServiceUrl = ({ serverEnvKey, publicEnvKey, devFallback, label, requiredInProduction = true }) => {
   const configured = normalizeUrl(process.env[serverEnvKey] || process.env[publicEnvKey]);
 
   if (!configured) {
-    if (isProduction) {
+    if (isProduction && requiredInProduction) {
       throw new Error(`${label} is required in production. Set ${serverEnvKey} or ${publicEnvKey}.`);
     }
 
@@ -21,6 +21,10 @@ const resolveServiceUrl = ({ serverEnvKey, publicEnvKey, devFallback, label }) =
     new URL(configured);
   } catch {
     throw new Error(`${label} is not a valid URL: ${configured}`);
+  }
+
+  if (isProduction && !requiredInProduction && isLocalUrl(configured)) {
+    return '';
   }
 
   if (isProduction && isLocalUrl(configured)) {
@@ -40,8 +44,9 @@ const expressApiBase = resolveServiceUrl({
 const fastApiBase = resolveServiceUrl({
   serverEnvKey: 'FASTAPI_URL',
   publicEnvKey: 'NEXT_PUBLIC_FASTAPI_URL',
-  devFallback: 'http://127.0.0.1:8000',
+  devFallback: '',
   label: 'FastAPI URL',
+  requiredInProduction: false,
 });
 
 const nextConfig = {
@@ -49,16 +54,21 @@ const nextConfig = {
   typedRoutes: false,
   outputFileTracingRoot: path.resolve(process.cwd()),
   async rewrites() {
-    return [
+    const rules = [
       {
         source: '/api/:path*',
         destination: `${expressApiBase}/:path*`,
       },
-      {
+    ];
+
+    if (fastApiBase) {
+      rules.push({
         source: '/ai/:path*',
         destination: `${fastApiBase}/:path*`,
-      },
-    ];
+      });
+    }
+
+    return rules;
   },
   webpack: (config, { dev }) => {
     if (dev) {

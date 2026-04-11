@@ -1,15 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Filter, MapPin, Building, Bookmark } from 'lucide-react';
-import { applyToJob, getJobsFeed } from '@sharedServices/authService';
+import { applyToJob, getJobsFeed, getSavedJobs, removeSavedJob, saveJob } from '@sharedServices/authService';
 import { formatJobStatus, statusBadgeClass } from '@companyFeatures/companyUtils';
-import { isJobSavedForUser, saveApplicationForUser, syncApplicationsForUser, toggleSavedJobForUser } from '@userFeatures/activity/userActivityStorage';
+import { saveApplicationForUser, syncApplicationsForUser } from '@userFeatures/activity/userActivityStorage';
 
 export default function UserJobsPage({ userType, user }) {
   const [jobs, setJobs] = useState([]);
+  const [savedJobIds, setSavedJobIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [applyingJobId, setApplyingJobId] = useState(null);
   const [feedback, setFeedback] = useState('');
+  const [plan, setPlan] = useState({ isPremium: false });
 
   useEffect(() => {
     let canceled = false;
@@ -25,11 +27,16 @@ export default function UserJobsPage({ userType, user }) {
         }
       }
       try {
-        const result = await getJobsFeed();
+        const [jobsData, savedJobs] = await Promise.all([
+          getJobsFeed(),
+          getSavedJobs().catch(() => []),
+        ]);
         if (!canceled) {
-          const nextJobs = Array.isArray(result) ? result : [];
+          const nextJobs = Array.isArray(jobsData?.jobs) ? jobsData.jobs : [];
           syncApplicationsForUser(user, nextJobs);
           setJobs(nextJobs);
+          setSavedJobIds(savedJobs.map((job) => Number(job?.id)).filter((id) => Number.isInteger(id)));
+          setPlan(jobsData?.plan || { isPremium: false });
         }
       } catch (err) {
         if (!canceled) {
@@ -104,10 +111,27 @@ export default function UserJobsPage({ userType, user }) {
     }
   };
 
-  const handleToggleSave = (job) => {
-    const nextSavedJobs = toggleSavedJobForUser(user, job);
-    const saved = nextSavedJobs.some((entry) => Number(entry?.id) === Number(job?.id));
-    setFeedback(saved ? `"${job.title}" was saved to your Saved Jobs.` : `"${job.title}" was removed from Saved Jobs.`);
+  const handleToggleSave = async (job) => {
+    const jobId = Number(job?.id);
+    if (!Number.isInteger(jobId) || jobId <= 0) {
+      return;
+    }
+
+    const isSaved = savedJobIds.includes(jobId);
+    try {
+      if (isSaved) {
+        await removeSavedJob(jobId);
+        setSavedJobIds((current) => current.filter((id) => id !== jobId));
+        setFeedback(`"${job.title}" was removed from Saved Jobs.`);
+        return;
+      }
+
+      await saveJob(jobId);
+      setSavedJobIds((current) => (current.includes(jobId) ? current : [jobId, ...current]));
+      setFeedback(`"${job.title}" was saved to your Saved Jobs.`);
+    } catch (err) {
+      setError(err?.message || 'Failed to update saved jobs.');
+    }
   };
 
   const summaryText = useMemo(() => {
@@ -144,6 +168,7 @@ export default function UserJobsPage({ userType, user }) {
       </div>
 
       {feedback && <p className="mb-4 text-sm text-[#3a5a40] dark:text-[#7fd0ee]">{feedback}</p>}
+      {plan?.isPremium ? <p className="mb-4 text-xs text-[#3a5a40] dark:text-[#7fd0ee]">Premium scoring is active. Match percentages appear on supported jobs.</p> : null}
       {error && <p className="mb-4 text-sm text-red-600 dark:text-red-400">{error}</p>}
       {loading ? (
         <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">Loading jobs...</p>
@@ -158,6 +183,8 @@ export default function UserJobsPage({ userType, user }) {
               key={job.id}
               job={job}
               user={user}
+              isSaved={savedJobIds.includes(Number(job?.id))}
+              isPremiumUser={Boolean(plan?.isPremium)}
               onApply={handleApply}
               onToggleSave={handleToggleSave}
               applying={applyingJobId === job.id}
@@ -169,14 +196,13 @@ export default function UserJobsPage({ userType, user }) {
   );
 }
 
-function JobCard({ job, user, onApply, onToggleSave, applying }) {
+function JobCard({ job, isSaved, isPremiumUser, onApply, onToggleSave, applying }) {
   const status = String(job?.status || 'open').toLowerCase();
   const isClosed = status === 'closed';
   const isFilled = status === 'filled';
   const hasApplied = Boolean(job?.hasApplied);
   const companyName = job?.company?.name || 'Company';
   const skills = Array.isArray(job?.skills) ? job.skills : [];
-  const isSaved = isJobSavedForUser(user, job?.id);
 
   return (
     <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-4 sm:p-6 hover:border-[#588157] dark:hover:border-[#3ba9d6] transition-colors">
@@ -206,6 +232,11 @@ function JobCard({ job, user, onApply, onToggleSave, applying }) {
                 </span>
               )}
               {job?.salary && <span className="font-semibold text-[#588157] dark:text-[#3ba9d6]">{job.salary}</span>}
+              {isPremiumUser && Number.isFinite(Number(job?.matchPercentage)) ? (
+                <span className="px-2 py-1 rounded bg-[#eef6ee] text-[#31572c] dark:bg-[#14304d] dark:text-[#dcecff] text-xs font-semibold">
+                  Match {Number(job.matchPercentage)}%
+                </span>
+              ) : null}
             </div>
           </div>
         </div>
@@ -215,6 +246,10 @@ function JobCard({ job, user, onApply, onToggleSave, applying }) {
       {job?.description && (
         <p className="mb-4 text-sm text-[#344e41] dark:text-[#b8d4e8] line-clamp-3">{job.description}</p>
       )}
+
+      {!job?.acceptsApplications ? (
+        <p className="mb-3 text-xs text-[#9a3412] dark:text-[#fdba74]">{job?.availabilityLabel || 'This listing is no longer accepting applications.'}</p>
+      ) : null}
 
       {skills.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">

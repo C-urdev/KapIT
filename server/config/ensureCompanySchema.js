@@ -45,6 +45,7 @@ const ensureCompanySchema = async () => {
         posting_plan_price INTEGER NOT NULL DEFAULT 1599,
         published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         active_until TIMESTAMP,
+        application_deadline TIMESTAMPTZ,
         closed_at TIMESTAMP,
         hired_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -89,6 +90,43 @@ const ensureCompanySchema = async () => {
       );
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS saved_jobs (
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        job_id BIGINT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        source VARCHAR(30) NOT NULL DEFAULT 'manual',
+        metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (user_id, job_id)
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS job_match_scores (
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        job_id BIGINT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        match_percentage INTEGER NOT NULL DEFAULT 0,
+        ats_score INTEGER NOT NULL DEFAULT 0,
+        metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (user_id, job_id)
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS applicant_ai_scores (
+        application_id BIGINT PRIMARY KEY REFERENCES applications(id) ON DELETE CASCADE,
+        job_id BIGINT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        candidate_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        match_percentage INTEGER NOT NULL DEFAULT 0,
+        ats_score INTEGER NOT NULL DEFAULT 0,
+        metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+
     await client.query("ALTER TABLE companies ADD COLUMN IF NOT EXISTS short_description VARCHAR(220);");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS status VARCHAR(40) NOT NULL DEFAULT 'open';");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS closed_reason VARCHAR(80);");
@@ -105,6 +143,7 @@ const ensureCompanySchema = async () => {
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS posting_plan_price INTEGER NOT NULL DEFAULT 1599;");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS active_until TIMESTAMP;");
+    await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS application_deadline TIMESTAMPTZ;");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS closed_at TIMESTAMP;");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS hired_at TIMESTAMP;");
     await client.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;");
@@ -113,11 +152,16 @@ const ensureCompanySchema = async () => {
     await client.query('CREATE INDEX IF NOT EXISTS idx_jobs_company_id_created ON jobs(company_id, created_at DESC);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_jobs_company_id_status_created ON jobs(company_id, status, created_at DESC);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_jobs_payment_status_created ON jobs(posting_payment_status, created_at DESC);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_jobs_active_until ON jobs(active_until) WHERE active_until IS NOT NULL;');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_jobs_application_deadline ON jobs(application_deadline) WHERE application_deadline IS NOT NULL;');
     await client.query('CREATE INDEX IF NOT EXISTS idx_job_post_payments_company_created ON job_post_payments(company_id, created_at DESC);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_job_post_payments_status_created ON job_post_payments(status, created_at DESC);');
     await client.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_job_post_payments_provider_checkout ON job_post_payments(provider, provider_checkout_id) WHERE provider_checkout_id IS NOT NULL;');
     await client.query('CREATE INDEX IF NOT EXISTS idx_apps_job_id_created ON applications(job_id, created_at DESC);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_apps_user_id_created ON applications(user_id, created_at DESC);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_saved_jobs_job_created ON saved_jobs(job_id, created_at DESC);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_job_match_scores_job_updated ON job_match_scores(job_id, updated_at DESC);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_applicant_ai_scores_job_updated ON applicant_ai_scores(job_id, updated_at DESC);');
 
     await client.query('COMMIT');
   } catch (error) {

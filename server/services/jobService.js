@@ -1,4 +1,5 @@
 const { normalizeSkills, serializeJobRow } = require('./companyService');
+const { normalizeDeadlineInput } = require('./jobAvailabilityService');
 
 const createDraftJobForCompany = async (client, companyId, draft) => {
   const title = String(draft?.title || '').trim();
@@ -9,6 +10,7 @@ const createDraftJobForCompany = async (client, companyId, draft) => {
   }
 
   const normalizedSkills = normalizeSkills(draft?.skills);
+  const applicationDeadline = normalizeDeadlineInput(draft?.applicationDeadline);
 
   const result = await client.query(
     `INSERT INTO jobs (
@@ -23,7 +25,8 @@ const createDraftJobForCompany = async (client, companyId, draft) => {
        posting_payment_status,
        pay_per_use_status,
        published_at,
-       active_until
+       active_until,
+       application_deadline
      )
      VALUES (
        $1,
@@ -37,7 +40,8 @@ const createDraftJobForCompany = async (client, companyId, draft) => {
        'pending',
        'not_due',
        NULL,
-       NULL
+       NULL,
+       $8::timestamptz
      )
      RETURNING *`,
     [
@@ -48,6 +52,7 @@ const createDraftJobForCompany = async (client, companyId, draft) => {
       draft?.location ? String(draft.location).trim() : null,
       draft?.type ? String(draft.type).trim() : null,
       normalizedSkills,
+      applicationDeadline,
     ]
   );
 
@@ -67,7 +72,8 @@ const publishDraftJobForCompany = async (client, jobId, companyId, plan, payment
          posting_plan_duration_days = $5::integer,
          posting_plan_price = $2::integer,
          published_at = CURRENT_TIMESTAMP,
-         active_until = CURRENT_TIMESTAMP + ($5::integer * INTERVAL '1 day')
+         active_until = CURRENT_TIMESTAMP + ($5::integer * INTERVAL '1 day'),
+         application_deadline = COALESCE(application_deadline, $8::timestamptz)
      WHERE id = $6
        AND company_id = $7
      RETURNING *`,
@@ -79,6 +85,7 @@ const publishDraftJobForCompany = async (client, jobId, companyId, plan, payment
       plan.durationDays,
       jobId,
       companyId,
+      normalizeDeadlineInput(plan?.applicationDeadline),
     ]
   );
 
@@ -98,6 +105,7 @@ const createPublishedJobForCompany = async (client, companyId, draft, plan, paym
   }
 
   const normalizedSkills = normalizeSkills(draft?.skills);
+  const applicationDeadline = normalizeDeadlineInput(draft?.applicationDeadline);
 
   const result = await client.query(
     `INSERT INTO jobs (
@@ -118,7 +126,8 @@ const createPublishedJobForCompany = async (client, companyId, draft, plan, paym
        posting_plan_duration_days,
        posting_plan_price,
        published_at,
-       active_until
+       active_until,
+       application_deadline
      )
      VALUES (
        $1,
@@ -138,7 +147,8 @@ const createPublishedJobForCompany = async (client, companyId, draft, plan, paym
        $12::integer,
        $8::integer,
        CURRENT_TIMESTAMP,
-       CURRENT_TIMESTAMP + ($12::integer * INTERVAL '1 day')
+       CURRENT_TIMESTAMP + ($12::integer * INTERVAL '1 day'),
+       $13::timestamptz
      )
      RETURNING *`,
     [
@@ -154,6 +164,7 @@ const createPublishedJobForCompany = async (client, companyId, draft, plan, paym
       plan.id,
       plan.durationLabel,
       plan.durationDays,
+      applicationDeadline,
     ]
   );
 

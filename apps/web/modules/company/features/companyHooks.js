@@ -73,10 +73,10 @@ export const useCompanyApplicants = () => {
   const fetchApplicants = useCallback(() => companyAPI.getApplicants(), []);
   const { data, loading, error, refetch } = useAsyncResource(fetchApplicants, [], {
     cacheKey: 'kapit_company_applicants',
-    fallbackData: { applicants: [] },
+    fallbackData: { applicants: [], plan: { isPremium: false } },
   });
   const applicants = useMemo(() => (Array.isArray(data?.applicants) ? data.applicants : EMPTY_LIST), [data]);
-  return { applicants, loading, error, refetch };
+  return { applicants, plan: data?.plan || { isPremium: false }, loading, error, refetch };
 };
 
 export const useCompanyAnalytics = () => {

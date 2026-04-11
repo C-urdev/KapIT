@@ -268,17 +268,36 @@ export const getPublicProfile = async (userId) => {
 
 export const getJobsFeed = async () => {
   if (isEndpointCoolingDown('auth:jobs-feed')) {
-    return [];
+    return { jobs: [], plan: { isPremium: false } };
   }
 
   try {
     const data = await authRequest('/jobs');
-    return Array.isArray(data?.jobs) ? data.jobs : [];
+    return {
+      jobs: Array.isArray(data?.jobs) ? data.jobs : [],
+      plan: data?.plan || { isPremium: false },
+    };
   } catch (error) {
     markEndpointFailed('auth:jobs-feed');
     throw new Error(getErrorMessage(error, 'Failed to load jobs'));
   }
 };
+
+export const getSavedJobs = async () => {
+  const data = await authRequest('/saved-jobs');
+  return Array.isArray(data?.savedJobs) ? data.savedJobs : [];
+};
+
+export const saveJob = async (jobId) =>
+  authRequest('/saved-jobs', {
+    method: 'POST',
+    body: JSON.stringify({ jobId }),
+  });
+
+export const removeSavedJob = async (jobId) =>
+  authRequest(`/saved-jobs/${encodeURIComponent(jobId)}`, {
+    method: 'DELETE',
+  });
 
 export const applyToJob = async (jobId) => {
   return authRequest(`/jobs/${encodeURIComponent(jobId)}/apply`, {

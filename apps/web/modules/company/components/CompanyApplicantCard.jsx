@@ -15,6 +15,8 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
   const isAccepted = applicantStatus === 'accepted';
   const isRejected = applicantStatus === 'rejected';
   const isReviewed = applicantStatus === 'reviewed';
+  const aiMatch = applicant?.ai?.matchPercentage;
+  const aiAtsScore = applicant?.ai?.atsScore;
   const canReview = !actionLoading && !isAccepted && !isReviewed;
   const canReject = !actionLoading && !isAccepted && !isRejected;
   const canHire = !actionLoading && !isAccepted && !isRejected && !isFilled;
@@ -35,6 +37,11 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
                 <MapPin className="h-4 w-4 text-[#588157] dark:text-[#7fd0ee]" />
                 {location}
               </span>
+              {Number.isFinite(Number(aiMatch)) ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#eef6ee] px-2 py-0.5 text-xs font-semibold text-[#31572c] dark:bg-[#14304d] dark:text-[#dcecff]">
+                  Match {Number(aiMatch)}%
+                </span>
+              ) : null}
             </div>
           </div>
         </div>
@@ -86,6 +93,11 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
                   <MapPin className="h-4 w-4 text-[#588157] dark:text-[#7fd0ee]" />
                   {location}
                 </span>
+                {Number.isFinite(Number(aiMatch)) ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#eef6ee] px-2 py-0.5 text-xs font-semibold text-[#31572c] dark:bg-[#14304d] dark:text-[#dcecff]">
+                    Match {Number(aiMatch)}% • ATS {Number(aiAtsScore || 0)}
+                  </span>
+                ) : null}
               </div>
             </div>
           </div>

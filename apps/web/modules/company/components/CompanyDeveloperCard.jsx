@@ -26,6 +26,11 @@ export default function CompanyDeveloperCard({ developer, onViewProfile, onMessa
                 {developer.address}
               </p>
             )}
+            {Number.isFinite(Number(developer?.ai?.matchPercentage)) ? (
+              <p className="mt-1 text-xs font-semibold text-[#31572c] dark:text-[#dcecff]">
+                Match {Number(developer.ai.matchPercentage)}% • ATS {Number(developer?.ai?.atsScore || 0)}
+              </p>
+            ) : null}
             {developer?.isPremium && <PremiumBadge className="mt-1" />}
           </div>
         </div>
