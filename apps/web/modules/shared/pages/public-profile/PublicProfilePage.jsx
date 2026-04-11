@@ -1,58 +1,93 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Building2, Globe, Mail, MapPin, MessageCircle, User } from 'lucide-react';
-import { addCommentToPostForUser, getPostsForUser, reactToCommentOnPostForUser, reactToPostForUser, toggleSharePostForUser } from '@userFeatures/posts/userPostStorage';
+import {
+  addCommentToPost,
+  listProfilePosts,
+  reactToCommentOnPost,
+  reactToPost,
+  toggleSharePost,
+} from '@sharedServices/postService';
 import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
 import FeedPostCard from '@userPages/home/FeedPostCard';
 
-export default function PublicProfilePage({ profile, onBack, onMessage, onMore, viewer, onToggleSavePost, onReactToPost, onAddComment, onReactToComment, onToggleSharePost }) {
+export default function PublicProfilePage({ profile, onBack, onMessage, onMore, viewer, onToggleSavePost, onReactToPost, onAddComment, onReactToComment, onToggleSharePost, savedPostIds = [] }) {
   const displayName = profile?.companyName || profile?.fullName || profile?.username || profile?.name || 'User';
   const initial = displayName.charAt(0).toUpperCase();
-  const [posts, setPosts] = useState(() => getPostsForUser(profile, viewer || profile));
+  const [posts, setPosts] = useState([]);
   const isCompany = profile?.type === 'company';
   const relatedCompanies = Array.isArray(profile?.relatedCompanies) ? profile.relatedCompanies : [];
 
   useEffect(() => {
-    setPosts(getPostsForUser(profile, viewer || profile));
+    let mounted = true;
+
+    const loadPosts = async () => {
+      if (!profile?.id) {
+        setPosts([]);
+        return;
+      }
+
+      try {
+        const items = await listProfilePosts(profile.id);
+        if (mounted) {
+          setPosts(items);
+        }
+      } catch {
+        if (mounted) {
+          setPosts([]);
+        }
+      }
+    };
+
+    void loadPosts();
+    return () => {
+      mounted = false;
+    };
   }, [profile, viewer]);
 
-  const handleReactToProfilePost = (postId, reactionType) => {
+  const reloadProfilePosts = async () => {
+    if (!profile?.id) {
+      setPosts([]);
+      return;
+    }
+
+    const items = await listProfilePosts(profile.id);
+    setPosts(items);
+  };
+
+  const handleReactToProfilePost = async (postId, reactionType) => {
     if (!viewer) {
       onReactToPost?.(postId, reactionType);
       return;
     }
-    reactToPostForUser(viewer, postId, reactionType);
-    setPosts(getPostsForUser(profile, viewer || profile));
+    await reactToPost(postId, reactionType);
+    await reloadProfilePosts();
   };
 
-  const handleAddCommentToProfilePost = (postId, commentInput) => {
+  const handleAddCommentToProfilePost = async (postId, commentInput) => {
     if (!viewer) {
       onAddComment?.(postId, commentInput);
       return;
     }
-    addCommentToPostForUser(viewer, postId, commentInput);
-    setPosts(getPostsForUser(profile, viewer || profile));
+    await addCommentToPost(postId, commentInput);
+    await reloadProfilePosts();
   };
 
-  const handleShareProfilePost = (postId, shareInput) => {
+  const handleShareProfilePost = async (postId, shareInput) => {
     if (!viewer) {
       onToggleSharePost?.(postId, shareInput);
       return;
     }
-    if (onToggleSharePost) {
-      onToggleSharePost(postId, shareInput);
-    } else {
-      toggleSharePostForUser(viewer, postId, shareInput);
-    }
-    setPosts(getPostsForUser(profile, viewer || profile));
+    await toggleSharePost(postId, shareInput);
+    await reloadProfilePosts();
   };
 
-  const handleReactToProfileComment = (postId, commentId, reactionType, parentCommentId = null) => {
+  const handleReactToProfileComment = async (postId, commentId, reactionType, parentCommentId = null) => {
     if (!viewer) {
       onReactToComment?.(postId, commentId, reactionType, parentCommentId);
       return;
     }
-    reactToCommentOnPostForUser(viewer, postId, commentId, reactionType, parentCommentId);
-    setPosts(getPostsForUser(profile, viewer || profile));
+    await reactToCommentOnPost(postId, commentId, reactionType, parentCommentId);
+    await reloadProfilePosts();
   };
 
   return (
@@ -186,6 +221,7 @@ export default function PublicProfilePage({ profile, onBack, onMessage, onMore, 
                     onToggleSharePost={handleShareProfilePost}
                     onHidePost={() => {}}
                     enableMenu={false}
+                    isSavedOverride={savedPostIds.includes(Number(post.id))}
                   />
                 ))}
               </div>

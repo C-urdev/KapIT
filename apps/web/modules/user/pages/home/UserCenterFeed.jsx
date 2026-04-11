@@ -4,7 +4,7 @@ import CenterFeedPosts from './CenterFeedPosts';
 import { Avatar } from './CenterFeedPostShared';
 
 export default function CenterFeed(props) {
-  const { user, userType, onOpenComposer, posts = [], onToggleSavePost, onReactToPost, onAddComment, onReactToComment, onToggleSharePost, onDeletePost, onBrowsePeople, onExploreProjects } = props;
+  const { user, userType, onOpenComposer, posts = [], onToggleSavePost, onReactToPost, onAddComment, onReactToComment, onToggleSharePost, onDeletePost, onBrowsePeople, onExploreProjects, savedPostIds = [] } = props;
   const displayName = user?.username || user?.name || 'User';
   const userInitial = displayName.charAt(0).toUpperCase();
   const profileImage = user?.profileImage || '';
@@ -60,6 +60,7 @@ export default function CenterFeed(props) {
           hiddenPostIds={hiddenPostIds}
           onUndoHidePost={handleUndoHidePost}
           onHideAuthor={handleHideAuthor}
+          savedPostIds={savedPostIds}
         />
       ) : (
         <div className="rounded-xl border border-[#a3b18a] bg-white p-12 text-center dark:border-[#1e3a5f] dark:bg-[#162842]">

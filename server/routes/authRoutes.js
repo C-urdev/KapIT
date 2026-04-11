@@ -16,6 +16,22 @@ const {
   getMyApplications,
   applyToJob,
 } = require('../controllers/authController');
+const {
+  listFeedPosts,
+  listMyPosts,
+  listProfilePosts,
+  createPost,
+  deletePost,
+  reactToPost,
+  addCommentToPost,
+  reactToCommentOnPost,
+  toggleSharePost,
+  importLegacyPosts,
+  listSavedPosts,
+  savePost,
+  removeSavedPost,
+  importLegacySavedPosts,
+} = require('../controllers/postsController');
 const { registerValidation, loginValidation, profileUpdateValidation, validate } = require('../middleware/validation');
 const { verifyToken, requireCsrfForCookieAuth } = require('../middleware/auth');
 const { loginRateLimiter } = require('../middleware/security');
@@ -37,5 +53,19 @@ router.post('/jobs/:id/apply', requireCsrfForCookieAuth, verifyToken, applyToJob
 router.get('/search', verifyToken, searchUsers);
 router.get('/profile/:id', verifyToken, getPublicProfile);
 router.patch('/profile', requireCsrfForCookieAuth, verifyToken, profileUpdateValidation, validate, updateMyProfile);
+router.get('/posts/feed', verifyToken, listFeedPosts);
+router.get('/posts/me', verifyToken, listMyPosts);
+router.get('/posts/profile/:userId', verifyToken, listProfilePosts);
+router.post('/posts', requireCsrfForCookieAuth, verifyToken, createPost);
+router.delete('/posts/:postId', requireCsrfForCookieAuth, verifyToken, deletePost);
+router.post('/posts/:postId/reactions', requireCsrfForCookieAuth, verifyToken, reactToPost);
+router.post('/posts/:postId/comments', requireCsrfForCookieAuth, verifyToken, addCommentToPost);
+router.post('/posts/:postId/comments/:commentId/reactions', requireCsrfForCookieAuth, verifyToken, reactToCommentOnPost);
+router.post('/posts/:postId/share', requireCsrfForCookieAuth, verifyToken, toggleSharePost);
+router.post('/posts/import-local', requireCsrfForCookieAuth, verifyToken, importLegacyPosts);
+router.get('/saved-posts', verifyToken, listSavedPosts);
+router.post('/saved-posts', requireCsrfForCookieAuth, verifyToken, savePost);
+router.delete('/saved-posts/:postId', requireCsrfForCookieAuth, verifyToken, removeSavedPost);
+router.post('/saved-posts/import-local', requireCsrfForCookieAuth, verifyToken, importLegacySavedPosts);
 
 module.exports = router;

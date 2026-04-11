@@ -16,19 +16,24 @@ import UserMyProfilePage from '@userFeatures/profile/UserMyProfilePage';
 import UserAccountSettingsModal from '@userFeatures/profile/UserAccountSettingsModal';
 import UserMobileBottomNav from '@userComponents/navigation/mobile/UserMobileBottomNav';
 import {
-  addCommentToPostForUser,
-  addPostForUser,
-  deletePostForUser,
-  getFeedPostsForViewer,
-  getPostsForUser,
-  reactToCommentOnPostForUser,
-  reactToPostForUser,
-  toggleSharePostForUser,
-} from '@userFeatures/posts/userPostStorage';
+  addCommentToPost,
+  createPost,
+  deletePost,
+  importLegacyLocalPosts,
+  importLegacySavedPosts,
+  listFeedPosts,
+  listMyPosts,
+  listSavedPosts,
+  reactToCommentOnPost,
+  reactToPost,
+  removeSavedPost,
+  savePost,
+  toggleSharePost,
+} from '@sharedServices/postService';
 import { getMyApplications, getPublicProfile, getSavedJobs } from '@sharedServices/authService';
 import { getUnreadNotificationCount } from '@sharedServices/notificationsService';
 import { ArrowLeft, BadgeCheck, Bookmark, Building2, FileCheck2, Lightbulb, Sparkles, UserCircle } from 'lucide-react';
-import { getApplicationsForUser, getSavedPostsForUser, toggleSavedPostForUser } from '@userFeatures/activity/userActivityStorage';
+import { getApplicationsForUser } from '@userFeatures/activity/userActivityStorage';
 
 const USER_NAV_QUERY_KEY = 'tab';
 const USER_NAV_TABS = new Set(['home', 'jobs', 'projects', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'help', 'tips', 'verified']);
@@ -76,19 +81,63 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   const [savedJobs, setSavedJobs] = useState([]);
   const [savedPosts, setSavedPosts] = useState([]);
   const [applications, setApplications] = useState([]);
+  const [importLegacyLoading, setImportLegacyLoading] = useState(false);
+  const [importLegacyMessage, setImportLegacyMessage] = useState('');
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isMobileShellViewport, setIsMobileShellViewport] = useState(false);
   const [mobileChromeHidden, setMobileChromeHidden] = useState(false);
   const lastScrollYRef = useRef(0);
+  const legacyPostsImportAttemptedRef = useRef(false);
+  const legacySavedPostsImportAttemptedRef = useRef(false);
   const mobileSafeAreaBottomPadding = isMobileShellViewport
     ? mobileChromeHidden
       ? 'max(1.75rem, calc(env(safe-area-inset-bottom) + 1rem))'
       : 'max(7rem, calc(env(safe-area-inset-bottom) + 5.75rem))'
     : undefined;
 
-  const syncPostState = (nextUser = user) => {
-    setPosts(getPostsForUser(nextUser));
-    setFeedPosts(getFeedPostsForViewer(nextUser));
+  const syncPostState = async () => {
+    try {
+      let [myPosts, allFeedPosts] = await Promise.all([
+        listMyPosts(),
+        listFeedPosts(),
+      ]);
+
+      const importMarkerKey = `kapit_legacy_posts_imported:${String(user?.id || user?.email || '').trim()}`;
+      const hasImportedMarker =
+        typeof window !== 'undefined' && importMarkerKey
+          ? window.localStorage.getItem(importMarkerKey) === 'true'
+          : false;
+
+      if (!legacyPostsImportAttemptedRef.current && !hasImportedMarker && myPosts.length === 0) {
+        legacyPostsImportAttemptedRef.current = true;
+        try {
+          const imported = await importLegacyLocalPosts();
+          if (imported.importedCount > 0) {
+            [myPosts, allFeedPosts] = await Promise.all([
+              listMyPosts(),
+              listFeedPosts(),
+            ]);
+          }
+
+          const shouldSetImportMarker = imported.importedCount > 0 || imported.skippedCount === 0;
+          if (typeof window !== 'undefined' && importMarkerKey && shouldSetImportMarker) {
+            window.localStorage.setItem(importMarkerKey, 'true');
+          }
+          if (!shouldSetImportMarker) {
+            legacyPostsImportAttemptedRef.current = false;
+          }
+        } catch {
+          // keep normal rendering even when import fails
+          legacyPostsImportAttemptedRef.current = false;
+        }
+      }
+
+      setPosts(myPosts);
+      setFeedPosts(allFeedPosts);
+    } catch {
+      setPosts([]);
+      setFeedPosts([]);
+    }
   };
 
   const updateActiveNav = (nextNav, options = {}) => {
@@ -142,9 +191,12 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   }, []);
 
   useEffect(() => {
-    syncPostState(user);
+    legacyPostsImportAttemptedRef.current = false;
+    legacySavedPostsImportAttemptedRef.current = false;
+    setImportLegacyMessage('');
+    void syncPostState();
     setSavedJobs([]);
-    setSavedPosts(getSavedPostsForUser(user));
+    setSavedPosts([]);
     setApplications(getApplicationsForUser(user));
   }, [user]);
 
@@ -164,6 +216,45 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
       }
     };
 
+    const loadSavedPosts = async () => {
+      try {
+        let items = await listSavedPosts();
+        const importMarkerKey = `kapit_legacy_saved_posts_imported:${String(user?.id || user?.email || '').trim()}`;
+        const hasImportedMarker =
+          typeof window !== 'undefined' && importMarkerKey
+            ? window.localStorage.getItem(importMarkerKey) === 'true'
+            : false;
+
+        if (!legacySavedPostsImportAttemptedRef.current && !hasImportedMarker && items.length === 0) {
+          legacySavedPostsImportAttemptedRef.current = true;
+          try {
+            const imported = await importLegacySavedPosts();
+            if (imported.importedCount > 0) {
+              items = await listSavedPosts();
+            }
+            const shouldSetImportMarker = imported.importedCount > 0 || imported.skippedCount === 0;
+            if (typeof window !== 'undefined' && importMarkerKey && shouldSetImportMarker) {
+              window.localStorage.setItem(importMarkerKey, 'true');
+            }
+            if (!shouldSetImportMarker) {
+              legacySavedPostsImportAttemptedRef.current = false;
+            }
+          } catch {
+            // keep normal loading behavior on import errors
+            legacySavedPostsImportAttemptedRef.current = false;
+          }
+        }
+
+        if (mounted) {
+          setSavedPosts(items);
+        }
+      } catch {
+        if (mounted) {
+          setSavedPosts([]);
+        }
+      }
+    };
+
     const loadApplications = async () => {
       try {
         const data = await getMyApplications();
@@ -178,19 +269,21 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
     };
 
     loadApplications();
+    loadSavedPosts();
     loadSavedJobs();
     window.addEventListener('focus', loadApplications);
+    window.addEventListener('focus', loadSavedPosts);
     window.addEventListener('focus', loadSavedJobs);
     return () => {
       mounted = false;
       window.removeEventListener('focus', loadApplications);
+      window.removeEventListener('focus', loadSavedPosts);
       window.removeEventListener('focus', loadSavedJobs);
     };
   }, [user]);
 
   useEffect(() => {
     const syncActivity = () => {
-      setSavedPosts(getSavedPostsForUser(user));
       setApplications(getApplicationsForUser(user));
     };
 
@@ -296,38 +389,88 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
     popup.focus?.();
   };
 
-  const handleCreatePost = (postInput) => {
-    addPostForUser(user, postInput);
-    syncPostState(user);
+  const handleCreatePost = async (postInput) => {
+    await createPost(postInput);
+    await syncPostState();
   };
 
-  const handleToggleSavePost = (post) => {
-    setSavedPosts(toggleSavedPostForUser(user, post));
+  const handleToggleSavePost = async (post) => {
+    const postId = Number(post?.id);
+    if (!Number.isInteger(postId) || postId <= 0) {
+      return;
+    }
+
+    const currentlySaved = savedPosts.some((entry) => Number(entry?.id) === postId);
+    if (currentlySaved) {
+      await removeSavedPost(postId);
+    } else {
+      await savePost(postId);
+    }
+
+    const items = await listSavedPosts();
+    setSavedPosts(items);
   };
 
-  const handleReactToPost = (postId, reactionType) => {
-    reactToPostForUser(user, postId, reactionType);
-    syncPostState(user);
+  const handleReactToPost = async (postId, reactionType) => {
+    await reactToPost(postId, reactionType);
+    await syncPostState();
   };
 
-  const handleAddComment = (postId, content) => {
-    addCommentToPostForUser(user, postId, content);
-    syncPostState(user);
+  const handleAddComment = async (postId, content) => {
+    await addCommentToPost(postId, content);
+    await syncPostState();
   };
 
-  const handleReactToComment = (postId, commentId, reactionType, parentCommentId = null) => {
-    reactToCommentOnPostForUser(user, postId, commentId, reactionType, parentCommentId);
-    syncPostState(user);
+  const handleReactToComment = async (postId, commentId, reactionType, parentCommentId = null) => {
+    await reactToCommentOnPost(postId, commentId, reactionType, parentCommentId);
+    await syncPostState();
   };
 
-  const handleToggleSharePost = (postId, shareInput) => {
-    toggleSharePostForUser(user, postId, shareInput);
-    syncPostState(user);
+  const handleToggleSharePost = async (postId, shareInput) => {
+    await toggleSharePost(postId, shareInput);
+    await syncPostState();
   };
 
-  const handleDeletePost = (postId) => {
-    deletePostForUser(user, postId);
-    syncPostState(user);
+  const handleDeletePost = async (postId) => {
+    await deletePost(postId);
+    await syncPostState();
+  };
+
+  const handleImportLegacyData = async () => {
+    try {
+      setImportLegacyLoading(true);
+      setImportLegacyMessage('');
+
+      const userKey = String(user?.id || user?.email || '').trim();
+      if (typeof window !== 'undefined' && userKey) {
+        window.localStorage.removeItem(`kapit_legacy_posts_imported:${userKey}`);
+        window.localStorage.removeItem(`kapit_legacy_saved_posts_imported:${userKey}`);
+      }
+
+      legacyPostsImportAttemptedRef.current = false;
+      legacySavedPostsImportAttemptedRef.current = false;
+
+      const [postImport, savedImport] = await Promise.all([
+        importLegacyLocalPosts(),
+        importLegacySavedPosts(),
+      ]);
+
+      await Promise.all([
+        syncPostState(),
+        (async () => {
+          const items = await listSavedPosts();
+          setSavedPosts(items);
+        })(),
+      ]);
+
+      const postSummary = `${postImport.importedCount} posts imported`;
+      const savedSummary = `${savedImport.importedCount} saved posts imported`;
+      setImportLegacyMessage(`${postSummary}; ${savedSummary}.`);
+    } catch (error) {
+      setImportLegacyMessage(error?.message || 'Legacy import failed. Please try again.');
+    } finally {
+      setImportLegacyLoading(false);
+    }
   };
 
   const handleOpenPublicProfile = async (result) => {
@@ -417,6 +560,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
                 userType={userType}
                 onOpenComposer={() => setComposerOpen(true)}
                 posts={feedPosts}
+                savedPostIds={savedPosts.map((entry) => Number(entry?.id)).filter((id) => Number.isInteger(id) && id > 0)}
                 onToggleSavePost={handleToggleSavePost}
                 onReactToPost={handleReactToPost}
                 onAddComment={handleAddComment}
@@ -437,6 +581,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
           <UserMyProfilePage
             user={user}
             posts={posts}
+            savedPostIds={savedPosts.map((entry) => Number(entry?.id)).filter((id) => Number.isInteger(id) && id > 0)}
             onUpdateUser={onUpdateUser}
             onOpenComposer={() => setComposerOpen(true)}
             onToggleSavePost={handleToggleSavePost}
@@ -445,6 +590,9 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
             onReactToComment={handleReactToComment}
             onToggleSharePost={handleToggleSharePost}
             onDeletePost={handleDeletePost}
+            onImportLegacyData={handleImportLegacyData}
+            importLegacyLoading={importLegacyLoading}
+            importLegacyMessage={importLegacyMessage}
           />
         )}
 
@@ -470,6 +618,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
           <PublicProfilePage
             profile={publicProfile}
             viewer={user}
+            savedPostIds={savedPosts.map((entry) => Number(entry?.id)).filter((id) => Number.isInteger(id) && id > 0)}
             onBack={() => updateActiveNav('home')}
             onMessage={handleMessageProfile}
             onToggleSavePost={handleToggleSavePost}
