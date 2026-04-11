@@ -26,11 +26,9 @@ const {
   addCommentToPost,
   reactToCommentOnPost,
   toggleSharePost,
-  importLegacyPosts,
   listSavedPosts,
   savePost,
   removeSavedPost,
-  importLegacySavedPosts,
 } = require('../controllers/postsController');
 const { registerValidation, loginValidation, profileUpdateValidation, validate } = require('../middleware/validation');
 const { verifyToken, requireCsrfForCookieAuth } = require('../middleware/auth');
@@ -62,10 +60,8 @@ router.post('/posts/:postId/reactions', requireCsrfForCookieAuth, verifyToken, r
 router.post('/posts/:postId/comments', requireCsrfForCookieAuth, verifyToken, addCommentToPost);
 router.post('/posts/:postId/comments/:commentId/reactions', requireCsrfForCookieAuth, verifyToken, reactToCommentOnPost);
 router.post('/posts/:postId/share', requireCsrfForCookieAuth, verifyToken, toggleSharePost);
-router.post('/posts/import-local', requireCsrfForCookieAuth, verifyToken, importLegacyPosts);
 router.get('/saved-posts', verifyToken, listSavedPosts);
 router.post('/saved-posts', requireCsrfForCookieAuth, verifyToken, savePost);
 router.delete('/saved-posts/:postId', requireCsrfForCookieAuth, verifyToken, removeSavedPost);
-router.post('/saved-posts/import-local', requireCsrfForCookieAuth, verifyToken, importLegacySavedPosts);
 
 module.exports = router;

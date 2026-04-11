@@ -4,8 +4,10 @@ import path from 'node:path';
 import process from 'node:process';
 import dotenv from 'dotenv';
 
+// Load local overrides first, then base .env as fallback values.
+// This keeps explicit shell/env-platform variables as highest priority.
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local'), override: true });
 
 const scriptName = process.argv[2] || 'dev';
 const appDirectory = path.resolve(process.cwd(), 'apps/web');
