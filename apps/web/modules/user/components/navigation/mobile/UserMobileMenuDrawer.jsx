@@ -260,7 +260,7 @@ export default function UserMobileMenuDrawer({
                 />
                 <PromoCard
                   title={isPremium ? 'Premium active' : 'Premium tools'}
-                  description={isPremium ? 'Your premium access is already active on this account.' : 'Build trust and unlock stronger reach with premium benefits.'}
+                  description={isPremium ? 'Your premium applicant tools are already active on this account.' : 'Unlock live premium tools like job match percentages and ATS-style resume analysis.'}
                   accentClass="bg-[radial-gradient(circle_at_50%_25%,#fff2a8,transparent_34%),linear-gradient(135deg,#62a3ff,#ffa3d6)]"
                   onClick={() => {
                     setMobileMenuOpen(false);

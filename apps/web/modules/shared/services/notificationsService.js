@@ -1,6 +1,5 @@
 import { apiRequest } from './apiClient';
 
-const API_URL = ((typeof process !== 'undefined' && process?.env?.NEXT_PUBLIC_EXPRESS_API_URL) || '/api');
 const SERVER_COOLDOWN_MS = 60 * 1000;
 const endpointCooldowns = new Map();
 const readCache = (key, fallback) => {
@@ -35,33 +34,37 @@ const markEndpointFailed = (key) => {
 
 export const getNotifications = async () => {
   if (isEndpointCoolingDown('notifications:list')) {
-    return readCache('kapit_notifications_list', []);
+    throw new Error('Notifications are temporarily unavailable. Please try again in a minute.');
   }
 
   try {
-    const data = await apiRequest(`${API_URL}/notifications`);
+    const data = await apiRequest('/notifications');
     const notifications = Array.isArray(data.notifications) ? data.notifications : [];
     writeCache('kapit_notifications_list', notifications);
     return notifications;
-  } catch {
+  } catch (error) {
     markEndpointFailed('notifications:list');
-    return readCache('kapit_notifications_list', []);
+    const cached = readCache('kapit_notifications_list', []);
+    if (cached.length > 0) {
+      return cached;
+    }
+    throw new Error(error?.message || 'Failed to load notifications');
   }
 };
 
 export const getUnreadNotificationCount = async () => {
   if (isEndpointCoolingDown('notifications:unread-count')) {
-    return readCache('kapit_notifications_unread_count', 0);
+    throw new Error('Notifications are temporarily unavailable. Please try again in a minute.');
   }
 
   try {
-    const data = await apiRequest(`${API_URL}/notifications/unread-count`);
+    const data = await apiRequest('/notifications/unread-count');
     const count = Number(data.unreadCount || 0);
     writeCache('kapit_notifications_unread_count', count);
     return count;
-  } catch {
+  } catch (error) {
     markEndpointFailed('notifications:unread-count');
-    return readCache('kapit_notifications_unread_count', 0);
+    throw new Error(error?.message || 'Failed to load unread notification count');
   }
 };
 
@@ -71,13 +74,13 @@ export const markNotificationsRead = async () => {
   }
 
   try {
-    const data = await apiRequest(`${API_URL}/notifications/read`, {
+    const data = await apiRequest('/notifications/read', {
       method: 'PATCH',
     });
     writeCache('kapit_notifications_unread_count', 0);
     return Number(data.updatedCount || 0);
-  } catch {
+  } catch (error) {
     markEndpointFailed('notifications:mark-read');
-    return 0;
+    throw new Error(error?.message || 'Failed to mark notifications as read');
   }
 };

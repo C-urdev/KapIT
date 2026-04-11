@@ -8,3 +8,4 @@ dist
 apps/web/.next
 .venv
 services/ai-fastapi/.venv
+server/uploads

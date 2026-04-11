@@ -6,6 +6,7 @@ import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
 import SkillTags from '@userComponents/developer/UserSkillTags';
 import PortfolioCard from '@userComponents/developer/UserPortfolioCard';
 import ResumeUploader from '@userComponents/developer/UserResumeUploader';
+import { developerAPI } from '@userFeatures/developer/userDeveloperAPI';
 import { navigate } from '@companyFeatures/companyUtils';
 import { cleanPlaceName, loadProvinceCityData } from '@sharedUtils/philippinesLocations';
 
@@ -551,7 +552,11 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
             </Section>
 
             <Section title="Resume (Optional)">
-              <ResumeUploader value={form.resume} onChange={(resume) => setForm((p) => ({ ...p, resume }))} />
+              <ResumeUploader
+                value={form.resume}
+                onChange={(resume) => setForm((p) => ({ ...p, resume }))}
+                onUpload={(file) => developerAPI.uploadResume(file)}
+              />
             </Section>
 
             <div className="flex items-center justify-end gap-3">

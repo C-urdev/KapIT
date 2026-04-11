@@ -80,7 +80,7 @@ export default function UserLeftSidebar({ user, userType, onOpenPremium, onOpenM
             <div className="min-w-0 flex-1">
               <h4 className="font-semibold text-[#3a5a40] dark:text-white text-sm mb-1">Upgrade to Premium</h4>
               <p className="text-xs text-[#344e41] dark:text-[#e7d9a5] mb-3">
-                {userType === 'employee' ? 'Top search rankings, unlimited projects, premium badge' : 'Priority candidate access, advanced filters, unlimited views'}
+                {userType === 'employee' ? 'Job match percentages, ATS-style resume analysis, premium badge' : 'Verified posting flow and applicant management tools'}
               </p>
               <button
                 onClick={() => onOpenPremium?.()}
@@ -101,8 +101,8 @@ export default function UserLeftSidebar({ user, userType, onOpenPremium, onOpenM
               <h4 className="font-semibold text-[#7a5200] dark:text-[#ffe08a] text-sm mb-1">You're in the Premium plan</h4>
               <p className="text-xs text-[#8a6100] dark:text-[#f3d57b]">
                 {userType === 'employee'
-                  ? 'Your premium badge and premium visibility are active on this account.'
-                  : 'Your premium access is active for advanced hiring tools and priority visibility.'}
+                  ? 'Your premium badge, job match percentages, and ATS-style resume analysis access are active on this account.'
+                  : 'Your paid hiring workflow and applicant management tools are active on this account.'}
               </p>
             </div>
           </div>
