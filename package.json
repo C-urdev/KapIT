@@ -9,6 +9,7 @@
     "server:watch": "nodemon server/server.js",
     "start": "node scripts/start-dev.js",
     "migrate:legacy-users": "node server/scripts/migrateLegacyUsers.js",
+    "migrate:posts:reassign-owner": "node server/scripts/reassignPostOwnership.js",
     "migrate:messages:backfill": "node server/scripts/backfillLegacyMessagesToConversations.js",
     "migrate:messages:verify": "node server/scripts/backfillLegacyMessagesToConversations.js --verify",
     "migrate:messages:parity": "node server/scripts/verifyMessagingParity.js",

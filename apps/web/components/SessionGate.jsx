@@ -45,11 +45,9 @@ export default function SessionGate({
 
         const nextUser = data?.user || null;
         if (!nextUser) {
-          if (!storedUser) {
-            await logoutUser();
-            router.replace(redirectTo);
-          }
-          setUser(storedUser || null);
+          await logoutUser();
+          setUser(null);
+          router.replace(redirectTo);
           return;
         }
 
@@ -66,11 +64,9 @@ export default function SessionGate({
         setUser(nextUser);
       } catch {
         if (!cancelled) {
-          if (!storedUser) {
-            await logoutUser();
-            router.replace(redirectTo);
-          }
-          setUser(storedUser || null);
+          await logoutUser();
+          setUser(null);
+          router.replace(redirectTo);
         }
       } finally {
         if (!cancelled) {

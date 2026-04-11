@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import LandingPage from '@sharedPages/landing/LandingPage';
 import SelectAccountTypeModal from '@sharedComponents/auth/SelectAccountTypeModal';
-import { getCurrentUser, getStoredUser } from '@sharedServices/authService';
+import { getCurrentUser } from '@sharedServices/authService';
 
 const resolveDashboardPath = (user) => (
   user?.accountType === 'company' || user?.type === 'company'
@@ -20,12 +20,6 @@ export default function LandingPageClient() {
     let cancelled = false;
 
     const redirectIfAuthenticated = async () => {
-      const storedUser = getStoredUser();
-      if (storedUser && !cancelled) {
-        router.replace(resolveDashboardPath(storedUser));
-        return;
-      }
-
       try {
         const data = await getCurrentUser();
         const currentUser = data?.user || null;

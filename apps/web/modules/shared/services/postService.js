@@ -1,47 +1,5 @@
 import { authRequest } from './apiClient';
 
-const LEGACY_STORAGE_KEY = 'kapit_posts_shared';
-const LEGACY_STORAGE_KEY_V1 = 'kapit_posts_by_user';
-const LEGACY_ACTIVITY_KEY = 'kapit_user_activity_by_user';
-
-const readLegacyLocalPosts = () => {
-  if (typeof window === 'undefined') {
-    return [];
-  }
-
-  try {
-    const raw = window.localStorage.getItem(LEGACY_STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
-    }
-  } catch {
-    // ignore malformed storage
-  }
-
-  try {
-    const rawLegacy = window.localStorage.getItem(LEGACY_STORAGE_KEY_V1);
-    if (!rawLegacy) {
-      return [];
-    }
-    const parsed = JSON.parse(rawLegacy);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return [];
-    }
-    return Object.entries(parsed).flatMap(([ownerKey, posts]) => (
-      Array.isArray(posts)
-        ? posts.map((post) => ({
-            ...post,
-            ownerKey,
-            ownerName: post?.ownerName || 'User',
-          }))
-        : []
-    ));
-  } catch {
-    return [];
-  }
-};
-
 export const listFeedPosts = async () => {
   const data = await authRequest('/posts/feed');
   return Array.isArray(data?.posts) ? data.posts : [];
@@ -133,23 +91,6 @@ export const toggleSharePost = async (postId, shareInput = {}) => {
   return data?.post || null;
 };
 
-export const importLegacyLocalPosts = async () => {
-  const posts = readLegacyLocalPosts();
-  if (!posts.length) {
-    return { importedCount: 0, skippedCount: 0 };
-  }
-
-  const data = await authRequest('/posts/import-local', {
-    method: 'POST',
-    body: JSON.stringify({ posts }),
-  });
-
-  return {
-    importedCount: Number(data?.importedCount || 0),
-    skippedCount: Number(data?.skippedCount || 0),
-  };
-};
-
 export const listSavedPosts = async () => {
   const data = await authRequest('/saved-posts');
   return Array.isArray(data?.savedPosts) ? data.savedPosts : [];
@@ -168,43 +109,4 @@ export const removeSavedPost = async (postId) => {
     method: 'DELETE',
   });
   return Boolean(data?.removed);
-};
-
-const readLegacySavedPosts = () => {
-  if (typeof window === 'undefined') {
-    return [];
-  }
-
-  try {
-    const raw = window.localStorage.getItem(LEGACY_ACTIVITY_KEY);
-    if (!raw) {
-      return [];
-    }
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object') {
-      return [];
-    }
-
-    const values = Object.values(parsed);
-    return values.flatMap((entry) => (Array.isArray(entry?.savedPosts) ? entry.savedPosts : []));
-  } catch {
-    return [];
-  }
-};
-
-export const importLegacySavedPosts = async () => {
-  const savedPosts = readLegacySavedPosts();
-  if (!savedPosts.length) {
-    return { importedCount: 0, skippedCount: 0 };
-  }
-
-  const data = await authRequest('/saved-posts/import-local', {
-    method: 'POST',
-    body: JSON.stringify({ savedPosts }),
-  });
-
-  return {
-    importedCount: Number(data?.importedCount || 0),
-    skippedCount: Number(data?.skippedCount || 0),
-  };
 };
