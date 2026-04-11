@@ -235,27 +235,27 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
 
       <section className="overflow-hidden rounded-[30px] border border-[#93a977] bg-[linear-gradient(180deg,#dcd7c9_0%,#d8d4c7_100%)] p-4 shadow-[0_22px_60px_rgba(58,90,64,0.10)] dark:border-[#1e3a5f] dark:bg-[linear-gradient(180deg,#11253b_0%,#0d1c2f_100%)] sm:p-6">
         <div className="rounded-[28px] border border-[#7f9775] bg-white px-4 py-5 shadow-[0_18px_50px_rgba(58,90,64,0.08)] dark:border-[#2a4a6f] dark:bg-[#162842] sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#6d8467] dark:text-[#7dc4ff]">
-                Workspace
-              </p>
-              <h2 className="mt-2 text-[1.95rem] font-black tracking-[-0.03em] text-[#31572c] dark:text-white">
-                {userType === 'employee' ? 'My Projects' : 'All Projects'}
-              </h2>
-              <p className="mt-1 text-sm text-[#556b58] dark:text-[#b8d4e8]">
-                Keep your strongest work visible with a folder shelf up top and a full projects list below.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
-              <ProjectStat label="Total Files" value={projects.length} />
-              <ProjectStat label="With Demo" value={projects.filter((project) => project.liveUrl).length} />
-            </div>
-          </div>
-
           {projects.length > 0 ? (
             <>
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#6d8467] dark:text-[#7dc4ff]">
+                    Workspace
+                  </p>
+                  <h2 className="mt-2 text-[1.95rem] font-black tracking-[-0.03em] text-[#31572c] dark:text-white">
+                    {userType === 'employee' ? 'My Projects' : 'All Projects'}
+                  </h2>
+                  <p className="mt-1 text-sm text-[#556b58] dark:text-[#b8d4e8]">
+                    Keep your strongest work visible with a folder shelf up top and a full projects list below.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+                  <ProjectStat label="Total Files" value={projects.length} />
+                  <ProjectStat label="With Demo" value={projects.filter((project) => project.liveUrl).length} />
+                </div>
+              </div>
+
               <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
                 {featuredProjects.map((project, index) => {
                   const tech = formatTechStack(project.techStack).slice(0, 3);
@@ -422,7 +422,8 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
               </div>
             </>
           ) : (
-            <div className="mt-8 rounded-[24px] border border-dashed border-[#bfd0af] bg-[#f8fbf6] p-10 text-center dark:border-[#2a4a6f] dark:bg-[#102235]">
+            <div className="flex min-h-[420px] items-center justify-center px-4 py-10 text-center sm:px-8">
+              <div className="w-full max-w-2xl">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-[#eef6ee] text-[#588157] dark:bg-[#14304d] dark:text-[#7dc4ff]">
                 <Sparkles className="h-7 w-7" />
               </div>
@@ -444,6 +445,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
                   Add Your First Project
                 </button>
               ) : null}
+              </div>
             </div>
           )}
         </div>
