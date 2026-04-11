@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Bookmark, EyeOff, MessageCircle, MoreHorizontal, Share2, ThumbsUp, Trash2, UserX, X } from 'lucide-react';
-import { isPostSavedForUser } from '@userFeatures/activity/userActivityStorage';
 import { ActionButton, ReactionPicker } from './CenterFeedActionButton';
 import CenterFeedCommentsView from './CenterFeedCommentsView';
 import CenterFeedShareSheet from './CenterFeedShareSheet';
@@ -51,13 +50,13 @@ const getResolvedPostOwnerName = (post, fallbackDisplayName = '') => {
   return fallbackDisplayName || 'User';
 };
 
-export default function FeedPostCard({ post, user, displayName, profileImage, userInitial, isMenuOpen, onOpenMenu, onCloseMenu, onToggleSavePost, onReactToPost, onAddComment, onReactToComment, onToggleSharePost, onDeletePost, isHidden = false, onHidePost, onUndoHidePost, onHideAuthor, enableMenu = true }) {
+export default function FeedPostCard({ post, user, displayName, profileImage, userInitial, isMenuOpen, onOpenMenu, onCloseMenu, onToggleSavePost, onReactToPost, onAddComment, onReactToComment, onToggleSharePost, onDeletePost, isHidden = false, onHidePost, onUndoHidePost, onHideAuthor, enableMenu = true, isSavedOverride = false }) {
   const actorKey = getActorKey(user);
   const authorDisplayName = getResolvedPostOwnerName(post, displayName);
   const authorInitial = String(authorDisplayName || 'U').charAt(0).toUpperCase();
   const isOwner = post?.ownerKey === actorKey;
   const authorProfileImage = post?.ownerProfileImage || (isOwner ? profileImage : '');
-  const isSaved = isPostSavedForUser(user, post.id);
+  const isSaved = Boolean(isSavedOverride);
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
   const [commentsViewOpen, setCommentsViewOpen] = useState(false);
   const [shareSheetOpen, setShareSheetOpen] = useState(false);

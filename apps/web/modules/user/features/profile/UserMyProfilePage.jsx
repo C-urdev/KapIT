@@ -52,7 +52,22 @@ const downscaleImageDataUrl = (dataUrl, { maxSize = 320, quality = 0.85 } = {}) 
     image.src = dataUrl;
   });
 
-export default function UserMyProfilePage({ user, posts = [], onUpdateUser, onOpenComposer, onToggleSavePost, onReactToPost, onAddComment, onReactToComment, onToggleSharePost, onDeletePost }) {
+export default function UserMyProfilePage({
+  user,
+  posts = [],
+  onUpdateUser,
+  onOpenComposer,
+  onToggleSavePost,
+  onReactToPost,
+  onAddComment,
+  onReactToComment,
+  onToggleSharePost,
+  onDeletePost,
+  savedPostIds = [],
+  onImportLegacyData,
+  importLegacyLoading = false,
+  importLegacyMessage = '',
+}) {
   const displayName = user?.username || user?.name || 'User';
   const initial = displayName.charAt(0).toUpperCase();
   const profileImage = user?.profileImage || '';
@@ -191,7 +206,20 @@ export default function UserMyProfilePage({ user, posts = [], onUpdateUser, onOp
 
         <div className="space-y-4">
           <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-5">
-            <h3 className="text-xl font-semibold text-[#3a5a40] dark:text-white">Posts</h3>
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-xl font-semibold text-[#3a5a40] dark:text-white">Posts</h3>
+              <button
+                type="button"
+                onClick={onImportLegacyData}
+                disabled={importLegacyLoading}
+                className="rounded-lg border border-[#a3b18a] px-3 py-1.5 text-sm font-semibold text-[#3a5a40] transition-colors hover:bg-[#f5f5f2] disabled:opacity-60 disabled:cursor-not-allowed dark:border-[#2a4a6f] dark:text-[#b8d4e8] dark:hover:bg-[#1e3a5f]"
+              >
+                {importLegacyLoading ? 'Importing...' : 'Import legacy posts'}
+              </button>
+            </div>
+            {importLegacyMessage ? (
+              <p className="mt-2 text-sm text-[#344e41] dark:text-[#b8d4e8]">{importLegacyMessage}</p>
+            ) : null}
           </div>
 
           {posts.length > 0 ? (
@@ -214,6 +242,7 @@ export default function UserMyProfilePage({ user, posts = [], onUpdateUser, onOp
                 onDeletePost={onDeletePost}
                 onHidePost={() => setMenuPostId(null)}
                 onHideAuthor={() => setMenuPostId(null)}
+                isSavedOverride={savedPostIds.includes(Number(post.id))}
               />
             ))
           ) : (
