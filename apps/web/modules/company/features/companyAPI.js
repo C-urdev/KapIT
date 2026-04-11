@@ -46,6 +46,7 @@ export const companyAPI = {
   deleteJob: (jobId) => request(`/jobs/${jobId}`, { method: 'DELETE' }),
   updateJobStatus: (jobId, status) => request(`/jobs/${jobId}/status`, { method: 'PATCH', body: { status } }),
   reopenJob: (jobId) => request(`/jobs/${jobId}/reopen`, { method: 'POST' }),
+  rankApplicantsForJob: (jobId) => request(`/jobs/${jobId}/ai/rank-applicants`),
   getApplicants: () => request('/applicants', { fallbackData: { success: true, applicants: [] } }),
   updateApplicantStatus: (applicationId, status) => request(`/applications/${applicationId}/status`, { method: 'PATCH', body: { status } }),
   searchDevelopers: (input) => {

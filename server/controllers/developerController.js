@@ -1,5 +1,7 @@
 const pool = require('../config/database');
 const { ensureBaseUserSchemaReady, ensureOnboardingSchemaReady } = require('../config/runtimeSchema');
+const { getPremiumStateForUser, requirePremiumApplicantFeature } = require('../services/planAccessService');
+const { isAiConfigured, analyzeResumeProfile } = require('../services/aiService');
 
 const normalizeSkills = (skills) => {
   if (!skills) return [];
@@ -250,7 +252,67 @@ const upsertMyDeveloperProfile = async (req, res) => {
   }
 };
 
+// POST /api/developer/ai/resume-analysis
+const analyzeMyResume = async (req, res) => {
+  let client;
+
+  try {
+    await ensureBaseUserSchemaReady();
+    await ensureOnboardingSchemaReady();
+    client = await pool.connect();
+    const plan = await getPremiumStateForUser(client, req.user.id);
+    requirePremiumApplicantFeature(plan, 'ATS resume analysis');
+
+    if (!isAiConfigured()) {
+      return res.status(503).json({ success: false, message: 'AI service is not configured.' });
+    }
+
+    const profileResult = await client.query(
+      `SELECT u.id,
+              COALESCE(dp.full_name, u.name, u.username) AS full_name,
+              COALESCE(dp.preferred_it_role, u.desired_job, dp.job_title) AS preferred_role,
+              COALESCE(dp.bio, u.bio, '') AS bio,
+              COALESCE(dp.resume_url, '') AS resume_url,
+              COALESCE(dp.skills, ARRAY[]::text[]) AS skills,
+              COALESCE(dp.location, u.address, '') AS location,
+              COALESCE(dp.experience_years, 0) AS experience_years
+       FROM users u
+       LEFT JOIN developer_profiles dp ON dp.user_id = u.id
+       WHERE u.id = $1
+       LIMIT 1`,
+      [req.user.id]
+    );
+
+    if (!profileResult.rows.length) {
+      return res.status(404).json({ success: false, message: 'Developer profile not found.' });
+    }
+
+    const profile = profileResult.rows[0];
+    const analysis = await analyzeResumeProfile({
+      id: profile.id,
+      fullName: profile.full_name,
+      preferredRole: profile.preferred_role,
+      bio: profile.bio,
+      resume: profile.resume_url,
+      skills: profile.skills,
+      location: profile.location,
+      yearsOfExperience: profile.experience_years,
+    });
+
+    return res.json({ success: true, analysis: analysis.analysis || analysis });
+  } catch (error) {
+    console.error('Analyze resume error:', error);
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error?.message || 'Server error while analyzing resume.',
+    });
+  } finally {
+    client?.release();
+  }
+};
+
 module.exports = {
   getMyDeveloperProfile,
   upsertMyDeveloperProfile,
+  analyzeMyResume,
 };

@@ -8,12 +8,13 @@ import PublicProfilePage from '@sharedPages/public-profile/PublicProfilePage';
 
 export default function CompanyApplicantsPage() {
   const viewer = getStoredUser();
-  const { applicants, loading, error, refetch } = useCompanyApplicants();
+  const { applicants, plan, loading, error, refetch } = useCompanyApplicants();
   const { analytics, loading: analyticsLoading, error: analyticsError, refetch: refetchAnalytics } = useCompanyAnalytics();
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [actionApplicantId, setActionApplicantId] = useState(null);
   const [feedback, setFeedback] = useState('');
+  const [rankingJobId, setRankingJobId] = useState(null);
   const statuses = analytics?.applicantsByStatus || {};
   const statusEntries = Object.entries(statuses);
 
@@ -50,6 +51,21 @@ export default function CompanyApplicantsPage() {
     }
   };
 
+  const handleRankApplicants = async (jobId) => {
+    if (!jobId) return;
+    setRankingJobId(jobId);
+    setFeedback('');
+    try {
+      await companyAPI.rankApplicantsForJob(jobId);
+      await refetch();
+      setFeedback('Applicant ranking was refreshed for this job.');
+    } catch (err) {
+      setFeedback(err?.message || 'Failed to rank applicants.');
+    } finally {
+      setRankingJobId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -65,6 +81,21 @@ export default function CompanyApplicantsPage() {
         >
           Refresh
         </button>
+        {plan?.isPremium ? (
+          <button
+            type="button"
+            onClick={() => {
+              const firstJobId = applicants[0]?.job?.id;
+              if (firstJobId) {
+                handleRankApplicants(firstJobId);
+              }
+            }}
+            disabled={!applicants[0]?.job?.id || rankingJobId != null}
+            className="px-4 py-2.5 rounded-xl bg-[#2f6b4f] text-white font-semibold hover:bg-[#285b44] disabled:opacity-60"
+          >
+            {rankingJobId ? 'Ranking...' : 'Refresh AI ranking'}
+          </button>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -108,6 +139,7 @@ export default function CompanyApplicantsPage() {
       <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[linear-gradient(135deg,#f8fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#16304a,#102235)] p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
         <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Hiring flow</h3>
         <p className="mt-2 text-sm text-[#344e41] dark:text-[#dcecff]">Use <span className="font-semibold text-[#3a5a40] dark:text-white">Hire candidate</span> when you make a selection. The job will be marked filled, and if you reopen the role later, it will go through the posting payment flow again before going live.</p>
+        {plan?.isPremium ? <p className="mt-2 text-sm text-[#344e41] dark:text-[#dcecff]">Premium employer AI ranking is enabled. Match scores appear after refreshing the ranking for a job.</p> : null}
       </div>
 
       {feedback && <p className="text-sm text-[#3a5a40] dark:text-[#7fd0ee]">{feedback}</p>}

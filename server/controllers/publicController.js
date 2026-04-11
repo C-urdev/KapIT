@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const { ensureBaseUserSchemaReady, ensureHiringSchemaReady } = require('../config/runtimeSchema');
+const { closeExpiredJobs, withJobAvailability } = require('../services/jobAvailabilityService');
 
 const slugify = (value) =>
   String(value || '')
@@ -19,6 +20,8 @@ const serializePublicJob = (row) => ({
   type: row.type || '',
   skills: Array.isArray(row.skills) ? row.skills : [],
   status: row.status || 'open',
+  active_until: row.active_until || null,
+  application_deadline: row.application_deadline || null,
   createdAt: row.created_at,
   company: {
     id: row.company_user_id || row.company_id,
@@ -56,6 +59,7 @@ const listPublicJobs = async (req, res) => {
     await ensureBaseUserSchemaReady();
     await ensureHiringSchemaReady();
     client = await pool.connect();
+    await closeExpiredJobs(client);
 
     const result = await client.query(
       `SELECT j.id,
@@ -67,6 +71,8 @@ const listPublicJobs = async (req, res) => {
               j.type,
               j.skills,
               j.status,
+              j.active_until,
+              j.application_deadline,
               j.created_at,
               c.user_id AS company_user_id,
               COALESCE(c.name, u.company_name, u.username, 'Company') AS company_name,
@@ -85,7 +91,7 @@ const listPublicJobs = async (req, res) => {
 
     return res.json({
       success: true,
-      jobs: result.rows.map(serializePublicJob),
+      jobs: result.rows.map((row) => withJobAvailability(serializePublicJob(row))).filter((job) => job.acceptsApplications),
     });
   } catch (error) {
     console.error('Public jobs error:', error);
@@ -105,6 +111,7 @@ const getPublicJobBySlug = async (req, res) => {
     await ensureBaseUserSchemaReady();
     await ensureHiringSchemaReady();
     client = await pool.connect();
+    await closeExpiredJobs(client);
 
     const slug = String(req.params.slug || '').trim();
     const jobId = Number(slug.split('-')[0]);
@@ -122,6 +129,8 @@ const getPublicJobBySlug = async (req, res) => {
               j.type,
               j.skills,
               j.status,
+              j.active_until,
+              j.application_deadline,
               j.created_at,
               c.user_id AS company_user_id,
               COALESCE(c.name, u.company_name, u.username, 'Company') AS company_name,
@@ -145,7 +154,7 @@ const getPublicJobBySlug = async (req, res) => {
 
     return res.json({
       success: true,
-      job: serializePublicJob(result.rows[0]),
+      job: withJobAvailability(serializePublicJob(result.rows[0])),
     });
   } catch (error) {
     console.error('Public job detail error:', error);
@@ -165,6 +174,7 @@ const getPublicCompanyProfile = async (req, res) => {
     await ensureBaseUserSchemaReady();
     await ensureHiringSchemaReady();
     client = await pool.connect();
+    await closeExpiredJobs(client);
 
     const companyUserId = String(req.params.companyId || '').trim();
     const companyResult = await client.query(
@@ -196,7 +206,7 @@ const getPublicCompanyProfile = async (req, res) => {
     const company = serializePublicCompany(companyResult.rows[0]);
 
     const jobsResult = await client.query(
-      `SELECT id, title, location, type, status, created_at
+      `SELECT id, title, location, type, status, active_until, application_deadline, created_at
        FROM jobs
        WHERE company_id = $1
          AND COALESCE(posting_payment_status, 'paid') = 'paid'
@@ -205,7 +215,7 @@ const getPublicCompanyProfile = async (req, res) => {
       [company.companyId]
     );
 
-    company.jobListings = jobsResult.rows.map((row) => ({
+    company.jobListings = jobsResult.rows.map((row) => withJobAvailability({
       id: row.id,
       slug: `${row.id}-${slugify(row.title || 'job')}`,
       title: row.title || 'Untitled job',
@@ -213,6 +223,8 @@ const getPublicCompanyProfile = async (req, res) => {
       type: row.type || '',
       status: row.status || 'open',
       createdAt: row.created_at,
+      active_until: row.active_until,
+      application_deadline: row.application_deadline,
     }));
 
     return res.json({

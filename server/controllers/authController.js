@@ -3,6 +3,9 @@ const crypto = require('crypto');
 const pool = require('../config/database');
 const { createNotification, ensureNotificationsTable } = require('./notificationsController');
 const { ensureBaseUserSchemaReady, ensureHiringSchemaReady, ensureOnboardingSchemaReady } = require('../config/runtimeSchema');
+const { withJobAvailability, closeExpiredJobs } = require('../services/jobAvailabilityService');
+const { getPremiumStateForUser, requirePremiumApplicantFeature } = require('../services/planAccessService');
+const { isAiConfigured, matchJobsForCandidate } = require('../services/aiService');
 const {
   attachSessionCookies,
   clearSessionCookies,
@@ -81,6 +84,55 @@ const serializeUser = (user) => ({
   website: user.website || '',
   hiringFor: user.hiring_for || '',
 });
+
+const serializeSavedJobRow = (row) => ({
+  id: row.job_id,
+  title: row.title || 'Untitled job',
+  description: row.description || '',
+  salary: row.salary || '',
+  location: row.location || '',
+  type: row.type || '',
+  skills: Array.isArray(row.skills) ? row.skills : [],
+  status: row.status || 'open',
+  createdAt: row.job_created_at || row.created_at,
+  savedAt: row.saved_at || row.created_at,
+  company: {
+    name: row.company_name || 'Company',
+    logo: row.company_logo || '',
+  },
+});
+
+const upsertJobMatchScore = async (client, { userId, jobId, match }) => {
+  await client.query(
+    `INSERT INTO job_match_scores (
+       user_id,
+       job_id,
+       match_percentage,
+       ats_score,
+       metadata,
+       updated_at
+     )
+     VALUES ($1, $2, $3, $4, $5::jsonb, CURRENT_TIMESTAMP)
+     ON CONFLICT (user_id, job_id) DO UPDATE SET
+       match_percentage = EXCLUDED.match_percentage,
+       ats_score = EXCLUDED.ats_score,
+       metadata = EXCLUDED.metadata,
+       updated_at = CURRENT_TIMESTAMP`,
+    [
+      userId,
+      jobId,
+      Number(match?.match_percentage || 0),
+      Number(match?.ats_score || 0),
+      JSON.stringify({
+        matchedSkills: match?.matched_skills || [],
+        missingSkills: match?.missing_skills || [],
+        strengths: match?.strengths || [],
+        concerns: match?.concerns || [],
+        keywordOverlap: match?.keyword_overlap || [],
+      }),
+    ]
+  );
+};
 
 const computeProfileCompleted = (userType, merged, accountType) => {
   const resolvedAccountType = String(accountType || merged?.account_type || '').trim().toLowerCase();
@@ -798,6 +850,9 @@ const getJobsFeed = async (req, res) => {
     await ensureBaseUserSchemaReady();
     await ensureHiringSchemaReady();
     client = await pool.connect();
+    await closeExpiredJobs(client);
+    const plan = await getPremiumStateForUser(client, req.user.id);
+
     const result = await client.query(
       `SELECT j.id,
               j.title,
@@ -807,6 +862,8 @@ const getJobsFeed = async (req, res) => {
               j.type,
               j.skills,
               j.status,
+              j.active_until,
+              j.application_deadline,
               j.created_at,
               EXISTS (
                 SELECT 1
@@ -830,24 +887,97 @@ const getJobsFeed = async (req, res) => {
       [req.user.id]
     );
 
-    const jobs = result.rows.map((row) => ({
-      id: row.id,
-      title: row.title,
-      description: row.description || '',
-      salary: row.salary || '',
-      location: row.location || '',
-      type: row.type || '',
-      skills: Array.isArray(row.skills) ? row.skills : [],
-      status: row.status || 'open',
-      createdAt: row.created_at,
-      hasApplied: Boolean(row.has_applied),
-      company: {
-        name: row.company_name || 'Company',
-        logo: row.company_logo || '',
-      },
-    }));
+    let jobs = result.rows
+      .map((row) => withJobAvailability({
+        id: row.id,
+        title: row.title,
+        description: row.description || '',
+        salary: row.salary || '',
+        location: row.location || '',
+        type: row.type || '',
+        skills: Array.isArray(row.skills) ? row.skills : [],
+        status: row.status || 'open',
+        active_until: row.active_until,
+        application_deadline: row.application_deadline,
+        createdAt: row.created_at,
+        hasApplied: Boolean(row.has_applied),
+        company: {
+          name: row.company_name || 'Company',
+          logo: row.company_logo || '',
+        },
+      }))
+      .filter((job) => job.status !== 'draft');
 
-    return res.json({ success: true, jobs });
+    if (plan.isPremium && isAiConfigured()) {
+      const profileResult = await client.query(
+        `SELECT dp.user_id,
+                COALESCE(dp.full_name, u.name, u.username) AS full_name,
+                COALESCE(dp.preferred_it_role, u.desired_job, dp.job_title) AS preferred_role,
+                COALESCE(dp.bio, u.bio, '') AS bio,
+                COALESCE(dp.resume_url, '') AS resume_url,
+                COALESCE(dp.skills, ARRAY[]::text[]) AS skills,
+                COALESCE(dp.location, u.address, '') AS location,
+                COALESCE(dp.experience_years, 0) AS experience_years
+         FROM users u
+         LEFT JOIN developer_profiles dp ON dp.user_id = u.id
+         WHERE u.id = $1
+         LIMIT 1`,
+        [req.user.id]
+      );
+
+      const profile = profileResult.rows[0];
+      if (profile && jobs.length) {
+        const aiResult = await matchJobsForCandidate({
+          candidate: {
+            id: req.user.id,
+            fullName: profile.full_name,
+            preferredRole: profile.preferred_role,
+            bio: profile.bio,
+            resume: profile.resume_url,
+            skills: profile.skills,
+            location: profile.location,
+            yearsOfExperience: profile.experience_years,
+          },
+          jobs,
+        }).catch(() => null);
+
+        const matchMap = new Map((aiResult?.matches || []).map((item) => [Number(item.job_id), item]));
+        jobs = await Promise.all(
+          jobs.map(async (job) => {
+            const match = matchMap.get(Number(job.id));
+            if (!match) {
+              return job;
+            }
+
+            await upsertJobMatchScore(client, {
+              userId: req.user.id,
+              jobId: job.id,
+              match,
+            }).catch(() => null);
+
+            return {
+              ...job,
+              matchPercentage: Number(match.match_percentage || 0),
+              atsScore: Number(match.ats_score || 0),
+              matchDetails: {
+                matchedSkills: match.matched_skills || [],
+                missingSkills: match.missing_skills || [],
+                strengths: match.strengths || [],
+                concerns: match.concerns || [],
+              },
+            };
+          })
+        );
+      }
+    }
+
+    return res.json({
+      success: true,
+      jobs,
+      plan: {
+        isPremium: plan.isPremium,
+      },
+    });
   } catch (error) {
     console.error('Get jobs feed error:', error);
     return res.json({
@@ -860,6 +990,129 @@ const getJobsFeed = async (req, res) => {
     if (client) {
       client.release();
     }
+  }
+};
+
+// @desc    Get saved jobs
+// @route   GET /api/auth/saved-jobs
+// @access  Private
+const getSavedJobs = async (req, res) => {
+  let client;
+
+  try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
+    client = await pool.connect();
+    await closeExpiredJobs(client);
+
+    const result = await client.query(
+      `SELECT sj.job_id,
+              sj.created_at AS saved_at,
+              j.title,
+              j.description,
+              j.salary,
+              j.location,
+              j.type,
+              j.skills,
+              j.status,
+              j.active_until,
+              j.application_deadline,
+              j.created_at AS job_created_at,
+              COALESCE(c.name, u.company_name, u.username, 'Company') AS company_name,
+              COALESCE(c.logo, u.profile_image, '') AS company_logo
+       FROM saved_jobs sj
+       JOIN jobs j ON j.id = sj.job_id
+       LEFT JOIN companies c ON c.id = j.company_id
+       LEFT JOIN users u ON u.id = c.user_id
+       WHERE sj.user_id = $1
+       ORDER BY sj.created_at DESC`,
+      [req.user.id]
+    );
+
+    const savedJobs = result.rows.map((row) => withJobAvailability(serializeSavedJobRow(row)));
+    return res.json({ success: true, savedJobs });
+  } catch (error) {
+    console.error('Get saved jobs error:', error);
+    return res.status(500).json({ success: false, message: 'Server error while fetching saved jobs.' });
+  } finally {
+    client?.release();
+  }
+};
+
+// @desc    Save a job
+// @route   POST /api/auth/saved-jobs
+// @access  Private
+const saveJob = async (req, res) => {
+  let client;
+
+  try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
+    client = await pool.connect();
+    const jobId = Number(req.body?.jobId);
+
+    if (!Number.isInteger(jobId) || jobId <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid job id.' });
+    }
+
+    const visibleJobResult = await client.query(
+      `SELECT id
+       FROM jobs
+       WHERE id = $1
+         AND COALESCE(posting_payment_status, 'paid') = 'paid'
+       LIMIT 1`,
+      [jobId]
+    );
+
+    if (!visibleJobResult.rows.length) {
+      return res.status(404).json({ success: false, message: 'Job not found.' });
+    }
+
+    await client.query(
+      `INSERT INTO saved_jobs (user_id, job_id, source, metadata)
+       VALUES ($1, $2, 'manual', '{}'::jsonb)
+       ON CONFLICT (user_id, job_id) DO NOTHING`,
+      [req.user.id, jobId]
+    );
+
+    return res.status(201).json({ success: true, saved: true, jobId });
+  } catch (error) {
+    console.error('Save job error:', error);
+    return res.status(500).json({ success: false, message: 'Server error while saving job.' });
+  } finally {
+    client?.release();
+  }
+};
+
+// @desc    Remove a saved job
+// @route   DELETE /api/auth/saved-jobs/:jobId
+// @access  Private
+const removeSavedJob = async (req, res) => {
+  let client;
+
+  try {
+    await ensureBaseUserSchemaReady();
+    await ensureHiringSchemaReady();
+    client = await pool.connect();
+    const jobId = Number(req.params.jobId);
+
+    if (!Number.isInteger(jobId) || jobId <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid job id.' });
+    }
+
+    await client.query(
+      `DELETE FROM saved_jobs
+       WHERE user_id = $1
+         AND job_id = $2`,
+      [req.user.id, jobId]
+    );
+
+    return res.json({ success: true, removed: true, jobId });
+  } catch (error) {
+    console.error('Remove saved job error:', error);
+    return res.status(500).json({ success: false, message: 'Server error while removing saved job.' });
+  } finally {
+    client?.release();
   }
 };
 
@@ -961,12 +1214,15 @@ const applyToJob = async (req, res) => {
 
     client = await pool.connect();
     await client.query('BEGIN');
+    await closeExpiredJobs(client);
 
     const jobResult = await client.query(
       `SELECT j.id,
               j.company_id,
               j.status,
               j.title,
+              j.active_until,
+              j.application_deadline,
               c.user_id AS company_user_id
        FROM jobs
        LEFT JOIN companies c ON c.id = j.company_id
@@ -985,12 +1241,13 @@ const applyToJob = async (req, res) => {
     }
 
     const job = jobResult.rows[0];
+    const availability = withJobAvailability(job);
     const status = String(job.status || '').toLowerCase();
-    if (status !== 'open') {
+    if (status !== 'open' || !availability.acceptsApplications) {
       await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,
-        message: 'This job is no longer accepting applications.',
+        message: availability.availabilityLabel || 'This job is no longer accepting applications.',
       });
     }
 
@@ -1106,6 +1363,9 @@ module.exports = {
   getPublicProfile,
   updateMyProfile,
   getJobsFeed,
+  getSavedJobs,
+  saveJob,
+  removeSavedJob,
   getMyApplications,
   applyToJob,
 };

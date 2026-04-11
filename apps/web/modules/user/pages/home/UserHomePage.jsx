@@ -25,10 +25,10 @@ import {
   reactToPostForUser,
   toggleSharePostForUser,
 } from '@userFeatures/posts/userPostStorage';
-import { getMyApplications, getPublicProfile } from '@sharedServices/authService';
+import { getMyApplications, getPublicProfile, getSavedJobs } from '@sharedServices/authService';
 import { getUnreadNotificationCount } from '@sharedServices/notificationsService';
 import { ArrowLeft, BadgeCheck, Bookmark, Building2, FileCheck2, Lightbulb, Sparkles, UserCircle } from 'lucide-react';
-import { getApplicationsForUser, getSavedJobsForUser, getSavedPostsForUser, toggleSavedPostForUser } from '@userFeatures/activity/userActivityStorage';
+import { getApplicationsForUser, getSavedPostsForUser, toggleSavedPostForUser } from '@userFeatures/activity/userActivityStorage';
 
 const USER_NAV_QUERY_KEY = 'tab';
 const USER_NAV_TABS = new Set(['home', 'jobs', 'projects', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'help', 'tips', 'verified']);
@@ -143,13 +143,26 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
 
   useEffect(() => {
     syncPostState(user);
-    setSavedJobs(getSavedJobsForUser(user));
+    setSavedJobs([]);
     setSavedPosts(getSavedPostsForUser(user));
     setApplications(getApplicationsForUser(user));
   }, [user]);
 
   useEffect(() => {
     let mounted = true;
+
+    const loadSavedJobs = async () => {
+      try {
+        const data = await getSavedJobs();
+        if (mounted) {
+          setSavedJobs(data);
+        }
+      } catch {
+        if (mounted) {
+          setSavedJobs([]);
+        }
+      }
+    };
 
     const loadApplications = async () => {
       try {
@@ -165,16 +178,18 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
     };
 
     loadApplications();
+    loadSavedJobs();
     window.addEventListener('focus', loadApplications);
+    window.addEventListener('focus', loadSavedJobs);
     return () => {
       mounted = false;
       window.removeEventListener('focus', loadApplications);
+      window.removeEventListener('focus', loadSavedJobs);
     };
   }, [user]);
 
   useEffect(() => {
     const syncActivity = () => {
-      setSavedJobs(getSavedJobsForUser(user));
       setSavedPosts(getSavedPostsForUser(user));
       setApplications(getApplicationsForUser(user));
     };

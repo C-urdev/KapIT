@@ -1,6 +1,6 @@
 const express = require('express');
 const { verifyToken, requireCsrfForCookieAuth } = require('../middleware/auth');
-const { getMyDeveloperProfile, upsertMyDeveloperProfile } = require('../controllers/developerController');
+const { getMyDeveloperProfile, upsertMyDeveloperProfile, analyzeMyResume } = require('../controllers/developerController');
 
 const router = express.Router();
 
@@ -15,5 +15,6 @@ router.use(verifyToken, requireDeveloperAccount);
 
 router.get('/profile', getMyDeveloperProfile);
 router.put('/profile', requireCsrfForCookieAuth, upsertMyDeveloperProfile);
+router.post('/ai/resume-analysis', requireCsrfForCookieAuth, analyzeMyResume);
 
 module.exports = router;

@@ -11,6 +11,7 @@ const {
   reopenJob,
   deleteJob,
   getDevelopers,
+  rankApplicantsForJob,
   getAnalytics,
   updateCompanyProfile,
   updateCompanyOnboardingProfile,
@@ -50,6 +51,7 @@ router.get('/jobs', getJobs);
 router.patch('/jobs/:jobId/status', requireCsrfForCookieAuth, updateJobStatus);
 router.post('/jobs/:jobId/reopen', requireCsrfForCookieAuth, reopenJob);
 router.delete('/jobs/:jobId', requireCsrfForCookieAuth, deleteJob);
+router.get('/jobs/:jobId/ai/rank-applicants', rankApplicantsForJob);
 router.get('/applicants', getApplicants);
 router.patch('/applications/:applicationId/status', requireCsrfForCookieAuth, updateApplicantStatus);
 router.get('/developers', getDevelopers);
