@@ -1,5 +1,11 @@
-const expressApiBase = process.env.NEXT_PUBLIC_EXPRESS_API_URL || 'http://127.0.0.1:5000/api';
-const fastApiBase = process.env.NEXT_PUBLIC_FASTAPI_URL || 'http://127.0.0.1:8000';
+const expressApiBase =
+  process.env.EXPRESS_API_URL ||
+  process.env.NEXT_PUBLIC_EXPRESS_API_URL ||
+  'http://127.0.0.1:5001/api';
+const fastApiBase =
+  process.env.FASTAPI_URL ||
+  process.env.NEXT_PUBLIC_FASTAPI_URL ||
+  'http://127.0.0.1:8000';
 
 export async function expressFetch(path, options = {}) {
   const response = await fetch(`${expressApiBase}${path}`, {
