@@ -266,6 +266,15 @@ export const getPublicProfile = async (userId) => {
   return data?.profile || null;
 };
 
+export const getFeaturedCompanies = async () => {
+  try {
+    const data = await authRequest('/featured-companies');
+    return Array.isArray(data?.companies) ? data.companies : [];
+  } catch {
+    return [];
+  }
+};
+
 export const getJobsFeed = async (filters = {}) => {
   if (isEndpointCoolingDown('auth:jobs-feed')) {
     return { jobs: [], plan: { isPremium: false } };

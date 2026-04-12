@@ -10,6 +10,7 @@ const {
   getPublicProfile,
   updateMyProfile,
   getJobsFeed,
+  getFeaturedCompaniesByRecentHires,
   getSavedJobs,
   saveJob,
   removeSavedJob,
@@ -43,6 +44,7 @@ router.post('/logout', requireCsrfForCookieAuth, logout);
 // Protected routes
 router.get('/me', verifyToken, getCurrentUser);
 router.get('/jobs', verifyToken, getJobsFeed);
+router.get('/featured-companies', verifyToken, getFeaturedCompaniesByRecentHires);
 router.get('/saved-jobs', verifyToken, getSavedJobs);
 router.post('/saved-jobs', requireCsrfForCookieAuth, verifyToken, saveJob);
 router.delete('/saved-jobs/:jobId', requireCsrfForCookieAuth, verifyToken, removeSavedJob);

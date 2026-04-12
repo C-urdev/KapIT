@@ -120,8 +120,8 @@ export default function UserNavbar({
           mobileHidden && !shouldKeepNavbarVisible ? '-translate-y-full xl:translate-y-0' : 'translate-y-0'
         }`}
       >
-        <div className="mx-auto w-full max-w-[1700px] px-3 sm:px-6 lg:px-8 2xl:px-12">
-          <div className="hidden xl:flex items-center h-16 gap-6">
+        <div className="mx-auto w-full max-w-[min(100%,1800px)] px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9">
+          <div className="hidden min-w-0 xl:block">
             <UserDesktopNavbar
               activeNav={activeNav}
               setActiveNav={setActiveNav}

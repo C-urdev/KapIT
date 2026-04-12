@@ -1,8 +1,48 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Award, TrendingUp } from 'lucide-react';
 import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
+import { getFeaturedCompanies } from '@sharedServices/authService';
+
+/** Pinned sample row so Featured Companies is never empty in demos; not tied to `jobs.hired_at`. */
+const DEMO_FOUNDIT_FEATURED = {
+  id: '__demo_foundit_featured__',
+  name: 'Foundit',
+  subtitle: 'Example employer on KapIT',
+  isPremium: true,
+};
 
 export default function UserRightSidebar({ userType }) {
+  const [featuredCompanies, setFeaturedCompanies] = useState([]);
+  const [featuredLoaded, setFeaturedLoaded] = useState(false);
+
+  useEffect(() => {
+    if (userType !== 'employee') {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      const rows = await getFeaturedCompanies();
+      if (!cancelled) {
+        setFeaturedCompanies(rows);
+        setFeaturedLoaded(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userType]);
+
+  const liveFeaturedCompanies =
+    userType === 'employee'
+      ? featuredCompanies.filter((c) => String(c.name || '').trim().toLowerCase() !== 'foundit')
+      : [];
+
+  const sidebarFeaturedCompanies =
+    userType === 'employee' && featuredLoaded ? [DEMO_FOUNDIT_FEATURED, ...liveFeaturedCompanies] : [];
+
   return (
     <div className="space-y-4">
       <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-4">
@@ -15,11 +55,25 @@ export default function UserRightSidebar({ userType }) {
 
         <div className="space-y-3">
           {userType === 'employee' ? (
-            <>
-              <RecommendationItem name="Globe Telecom" subtitle="Telecommunications" isPremium />
-              <RecommendationItem name="Accenture Philippines" subtitle="IT Consulting" isPremium />
-              <RecommendationItem name="Thinking Machines" subtitle="Data Science & AI" />
-            </>
+            !featuredLoaded ? (
+              <p className="text-sm text-[#344e41] dark:text-[#b8d4e8] px-2">Loading featured companies…</p>
+            ) : (
+              <>
+                {sidebarFeaturedCompanies.map((company) => (
+                  <RecommendationItem
+                    key={company.id}
+                    name={company.name || 'Company'}
+                    subtitle={company.subtitle || 'Recently hired on KapIT'}
+                    isPremium={company.isPremium !== false}
+                  />
+                ))}
+                {liveFeaturedCompanies.length === 0 ? (
+                  <p className="text-xs text-[#344e41]/85 dark:text-[#b8d4e8]/85 px-2 pt-1">
+                    Other companies join this list after they hire through KapIT (recent hires).
+                  </p>
+                ) : null}
+              </>
+            )
           ) : (
             <>
               <RecommendationItem name="Carlos Mendoza" subtitle="Senior Full Stack Dev" isPremium skills={['React', 'Node.js', 'AWS']} />

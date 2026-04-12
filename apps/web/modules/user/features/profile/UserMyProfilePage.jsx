@@ -140,7 +140,7 @@ export default function UserMyProfilePage({
   };
 
   return (
-    <div className="w-full max-w-none mx-0 space-y-5">
+    <div className="mx-auto w-full max-w-[min(100%,1180px)] space-y-5">
       <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl overflow-hidden">
         <div className="h-16 sm:h-20 bg-gradient-to-r from-[#588157] to-[#3a5a40] dark:from-[#2d8bb8] dark:to-[#3ba9d6]" />
         <div className="px-6 sm:px-8 py-6 min-h-[170px]">

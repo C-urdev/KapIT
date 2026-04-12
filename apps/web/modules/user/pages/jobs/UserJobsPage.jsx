@@ -149,16 +149,6 @@ export default function UserJobsPage({ userType, user }) {
     [appliedFilters]
   );
 
-  const summaryText = useMemo(() => {
-    if (userType === 'employee') {
-      const closedCount = jobs.filter((job) => String(job?.status || '').toLowerCase() === 'closed').length;
-      return closedCount > 0
-        ? 'Browse live company postings and narrow them by role, skills, and location. Closed jobs stay labeled clearly for context.'
-        : 'Find your next opportunity in tech with focused job search filters.';
-    }
-    return 'Manage your job postings';
-  }, [jobs, userType]);
-
   const handleFilterChange = (key, value) => {
     setFilters((current) => ({ ...current, [key]: value }));
   };
@@ -241,12 +231,11 @@ export default function UserJobsPage({ userType, user }) {
   };
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto space-y-6">
+    <div className="mx-auto w-full max-w-[min(100%,1040px)] space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-[#3a5a40] dark:text-white mb-2">
+        <h1 className="text-3xl font-bold text-[#3a5a40] dark:text-white">
           {userType === 'employee' ? 'Browse Jobs' : 'Posted Jobs'}
         </h1>
-        <p className="text-sm text-[#5f6f52] dark:text-[#a6bfd8]">{summaryText}</p>
       </div>
 
       <form
@@ -390,7 +379,6 @@ function FilterPopup({ popupRef, position, filters, onChange, onClose, onReset, 
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <p className="text-lg font-semibold text-[#3a5a40] dark:text-white">Job filters</p>
-            <p className="mt-1 text-sm text-[#5f6f52] dark:text-[#a6bfd8]">Narrow listings by role details, location, and availability.</p>
           </div>
           <button
             type="button"

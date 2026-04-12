@@ -1,5 +1,17 @@
 import React from 'react';
-import { MessageCircle, Search, Send, Smile } from 'lucide-react';
+import {
+  ChevronLeft,
+  Image as ImageIcon,
+  Info,
+  MessageCircle,
+  Phone,
+  Plus,
+  Search,
+  Send,
+  Smile,
+  PencilLine,
+  Video,
+} from 'lucide-react';
 import { getPublicProfile } from '@sharedServices/authService';
 import { getMessages, listConversations, sendMessage } from '@sharedServices/messageService';
 
@@ -38,6 +50,8 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
   const [sendingMessage, setSendingMessage] = React.useState(false);
   const [emojiPickerOpen, setEmojiPickerOpen] = React.useState(false);
   const composerRef = React.useRef(null);
+  const searchInputRef = React.useRef(null);
+  const messagesEndRef = React.useRef(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -166,6 +180,10 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
     return () => document.removeEventListener('pointerdown', handlePointerDown);
   }, []);
 
+  React.useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [selectedConversation?.id, messagesByConversation, loadingMessages]);
+
   const filteredConversations = React.useMemo(() => {
     const query = String(contactSearchQuery || '').trim().toLowerCase();
     if (!query) {
@@ -190,6 +208,11 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
   const handleSelectConversation = (conversation) => {
     setSelectedConversation(conversation);
     setContactSearchQuery('');
+    setError('');
+  };
+
+  const handleBackToList = () => {
+    setSelectedConversation(null);
     setError('');
   };
 
@@ -272,189 +295,330 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
     setEmojiPickerOpen(false);
   };
 
+  const threadMessages = selectedConversation ? messagesByConversation[selectedConversation.id] || [] : [];
+  const listHiddenOnMobile = Boolean(selectedConversation);
+  const threadHiddenOnMobile = !selectedConversation;
+
   return (
-    <div className="w-full max-w-[1500px] mx-auto">
-      <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl overflow-hidden min-h-[68vh]">
-        <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[68vh]">
-          <div className="lg:col-span-4 border-b lg:border-b-0 lg:border-r border-[#a3b18a] dark:border-[#2a4a6f] overflow-y-auto">
-            <div className="p-4 border-b border-[#a3b18a] dark:border-[#2a4a6f] space-y-3">
-              <div>
-                <h2 className="text-xl font-bold text-[#3a5a40] dark:text-white">Messages</h2>
-              </div>
+    <div className="mx-auto flex w-full max-w-[min(100%,1420px)] justify-center px-0 sm:px-0">
+      <div className="flex h-[min(78vh,calc(100dvh-10rem))] min-h-[380px] w-full overflow-hidden rounded-2xl border border-[#a3b18a] bg-white shadow-[0_20px_50px_rgba(58,90,64,0.12)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-black/30">
+        {/* Narrow icon rail — layout only; KapIT palette */}
+        <aside className="hidden w-[52px] shrink-0 flex-col items-center border-r border-[#d9e0d2] bg-[#f8faf6] py-3 dark:border-[#244060] dark:bg-[#122238] sm:flex md:w-14">
+          <button
+            type="button"
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#1e3a5f] dark:text-[#7dc4ff]"
+            aria-current="page"
+            title="Messages"
+          >
+            <MessageCircle className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => searchInputRef.current?.focus()}
+            className="mt-2 flex h-10 w-10 items-center justify-center rounded-xl text-[#5c6d58] transition-colors hover:bg-[#eef0ea] dark:text-[#9fb4ca] dark:hover:bg-[#1e3a5f]"
+            title="Search conversations"
+          >
+            <Search className="h-5 w-5" />
+          </button>
+          <div className="mt-auto flex flex-col items-center gap-2 pb-1">
+            <MiniUserAvatar user={user} />
+          </div>
+        </aside>
 
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#4b5563] dark:text-[#7d9ab8]" />
-                <input
-                  type="text"
-                  value={contactSearchQuery}
-                  onChange={(event) => setContactSearchQuery(event.target.value)}
-                  placeholder="Search conversations..."
-                  className="w-full rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] bg-[#f5f5f2] dark:bg-[#1e3a5f] pl-10 pr-4 py-2.5 text-sm text-[#344e41] dark:text-white placeholder-[#4b5563] dark:placeholder-[#7d9ab8] focus:outline-none focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#3ba9d6]"
-                />
-              </div>
+        {/* Conversation list */}
+        <div
+          className={`flex w-full min-w-0 shrink-0 flex-col border-[#d9e0d2] bg-white dark:border-[#244060] dark:bg-[#162842] sm:max-w-[min(100%,380px)] sm:border-r ${
+            listHiddenOnMobile ? 'hidden lg:flex' : 'flex'
+          }`}
+        >
+          <div className="flex items-center justify-between gap-2 border-b border-[#e4e7de] px-3 py-3 dark:border-[#244060] sm:px-4">
+            <h2 className="text-lg font-bold tracking-tight text-[#3a5a40] dark:text-white">Chats</h2>
+            <div className="flex items-center gap-0.5">
+              <RailIconButton label="Voice call (coming soon)" disabled>
+                <Phone className="h-4 w-4" />
+              </RailIconButton>
+              <RailIconButton label="Video call (coming soon)" disabled>
+                <Video className="h-4 w-4" />
+              </RailIconButton>
+              <RailIconButton label="Search chats" onClick={() => searchInputRef.current?.focus()}>
+                <PencilLine className="h-4 w-4" />
+              </RailIconButton>
             </div>
-
-            {loadingConversations ? (
-              <div className="p-6 text-center text-sm text-[#3a5a40] dark:text-[#7d9ab8]">Loading conversations...</div>
-            ) : filteredConversations.length > 0 ? (
-              <div>
-                {filteredConversations.map((conversation) => (
-                  <button
-                    key={conversation.id}
-                    type="button"
-                    onClick={() => handleSelectConversation(conversation)}
-                    className={`w-full p-4 flex items-start gap-3 hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors border-b border-[#a3b18a] dark:border-[#2a4a6f] ${
-                      selectedConversation?.id === conversation.id ? 'bg-[#f5f5f2] dark:bg-[#1e3a5f]' : ''
-                    }`}
-                  >
-                    <Avatar account={conversation} />
-                    <div className="flex-1 min-w-0 text-left">
-                      <div className="flex items-center justify-between mb-1 gap-3">
-                        <h4 className="font-semibold text-[#3a5a40] dark:text-white truncate">{conversation.displayName}</h4>
-                        <span className="text-xs text-[#3a5a40] dark:text-[#7d9ab8] shrink-0">{conversation.time}</span>
-                      </div>
-                      <p className="text-sm text-[#344e41] dark:text-[#b8d4e8] truncate">
-                        {conversation.lastMessage
-                          ? `${conversation.lastMessageSender === 'me' ? 'You: ' : ''}${conversation.lastMessage}`
-                          : 'No messages yet'}
-                      </p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            ) : conversations.length > 0 ? (
-              <div className="p-6 text-center text-sm text-[#3a5a40] dark:text-[#7d9ab8]">
-                No conversation matches that search.
-              </div>
-            ) : (
-              <div className="p-6 text-center text-sm text-[#3a5a40] dark:text-[#7d9ab8]">
-                No conversations yet.
-              </div>
-            )}
           </div>
 
-          <div className="lg:col-span-8 flex flex-col min-h-[50vh]">
-            {selectedConversation ? (
-              <>
-                <div className="p-4 border-b border-[#a3b18a] dark:border-[#2a4a6f] flex items-center gap-3">
-                  <Avatar account={selectedConversation} compact />
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-[#3a5a40] dark:text-white truncate">{selectedConversation.displayName}</h3>
-                    <p className="text-xs text-[#4b5563] dark:text-[#b8d4e8] truncate">{selectedConversation.type === 'company' ? 'Company account' : 'User account'}</p>
-                  </div>
-                </div>
+          <div className="border-b border-[#e4e7de] px-3 py-2.5 dark:border-[#244060] sm:px-4">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6b7c6a] dark:text-[#7d9ab8]" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={contactSearchQuery}
+                onChange={(event) => setContactSearchQuery(event.target.value)}
+                placeholder="Search conversations..."
+                className="w-full rounded-full border border-[#cfd9c4] bg-[#f5f7f2] py-2.5 pl-10 pr-4 text-sm text-[#344e41] outline-none transition-shadow placeholder:text-[#6b7c6a] focus:border-[#588157] focus:ring-2 focus:ring-[#588157]/25 dark:border-[#2a4a6f] dark:bg-[#0f2139] dark:text-white dark:placeholder:text-[#7d9ab8] dark:focus:border-[#3ba9d6] dark:focus:ring-[#3ba9d6]/25"
+              />
+            </div>
+          </div>
 
-                <div className="flex-1 p-4 overflow-y-auto bg-[#f5f5f2] dark:bg-[#0a1628] min-h-[35vh]">
-                  {error ? <p className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p> : null}
-                  {loadingMessages ? <p className="mb-3 text-sm text-[#3a5a40] dark:text-[#7d9ab8]">Loading messages...</p> : null}
-                  <div className="space-y-4">
-                    {(messagesByConversation[selectedConversation.id] || []).map((message) => (
-                      <div key={message.id} className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
-                        <div
-                          className={`rounded-lg p-3 max-w-xs ${
-                            message.sender === 'me'
-                              ? 'bg-[#588157] dark:bg-[#3ba9d6]'
-                              : 'bg-white dark:bg-[#1e3a5f] border border-[#a3b18a] dark:border-[#2a4a6f]'
-                          }`}
-                        >
-                          <p className={`text-sm ${message.sender === 'me' ? 'text-white' : 'text-[#344e41] dark:text-white'}`}>{message.text}</p>
-                          <span className={`text-xs mt-1 ${message.sender === 'me' ? 'text-white/80' : 'text-[#3a5a40] dark:text-[#7d9ab8]'}`}>{message.time}</span>
-                        </div>
-                      </div>
-                    ))}
-                    {!loadingMessages && (messagesByConversation[selectedConversation.id] || []).length === 0 ? (
-                      <div className="text-center text-sm text-[#3a5a40] dark:text-[#7d9ab8] py-10">No messages yet. Send the first one.</div>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="p-4 border-t border-[#a3b18a] dark:border-[#2a4a6f]">
-                  <div className="flex gap-2" ref={composerRef}>
-                    <div className="relative shrink-0">
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {loadingConversations ? (
+              <div className="p-6 text-center text-sm text-[#5c6d58] dark:text-[#7d9ab8]">Loading conversations…</div>
+            ) : filteredConversations.length > 0 ? (
+              <ul className="space-y-0.5 p-2">
+                {filteredConversations.map((conversation) => {
+                  const active = selectedConversation?.id === conversation.id;
+                  return (
+                    <li key={conversation.id}>
                       <button
                         type="button"
-                        onClick={() => setEmojiPickerOpen((current) => !current)}
-                        className="inline-flex h-full min-h-[42px] items-center justify-center rounded-lg border border-[#a3b18a] bg-[#f5f5f2] px-3 text-[#3a5a40] transition-colors hover:bg-[#eef6ee] dark:border-[#2a4a6f] dark:bg-[#1e3a5f] dark:text-white dark:hover:bg-[#24466c]"
-                        aria-label="Open emoji picker"
+                        onClick={() => handleSelectConversation(conversation)}
+                        className={`flex w-full items-start gap-3 rounded-2xl px-2.5 py-2.5 text-left transition-colors ${
+                          active
+                            ? 'bg-[#eef6ee] dark:bg-[#1e3a5f]'
+                            : 'hover:bg-[#f5f7f2] dark:hover:bg-[#142c48]'
+                        }`}
                       >
-                        <Smile className="h-5 w-5" />
-                      </button>
-
-                      {emojiPickerOpen ? (
-                        <div className="absolute bottom-[calc(100%+0.5rem)] left-0 z-20 w-56 rounded-xl border border-[#a3b18a] bg-white p-3 shadow-xl dark:border-[#2a4a6f] dark:bg-[#162842]">
-                          <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#588157] dark:text-[#7fd0ee]">
-                            Emojis
+                        <Avatar account={conversation} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className="truncate font-semibold text-[#2f4e35] dark:text-white">{conversation.displayName}</span>
+                            <span className="shrink-0 text-[11px] font-medium text-[#6b7c6a] dark:text-[#8aa4bc]">{conversation.time}</span>
                           </div>
-                          <div className="grid grid-cols-6 gap-2">
-                            {QUICK_EMOJIS.map((emoji) => (
-                              <button
-                                key={emoji}
-                                type="button"
-                                onClick={() => appendEmoji(emoji)}
-                                className="flex h-9 w-9 items-center justify-center rounded-lg text-lg transition-colors hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f]"
-                                aria-label={`Insert ${emoji}`}
-                              >
-                                {emoji}
-                              </button>
-                            ))}
-                          </div>
+                          <p className="mt-0.5 truncate text-sm text-[#556b58] dark:text-[#b8d4e8]">
+                            {conversation.lastMessage
+                              ? `${conversation.lastMessageSender === 'me' ? 'You: ' : ''}${conversation.lastMessage}`
+                              : 'No messages yet'}
+                          </p>
                         </div>
-                      ) : null}
-                    </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : conversations.length > 0 ? (
+              <div className="p-6 text-center text-sm text-[#5c6d58] dark:text-[#7d9ab8]">No matches for that search.</div>
+            ) : (
+              <div className="p-6 text-center text-sm text-[#5c6d58] dark:text-[#7d9ab8]">No conversations yet.</div>
+            )}
+          </div>
+        </div>
 
+        {/* Thread */}
+        <div
+          className={`min-w-0 flex-1 flex-col bg-[#f0f3ec] dark:bg-[#0a1628] ${
+            threadHiddenOnMobile ? 'hidden lg:flex' : 'flex'
+          }`}
+        >
+          {selectedConversation ? (
+            <>
+              <header className="flex shrink-0 items-center gap-2 border-b border-[#e0e6da] bg-white px-2 py-2.5 dark:border-[#244060] dark:bg-[#162842] sm:gap-3 sm:px-4">
+                <button
+                  type="button"
+                  onClick={handleBackToList}
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#3a5a40] transition-colors hover:bg-[#eef6ee] lg:hidden dark:text-white dark:hover:bg-[#1e3a5f]"
+                  aria-label="Back to conversations"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <Avatar account={selectedConversation} compact />
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate font-semibold text-[#2f4e35] dark:text-white">{selectedConversation.displayName}</h3>
+                  <p className="truncate text-xs text-[#6b7c6a] dark:text-[#9fb4ca]">
+                    {selectedConversation.type === 'company' ? 'Company on KapIT' : 'Member on KapIT'}
+                  </p>
+                </div>
+                <div className="hidden items-center gap-0.5 sm:flex">
+                  <RailIconButton label="Call (coming soon)" disabled>
+                    <Phone className="h-4 w-4" />
+                  </RailIconButton>
+                  <RailIconButton label="Video (coming soon)" disabled>
+                    <Video className="h-4 w-4" />
+                  </RailIconButton>
+                  <RailIconButton label="Details (coming soon)" disabled>
+                    <Info className="h-4 w-4" />
+                  </RailIconButton>
+                </div>
+              </header>
+
+              <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-5">
+                {error ? <p className="mb-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">{error}</p> : null}
+                {loadingMessages ? (
+                  <p className="mb-3 text-center text-sm text-[#6b7c6a] dark:text-[#7d9ab8]">Loading messages…</p>
+                ) : null}
+                <div className="mx-auto flex max-w-3xl flex-col gap-2">
+                  {threadMessages.map((message) => (
+                    <div key={message.id} className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
+                      <div
+                        className={`max-w-[min(100%,420px)] px-3.5 py-2 shadow-sm ${
+                          message.sender === 'me'
+                            ? 'rounded-[20px] rounded-br-md bg-[#588157] text-white dark:bg-[#2d8bb8]'
+                            : 'rounded-[20px] rounded-bl-md border border-[#d5dccf] bg-white text-[#344e41] dark:border-[#2a4a6f] dark:bg-[#1e3a5f] dark:text-white'
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap text-[0.9375rem] leading-relaxed">{message.text}</p>
+                        <p
+                          className={`mt-1 text-[11px] font-medium ${
+                            message.sender === 'me' ? 'text-white/75' : 'text-[#6b7c6a] dark:text-[#9fb4ca]'
+                          }`}
+                        >
+                          {message.time}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {!loadingMessages && threadMessages.length === 0 ? (
+                    <p className="py-12 text-center text-sm text-[#6b7c6a] dark:text-[#7d9ab8]">No messages yet. Say hello below.</p>
+                  ) : null}
+                  <div ref={messagesEndRef} />
+                </div>
+              </div>
+
+              <footer className="shrink-0 border-t border-[#e0e6da] bg-white px-2 py-2.5 dark:border-[#244060] dark:bg-[#162842] sm:px-4" ref={composerRef}>
+                <div className="mx-auto flex max-w-3xl items-end gap-1.5 sm:gap-2">
+                  <div className="hidden shrink-0 items-center gap-0.5 sm:flex">
+                    <ComposerIconButton label="Attach (coming soon)" disabled>
+                      <Plus className="h-5 w-5" />
+                    </ComposerIconButton>
+                    <ComposerIconButton label="Photos (coming soon)" disabled>
+                      <ImageIcon className="h-5 w-5" />
+                    </ComposerIconButton>
+                  </div>
+
+                  <div className="relative min-w-0 flex-1">
                     <input
                       type="text"
-                      placeholder={`Message ${selectedConversation.displayName}...`}
+                      placeholder={`Message ${selectedConversation.displayName}…`}
                       value={messageInput}
                       onChange={(event) => setMessageInput(event.target.value)}
                       onFocus={() => setEmojiPickerOpen(false)}
                       onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
+                        if (event.key === 'Enter' && !event.shiftKey) {
                           event.preventDefault();
                           handleSend();
                         }
                       }}
-                      className="flex-1 px-4 py-2 bg-[#f5f5f2] dark:bg-[#1e3a5f] border border-[#a3b18a] dark:border-[#2a4a6f] rounded-lg text-[#344e41] dark:text-white placeholder-[#3a5a40] dark:placeholder-[#7d9ab8] focus:outline-none focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#3ba9d6]"
+                      className="w-full rounded-full border border-[#cfd9c4] bg-[#f5f7f2] py-2.5 pl-4 pr-12 text-[0.9375rem] text-[#344e41] outline-none transition-shadow placeholder:text-[#6b7c6a] focus:border-[#588157] focus:ring-2 focus:ring-[#588157]/20 dark:border-[#2a4a6f] dark:bg-[#0f2139] dark:text-white dark:placeholder:text-[#7d9ab8] dark:focus:border-[#3ba9d6] dark:focus:ring-[#3ba9d6]/20"
                     />
+                  </div>
+
+                  <div className="relative flex shrink-0 items-center gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setEmojiPickerOpen((current) => !current)}
+                      className="flex h-10 w-10 items-center justify-center rounded-full text-[#5c6d58] transition-colors hover:bg-[#eef6ee] dark:text-[#b8d4e8] dark:hover:bg-[#1e3a5f]"
+                      aria-label="Emoji"
+                    >
+                      <Smile className="h-5 w-5" />
+                    </button>
+                    {emojiPickerOpen ? (
+                      <div className="absolute bottom-[calc(100%+0.5rem)] right-0 z-20 w-56 rounded-2xl border border-[#cfd9c4] bg-white p-3 shadow-xl dark:border-[#2a4a6f] dark:bg-[#162842]">
+                        <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#588157] dark:text-[#7fd0ee]">Emojis</div>
+                        <div className="grid grid-cols-6 gap-1.5">
+                          {QUICK_EMOJIS.map((emoji) => (
+                            <button
+                              key={emoji}
+                              type="button"
+                              onClick={() => appendEmoji(emoji)}
+                              className="flex h-9 w-9 items-center justify-center rounded-lg text-lg transition-colors hover:bg-[#f5f7f2] dark:hover:bg-[#1e3a5f]"
+                              aria-label={`Insert ${emoji}`}
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                     <button
                       type="button"
                       onClick={handleSend}
                       disabled={sendingMessage}
-                      className="px-4 py-2 bg-[#3a5a40] hover:bg-[#344e41] disabled:opacity-60 disabled:cursor-not-allowed dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white rounded-lg transition-colors"
-                      aria-label="Send message"
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-[#3a5a40] text-white shadow-md transition-colors hover:bg-[#344e41] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de]"
+                      aria-label="Send"
                     >
-                      <Send className="w-5 h-5" />
+                      <Send className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-[#3a5a40] dark:text-[#7d9ab8]">
-                <div className="text-center px-6">
-                  <MessageCircle className="w-16 h-16 mx-auto mb-4 text-[#a3b18a] dark:text-[#2a4a6f]" />
-                  <p className="dark:text-white">Select a conversation to start messaging.</p>
-                </div>
+              </footer>
+            </>
+          ) : (
+            <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#588157] dark:bg-[#14304d] dark:text-[#7dc4ff]">
+                <MessageCircle className="h-8 w-8" />
               </div>
-            )}
-          </div>
+              <p className="mt-4 max-w-sm text-sm font-medium text-[#3a5a40] dark:text-[#d5e6f5]">Select a chat from the list to open the conversation.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
+function RailIconButton({ children, label, onClick, disabled }) {
+  return (
+    <button
+      type="button"
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      title={label}
+      aria-label={label}
+      className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-[#5c6d58] transition-colors dark:text-[#9fb4ca] ${
+        disabled
+          ? 'cursor-not-allowed opacity-40'
+          : 'hover:bg-[#eef6ee] dark:hover:bg-[#1e3a5f]'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ComposerIconButton({ children, label, disabled }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      title={label}
+      aria-label={label}
+      className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-[#5c6d58] dark:text-[#9fb4ca] ${
+        disabled ? 'cursor-not-allowed opacity-35' : 'hover:bg-[#eef6ee] dark:hover:bg-[#1e3a5f]'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 function Avatar({ account, compact = false }) {
   const displayName = formatDisplayName(account);
   const initial = displayName.charAt(0).toUpperCase();
-  const sizeClass = compact ? 'w-10 h-10' : 'w-12 h-12';
+  const sizeClass = compact ? 'h-10 w-10' : 'h-12 w-12';
 
   return (
-    <div className={`${sizeClass} rounded-full bg-[#588157] dark:bg-[#3ba9d6] text-white flex items-center justify-center overflow-hidden shrink-0 font-semibold`}>
+    <div
+      className={`${sizeClass} flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#588157] text-sm font-semibold text-white dark:bg-[#3ba9d6]`}
+    >
       {account?.profileImage ? (
-        <img src={account.profileImage} alt={`${displayName} avatar`} className="w-full h-full object-cover" />
+        <img src={account.profileImage} alt="" className="h-full w-full object-cover" />
       ) : (
         initial
       )}
+    </div>
+  );
+}
+
+function MiniUserAvatar({ user }) {
+  const displayName = user?.username || user?.name || user?.email || 'You';
+  const initial = String(displayName).charAt(0).toUpperCase();
+  const src = user?.profileImage || '';
+
+  return (
+    <div
+      className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-[#d5dccf] bg-[#588157] text-xs font-bold text-white dark:border-[#2a4a6f] dark:bg-[#3ba9d6]"
+      title="You"
+    >
+      {src ? <img src={src} alt="" className="h-full w-full object-cover" /> : initial}
     </div>
   );
 }

@@ -26,7 +26,7 @@ export default function HelpPage({ onBack }) {
       </header>
 
       <main className="max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-10">
-        <div className="mx-auto w-full max-w-[860px] bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-2xl p-4 sm:p-8 shadow-[0_18px_45px_rgba(16,42,27,0.08)] dark:shadow-[0_18px_45px_rgba(0,0,0,0.28)]">
+        <div className="mx-auto w-full max-w-[min(100%,1100px)] bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-2xl p-4 sm:p-8 shadow-[0_18px_45px_rgba(16,42,27,0.08)] dark:shadow-[0_18px_45px_rgba(0,0,0,0.28)]">
           <div className="flex items-start gap-3 mb-4 sm:mb-5">
             <HelpCircle className="mt-0.5 h-5 w-5 shrink-0 text-[#588157] dark:text-[#3ba9d6]" />
             <h2 className="min-w-0 text-lg sm:text-xl font-bold text-[#3a5a40] dark:text-white">Need Help?</h2>
