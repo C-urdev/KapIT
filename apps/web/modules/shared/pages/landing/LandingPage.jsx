@@ -103,7 +103,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
     <div className="min-h-screen flex flex-col bg-white dark:bg-gradient-to-b dark:from-[#0a1628] dark:via-[#0f2139] dark:to-[#162842]">
       <div ref={topRef} />
       <header className="sticky top-0 z-30 bg-white/75 dark:bg-[#0f2139]/75 backdrop-blur">
-        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 py-4 flex flex-wrap justify-between items-center gap-3">
+        <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-4 flex flex-wrap justify-between items-center gap-3">
           <button
             type="button"
             onClick={scrollToTop}
@@ -179,7 +179,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/5 to-white dark:to-[#0f2139]" aria-hidden="true" />
 
         <div className="relative flex-1 flex items-center">
-          <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 py-16 sm:py-20 lg:py-24">
+          <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-16 sm:py-20 lg:py-24">
             <div className="max-w-6xl mx-auto text-center w-full">
               <p className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 dark:bg-[#162842]/70 border border-white/40 dark:border-[#1e3a5f] text-sm font-semibold text-[#344e41] dark:text-[#b8d4e8] backdrop-blur">
                 <Users className="w-4 h-4 text-[#588157] dark:text-[#3ba9d6]" />
@@ -250,7 +250,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
 
         <div className="relative bg-white/95 dark:bg-[#0f2139]/95 backdrop-blur">
           <ThinSectionLine className="top-0" />
-          <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 py-6 sm:py-7">
+          <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-6 sm:py-7">
             <div className="flex flex-col md:flex-row items-center justify-center md:justify-between gap-4">
               <p className="text-sm font-semibold text-[#344e41] dark:text-[#b8d4e8]">
                 Trusted by companies hiring Filipino tech talent
@@ -275,7 +275,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
         ref={categoriesRef}
         className="relative bg-gradient-to-b from-[#e2ddcf] via-[#ebe6da] to-[#f7f6f1] dark:bg-gradient-to-b dark:from-[#0f2139] dark:via-[#102743] dark:to-[#132d4d] scroll-mt-24"
       >
-        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 pt-14 pb-10 min-h-[360px] sm:min-h-[400px]">
+        <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 pt-14 pb-10 min-h-[360px] sm:min-h-[400px]">
           <div className="max-w-3xl">
             <h3 className="text-3xl font-bold text-[#102a1b] dark:text-white">Explore categories</h3>
           </div>
@@ -292,7 +292,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
       </section>
 
       <section className="relative bg-gradient-to-b from-[#fbfaf6] via-[#fbfaf6] via-[97%] to-[#f8f4ec] dark:bg-gradient-to-b dark:from-[#132d4d] dark:via-[#102743] dark:to-[#0f2139]">
-        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 pt-10 pb-10 min-h-[360px] sm:min-h-[400px]">
+        <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 pt-10 pb-10 min-h-[360px] sm:min-h-[400px]">
           <div className="max-w-3xl">
             <h3 className="text-3xl font-bold text-[#102a1b] dark:text-white">How KapIT works</h3>
           </div>
@@ -325,7 +325,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
       </section>
 
       <section className="relative bg-gradient-to-b from-[#f8f4ec] via-[#eee9de] via-[8%] to-[#e2ddcf] dark:bg-gradient-to-b dark:from-[#0f2139] dark:via-[#0d1d33] dark:to-[#0a1628]">
-        <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 py-10 min-h-[360px] sm:min-h-[400px] flex items-center">
+        <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-10 min-h-[360px] sm:min-h-[400px] flex items-center">
           <div className="w-full px-2 sm:px-0 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-10">
             <div className="max-w-2xl">
               <h3 className="text-3xl sm:text-4xl font-extrabold text-[#102a1b] dark:text-white">

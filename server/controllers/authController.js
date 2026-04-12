@@ -857,6 +857,79 @@ const updateMyProfile = async (req, res) => {
   }
 };
 
+// Companies appear here after they record a hire on KapIT (`jobs.hired_at`).
+// Newer employers (by `companies.created_at`) are ordered first among those with recent hires.
+const clampInt = (raw, fallback, min, max) => {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) {
+    return fallback;
+  }
+  return Math.min(max, Math.max(min, Math.trunc(n)));
+};
+
+const FEATURED_COMPANY_RECENT_HIRE_DAYS = clampInt(process.env.FEATURED_COMPANY_RECENT_HIRE_DAYS, 60, 7, 365);
+const FEATURED_COMPANY_NEW_DAYS = clampInt(process.env.FEATURED_COMPANY_NEW_DAYS, 180, 7, 730);
+const FEATURED_COMPANY_LIMIT = clampInt(process.env.FEATURED_COMPANY_LIMIT, 10, 1, 25);
+
+// @desc    Companies with recent hires (for employee home sidebar)
+// @route   GET /api/auth/featured-companies
+// @access  Private
+const getFeaturedCompaniesByRecentHires = async (req, res) => {
+  let client;
+
+  try {
+    await ensureOnboardingSchemaReady();
+    client = await pool.connect();
+
+    const result = await client.query(
+      `SELECT
+         c.id::text AS company_id,
+         COALESCE(NULLIF(TRIM(BOTH FROM c.name), ''), NULLIF(TRIM(BOTH FROM u.company_name), ''), u.username, 'Company') AS name,
+         COALESCE(
+           NULLIF(TRIM(BOTH FROM cp.industry), ''),
+           NULLIF(TRIM(BOTH FROM u.industry), ''),
+           NULLIF(TRIM(BOTH FROM c.short_description), ''),
+           'Recently hired on KapIT'
+         ) AS subtitle,
+         MAX(j.hired_at) AS last_hire_at,
+         (c.created_at >= CURRENT_TIMESTAMP - ($2 * INTERVAL '1 day')) AS is_new_company
+       FROM companies c
+       INNER JOIN jobs j ON j.company_id = c.id
+         AND j.hired_at IS NOT NULL
+         AND j.hired_at >= CURRENT_TIMESTAMP - ($1 * INTERVAL '1 day')
+       LEFT JOIN users u ON u.id = c.user_id
+       LEFT JOIN company_profiles cp ON cp.user_id = c.user_id
+       GROUP BY c.id, c.name, c.created_at, c.short_description, u.company_name, u.username, u.industry, cp.industry
+       ORDER BY
+         (c.created_at >= CURRENT_TIMESTAMP - ($2 * INTERVAL '1 day')) DESC NULLS LAST,
+         MAX(j.hired_at) DESC
+       LIMIT $3`,
+      [FEATURED_COMPANY_RECENT_HIRE_DAYS, FEATURED_COMPANY_NEW_DAYS, FEATURED_COMPANY_LIMIT]
+    );
+
+    const companies = result.rows.map((row) => ({
+      id: row.company_id,
+      name: row.name,
+      subtitle: row.subtitle,
+      lastHireAt: row.last_hire_at ? new Date(row.last_hire_at).toISOString() : null,
+      isNewCompany: Boolean(row.is_new_company),
+    }));
+
+    return res.json({ success: true, companies });
+  } catch (error) {
+    console.error('Featured companies error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Could not load featured companies',
+      ...(isDev ? buildDevErrorMeta(error) : {}),
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+};
+
 // @desc    Get available jobs for authenticated users
 // @route   GET /api/auth/jobs
 // @access  Private
@@ -1428,6 +1501,7 @@ module.exports = {
   getPublicProfile,
   updateMyProfile,
   getJobsFeed,
+  getFeaturedCompaniesByRecentHires,
   getSavedJobs,
   saveJob,
   removeSavedJob,

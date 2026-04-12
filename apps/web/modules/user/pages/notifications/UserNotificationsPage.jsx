@@ -186,7 +186,7 @@ export default function UserNotificationsPage({ onReadAll }) {
   };
 
   return (
-    <div className="mx-auto w-full max-w-4xl">
+    <div className="mx-auto w-full max-w-[min(100%,1200px)]">
       <div className="mb-4 px-1 sm:mb-5">
         <h1 className="text-[2rem] leading-none text-[#183622] dark:text-white sm:text-[2.35rem]">Notifications</h1>
       </div>

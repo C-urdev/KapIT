@@ -115,6 +115,9 @@ const normalizeVisibility = (value) => {
   return 'Only me';
 };
 
+/** SQL predicate: true when stored visibility is public (any casing), matching {@link normalizeVisibility}. */
+const sqlPostIsPublic = "LOWER(TRIM(COALESCE(p.visibility, ''))) = 'public'";
+
 const getUserKey = (userLike) => {
   const email = String(userLike?.email || '').trim().toLowerCase();
   if (email) {
@@ -126,7 +129,13 @@ const getUserKey = (userLike) => {
 };
 
 const getDisplayName = (userLike) =>
-  userLike?.company_name || userLike?.companyName || userLike?.full_name || userLike?.name || userLike?.username || userLike?.email || 'User';
+  userLike?.company_name ||
+  userLike?.companyName ||
+  userLike?.username ||
+  userLike?.full_name ||
+  userLike?.name ||
+  userLike?.email ||
+  'User';
 
 const getPostOwnerDisplayName = (post) => {
   const ownerName = String(post?.ownerName || '').trim();
@@ -198,7 +207,10 @@ const readPostWithOwner = async (client, postId) => {
 };
 
 const canViewerAccessPost = (postRow, viewerUserId) =>
-  postRow && (postRow.owner_user_id === viewerUserId || normalizeVisibility(postRow.visibility) === 'Public');
+  Boolean(
+    postRow &&
+      (String(postRow.owner_user_id) === String(viewerUserId) || normalizeVisibility(postRow.visibility) === 'Public')
+  );
 
 const listFeedPosts = async (req, res) => {
   let client;
@@ -218,7 +230,7 @@ const listFeedPosts = async (req, res) => {
        FROM user_posts p
        JOIN users u ON u.id = p.owner_user_id
        WHERE p.owner_user_id = $1
-          OR p.visibility = 'Public'
+          OR ${sqlPostIsPublic}
        ORDER BY p.created_at DESC, p.id DESC`,
       [req.user.id]
     );
@@ -299,7 +311,7 @@ const listProfilePosts = async (req, res) => {
        FROM user_posts p
        JOIN users u ON u.id = p.owner_user_id
        WHERE p.owner_user_id = $1
-         AND ($2::boolean = TRUE OR p.visibility = 'Public')
+         AND ($2::boolean = TRUE OR ${sqlPostIsPublic})
        ORDER BY p.created_at DESC, p.id DESC`,
       [profileUserId, includePrivate]
     );
@@ -781,6 +793,7 @@ const listSavedPosts = async (req, res) => {
        JOIN user_posts p ON p.id = s.post_id
        JOIN users u ON u.id = p.owner_user_id
        WHERE s.user_id = $1
+         AND (p.owner_user_id = $1 OR ${sqlPostIsPublic})
        ORDER BY s.created_at DESC, p.id DESC`,
       [req.user.id]
     );

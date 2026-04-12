@@ -422,7 +422,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
       />
 
       <div
-        className="mx-auto w-full max-w-[1700px] px-3 pb-28 pt-4 sm:px-6 lg:px-8 2xl:px-12 xl:py-6 xl:pb-8"
+        className="mx-auto w-full max-w-[min(100%,1800px)] px-3 pb-28 pt-4 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 xl:py-6 xl:pb-8"
         style={{ paddingBottom: mobileSafeAreaBottomPadding }}
       >
         {canReturnToSettings && ['my-profile', 'projects', 'saved-jobs', 'applications'].includes(activeNav) && (
@@ -441,7 +441,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
           </div>
         )}
         {activeNav === 'home' && (
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 2xl:gap-8">
+          <div className="mx-auto grid w-full max-w-[min(100%,1680px)] grid-cols-1 gap-6 xl:grid-cols-12 2xl:gap-8">
             <aside className="hidden xl:block xl:col-span-3">
               <UserLeftSidebar
                 user={user}
@@ -555,14 +555,13 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
 
 function ApplicationsPanel({ applications }) {
   return (
-    <div className="mx-auto max-w-4xl rounded-[24px] border border-[#a3b18a] bg-white p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
+    <div className="mx-auto w-full max-w-[min(100%,1200px)] rounded-[24px] border border-[#a3b18a] bg-white p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
       <div className="flex items-start gap-4">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#14304d] dark:text-[#7dc4ff]">
           <FileCheck2 className="h-6 w-6" />
         </div>
         <div>
           <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Applications</h2>
-          <p className="mt-2 max-w-2xl text-sm text-[#344e41] dark:text-[#b8d4e8]">Every job you apply to now shows up here, including applications submitted from other tabs.</p>
           {applications.length === 0 ? (
             <div className="mt-5 rounded-2xl border border-dashed border-[#bfd0af] bg-[#f8fbf6] p-4 text-sm text-[#5f6f52] dark:border-[#2a4a6f] dark:bg-[#102235] dark:text-[#d5e6f5]">
               No applications yet. Start applying to jobs and they will appear here automatically.
@@ -598,14 +597,13 @@ function ApplicationsPanel({ applications }) {
 
 function SavedJobsPanel({ savedJobs, savedPosts }) {
   return (
-    <div className="mx-auto max-w-4xl rounded-[24px] border border-[#a3b18a] bg-white p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
+    <div className="mx-auto w-full max-w-[min(100%,1200px)] rounded-[24px] border border-[#a3b18a] bg-white p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
       <div className="flex items-start gap-4">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#14304d] dark:text-[#7dc4ff]">
           <Bookmark className="h-6 w-6" />
         </div>
         <div className="w-full">
           <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Saved Jobs</h2>
-          <p className="mt-2 max-w-2xl text-sm text-[#344e41] dark:text-[#b8d4e8]">Save job listings and feed posts you want to revisit later. They stay grouped here across tabs.</p>
           {savedJobs.length === 0 && savedPosts.length === 0 ? (
             <div className="mt-5 rounded-2xl border border-dashed border-[#bfd0af] bg-[#f8fbf6] p-4 text-sm text-[#5f6f52] dark:border-[#2a4a6f] dark:bg-[#102235] dark:text-[#d5e6f5]">
               Nothing saved yet. Use the bookmark buttons on job listings or posts to save them here.
@@ -669,7 +667,7 @@ function TipsPanel() {
   ];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="mx-auto w-full max-w-[min(100%,1200px)] space-y-5">
       <div className="rounded-[24px] border border-[#a3b18a] bg-white p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#14304d] dark:text-[#7dc4ff]">
@@ -677,9 +675,6 @@ function TipsPanel() {
           </div>
           <div>
             <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Tips</h2>
-            <p className="mt-2 max-w-2xl text-sm text-[#344e41] dark:text-[#b8d4e8]">
-              Practical tips to improve your profile, stand out in search, and make a stronger impression on recruiters and companies.
-            </p>
           </div>
         </div>
       </div>
@@ -724,7 +719,7 @@ function VerifiedProfilesPanel() {
   ];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="mx-auto w-full max-w-[min(100%,1200px)] space-y-5">
       <div className="rounded-[24px] border border-[#a3b18a] bg-white p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#14304d] dark:text-[#7dc4ff]">
@@ -732,9 +727,6 @@ function VerifiedProfilesPanel() {
           </div>
           <div>
             <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Verified Users & Companies</h2>
-            <p className="mt-2 max-w-2xl text-sm text-[#344e41] dark:text-[#b8d4e8]">
-              A dedicated view explaining what verified profiles represent for both developers and companies on KapIT.
-            </p>
           </div>
         </div>
       </div>

@@ -110,7 +110,7 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
 
       <div className={`min-h-screen pt-[5.5rem] sm:pt-[6rem] xl:pt-20 transition-[padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? 'xl:pl-20' : 'xl:pl-72'}`}>
         <main
-          className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 py-4 sm:py-6 pb-24 md:pb-10"
+          className="mx-auto w-full max-w-[min(100%,1800px)] px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-4 sm:py-6 pb-24 md:pb-10"
           style={{ paddingBottom: 'max(6rem, calc(4.5rem + env(safe-area-inset-bottom)))' }}
         >
           {children}

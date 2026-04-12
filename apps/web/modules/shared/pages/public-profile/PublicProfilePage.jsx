@@ -91,7 +91,7 @@ export default function PublicProfilePage({ profile, onBack, onMessage, onMore, 
   };
 
   return (
-    <div className="w-full max-w-[1300px] mx-auto space-y-6">
+    <div className="mx-auto w-full max-w-[min(100%,1240px)] space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
           <button

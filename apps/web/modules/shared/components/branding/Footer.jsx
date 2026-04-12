@@ -67,7 +67,7 @@ export default function Footer() {
         className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#b8ad94] to-transparent opacity-95 shadow-[0_1px_0_rgba(255,255,255,0.45)] dark:via-[#6d95c5] dark:shadow-[0_1px_0_rgba(12,24,40,0.7)]"
         aria-hidden="true"
       />
-      <div className="relative w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-12">
+      <div className="relative mx-auto w-full max-w-[min(100%,1800px)] px-4 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-12">
         <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-6">
           <div className="col-span-2 sm:col-span-3 lg:col-span-1">
             <div className="text-xl font-bold text-[#3a5a40] dark:text-white">KapIT</div>

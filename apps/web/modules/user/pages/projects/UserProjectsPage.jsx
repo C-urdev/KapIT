@@ -208,17 +208,12 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
   const featuredProjects = projects.slice(0, 6);
 
   return (
-    <div className="mx-auto w-full max-w-[1320px]">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div className="mx-auto w-full max-w-[min(100%,1120px)]">
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-[2.15rem] font-black tracking-[-0.03em] text-[#3a5a40] dark:text-white">
             {userType === 'employee' ? 'My Projects' : 'Projects Library'}
           </h1>
-          <p className="mt-1 text-base text-[#4f6650] dark:text-[#b8d4e8]">
-            {userType === 'employee'
-              ? 'Showcase your work in a cleaner, portfolio-style workspace.'
-              : 'Browse published developer work in a structured projects view.'}
-          </p>
         </div>
 
         {userType === 'employee' ? (
@@ -233,21 +228,14 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
         ) : null}
       </div>
 
-      <section className="overflow-hidden rounded-[30px] border border-[#93a977] bg-[linear-gradient(180deg,#dcd7c9_0%,#d8d4c7_100%)] p-4 shadow-[0_22px_60px_rgba(58,90,64,0.10)] dark:border-[#1e3a5f] dark:bg-[linear-gradient(180deg,#11253b_0%,#0d1c2f_100%)] sm:p-6">
-        <div className="rounded-[28px] border border-[#7f9775] bg-white px-4 py-5 shadow-[0_18px_50px_rgba(58,90,64,0.08)] dark:border-[#2a4a6f] dark:bg-[#162842] sm:px-6 lg:px-8">
+      <section className="overflow-hidden rounded-[28px] border border-[#7f9775] bg-white px-4 py-5 shadow-[0_18px_50px_rgba(58,90,64,0.1)] dark:border-[#2a4a6f] dark:bg-[#162842] sm:px-6 lg:px-8">
           {projects.length > 0 ? (
             <>
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#6d8467] dark:text-[#7dc4ff]">
-                    Workspace
-                  </p>
-                  <h2 className="mt-2 text-[1.95rem] font-black tracking-[-0.03em] text-[#31572c] dark:text-white">
+                  <h2 className="text-[1.95rem] font-black tracking-[-0.03em] text-[#31572c] dark:text-white">
                     {userType === 'employee' ? 'My Projects' : 'All Projects'}
                   </h2>
-                  <p className="mt-1 text-sm text-[#556b58] dark:text-[#b8d4e8]">
-                    Keep your strongest work visible with a folder shelf up top and a full projects list below.
-                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
@@ -305,7 +293,6 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
                   </div>
                   <div>
                     <h3 className="text-[1.35rem] font-black tracking-[-0.02em] text-[#31572c] dark:text-white">All Files</h3>
-                    <p className="text-sm text-[#5e745f] dark:text-[#b8d4e8]">A clean list view of every project in your showcase.</p>
                   </div>
                 </div>
 
@@ -430,11 +417,6 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
               <h3 className="mt-5 text-2xl font-bold text-[#3a5a40] dark:text-white">
                 {userType === 'employee' ? 'Start Your Project Shelf' : 'No Projects Yet'}
               </h3>
-              <p className="mx-auto mt-2 max-w-xl text-sm leading-7 text-[#556b58] dark:text-[#b8d4e8]">
-                {userType === 'employee'
-                  ? 'Add your first project and this page will turn into a polished workspace with featured folders and a full files table.'
-                  : 'Published developer projects will appear here once creators start sharing their work.'}
-              </p>
               {userType === 'employee' ? (
                 <button
                   type="button"
@@ -448,7 +430,6 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
               </div>
             </div>
           )}
-        </div>
       </section>
 
       {isModalOpen ? (
@@ -459,9 +440,6 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
                 <h2 className="text-2xl font-bold text-[#3a5a40] dark:text-white">
                   {editingProjectId ? 'Edit Project' : 'Add New Project'}
                 </h2>
-                <p className="mt-1 text-sm text-[#344e41] dark:text-[#b8d4e8]">
-                  Add the work you want recruiters and companies to see on your profile.
-                </p>
               </div>
               <button
                 type="button"
