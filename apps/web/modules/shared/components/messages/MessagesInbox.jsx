@@ -15,6 +15,8 @@ import { getMessages, listConversations, sendMessage } from '@sharedServices/mes
 const QUICK_EMOJIS = ['😀', '😂', '😊', '😍', '👍', '👌', '👏', '🙏', '🔥', '🎉', '💯', '❤️', '😢', '😭', '💀', '🕵️'];
 const MAX_IMAGE_BYTES = 100 * 1024 * 1024;
 const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+const INITIAL_RECENT_HOURS = 5;
+const MESSAGE_PAGE_SIZE = 40;
 
 const formatTime = (value) =>
   new Date(value || Date.now()).toLocaleTimeString([], {
@@ -42,6 +44,7 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
   const [selectedConversation, setSelectedConversation] = React.useState(null);
   const [messageInput, setMessageInput] = React.useState('');
   const [messagesByConversation, setMessagesByConversation] = React.useState({});
+  const [threadPagingByConversation, setThreadPagingByConversation] = React.useState({});
   const [loadingConversations, setLoadingConversations] = React.useState(true);
   const [loadingMessages, setLoadingMessages] = React.useState(false);
   const [error, setError] = React.useState('');
@@ -52,9 +55,21 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
   const composerRef = React.useRef(null);
   const searchInputRef = React.useRef(null);
   const messagesEndRef = React.useRef(null);
+  const threadScrollRef = React.useRef(null);
   const imageInputRef = React.useRef(null);
   const videoInputRef = React.useRef(null);
   const blobUrlsRef = React.useRef([]);
+  const isPrependingMessagesRef = React.useRef(false);
+  const messagesByConversationRef = React.useRef({});
+  const threadPagingByConversationRef = React.useRef({});
+
+  React.useEffect(() => {
+    messagesByConversationRef.current = messagesByConversation;
+  }, [messagesByConversation]);
+
+  React.useEffect(() => {
+    threadPagingByConversationRef.current = threadPagingByConversation;
+  }, [threadPagingByConversation]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -129,48 +144,103 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
     };
   }, [initialContactId]);
 
-  React.useEffect(() => {
-    let cancelled = false;
-
-    const loadMessages = async () => {
-      if (!selectedConversation?.id) {
+  const loadMessages = React.useCallback(
+    async (conversationId, { loadOlder = false } = {}) => {
+      if (!conversationId) {
         return;
       }
 
-      try {
-        setLoadingMessages(true);
-        setError('');
-        const remoteMessages = await getMessages(selectedConversation.id);
-        if (cancelled) {
+      if (loadOlder) {
+        const pagingState = threadPagingByConversationRef.current[conversationId];
+        if (!pagingState?.hasMore || pagingState?.loadingOlder) {
           return;
         }
+      }
 
-        setMessagesByConversation((prev) => ({
-          ...prev,
-          [selectedConversation.id]: remoteMessages.map((message) => ({
-            id: String(message.id),
-            sender: message.sender,
-            text: message.text,
-            time: formatTime(message.createdAt),
-          })),
+      const currentMessages = messagesByConversationRef.current[conversationId] || [];
+      const oldestMessage = currentMessages[0];
+      const previousScrollHeight = threadScrollRef.current?.scrollHeight || 0;
+
+      try {
+        if (loadOlder) {
+          setThreadPagingByConversation((prev) => ({
+            ...prev,
+            [conversationId]: { ...(prev[conversationId] || {}), loadingOlder: true },
+          }));
+        } else {
+          setLoadingMessages(true);
+        }
+
+        setError('');
+        const response = await getMessages(conversationId, {
+          limit: MESSAGE_PAGE_SIZE,
+          recentHours: loadOlder ? undefined : INITIAL_RECENT_HOURS,
+          beforeCreatedAt: loadOlder ? oldestMessage?.createdAt : undefined,
+        });
+
+        const mappedMessages = (response.messages || []).map((message) => ({
+          id: String(message.id),
+          sender: message.sender,
+          text: message.text,
+          time: formatTime(message.createdAt),
+          createdAt: message.createdAt,
         }));
+
+        setMessagesByConversation((prev) => {
+          if (!loadOlder) {
+            return { ...prev, [conversationId]: mappedMessages };
+          }
+
+          isPrependingMessagesRef.current = true;
+          const existing = prev[conversationId] || [];
+          const existingIds = new Set(existing.map((message) => message.id));
+          const dedupedOlder = mappedMessages.filter((message) => !existingIds.has(message.id));
+          return { ...prev, [conversationId]: [...dedupedOlder, ...existing] };
+        });
+
+        setThreadPagingByConversation((prev) => ({
+          ...prev,
+          [conversationId]: {
+            hasMore: Boolean(response.hasMore),
+            loadingOlder: false,
+          },
+        }));
+
+        if (loadOlder) {
+          requestAnimationFrame(() => {
+            if (!threadScrollRef.current) {
+              isPrependingMessagesRef.current = false;
+              return;
+            }
+            const nextScrollHeight = threadScrollRef.current.scrollHeight;
+            threadScrollRef.current.scrollTop += nextScrollHeight - previousScrollHeight;
+            isPrependingMessagesRef.current = false;
+          });
+        }
       } catch (err) {
-        if (!cancelled) {
-          setError(err.message || 'Failed to load messages');
+        setError(err.message || 'Failed to load messages');
+        if (loadOlder) {
+          setThreadPagingByConversation((prev) => ({
+            ...prev,
+            [conversationId]: { ...(prev[conversationId] || {}), loadingOlder: false },
+          }));
         }
       } finally {
-        if (!cancelled) {
+        if (!loadOlder) {
           setLoadingMessages(false);
         }
       }
-    };
+    },
+    []
+  );
 
-    loadMessages();
+  React.useEffect(() => {
+    if (!selectedConversation?.id) {
+      return;
+    }
 
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedConversation?.id]);
+    loadMessages(selectedConversation.id, { loadOlder: false });
+  }, [selectedConversation?.id, loadMessages]);
 
   React.useEffect(() => {
     const handlePointerDown = (event) => {
@@ -185,6 +255,9 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
   }, []);
 
   React.useEffect(() => {
+    if (isPrependingMessagesRef.current) {
+      return;
+    }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [selectedConversation?.id, messagesByConversation, loadingMessages]);
 
@@ -241,12 +314,14 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
     }
 
     const tempId = `temp-${Date.now()}`;
-    const optimisticTime = formatTime(new Date().toISOString());
+    const optimisticCreatedAt = new Date().toISOString();
+    const optimisticTime = formatTime(optimisticCreatedAt);
     const optimisticMessage = {
       id: tempId,
       sender: 'me',
       text: trimmed,
       time: optimisticTime,
+      createdAt: optimisticCreatedAt,
     };
 
     setSendingMessage(true);
@@ -274,6 +349,7 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
         sender: savedMessage.sender,
         text: savedMessage.text,
         time: formatTime(savedMessage.createdAt),
+        createdAt: savedMessage.createdAt,
       };
 
       setMessagesByConversation((prev) => {
@@ -362,8 +438,25 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
   };
 
   const threadMessages = selectedConversation ? messagesByConversation[selectedConversation.id] || [] : [];
+  const threadPaging = selectedConversation ? threadPagingByConversation[selectedConversation.id] || {} : {};
   const listHiddenOnMobile = Boolean(selectedConversation);
   const threadHiddenOnMobile = !selectedConversation;
+
+  const handleThreadScroll = React.useCallback(
+    (event) => {
+      if (!selectedConversation?.id) {
+        return;
+      }
+
+      const target = event.currentTarget;
+      if (target.scrollTop > 40) {
+        return;
+      }
+
+      loadMessages(selectedConversation.id, { loadOlder: true });
+    },
+    [loadMessages, selectedConversation?.id]
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-[min(100%,1420px)] justify-center px-0 sm:px-0">
@@ -479,12 +572,19 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
                 </div>
               </header>
 
-              <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-5">
+              <div
+                ref={threadScrollRef}
+                onScroll={handleThreadScroll}
+                className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-5"
+              >
                 {error ? <p className="mb-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">{error}</p> : null}
                 {loadingMessages ? (
                   <p className="mb-3 text-center text-sm text-[#6b7c6a] dark:text-[#7d9ab8]">Loading messages…</p>
                 ) : null}
                 <div className="mx-auto flex max-w-3xl flex-col gap-2">
+                  {threadPaging.loadingOlder ? (
+                    <p className="py-1 text-center text-xs text-[#6b7c6a] dark:text-[#7d9ab8]">Loading older messages…</p>
+                  ) : null}
                   {threadMessages.map((message) => (
                     <div key={message.id} className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
                       <div

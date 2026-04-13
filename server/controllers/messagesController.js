@@ -19,7 +19,6 @@ const {
   recordConversationReadDecision,
   recordConversationReadServed,
   recordConversationReadFallback,
-  recordEmptyConversationThread,
   recordConversationListCountMismatch,
   recordConversationThreadCountMismatch,
   recordDualWriteFailure,
@@ -335,13 +334,31 @@ const listMessages = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Contact id is required' });
     }
 
+    const rawBeforeCreatedAt = String(req.query?.beforeCreatedAt || '').trim();
+    const beforeDate = rawBeforeCreatedAt ? new Date(rawBeforeCreatedAt) : null;
+    const hasBeforeCursor = beforeDate instanceof Date && !Number.isNaN(beforeDate.getTime());
+    const beforeCreatedAt = hasBeforeCursor ? beforeDate.toISOString() : null;
+    const limitParam = Number(req.query?.limit);
+    const limit = Number.isFinite(limitParam) ? Math.max(1, Math.min(100, limitParam)) : 40;
+    const recentHoursParam = Number(req.query?.recentHours);
+    const recentHours = hasBeforeCursor
+      ? null
+      : Number.isFinite(recentHoursParam)
+        ? Math.max(1, Math.min(48, recentHoursParam))
+        : 5;
+
     const readDecision = getConversationReadDecision(req, req.user);
     recordConversationReadDecision(readDecision);
 
     if (readDecision.enabled) {
-      const conversationResult = await getConversationMessagesByParticipantIds(client, req.user.id, contactId);
-      if (conversationResult.messages.length > 0) {
-        if (shouldShadowCompareConversationReads()) {
+      const conversationResult = await getConversationMessagesByParticipantIds(client, req.user.id, contactId, {
+        markAsRead: !hasBeforeCursor,
+        limit,
+        beforeCreatedAt,
+        recentHours,
+      });
+      if (conversationResult.conversation) {
+        if (shouldShadowCompareConversationReads() && !hasBeforeCursor && !recentHours) {
           const legacyMessages = await getLegacyThreadMessages(client, req.user.id, contactId);
           if (legacyMessages.length !== conversationResult.messages.length) {
             recordConversationThreadCountMismatch();
@@ -359,16 +376,14 @@ const listMessages = async (req, res) => {
         return res.json({
           success: true,
           messages: conversationResult.messages,
+          hasMore: Boolean(conversationResult.hasMore),
           source: 'conversations',
           conversationId: conversationResult.conversation.id,
         });
       }
 
-      const fallbackReason = conversationResult.conversation ? 'empty_conversation_messages' : 'conversation_missing';
+      const fallbackReason = 'conversation_missing';
       recordConversationReadFallback(fallbackReason);
-      if (fallbackReason === 'empty_conversation_messages') {
-        recordEmptyConversationThread();
-      }
       logMessagingMigrationEvent('conversation_thread_fallback', {
         userId: req.user.id,
         contactId,
@@ -377,22 +392,37 @@ const listMessages = async (req, res) => {
       });
     }
 
+    const whereClauses = ['user_id = $1', 'contact_user_id = $2'];
+    const values = [req.user.id, contactId];
+
+    if (hasBeforeCursor) {
+      values.push(beforeCreatedAt);
+      whereClauses.push(`created_at < $${values.length}`);
+    } else if (recentHours) {
+      values.push(recentHours);
+      whereClauses.push(`created_at >= NOW() - ($${values.length} * INTERVAL '1 hour')`);
+    }
+
+    values.push(limit + 1);
     const result = await client.query(
       `SELECT id,
               sender_type,
               body,
               created_at
        FROM messages
-       WHERE user_id = $1
-         AND contact_user_id = $2
-       ORDER BY created_at ASC, id ASC`,
-      [req.user.id, contactId]
+       WHERE ${whereClauses.join(' AND ')}
+       ORDER BY created_at DESC, id DESC
+       LIMIT $${values.length}`,
+      values
     );
 
     const messages = [];
     const seenMessages = new Set();
+    const hasMore = result.rows.length > limit;
+    const rowsToReturn = hasMore ? result.rows.slice(0, limit) : result.rows;
+    const ascendingRows = rowsToReturn.reverse();
 
-    for (const row of result.rows) {
+    for (const row of ascendingRows) {
       const messageKey = [
         row.sender_type || '',
         row.body || '',
@@ -412,7 +442,7 @@ const listMessages = async (req, res) => {
       });
     }
 
-    res.json({ success: true, messages, source: 'legacy' });
+    res.json({ success: true, messages, hasMore, source: 'legacy' });
   } catch (error) {
     console.error('List messages error:', error);
     res.json({

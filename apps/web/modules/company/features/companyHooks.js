@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { companyAPI } from './companyAPI';
 
 const EMPTY_LIST = [];
@@ -32,25 +32,28 @@ const useAsyncResource = (fetcher, deps = [], { cacheKey = '', fallbackData = nu
   const [data, setData] = useState(cachedData);
   const [loading, setLoading] = useState(cachedData == null);
   const [error, setError] = useState('');
+  const dataRef = useRef(cachedData);
+
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
 
   const refetch = useCallback(async () => {
-    if (data == null) {
-      setLoading(true);
-    }
+    setLoading(dataRef.current == null);
     setError('');
     try {
       const result = await fetcher();
       setData(result);
       writeCache(cacheKey, result);
     } catch (err) {
-      if (data == null) {
-        setData(cachedData);
-      }
-      setError(err?.message || 'Request failed');
+      const hadData = dataRef.current != null || cachedData != null;
+      setData((previous) => (previous == null ? cachedData : previous));
+      // Keep the UI stable when we already have data (e.g. transient 429).
+      setError(hadData ? '' : (err?.message || 'Request failed'));
     } finally {
       setLoading(false);
     }
-  }, [cacheKey, cachedData, data, fetcher]);
+  }, [cacheKey, cachedData, fetcher]);
 
   useEffect(() => {
     refetch();

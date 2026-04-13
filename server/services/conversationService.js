@@ -209,14 +209,38 @@ const getUserConversations = async (client, userId) => {
 };
 
 const getConversationMessagesByParticipantIds = async (client, userId, contactUserId, options = {}) => {
-  const { markAsRead = true } = options;
+  const {
+    markAsRead = true,
+    limit = 40,
+    beforeCreatedAt = null,
+    recentHours = null,
+  } = options;
   const conversation = await findDirectConversation(client, userId, contactUserId);
   if (!conversation) {
     return {
       conversation: null,
       messages: [],
+      hasMore: false,
     };
   }
+
+  const parsedLimit = Number.isFinite(Number(limit)) ? Math.max(1, Math.min(100, Number(limit))) : 40;
+  const beforeDate = beforeCreatedAt ? new Date(beforeCreatedAt) : null;
+  const hasValidBeforeDate = beforeDate instanceof Date && !Number.isNaN(beforeDate.getTime());
+  const parsedRecentHours = Number.isFinite(Number(recentHours)) ? Math.max(1, Math.min(48, Number(recentHours))) : null;
+
+  const whereClauses = ['cm.conversation_id = $1'];
+  const values = [conversation.id];
+
+  if (hasValidBeforeDate) {
+    values.push(beforeDate.toISOString());
+    whereClauses.push(`cm.created_at < $${values.length}`);
+  } else if (parsedRecentHours) {
+    values.push(parsedRecentHours);
+    whereClauses.push(`cm.created_at >= NOW() - ($${values.length} * INTERVAL '1 hour')`);
+  }
+
+  values.push(parsedLimit + 1);
 
   const result = await client.query(
     `SELECT cm.id,
@@ -225,12 +249,17 @@ const getConversationMessagesByParticipantIds = async (client, userId, contactUs
             cm.created_at,
             cm.legacy_message_id
      FROM conversation_messages cm
-     WHERE cm.conversation_id = $1
-     ORDER BY cm.created_at ASC, cm.id ASC`,
-    [conversation.id]
+     WHERE ${whereClauses.join(' AND ')}
+     ORDER BY cm.created_at DESC, cm.id DESC
+     LIMIT $${values.length}`,
+    values
   );
 
-  const messages = result.rows.map((row) => ({
+  const hasMore = result.rows.length > parsedLimit;
+  const rowsToReturn = hasMore ? result.rows.slice(0, parsedLimit) : result.rows;
+  const ascendingRows = rowsToReturn.reverse();
+
+  const messages = ascendingRows.map((row) => ({
     id: row.id,
     sender: row.sender_user_id === userId ? 'me' : 'them',
     text: row.body,
@@ -238,19 +267,20 @@ const getConversationMessagesByParticipantIds = async (client, userId, contactUs
     legacyMessageId: row.legacy_message_id || null,
   }));
 
-  const lastMessage = result.rows[result.rows.length - 1] || null;
+  const lastMessage = messages[messages.length - 1] || null;
   if (markAsRead && lastMessage) {
     await upsertMessageReadState(client, {
       conversationId: conversation.id,
       userId,
       lastReadMessageId: lastMessage.id,
-      lastReadAt: lastMessage.created_at,
+      lastReadAt: lastMessage.createdAt,
     });
   }
 
   return {
     conversation,
     messages,
+    hasMore,
   };
 };
 
