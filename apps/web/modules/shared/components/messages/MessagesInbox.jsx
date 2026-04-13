@@ -15,7 +15,6 @@ import { getMessages, listConversations, sendMessage } from '@sharedServices/mes
 const QUICK_EMOJIS = ['😀', '😂', '😊', '😍', '👍', '👌', '👏', '🙏', '🔥', '🎉', '💯', '❤️', '😢', '😭', '💀', '🕵️'];
 const MAX_IMAGE_BYTES = 100 * 1024 * 1024;
 const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
-const INITIAL_RECENT_HOURS = 5;
 const MESSAGE_PAGE_SIZE = 40;
 
 const formatTime = (value) =>
@@ -152,7 +151,7 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
 
       if (loadOlder) {
         const pagingState = threadPagingByConversationRef.current[conversationId];
-        if (!pagingState?.hasMore || pagingState?.loadingOlder) {
+        if (pagingState && (!pagingState.hasMore || pagingState.loadingOlder)) {
           return;
         }
       }
@@ -174,7 +173,7 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
         setError('');
         const response = await getMessages(conversationId, {
           limit: MESSAGE_PAGE_SIZE,
-          recentHours: loadOlder ? undefined : INITIAL_RECENT_HOURS,
+          recentHours: undefined,
           beforeCreatedAt: loadOlder ? oldestMessage?.createdAt : undefined,
         });
 

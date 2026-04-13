@@ -345,7 +345,7 @@ const listMessages = async (req, res) => {
       ? null
       : Number.isFinite(recentHoursParam)
         ? Math.max(1, Math.min(48, recentHoursParam))
-        : 5;
+        : null;
 
     const readDecision = getConversationReadDecision(req, req.user);
     recordConversationReadDecision(readDecision);
@@ -357,32 +357,38 @@ const listMessages = async (req, res) => {
         beforeCreatedAt,
         recentHours,
       });
+      let fallbackReason = 'conversation_missing';
       if (conversationResult.conversation) {
-        if (shouldShadowCompareConversationReads() && !hasBeforeCursor && !recentHours) {
-          const legacyMessages = await getLegacyThreadMessages(client, req.user.id, contactId);
-          if (legacyMessages.length !== conversationResult.messages.length) {
-            recordConversationThreadCountMismatch();
-            logMessagingMigrationEvent('conversation_thread_count_mismatch', {
-              userId: req.user.id,
-              contactId,
-              conversationCount: conversationResult.messages.length,
-              legacyCount: legacyMessages.length,
-              reason: readDecision.reason,
-            });
+        // If conversation rows exist but contain no messages yet, try legacy storage
+        // so historical threads remain visible during migration.
+        if (!hasBeforeCursor && conversationResult.messages.length === 0) {
+          fallbackReason = 'empty_conversation_messages';
+        } else {
+          if (shouldShadowCompareConversationReads() && !hasBeforeCursor && !recentHours) {
+            const legacyMessages = await getLegacyThreadMessages(client, req.user.id, contactId);
+            if (legacyMessages.length !== conversationResult.messages.length) {
+              recordConversationThreadCountMismatch();
+              logMessagingMigrationEvent('conversation_thread_count_mismatch', {
+                userId: req.user.id,
+                contactId,
+                conversationCount: conversationResult.messages.length,
+                legacyCount: legacyMessages.length,
+                reason: readDecision.reason,
+              });
+            }
           }
-        }
 
-        recordConversationReadServed();
-        return res.json({
-          success: true,
-          messages: conversationResult.messages,
-          hasMore: Boolean(conversationResult.hasMore),
-          source: 'conversations',
-          conversationId: conversationResult.conversation.id,
-        });
+          recordConversationReadServed();
+          return res.json({
+            success: true,
+            messages: conversationResult.messages,
+            hasMore: Boolean(conversationResult.hasMore),
+            source: 'conversations',
+            conversationId: conversationResult.conversation.id,
+          });
+        }
       }
 
-      const fallbackReason = 'conversation_missing';
       recordConversationReadFallback(fallbackReason);
       logMessagingMigrationEvent('conversation_thread_fallback', {
         userId: req.user.id,
@@ -392,7 +398,37 @@ const listMessages = async (req, res) => {
       });
     }
 
-    const whereClauses = ['user_id = $1', 'contact_user_id = $2'];
+    const whereClauses = [
+      'user_id = $1',
+      `(contact_user_id = $2 OR (
+        contact_user_id IS NULL
+        AND (
+          (sender_user_id = $1 AND recipient_user_id = $2)
+          OR (sender_user_id = $2 AND recipient_user_id = $1)
+        )
+      ) OR (
+        contact_user_id IS NULL
+        AND (sender_user_id IS NULL OR recipient_user_id IS NULL)
+        AND COALESCE(NULLIF(TRIM(contact_name), ''), '') <> ''
+        AND LOWER(TRIM(contact_name)) IN (
+          SELECT DISTINCT LOWER(TRIM(value_text))
+          FROM (
+            SELECT u.username AS value_text
+            FROM users u
+            WHERE u.id = $2
+            UNION ALL
+            SELECT u.email AS value_text
+            FROM users u
+            WHERE u.id = $2
+            UNION ALL
+            SELECT u.company_name AS value_text
+            FROM users u
+            WHERE u.id = $2
+          ) contact_labels
+          WHERE COALESCE(NULLIF(TRIM(value_text), ''), '') <> ''
+        )
+      ))`,
+    ];
     const values = [req.user.id, contactId];
 
     if (hasBeforeCursor) {
