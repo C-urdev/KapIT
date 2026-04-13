@@ -2,20 +2,19 @@ import React from 'react';
 import {
   ChevronLeft,
   Image as ImageIcon,
-  Info,
   MessageCircle,
-  Phone,
   Plus,
   Search,
   Send,
   Smile,
-  PencilLine,
   Video,
 } from 'lucide-react';
 import { getPublicProfile } from '@sharedServices/authService';
 import { getMessages, listConversations, sendMessage } from '@sharedServices/messageService';
 
 const QUICK_EMOJIS = ['😀', '😂', '😊', '😍', '👍', '👌', '👏', '🙏', '🔥', '🎉', '💯', '❤️', '😢', '😭', '💀', '🕵️'];
+const MAX_IMAGE_BYTES = 100 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 
 const formatTime = (value) =>
   new Date(value || Date.now()).toLocaleTimeString([], {
@@ -49,9 +48,13 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
   const [contactSearchQuery, setContactSearchQuery] = React.useState('');
   const [sendingMessage, setSendingMessage] = React.useState(false);
   const [emojiPickerOpen, setEmojiPickerOpen] = React.useState(false);
+  const [attachMenuOpen, setAttachMenuOpen] = React.useState(false);
   const composerRef = React.useRef(null);
   const searchInputRef = React.useRef(null);
   const messagesEndRef = React.useRef(null);
+  const imageInputRef = React.useRef(null);
+  const videoInputRef = React.useRef(null);
+  const blobUrlsRef = React.useRef([]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -173,6 +176,7 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
     const handlePointerDown = (event) => {
       if (!composerRef.current?.contains(event.target)) {
         setEmojiPickerOpen(false);
+        setAttachMenuOpen(false);
       }
     };
 
@@ -183,6 +187,20 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [selectedConversation?.id, messagesByConversation, loadingMessages]);
+
+  const clearTrackedBlobUrls = React.useCallback(() => {
+    blobUrlsRef.current.forEach((blobUrl) => {
+      URL.revokeObjectURL(blobUrl);
+    });
+    blobUrlsRef.current = [];
+  }, []);
+
+  React.useEffect(
+    () => () => {
+      clearTrackedBlobUrls();
+    },
+    [clearTrackedBlobUrls]
+  );
 
   const filteredConversations = React.useMemo(() => {
     const query = String(contactSearchQuery || '').trim().toLowerCase();
@@ -278,6 +296,7 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
 
       setSelectedConversation(updatedConversation);
       setConversations((prev) => [updatedConversation, ...prev.filter((conversation) => conversation.id !== updatedConversation.id)]);
+      clearTrackedBlobUrls();
     } catch (err) {
       setMessagesByConversation((prev) => ({
         ...prev,
@@ -295,15 +314,62 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
     setEmojiPickerOpen(false);
   };
 
+  const handleAttachImage = () => {
+    imageInputRef.current?.click();
+    setAttachMenuOpen(false);
+  };
+
+  const handleImageSelected = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setError('Image is too large. Please upload an image up to 100MB.');
+      event.target.value = '';
+      return;
+    }
+
+    // Insert a temporary local URL so users can send/share image references quickly.
+    const localUrl = URL.createObjectURL(file);
+    blobUrlsRef.current.push(localUrl);
+    setMessageInput((current) => `${current ? `${current} ` : ''}${localUrl}`);
+    event.target.value = '';
+    setError('');
+  };
+
+  const handleAttachVideo = () => {
+    videoInputRef.current?.click();
+    setAttachMenuOpen(false);
+  };
+
+  const handleVideoSelected = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+    if (file.size > MAX_VIDEO_BYTES) {
+      setError('Video is too large. Please upload a video up to 100MB.');
+      event.target.value = '';
+      return;
+    }
+
+    const localUrl = URL.createObjectURL(file);
+    blobUrlsRef.current.push(localUrl);
+    setMessageInput((current) => `${current ? `${current} ` : ''}${localUrl}`);
+    event.target.value = '';
+    setError('');
+  };
+
   const threadMessages = selectedConversation ? messagesByConversation[selectedConversation.id] || [] : [];
   const listHiddenOnMobile = Boolean(selectedConversation);
   const threadHiddenOnMobile = !selectedConversation;
 
   return (
     <div className="mx-auto flex w-full max-w-[min(100%,1420px)] justify-center px-0 sm:px-0">
-      <div className="flex h-[min(78vh,calc(100dvh-10rem))] min-h-[380px] w-full overflow-hidden rounded-2xl border border-[#a3b18a] bg-white shadow-[0_20px_50px_rgba(58,90,64,0.12)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-black/30">
+      <div className="flex h-[calc(100dvh-6.75rem)] min-h-[460px] w-full overflow-hidden rounded-none border-y border-[#a3b18a] bg-white shadow-none dark:border-[#1e3a5f] dark:bg-[#162842] sm:h-[min(78vh,calc(100dvh-10rem))] sm:min-h-[380px] sm:rounded-2xl sm:border sm:shadow-[0_20px_50px_rgba(58,90,64,0.12)] sm:dark:shadow-black/30">
         {/* Narrow icon rail — layout only; KapIT palette */}
-        <aside className="hidden w-[52px] shrink-0 flex-col items-center border-r border-[#d9e0d2] bg-[#f8faf6] py-3 dark:border-[#244060] dark:bg-[#122238] sm:flex md:w-14">
+        <aside className="hidden w-[52px] shrink-0 flex-col items-center border-r border-[#d9e0d2] bg-[#f8faf6] py-3 dark:border-[#244060] dark:bg-[#122238] md:flex md:w-14">
           <button
             type="button"
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#1e3a5f] dark:text-[#7dc4ff]"
@@ -312,14 +378,6 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
           >
             <MessageCircle className="h-5 w-5" />
           </button>
-          <button
-            type="button"
-            onClick={() => searchInputRef.current?.focus()}
-            className="mt-2 flex h-10 w-10 items-center justify-center rounded-xl text-[#5c6d58] transition-colors hover:bg-[#eef0ea] dark:text-[#9fb4ca] dark:hover:bg-[#1e3a5f]"
-            title="Search conversations"
-          >
-            <Search className="h-5 w-5" />
-          </button>
           <div className="mt-auto flex flex-col items-center gap-2 pb-1">
             <MiniUserAvatar user={user} />
           </div>
@@ -327,23 +385,15 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
 
         {/* Conversation list */}
         <div
-          className={`flex w-full min-w-0 shrink-0 flex-col border-[#d9e0d2] bg-white dark:border-[#244060] dark:bg-[#162842] sm:max-w-[min(100%,380px)] sm:border-r ${
+          className={`flex w-full min-w-0 shrink-0 flex-col border-[#d9e0d2] bg-white dark:border-[#244060] dark:bg-[#162842] sm:max-w-[min(100%,320px)] md:w-[300px] md:border-r ${
             listHiddenOnMobile ? 'hidden lg:flex' : 'flex'
           }`}
         >
           <div className="flex items-center justify-between gap-2 border-b border-[#e4e7de] px-3 py-3 dark:border-[#244060] sm:px-4">
             <h2 className="text-lg font-bold tracking-tight text-[#3a5a40] dark:text-white">Chats</h2>
-            <div className="flex items-center gap-0.5">
-              <RailIconButton label="Voice call (coming soon)" disabled>
-                <Phone className="h-4 w-4" />
-              </RailIconButton>
-              <RailIconButton label="Video call (coming soon)" disabled>
-                <Video className="h-4 w-4" />
-              </RailIconButton>
-              <RailIconButton label="Search chats" onClick={() => searchInputRef.current?.focus()}>
-                <PencilLine className="h-4 w-4" />
-              </RailIconButton>
-            </div>
+            <RailIconButton label="Search chats" onClick={() => searchInputRef.current?.focus()}>
+              <Search className="h-4 w-4" />
+            </RailIconButton>
           </div>
 
           <div className="border-b border-[#e4e7de] px-3 py-2.5 dark:border-[#244060] sm:px-4">
@@ -427,17 +477,6 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
                     {selectedConversation.type === 'company' ? 'Company on KapIT' : 'Member on KapIT'}
                   </p>
                 </div>
-                <div className="hidden items-center gap-0.5 sm:flex">
-                  <RailIconButton label="Call (coming soon)" disabled>
-                    <Phone className="h-4 w-4" />
-                  </RailIconButton>
-                  <RailIconButton label="Video (coming soon)" disabled>
-                    <Video className="h-4 w-4" />
-                  </RailIconButton>
-                  <RailIconButton label="Details (coming soon)" disabled>
-                    <Info className="h-4 w-4" />
-                  </RailIconButton>
-                </div>
               </header>
 
               <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-5">
@@ -475,13 +514,44 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
 
               <footer className="shrink-0 border-t border-[#e0e6da] bg-white px-2 py-2.5 dark:border-[#244060] dark:bg-[#162842] sm:px-4" ref={composerRef}>
                 <div className="mx-auto flex max-w-3xl items-end gap-1.5 sm:gap-2">
-                  <div className="hidden shrink-0 items-center gap-0.5 sm:flex">
-                    <ComposerIconButton label="Attach (coming soon)" disabled>
+                  <div className="relative shrink-0">
+                    <ComposerIconButton label="Attach image or link" onClick={() => setAttachMenuOpen((current) => !current)}>
                       <Plus className="h-5 w-5" />
                     </ComposerIconButton>
-                    <ComposerIconButton label="Photos (coming soon)" disabled>
-                      <ImageIcon className="h-5 w-5" />
-                    </ComposerIconButton>
+                    <input
+                      ref={imageInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelected}
+                      className="hidden"
+                    />
+                    <input
+                      ref={videoInputRef}
+                      type="file"
+                      accept="video/*"
+                      onChange={handleVideoSelected}
+                      className="hidden"
+                    />
+                    {attachMenuOpen ? (
+                      <div className="absolute bottom-[calc(100%+0.5rem)] left-0 z-20 min-w-[170px] rounded-xl border border-[#cfd9c4] bg-white p-1.5 shadow-xl dark:border-[#2a4a6f] dark:bg-[#162842]">
+                        <button
+                          type="button"
+                          onClick={handleAttachImage}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-[#344e41] hover:bg-[#f5f7f2] dark:text-white dark:hover:bg-[#1e3a5f]"
+                        >
+                          <ImageIcon className="h-4 w-4" />
+                          Add image
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleAttachVideo}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-[#344e41] hover:bg-[#f5f7f2] dark:text-white dark:hover:bg-[#1e3a5f]"
+                        >
+                          <Video className="h-4 w-4" />
+                          Add video
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="relative min-w-0 flex-1">
@@ -574,10 +644,11 @@ function RailIconButton({ children, label, onClick, disabled }) {
   );
 }
 
-function ComposerIconButton({ children, label, disabled }) {
+function ComposerIconButton({ children, label, disabled, onClick }) {
   return (
     <button
       type="button"
+      onClick={disabled ? undefined : onClick}
       disabled={disabled}
       title={label}
       aria-label={label}

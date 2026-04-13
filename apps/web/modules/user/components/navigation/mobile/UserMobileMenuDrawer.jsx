@@ -3,6 +3,7 @@ import {
   Bookmark,
   Briefcase,
   ChevronDown,
+  Crown,
   FolderKanban,
   HelpCircle,
   LogOut,
@@ -184,7 +185,10 @@ export default function UserMobileMenuDrawer({
             }}
             className="mt-5 flex w-full items-center justify-center rounded-[1.15rem] bg-[#3a5a40] px-4 py-4 text-lg font-semibold text-white transition-colors hover:bg-[#344e41] dark:bg-[#3b3f46] dark:hover:bg-[#454a52]"
           >
-            {isPremium ? 'Manage Premium' : 'See more'}
+            <span className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-[#f4c542]" />
+              Upgrade Plan
+            </span>
           </button>
 
           <div className="mt-6">

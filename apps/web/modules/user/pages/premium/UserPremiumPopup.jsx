@@ -9,15 +9,17 @@ const PREMIUM_PLAN = {
   name: 'Premium',
   amount: 399,
   unit: 'PHP /\nmonth',
-  subtitle: 'Unlock the premium applicant tools that are already live in KapIT.',
+  subtitle: 'Unlock advanced tools that help you find better jobs faster and track every application.',
   cta: 'Upgrade to Premium',
   highlighted: true,
   features: [
-    { icon: Sparkles, text: 'See job match percentages on supported job listings' },
-    { icon: Brain, text: 'Use ATS-style resume analysis when AI services are available' },
-    { icon: Check, text: 'Keep your premium badge active on your account and profile' },
-    { icon: MessageCircle, text: 'Get premium-only applicant tooling without changing the basic apply flow' },
-    { icon: ImageIcon, text: 'Continue using the same job browsing, profile, and resume workflow with premium access enabled' },
+    { icon: Sparkles, text: 'Priority job access' },
+    { icon: Brain, text: 'Smart job filtering and ATS resume format support' },
+    { icon: Check, text: 'Skill matching percentage on job posts (for example: You match 88% of this job)' },
+    { icon: MessageCircle, text: 'Ghost job prevention to reduce outdated or inactive job posts' },
+    { icon: ImageIcon, text: 'See when application submission is still available based on posting period' },
+    { icon: CheckCircle2, text: 'Application status tracking through email updates' },
+    { icon: Crown, text: 'AI-assisted professional ATS resume builder using guided questions' },
   ],
 };
 
@@ -27,13 +29,13 @@ const plans = [
     name: 'Free',
     amount: '0',
     unit: 'PHP /\nmonth',
-    subtitle: 'Get started with the core applicant tools.',
+    subtitle: 'Use essential tools for job search and applications at no monthly cost.',
     cta: 'Your current plan',
     features: [
-      { icon: Sparkles, text: 'Browse jobs and use the basic search filters' },
-      { icon: MessageCircle, text: 'Create your profile, upload your resume, and apply to jobs' },
-      { icon: ImageIcon, text: 'View company profiles and full job descriptions' },
-      { icon: Brain, text: 'Use the standard applicant experience without premium AI scoring tools' },
+      { icon: Sparkles, text: 'Browse available jobs and apply using the standard flow' },
+      { icon: MessageCircle, text: 'Create your profile and upload your resume manually' },
+      { icon: ImageIcon, text: 'View company profiles and complete job descriptions' },
+      { icon: Brain, text: 'Premium-only tools like priority access, ATS AI tools, and smart matching are not included' },
     ],
   },
   PREMIUM_PLAN,
@@ -458,7 +460,7 @@ export default function UserPremiumPopup({ isOpen, onClose, user, onOpenMerchant
                 <Crown className="h-5 w-5 sm:h-6 sm:w-6 text-[#588157] dark:text-[#7fd0ee]" />
                 Premium Plans
               </h2>
-              <p className="mt-1 text-sm text-[#344e41] dark:text-[#b8d4e8]">Choose between Free Plan and Premium Plan.</p>
+              <p className="mt-1 text-sm text-[#344e41] dark:text-[#b8d4e8]">Choose the plan that fits your job application needs.</p>
             </div>
             <button
               type="button"
@@ -473,7 +475,7 @@ export default function UserPremiumPopup({ isOpen, onClose, user, onOpenMerchant
           <div className="overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
             {isPremium ? (
               <div className="mb-4 rounded-[20px] border border-[#bfd0af] bg-[linear-gradient(180deg,#f4f8f1,#ebf4e7)] px-4 py-3 text-sm text-[#2f4e39] dark:border-[#2f5a78] dark:bg-[linear-gradient(180deg,#14304d,#102138)] dark:text-[#dcecff]">
-                You're already on the Premium plan. This also applies when premium was activated using the localhost sample access.
+                You're already on the Premium plan.
               </div>
             ) : null}
             <div className="grid gap-4 sm:gap-5 md:grid-cols-2">

@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 import Footer from '@sharedComponents/branding/Footer';
-import heroBg from '../../../assets/hero-bg.svg';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
 
 const QUICK_TAGS = [
@@ -173,7 +172,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
       <section className="relative overflow-hidden min-h-[calc(100vh-5rem)] flex flex-col">
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${heroBg})` }}
+          style={{ backgroundImage: 'url(/hero-bg.svg)' }}
           aria-hidden="true"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/5 to-white dark:to-[#0f2139]" aria-hidden="true" />
@@ -385,6 +384,8 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
   const segmentWidthRef = useRef(0);
   const suppressClickRef = useRef(false);
   const scrollSpeedRef = useRef(20);
+  const isPageVisibleRef = useRef(true);
+  const isCarouselVisibleRef = useRef(true);
   const dragStateRef = useRef({
     active: false,
     moved: false,
@@ -458,7 +459,12 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
       const delta = timestamp - lastTimestampRef.current;
       lastTimestampRef.current = timestamp;
 
-      if (!dragStateRef.current.active && !orbitPausedRef.current) {
+      if (
+        isPageVisibleRef.current &&
+        isCarouselVisibleRef.current &&
+        !dragStateRef.current.active &&
+        !orbitPausedRef.current
+      ) {
         offsetRef.current += (scrollSpeedRef.current * delta) / 1000;
         syncLoopPosition();
       }
@@ -466,13 +472,37 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
       frameRef.current = window.requestAnimationFrame(tick);
     };
 
+    const handleVisibilityChange = () => {
+      isPageVisibleRef.current = !document.hidden;
+      if (isPageVisibleRef.current) {
+        lastTimestampRef.current = 0;
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    const intersectionObserver =
+      typeof IntersectionObserver === 'function'
+        ? new IntersectionObserver(
+            ([entry]) => {
+              isCarouselVisibleRef.current = Boolean(entry?.isIntersecting);
+              if (isCarouselVisibleRef.current) {
+                lastTimestampRef.current = 0;
+              }
+            },
+            { threshold: 0.08 }
+          )
+        : null;
+    intersectionObserver?.observe(track);
+
     frameRef.current = window.requestAnimationFrame(tick);
 
     return () => {
       lastTimestampRef.current = 0;
       resizeObserver?.disconnect();
+      intersectionObserver?.disconnect();
       window.removeEventListener('resize', handleResize);
-      window.cancelAnimationFrame(frameRef.current);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (frameRef.current) window.cancelAnimationFrame(frameRef.current);
     };
   }, [repeatedCategoryGroups]);
 
@@ -607,6 +637,8 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
   const segmentWidthRef = useRef(0);
   const suppressClickRef = useRef(false);
   const scrollSpeedRef = useRef(18);
+  const isPageVisibleRef = useRef(true);
+  const isCarouselVisibleRef = useRef(true);
   const dragStateRef = useRef({
     active: false,
     moved: false,
@@ -677,7 +709,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
       const delta = timestamp - lastTimestampRef.current;
       lastTimestampRef.current = timestamp;
 
-      if (!dragStateRef.current.active) {
+      if (isPageVisibleRef.current && isCarouselVisibleRef.current && !dragStateRef.current.active) {
         offsetRef.current += (scrollSpeedRef.current * delta) / 1000;
       }
 
@@ -685,13 +717,37 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
       frameRef.current = window.requestAnimationFrame(tick);
     };
 
+    const handleVisibilityChange = () => {
+      isPageVisibleRef.current = !document.hidden;
+      if (isPageVisibleRef.current) {
+        lastTimestampRef.current = 0;
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    const intersectionObserver =
+      typeof IntersectionObserver === 'function'
+        ? new IntersectionObserver(
+            ([entry]) => {
+              isCarouselVisibleRef.current = Boolean(entry?.isIntersecting);
+              if (isCarouselVisibleRef.current) {
+                lastTimestampRef.current = 0;
+              }
+            },
+            { threshold: 0.08 }
+          )
+        : null;
+    intersectionObserver?.observe(track);
+
     frameRef.current = window.requestAnimationFrame(tick);
 
     return () => {
       lastTimestampRef.current = 0;
       resizeObserver?.disconnect();
+      intersectionObserver?.disconnect();
       window.removeEventListener('resize', handleResize);
-      window.cancelAnimationFrame(frameRef.current);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (frameRef.current) window.cancelAnimationFrame(frameRef.current);
     };
   }, [repeatedCategoryGroups]);
 

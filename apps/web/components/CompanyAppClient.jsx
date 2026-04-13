@@ -2,22 +2,24 @@
 
 import { useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { logoutUser } from '@sharedServices/authService';
 import ConfirmModal from '@sharedComponents/ui/ConfirmModal';
 import SessionGate from './SessionGate';
 import CompanyLayout from '@companyLayouts/CompanyLayout';
-import CompanyDashboardPage from '@companyPages/CompanyDashboardPage';
-import CompanyPostJobPage from '@companyPages/CompanyPostJobPage';
-import CompanyPostJobPaymentPage from '@companyPages/CompanyPostJobPaymentPage';
-import CompanyManageJobsPage from '@companyPages/CompanyManageJobsPage';
-import CompanyApplicantsPage from '@companyPages/CompanyApplicantsPage';
-import CompanyMessagesPage from '@companyPages/CompanyMessagesPage';
-import CompanyNotificationsPage from '@companyPages/CompanyNotificationsPage';
-import CompanySearchDevelopersPage from '@companyPages/CompanySearchDevelopersPage';
-import CompanyProfilePage from '@companyPages/CompanyProfilePage';
-import CompanyPublicProfilePage from '@companyPages/CompanyPublicProfilePage';
-import HelpPage from '@sharedPages/help/HelpPage';
 import { COMPANY_PATHS } from '@companyFeatures/companyUtils';
+
+const CompanyDashboardPage = dynamic(() => import('@companyPages/CompanyDashboardPage'));
+const CompanyPostJobPage = dynamic(() => import('@companyPages/CompanyPostJobPage'));
+const CompanyPostJobPaymentPage = dynamic(() => import('@companyPages/CompanyPostJobPaymentPage'));
+const CompanyManageJobsPage = dynamic(() => import('@companyPages/CompanyManageJobsPage'));
+const CompanyApplicantsPage = dynamic(() => import('@companyPages/CompanyApplicantsPage'));
+const CompanyMessagesPage = dynamic(() => import('@companyPages/CompanyMessagesPage'));
+const CompanyNotificationsPage = dynamic(() => import('@companyPages/CompanyNotificationsPage'));
+const CompanySearchDevelopersPage = dynamic(() => import('@companyPages/CompanySearchDevelopersPage'));
+const CompanyProfilePage = dynamic(() => import('@companyPages/CompanyProfilePage'));
+const CompanyPublicProfilePage = dynamic(() => import('@companyPages/CompanyPublicProfilePage'));
+const HelpPage = dynamic(() => import('@sharedPages/help/HelpPage'));
 
 function renderCompanyRoute(pathname, user, updateUser, onBackFromHelp) {
   if (pathname === COMPANY_PATHS.postJobPayment) return <CompanyPostJobPaymentPage />;

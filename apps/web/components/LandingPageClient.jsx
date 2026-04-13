@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import LandingPage from '@sharedPages/landing/LandingPage';
-import SelectAccountTypeModal from '@sharedComponents/auth/SelectAccountTypeModal';
 import { getCurrentUser } from '@sharedServices/authService';
+
+const SelectAccountTypeModal = dynamic(() => import('@sharedComponents/auth/SelectAccountTypeModal'));
 
 const resolveDashboardPath = (user) => (
   user?.accountType === 'company' || user?.type === 'company'
@@ -46,27 +48,29 @@ export default function LandingPageClient() {
         onSignIn={() => router.push('/auth/login')}
       />
 
-      <SelectAccountTypeModal
-        open={isAccountTypeModalOpen}
-        onClose={() => setIsAccountTypeModalOpen(false)}
-        onSelect={(type) => {
-          setIsAccountTypeModalOpen(false);
+      {isAccountTypeModalOpen ? (
+        <SelectAccountTypeModal
+          open={isAccountTypeModalOpen}
+          onClose={() => setIsAccountTypeModalOpen(false)}
+          onSelect={(type) => {
+            setIsAccountTypeModalOpen(false);
 
-          if (type === 'login') {
-            router.push('/auth/login');
-            return;
-          }
+            if (type === 'login') {
+              router.push('/auth/login');
+              return;
+            }
 
-          if (type === 'developer') {
-            router.push('/auth/register?type=developer');
-            return;
-          }
+            if (type === 'developer') {
+              router.push('/auth/register?type=developer');
+              return;
+            }
 
-          if (type === 'company') {
-            router.push('/auth/register?type=company');
-          }
-        }}
-      />
+            if (type === 'company') {
+              router.push('/auth/register?type=company');
+            }
+          }}
+        />
+      ) : null}
     </>
   );
 }
