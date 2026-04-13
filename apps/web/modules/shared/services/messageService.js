@@ -22,15 +22,30 @@ export const listConversations = async () => {
   }
 };
 
-export const getMessages = async (contactId) => {
+export const getMessages = async (contactId, options = {}) => {
   const cooldownKey = `messages:thread:${String(contactId || '')}`;
   if (isEndpointCoolingDown(cooldownKey)) {
     throw new Error('Messages are temporarily unavailable. Please try again in a minute.');
   }
 
   try {
-    const data = await apiRequest(`/messages/${encodeURIComponent(contactId)}`);
-    return data.messages || [];
+    const params = new URLSearchParams();
+    if (options.beforeCreatedAt) {
+      params.set('beforeCreatedAt', String(options.beforeCreatedAt));
+    }
+    if (options.limit) {
+      params.set('limit', String(options.limit));
+    }
+    if (options.recentHours) {
+      params.set('recentHours', String(options.recentHours));
+    }
+
+    const query = params.toString();
+    const data = await apiRequest(`/messages/${encodeURIComponent(contactId)}${query ? `?${query}` : ''}`);
+    return {
+      messages: data.messages || [],
+      hasMore: Boolean(data.hasMore),
+    };
   } catch (error) {
     markEndpointFailed(cooldownKey);
     throw new Error(error?.message || 'Failed to load messages');
