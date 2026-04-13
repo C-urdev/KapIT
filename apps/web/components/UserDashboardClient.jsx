@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import UserHomePage from '@userPages/home/UserHomePage';
 import { logoutUser } from '@sharedServices/authService';
-import ConfirmModal from '@sharedComponents/ui/ConfirmModal';
 import SessionGate from './SessionGate';
+
+const ConfirmModal = dynamic(() => import('@sharedComponents/ui/ConfirmModal'));
 
 export default function UserDashboardClient() {
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);

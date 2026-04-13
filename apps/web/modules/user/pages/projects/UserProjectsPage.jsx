@@ -297,7 +297,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
                 </div>
 
                 <div className="mt-5 overflow-x-auto">
-                  <div className="min-w-[860px]">
+                  <div className="min-w-[720px] sm:min-w-[860px]">
                     <div className="grid grid-cols-[minmax(0,2.3fr)_minmax(0,1fr)_minmax(0,1.05fr)_120px_88px_88px] gap-4 border-b border-[#d9e0d2] px-4 pb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#758976] dark:border-[#2a4a6f] dark:text-[#89aeca]">
                       <div>Name</div>
                       <div>Stack</div>
