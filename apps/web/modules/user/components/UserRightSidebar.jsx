@@ -7,7 +7,7 @@ import { getFeaturedCompanies } from '@sharedServices/authService';
 const DEMO_FOUNDIT_FEATURED = {
   id: '__demo_foundit_featured__',
   name: 'Foundit',
-  subtitle: 'Example employer on KapIT',
+  subtitle: 'AI and engineering company',
   isPremium: true,
 };
 
@@ -69,7 +69,7 @@ export default function UserRightSidebar({ userType }) {
                 ))}
                 {liveFeaturedCompanies.length === 0 ? (
                   <p className="text-xs text-[#344e41]/85 dark:text-[#b8d4e8]/85 px-2 pt-1">
-                    Other companies join this list after they hire through KapIT (recent hires).
+                    This list features companies hiring on KapIT, such as AI and engineering teams.
                   </p>
                 ) : null}
               </>

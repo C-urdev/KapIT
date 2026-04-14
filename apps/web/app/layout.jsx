@@ -1,4 +1,5 @@
 import AppProviders from '../components/AppProviders';
+import ReleaseSync from '../components/ReleaseSync';
 import Script from 'next/script';
 import './globals.css';
 
@@ -17,6 +18,8 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  const buildVersion = process.env.VERCEL_GIT_COMMIT_SHA || process.env.NEXT_PUBLIC_BUILD_VERSION || 'local-dev';
+
   return (
     <html lang='en'>
       <head>
@@ -47,6 +50,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className='bg-[#f7f6f1] text-slate-900'>
+        <ReleaseSync currentVersion={buildVersion} />
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
