@@ -8,7 +8,6 @@ import {
   Cpu,
   Cloud,
   ArrowRight,
-  Users,
   Moon,
   Sun,
 } from 'lucide-react';
@@ -180,11 +179,6 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
         <div className="relative flex-1 flex items-center">
           <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-16 sm:py-20 lg:py-24">
             <div className="max-w-6xl mx-auto text-center w-full">
-              <p className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 dark:bg-[#162842]/70 border border-white/40 dark:border-[#1e3a5f] text-sm font-semibold text-[#344e41] dark:text-[#b8d4e8] backdrop-blur">
-                <Users className="w-4 h-4 text-[#588157] dark:text-[#3ba9d6]" />
-                Marketplace for Filipino IT talent
-              </p>
-
               <h2 className="mt-8 text-5xl sm:text-6xl lg:text-7xl xl:text-[5.5rem] font-extrabold tracking-tight text-[#102a1b] dark:text-white max-w-6xl mx-auto">
                 Connect Filipino IT Talent with Opportunity
               </h2>
@@ -288,39 +282,6 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
           </div>
         </div>
         <ThinSectionLine className="bottom-0" />
-      </section>
-
-      <section className="relative bg-gradient-to-b from-[#fbfaf6] via-[#fbfaf6] via-[97%] to-[#f8f4ec] dark:bg-gradient-to-b dark:from-[#132d4d] dark:via-[#102743] dark:to-[#0f2139]">
-        <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 pt-10 pb-10 min-h-[360px] sm:min-h-[400px]">
-          <div className="max-w-3xl">
-            <h3 className="text-3xl font-bold text-[#102a1b] dark:text-white">How KapIT works</h3>
-          </div>
-
-          <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-3 md:gap-10">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#588157] dark:text-[#7fd0ee]">Step 1</p>
-              <h4 className="mt-3 text-2xl font-bold text-[#102a1b] dark:text-white">Create your profile</h4>
-              <p className="mt-3 max-w-sm text-base leading-relaxed text-[#344e41] dark:text-[#b8d4e8]">
-                Create your developer profile or company account.
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#588157] dark:text-[#7fd0ee]">Step 2</p>
-              <h4 className="mt-3 text-2xl font-bold text-[#102a1b] dark:text-white">Showcase work</h4>
-              <p className="mt-3 max-w-sm text-base leading-relaxed text-[#344e41] dark:text-[#b8d4e8]">
-                Showcase portfolios or post IT projects with clear requirements.
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#588157] dark:text-[#7fd0ee]">Step 3</p>
-              <h4 className="mt-3 text-2xl font-bold text-[#102a1b] dark:text-white">Connect & collaborate</h4>
-              <p className="mt-3 max-w-sm text-base leading-relaxed text-[#344e41] dark:text-[#b8d4e8]">
-                Connect and collaborate with Filipino IT talent.
-              </p>
-            </div>
-          </div>
-        </div>
-        <ThinSectionLine className="bottom-0 z-10" />
       </section>
 
       <section className="relative bg-gradient-to-b from-[#f8f4ec] via-[#eee9de] via-[8%] to-[#e2ddcf] dark:bg-gradient-to-b dark:from-[#0f2139] dark:via-[#0d1d33] dark:to-[#0a1628]">
