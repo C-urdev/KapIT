@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import CompanySidebar from '@companyComponents/CompanySidebar';
 import CompanyHeader from '@companyComponents/CompanyHeader';
 import CompanyMobileMenuDrawer from '@companyComponents/layout/mobile/CompanyMobileMenuDrawer';
-import { LayoutDashboard, Briefcase, Users, MessageCircle, Bell } from 'lucide-react';
+import { LayoutDashboard, Briefcase, MessageCircle } from 'lucide-react';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
 import CompanyPremiumPopup from '@companyPages/CompanyPremiumPopupPage';
 import { getUnreadNotificationCount } from '@sharedServices/notificationsService';
@@ -137,22 +137,19 @@ const MOBILE_NAV_ITEMS = [
   { path: COMPANY_PATHS.dashboard, label: 'Home', icon: LayoutDashboard },
   { path: COMPANY_PATHS.jobs, label: 'Jobs', icon: Briefcase },
   { path: COMPANY_PATHS.messages, label: 'Messages', icon: MessageCircle },
-  { path: COMPANY_PATHS.notifications, label: 'Notifications', icon: Bell },
-  { path: COMPANY_PATHS.applicants, label: 'Applicants', icon: Users },
 ];
 
-function CompanyMobileBottomNav({ pathname, unreadNotificationCount = 0 }) {
+function CompanyMobileBottomNav({ pathname }) {
   if (pathname === COMPANY_PATHS.postJobPayment) {
     return null;
   }
 
   return (
     <div className="xl:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#a3b18a] dark:border-[#2a4a6f] bg-white/95 dark:bg-[#162842]/95 backdrop-blur-md">
-      <div className="grid h-16 grid-cols-5 gap-1 px-2" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="grid h-16 grid-cols-3 gap-1 px-2" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {MOBILE_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = pathname === item.path;
-          const hasBadge = item.path === COMPANY_PATHS.notifications && unreadNotificationCount > 0;
           return (
             <button
               key={item.path}
@@ -164,7 +161,6 @@ function CompanyMobileBottomNav({ pathname, unreadNotificationCount = 0 }) {
                   : 'text-[#344e41] dark:text-white'
               }`}
             >
-              {hasBadge ? <span className="absolute right-3 top-2 h-2.5 w-2.5 rounded-full bg-[#588157] dark:bg-[#3ba9d6]" /> : null}
               <Icon className={`h-5 w-5 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${active ? 'scale-105' : 'scale-100'}`} />
               <span className={`text-[11px] font-medium transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${active ? 'translate-y-0' : 'translate-y-0.5'}`}>{item.label}</span>
             </button>

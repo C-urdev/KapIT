@@ -78,7 +78,7 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
         ) : null}
       </div>
 
-      <div className="hidden rounded-2xl border border-[#d6d3c9] bg-white p-6 shadow-sm shadow-black/5 transition-colors dark:border-[#2a4a6f] dark:bg-[#162842] xl:grid xl:grid-cols-[minmax(0,1.7fr)_0.95fr_0.9fr_0.95fr_minmax(19rem,1.8fr)] xl:items-center xl:gap-6">
+      <div className="hidden rounded-2xl border border-[#d6d3c9] bg-white p-6 shadow-sm shadow-black/5 transition-colors dark:border-[#2a4a6f] dark:bg-[#162842] xl:grid xl:grid-cols-[minmax(0,1.7fr)_0.95fr_0.9fr_0.95fr_minmax(17.5rem,1.35fr)] xl:items-center xl:gap-6">
         <div className="min-w-0">
           <div className="flex items-start gap-3">
             <Avatar user={user} name={name} />
@@ -112,7 +112,7 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
         <div className="min-w-0 justify-self-start">
           <StatusBlock applicantStatus={applicantStatus} desktop />
         </div>
-        <div className="min-w-0 justify-self-end">
+        <div className="min-w-0 justify-self-stretch">
           <ActionRow
             applicant={applicant}
             user={user}
@@ -183,10 +183,11 @@ function ActionRow({
   onHire,
   wrap = false,
 }) {
-  const compactActionClass = wrap ? 'w-full min-[420px]:w-auto justify-center' : 'w-auto';
+  const compactActionClass = wrap ? 'w-full min-[420px]:w-auto justify-center' : 'min-w-[5.5rem] justify-center';
+  const desktopLayoutClass = wrap ? 'flex-wrap' : 'grid w-full grid-cols-3';
 
   return (
-    <div className={`flex items-center gap-2.5 ${wrap ? 'flex-wrap' : 'flex-wrap xl:justify-end'}`}>
+    <div className={`flex items-center gap-2 ${desktopLayoutClass}`}>
       {resumeUrl ? (
         <a
           href={resumeUrl}

@@ -50,6 +50,15 @@ export default function CompanyManageJobsPage() {
     filled: displayJobs.filter((job) => job?.status === 'filled').length,
     closed: displayJobs.filter((job) => job?.status === 'closed').length,
   }), [displayJobs]);
+  const graphData = useMemo(
+    () => [
+      { label: 'Open', value: Number(summary.open), color: '#3a5a40' },
+      { label: 'Draft', value: Number(summary.draft), color: '#588157' },
+      { label: 'Filled', value: Number(summary.filled), color: '#7aa17b' },
+      { label: 'Closed', value: Number(summary.closed), color: '#93b18e' },
+    ],
+    [summary.closed, summary.draft, summary.filled, summary.open],
+  );
 
   const handleClose = async (job) => {
     if (!job?.id) return;
@@ -192,16 +201,14 @@ export default function CompanyManageJobsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <SummaryCard label="Open" value={summary.open} />
-        <SummaryCard label="Draft" value={summary.draft} />
-        <SummaryCard label="Filled" value={summary.filled} />
-        <SummaryCard label="Closed" value={summary.closed} />
-      </div>
-
       <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[linear-gradient(135deg,#f6fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#16304a,#102235)] p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
         <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Manage persisted postings</h3>
         <p className="mt-2 text-sm text-[#344e41] dark:text-[#dcecff]">Every job listed here comes from the database. Unpaid jobs stay in draft until you use Pay now, while only paid jobs are published to developers.</p>
+      </div>
+
+      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
+        <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Jobs snapshot graph</h3>
+        <SummaryGraph data={graphData} />
       </div>
 
       {feedback && <p className="text-sm text-[#3a5a40] dark:text-[#7fd0ee]">{feedback}</p>}
@@ -245,11 +252,52 @@ export default function CompanyManageJobsPage() {
   );
 }
 
-function SummaryCard({ label, value }) {
+function SummaryGraph({ data }) {
+  if (!data.length) {
+    return <p className="mt-4 text-sm text-[#4b5563] dark:text-[#b8d4e8]">Loading graph data...</p>;
+  }
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  const safeTotal = total > 0 ? total : 1;
+  let currentAngle = 0;
+  const gradientStops = data
+    .map((item) => {
+      const angle = (item.value / safeTotal) * 360;
+      const start = currentAngle;
+      const end = currentAngle + angle;
+      currentAngle = end;
+      return `${item.color} ${start}deg ${end}deg`;
+    })
+    .join(', ');
+
   return (
-    <div className="rounded-xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] p-4 transition-colors duration-300">
-      <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">{label}</p>
-      <p className="mt-1 text-2xl font-extrabold text-[#3a5a40] dark:text-white">{value}</p>
+    <div className="mt-5 grid gap-6 md:grid-cols-[220px_minmax(0,1fr)] md:items-center">
+      <div className="flex justify-center md:justify-start">
+        <div className="relative h-44 w-44" role="img" aria-label="Manage jobs summary donut chart">
+          <div className="h-full w-full rounded-full" style={{ background: `conic-gradient(${gradientStops || '#d1d5db 0deg 360deg'})` }} />
+          <div className="absolute inset-[18%] flex items-center justify-center rounded-full bg-white text-center dark:bg-[#162842]">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#6b7280] dark:text-[#9fb4ca]">Total</p>
+              <p className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">{total}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="space-y-3">
+        {data.map((item) => {
+          const percent = Math.round((item.value / safeTotal) * 100);
+          return (
+            <div key={item.label} className="flex items-center justify-between rounded-xl border border-[#d6d3c9] px-3 py-2 dark:border-[#2a4a6f]">
+              <div className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+                <span className="text-sm font-medium text-[#344e41] dark:text-[#dcecff]">{item.label}</span>
+              </div>
+              <div className="text-sm font-semibold text-[#3a5a40] dark:text-white">
+                {item.value} <span className="text-xs font-medium text-[#6b7280] dark:text-[#9fb4ca]">({percent}%)</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

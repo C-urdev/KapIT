@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import ApplicantCard from '@companyComponents/CompanyApplicantCard';
 import { companyAPI } from '@companyFeatures/companyAPI';
 import { useCompanyAnalytics, useCompanyApplicants } from '@companyFeatures/companyHooks';
@@ -17,6 +17,14 @@ export default function CompanyApplicantsPage() {
   const [rankingJobId, setRankingJobId] = useState(null);
   const statuses = analytics?.applicantsByStatus || {};
   const statusEntries = Object.entries(statuses);
+  const summaryValues = useMemo(
+    () => [
+      { label: 'Total jobs', value: Number(analytics?.totalJobs ?? 0), color: '#3a5a40' },
+      { label: 'Total applicants', value: Number(analytics?.totalApplicants ?? applicants.length ?? 0), color: '#588157' },
+      { label: 'Pipeline statuses', value: Number(statusEntries.length), color: '#7aa17b' },
+    ],
+    [analytics?.totalApplicants, analytics?.totalJobs, applicants.length, statusEntries.length],
+  );
 
   const handleViewProfile = async (user) => {
     if (!user?.id) return;
@@ -73,15 +81,6 @@ export default function CompanyApplicantsPage() {
           <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Applicants</h2>
         </div>
         <div className="flex w-full sm:w-auto flex-wrap items-stretch sm:items-center gap-2">
-          <button
-            type="button"
-            onClick={async () => {
-              await Promise.all([refetch(), refetchAnalytics()]);
-            }}
-            className="px-4 py-2.5 rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors w-full min-[420px]:w-auto"
-          >
-            Refresh
-          </button>
           {plan?.isPremium ? (
             <button
               type="button"
@@ -100,28 +99,19 @@ export default function CompanyApplicantsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <SummaryStat
-          label="Total jobs"
-          value={analyticsLoading ? '...' : analytics?.totalJobs ?? 0}
-        />
-        <SummaryStat
-          label="Total applicants"
-          value={analyticsLoading ? '...' : analytics?.totalApplicants ?? applicants.length}
-        />
-        <SummaryStat
-          label="Pipeline statuses"
-          value={analyticsLoading ? '...' : statusEntries.length}
-        />
+      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[linear-gradient(135deg,#f8fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#16304a,#102235)] p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
+        <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Hiring flow</h3>
+        <p className="mt-2 text-sm text-[#344e41] dark:text-[#dcecff]">Use <span className="font-semibold text-[#3a5a40] dark:text-white">Hire candidate</span> when you make a selection. The job will be marked filled, and if you reopen the role later, it will go through the posting payment flow again before going live.</p>
+        {plan?.isPremium ? <p className="mt-2 text-sm text-[#344e41] dark:text-[#dcecff]">Premium employer AI ranking is enabled. Match scores appear after refreshing the ranking for a job.</p> : null}
       </div>
 
       <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Pipeline overview</h3>
-          </div>
+        <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Applicants snapshot graph</h3>
+        <SummaryGraph data={analyticsLoading ? [] : summaryValues} />
+        <div className="mt-5 border-t border-[#d6d3c9] dark:border-[#2a4a6f] pt-4">
+          <h4 className="text-sm font-semibold text-[#3a5a40] dark:text-white">Pipeline overview</h4>
           {statusEntries.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               {statusEntries.map(([status, count]) => (
                 <div
                   key={status}
@@ -133,15 +123,9 @@ export default function CompanyApplicantsPage() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">{analyticsLoading ? 'Loading status data...' : 'No applicant status data yet.'}</p>
+            <p className="mt-3 text-sm text-[#4b5563] dark:text-[#b8d4e8]">{analyticsLoading ? 'Loading status data...' : 'No applicant status data yet.'}</p>
           )}
         </div>
-      </div>
-
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[linear-gradient(135deg,#f8fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#16304a,#102235)] p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
-        <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Hiring flow</h3>
-        <p className="mt-2 text-sm text-[#344e41] dark:text-[#dcecff]">Use <span className="font-semibold text-[#3a5a40] dark:text-white">Hire candidate</span> when you make a selection. The job will be marked filled, and if you reopen the role later, it will go through the posting payment flow again before going live.</p>
-        {plan?.isPremium ? <p className="mt-2 text-sm text-[#344e41] dark:text-[#dcecff]">Premium employer AI ranking is enabled. Match scores appear after refreshing the ranking for a job.</p> : null}
       </div>
 
       {feedback && <p className="text-sm text-[#3a5a40] dark:text-[#7fd0ee]">{feedback}</p>}
@@ -155,12 +139,12 @@ export default function CompanyApplicantsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="hidden xl:grid xl:grid-cols-[minmax(0,1.7fr)_minmax(0,0.95fr)_0.9fr_0.95fr_minmax(19rem,1.8fr)] gap-6 rounded-2xl bg-[#f5f5f2] dark:bg-[#102235] px-6 py-4 text-sm font-semibold text-[#344e41] dark:text-[#dcecff]">
+          <div className="hidden xl:grid xl:grid-cols-[minmax(0,1.7fr)_minmax(0,0.95fr)_0.9fr_0.95fr_minmax(17.5rem,1.35fr)] gap-6 rounded-2xl bg-[#f5f5f2] dark:bg-[#102235] px-6 py-4 text-sm font-semibold text-[#344e41] dark:text-[#dcecff]">
             <div>Candidate</div>
             <div>Applied To</div>
             <div>Job Status</div>
             <div>Applicant Status</div>
-            <div>Action</div>
+            <div className="text-center">Action</div>
           </div>
           {applicants.map((applicant) => (
             <ApplicantCard
@@ -202,11 +186,55 @@ export default function CompanyApplicantsPage() {
   );
 }
 
-function SummaryStat({ label, value }) {
+function SummaryGraph({ data }) {
+  if (!data.length) {
+    return <p className="mt-4 text-sm text-[#4b5563] dark:text-[#b8d4e8]">Loading graph data...</p>;
+  }
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  const safeTotal = total > 0 ? total : 1;
+  let currentAngle = 0;
+  const gradientStops = data
+    .map((item) => {
+      const angle = (item.value / safeTotal) * 360;
+      const start = currentAngle;
+      const end = currentAngle + angle;
+      currentAngle = end;
+      return `${item.color} ${start}deg ${end}deg`;
+    })
+    .join(', ');
+  const donutStyle = {
+    background: `conic-gradient(${gradientStops || '#d1d5db 0deg 360deg'})`,
+  };
+
   return (
-    <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] px-5 py-4 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
-      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#588157] dark:text-[#7fd0ee]">{label}</div>
-      <div className="mt-2 text-3xl font-extrabold text-[#3a5a40] dark:text-white">{value}</div>
+    <div className="mt-5 grid gap-6 md:grid-cols-[220px_minmax(0,1fr)] md:items-center">
+      <div className="flex justify-center md:justify-start">
+        <div className="relative h-44 w-44" role="img" aria-label="Applicants summary donut chart">
+          <div className="h-full w-full rounded-full" style={donutStyle} />
+          <div className="absolute inset-[18%] flex items-center justify-center rounded-full bg-white text-center dark:bg-[#162842]">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#6b7280] dark:text-[#9fb4ca]">Total</p>
+              <p className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">{total}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="space-y-3">
+        {data.map((item) => {
+          const percent = Math.round((item.value / safeTotal) * 100);
+          return (
+            <div key={item.label} className="flex items-center justify-between rounded-xl border border-[#d6d3c9] px-3 py-2 dark:border-[#2a4a6f]">
+              <div className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+                <span className="text-sm font-medium text-[#344e41] dark:text-[#dcecff]">{item.label}</span>
+              </div>
+              <div className="text-sm font-semibold text-[#3a5a40] dark:text-white">
+                {item.value} <span className="text-xs font-medium text-[#6b7280] dark:text-[#9fb4ca]">({percent}%)</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
