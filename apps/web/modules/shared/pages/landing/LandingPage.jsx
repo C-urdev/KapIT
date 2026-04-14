@@ -397,6 +397,7 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
   const scrollSpeedRef = useRef(20);
   const isPageVisibleRef = useRef(true);
   const isCarouselVisibleRef = useRef(true);
+  const activePointerTypeRef = useRef(null);
   const dragStateRef = useRef({
     active: false,
     moved: false,
@@ -597,6 +598,7 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
     if (event.pointerType === 'mouse' && event.button !== 0) {
       return;
     }
+    activePointerTypeRef.current = event.pointerType || null;
     beginDrag({ pointerId: event.pointerId, clientX: event.clientX });
     trackRef.current?.setPointerCapture?.(event.pointerId);
   };
@@ -610,10 +612,14 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
     if (track && dragStateRef.current.pointerId !== null) {
       track.releasePointerCapture?.(dragStateRef.current.pointerId);
     }
+    activePointerTypeRef.current = null;
     endDrag();
   };
 
   const handlePointerLeave = () => {
+    if (activePointerTypeRef.current === 'touch') {
+      return;
+    }
     if (dragStateRef.current.active) {
       endDrag();
     }
@@ -686,6 +692,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
   const scrollSpeedRef = useRef(18);
   const isPageVisibleRef = useRef(true);
   const isCarouselVisibleRef = useRef(true);
+  const activePointerTypeRef = useRef(null);
   const dragStateRef = useRef({
     active: false,
     moved: false,
@@ -854,7 +861,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
     if (event.pointerType === 'mouse' && event.button !== 0) {
       return;
     }
-
+    activePointerTypeRef.current = event.pointerType || null;
     beginDrag({ pointerId: event.pointerId, clientX: event.clientX });
     trackRef.current?.setPointerCapture?.(event.pointerId);
   };
@@ -868,10 +875,14 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
     if (track && dragStateRef.current.pointerId !== null) {
       track.releasePointerCapture?.(dragStateRef.current.pointerId);
     }
+    activePointerTypeRef.current = null;
     endDrag();
   };
 
   const handlePointerLeave = () => {
+    if (activePointerTypeRef.current === 'touch') {
+      return;
+    }
     if (dragStateRef.current.active) {
       endDrag();
     }
