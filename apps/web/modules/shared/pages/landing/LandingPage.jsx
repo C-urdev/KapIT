@@ -441,8 +441,22 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
     const measure = () => {
       const segmentWidth = segment.getBoundingClientRect().width;
       if (segmentWidth <= 0) return;
+      const previousSegmentWidth = segmentWidthRef.current || segmentWidth;
       segmentWidthRef.current = segmentWidth;
-      offsetRef.current = -segmentWidth;
+
+      if (offsetRef.current === 0) {
+        offsetRef.current = -segmentWidth;
+      } else if (previousSegmentWidth > 0 && previousSegmentWidth !== segmentWidth) {
+        // Preserve relative carousel position when iOS viewport height changes.
+        offsetRef.current = (offsetRef.current / previousSegmentWidth) * segmentWidth;
+      }
+
+      while (offsetRef.current >= 0) {
+        offsetRef.current -= segmentWidth;
+      }
+      while (offsetRef.current <= segmentWidth * -2) {
+        offsetRef.current += segmentWidth;
+      }
       applyTransform();
     };
 
@@ -735,6 +749,13 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
     };
 
     const measure = () => {
+      const segmentWidth = segment.getBoundingClientRect().width;
+      if (segmentWidth <= 0) return;
+      const previousSegmentWidth = segmentWidthRef.current || segmentWidth;
+      segmentWidthRef.current = segmentWidth;
+      if (offsetRef.current !== 0 && previousSegmentWidth > 0 && previousSegmentWidth !== segmentWidth) {
+        offsetRef.current = (offsetRef.current / previousSegmentWidth) * segmentWidth;
+      }
       syncLoopPosition();
     };
 
