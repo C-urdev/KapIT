@@ -1,6 +1,6 @@
 import LandingPageClient from '../../components/LandingPageClient';
 
-export const revalidate = 300;
+export const revalidate = 0;
 
 export async function generateMetadata() {
   return {
