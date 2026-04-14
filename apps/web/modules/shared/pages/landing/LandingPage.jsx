@@ -8,6 +8,7 @@ import {
   Cpu,
   Cloud,
   ArrowRight,
+  Users,
   Moon,
   Sun,
 } from 'lucide-react';
@@ -241,18 +242,18 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
           </div>
         </div>
 
-        <div className="relative bg-white/95 dark:bg-[#0f2139]/95 backdrop-blur">
+        <div className="sticky top-[72px] z-20 relative bg-white/95 dark:bg-[#0f2139]/95 backdrop-blur">
           <ThinSectionLine className="top-0" />
-          <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-6 sm:py-7">
+          <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-4 sm:py-5">
             <div className="flex flex-col md:flex-row items-center justify-center md:justify-between gap-4">
               <p className="text-sm font-semibold text-[#344e41] dark:text-[#b8d4e8]">
                 Trusted by companies hiring Filipino tech talent
               </p>
-              <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
                 {TRUSTED_LOGOS.map((name) => (
                   <div
                     key={name}
-                    className="text-sm sm:text-base font-semibold tracking-wide text-slate-500 dark:text-slate-400 opacity-80 grayscale"
+                    className="text-sm font-semibold tracking-wide text-slate-500 dark:text-slate-400 opacity-80 grayscale"
                   >
                     {name}
                   </div>
@@ -284,11 +285,59 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
         <ThinSectionLine className="bottom-0" />
       </section>
 
+      <section className="relative bg-gradient-to-b from-[#fbfaf6] via-[#fbfaf6] via-[97%] to-[#f8f4ec] dark:bg-gradient-to-b dark:from-[#132d4d] dark:via-[#102743] dark:to-[#0f2139]">
+        <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 pt-14 pb-10 min-h-[360px] sm:min-h-[400px]">
+          <div className="max-w-3xl">
+            <h3 className="text-3xl font-bold text-[#102a1b] dark:text-white">How KapIT works</h3>
+          </div>
+
+          <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-6">
+            <div className="rounded-2xl border border-[#a3b18a] dark:border-[#2a4a6f] bg-[#fbfaf6]/70 dark:bg-[#132d4d]/35 p-5 min-h-[200px]">
+              <div className="flex items-start justify-between">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#588157] dark:text-[#7fd0ee]">Step 1</p>
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#cfd8c1] dark:border-[#3a628b] bg-white/70 dark:bg-[#183655]">
+                  <Users className="h-5 w-5 text-[#588157] dark:text-[#8ccff0]" />
+                </span>
+              </div>
+              <h4 className="mt-5 text-xl font-bold text-[#102a1b] dark:text-white">Create your profile</h4>
+              <p className="mt-3 max-w-sm text-base leading-relaxed text-[#344e41] dark:text-[#b8d4e8]">
+                Create your developer profile or company account.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#a3b18a] dark:border-[#2a4a6f] bg-[#fbfaf6]/70 dark:bg-[#132d4d]/35 p-5 min-h-[200px]">
+              <div className="flex items-start justify-between">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#588157] dark:text-[#7fd0ee]">Step 2</p>
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#cfd8c1] dark:border-[#3a628b] bg-white/70 dark:bg-[#183655]">
+                  <Code2 className="h-5 w-5 text-[#588157] dark:text-[#8ccff0]" />
+                </span>
+              </div>
+              <h4 className="mt-5 text-xl font-bold text-[#102a1b] dark:text-white">Showcase work</h4>
+              <p className="mt-3 max-w-sm text-base leading-relaxed text-[#344e41] dark:text-[#b8d4e8]">
+                Showcase portfolios or post IT projects with clear requirements.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#a3b18a] dark:border-[#2a4a6f] bg-[#fbfaf6]/70 dark:bg-[#132d4d]/35 p-5 min-h-[200px]">
+              <div className="flex items-start justify-between">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#588157] dark:text-[#7fd0ee]">Step 3</p>
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#cfd8c1] dark:border-[#3a628b] bg-white/70 dark:bg-[#183655]">
+                  <ArrowRight className="h-5 w-5 text-[#588157] dark:text-[#8ccff0]" />
+                </span>
+              </div>
+              <h4 className="mt-5 text-xl font-bold text-[#102a1b] dark:text-white">Connect & collaborate</h4>
+              <p className="mt-3 max-w-sm text-base leading-relaxed text-[#344e41] dark:text-[#b8d4e8]">
+                Connect and collaborate with Filipino IT talent.
+              </p>
+            </div>
+          </div>
+        </div>
+        <ThinSectionLine className="bottom-0 z-10" />
+      </section>
+
       <section className="relative bg-gradient-to-b from-[#f8f4ec] via-[#eee9de] via-[8%] to-[#e2ddcf] dark:bg-gradient-to-b dark:from-[#0f2139] dark:via-[#0d1d33] dark:to-[#0a1628]">
-        <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-10 min-h-[360px] sm:min-h-[400px] flex items-center">
+        <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 pt-14 pb-10 min-h-[360px] sm:min-h-[400px] flex items-center">
           <div className="w-full px-2 sm:px-0 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-10">
             <div className="max-w-2xl">
-              <h3 className="text-3xl sm:text-4xl font-extrabold text-[#102a1b] dark:text-white">
+              <h3 className="text-3xl font-bold text-[#102a1b] dark:text-white">
                 Start building with Filipino IT Talent
               </h3>
             </div>
