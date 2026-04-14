@@ -8,10 +8,12 @@ import { navigate } from '@companyFeatures/companyUtils';
 import { cleanPlaceName, loadProvinceCityData } from '@sharedUtils/philippinesLocations';
 
 const INDUSTRY_OPTIONS = [
+  'AI and Engineering',
   'Information Technology Services',
   'Software Development',
   'Web Development',
   'Mobile App Development',
+  'Blockchain / Crypto',
   'E-commerce',
   'Fintech',
   'EdTech',
@@ -26,7 +28,11 @@ const INDUSTRY_OPTIONS = [
   'Digital Marketing',
   'Gaming / Entertainment Tech',
   'Startup / SaaS',
+  'Enterprise Solutions',
+  'Product Development',
 ];
+const OTHER_COMPANY_TYPE_OPTION = 'Other';
+const COMPANY_TYPE_OPTIONS = [...INDUSTRY_OPTIONS, OTHER_COMPANY_TYPE_OPTION];
 
 const COMPANY_SIZE_OPTIONS = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'];
 const parseLocation = (rawLocation, provinceOptions, provinceCodeByLabel, getCitiesForProvince) => {
@@ -73,10 +79,13 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
     provinceCodeByLabel: {},
     getCitiesForProvince: () => [],
   });
+  const initialIndustry = String(user?.industry || '').trim();
+  const initialUsesCustomType = Boolean(initialIndustry) && !INDUSTRY_OPTIONS.includes(initialIndustry);
   const [form, setForm] = useState({
     companyName: user?.companyName || user?.username || '',
     logoUrl: user?.profileImage || '',
-    industry: user?.industry || '',
+    industry: initialUsesCustomType ? OTHER_COMPANY_TYPE_OPTION : initialIndustry,
+    customIndustry: initialUsesCustomType ? initialIndustry : '',
     companySize: user?.companySize || '',
     description: user?.bio || '',
     website: user?.website || '',
@@ -153,9 +162,10 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
   }, [form.city, locationData]);
 
   const isComplete = useMemo(() => {
+    const finalIndustry = form.industry === OTHER_COMPANY_TYPE_OPTION ? form.customIndustry : form.industry;
     return Boolean(
       String(form.companyName).trim() &&
-        String(form.industry).trim() &&
+        String(finalIndustry).trim() &&
         String(form.companySize).trim() &&
         String(form.location).trim() &&
         String(form.contactEmail).trim()
@@ -170,7 +180,7 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
       await onSubmit?.({
         companyName: form.companyName,
         logoUrl: form.logoUrl,
-        industry: form.industry,
+        industry: form.industry === OTHER_COMPANY_TYPE_OPTION ? form.customIndustry : form.industry,
         companySize: form.companySize,
         description: form.description,
         website: form.website,
@@ -245,15 +255,26 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
                     required
                   />
                 </Field>
-                <Field label="Industry">
+                <Field label="Company Type">
                   <SearchableSelect
                     value={form.industry}
                     onChange={(industry) => setForm((p) => ({ ...p, industry }))}
-                    options={INDUSTRY_OPTIONS}
-                    placeholder="Select an industry"
-                    searchPlaceholder="Search industries"
+                    options={COMPANY_TYPE_OPTIONS}
+                    placeholder="Select company type"
+                    searchPlaceholder="Search company types"
                   />
                 </Field>
+                {form.industry === OTHER_COMPANY_TYPE_OPTION ? (
+                  <Field label="Other Company Type">
+                    <input
+                      value={form.customIndustry}
+                      onChange={(e) => setForm((p) => ({ ...p, customIndustry: e.target.value }))}
+                      className="field"
+                      placeholder="Enter your company type"
+                      required
+                    />
+                  </Field>
+                ) : null}
                 <Field label="Company Size">
                   <SearchableSelect
                     value={form.companySize}
