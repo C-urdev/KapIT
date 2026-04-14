@@ -66,7 +66,7 @@ function formatJobDate(value) {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function CompactJobRow({ job, onManage }) {
+function CompactJobRow({ job, onManage, onOpenApplicants }) {
   const applicants = Number(job?.applicant_count || job?.applicantCount || 0);
   const status = String(job?.status || 'open').toLowerCase();
   const statusDot = status === 'open' ? 'bg-emerald-500' : status === 'closed' ? 'bg-amber-500' : status === 'draft' ? 'bg-slate-500' : 'bg-sky-500';
@@ -110,11 +110,20 @@ function CompactJobRow({ job, onManage }) {
 
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-[#6b7280] dark:text-[#9fb4ca] lg:hidden">Job Status</p>
-        <div className="inline-flex items-center gap-2 rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-[#fbfcfa] dark:bg-[#102235] px-3 py-2 text-sm text-[#344e41] dark:text-white">
+        <button
+          type="button"
+          onClick={() => {
+            if (status === 'open') onOpenApplicants?.(job);
+          }}
+          className="inline-flex items-center gap-2 rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-[#fbfcfa] dark:bg-[#102235] px-3 py-2 text-sm text-[#344e41] dark:text-white disabled:cursor-not-allowed disabled:opacity-80"
+          disabled={status !== 'open'}
+          aria-label={status === 'open' ? 'Open applicants list for this job' : 'Job status'}
+          title={status === 'open' ? 'Open applicants for this job' : undefined}
+        >
           <span className={`h-2.5 w-2.5 rounded-full ${statusDot}`} />
           <span>{formatJobStatus(status)}</span>
           <ChevronDown className="h-4 w-4 text-[#6b7280] dark:text-[#9fb4ca]" />
-        </div>
+        </button>
       </div>
 
       <div>
@@ -172,6 +181,14 @@ export default function CompanyDashboardPage() {
 
     return nextJobs;
   }, [closedJobs, draftJobs, locationQuery, openJobs, sortBy, sortOrder, statusTab, titleQuery]);
+  const overviewGraphData = useMemo(
+    () => [
+      { label: 'Total jobs', value: Number(analytics?.totalJobs ?? 0), color: '#3a5a40' },
+      { label: 'Total applicants', value: Number(analytics?.totalApplicants ?? 0), color: '#588157' },
+      { label: 'Open jobs', value: Number(jobsByStatus.open ?? 0), color: '#7aa17b' },
+    ],
+    [analytics?.totalApplicants, analytics?.totalJobs, jobsByStatus.open],
+  );
 
   return (
     <div className="space-y-8">
@@ -204,6 +221,10 @@ export default function CompanyDashboardPage() {
         <StatsCard label="Open jobs" value={analyticsLoading ? '-' : jobsByStatus.open ?? 0} icon={BarChart3} />
         <StatsCard label="Filled jobs" value={analyticsLoading ? '-' : jobsByStatus.filled ?? 0} icon={Users} />
         <StatsCard label="Total applicants" value={analyticsLoading ? '-' : analytics?.totalApplicants ?? 0} icon={Users} />
+      </div>
+      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
+        <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Applicants snapshot graph</h3>
+        <SummaryGraph data={analyticsLoading ? [] : overviewGraphData} />
       </div>
 
       <section className="space-y-4">
@@ -244,11 +265,66 @@ export default function CompanyDashboardPage() {
         ) : (
           <div className="space-y-4">
             {filteredJobs.slice(0, 8).map((job) => (
-              <CompactJobRow key={job.id} job={job} onManage={() => navigate(COMPANY_PATHS.jobs)} />
+              <CompactJobRow
+                key={job.id}
+                job={job}
+                onManage={() => navigate(COMPANY_PATHS.jobs)}
+                onOpenApplicants={(selectedJob) => navigate(`${COMPANY_PATHS.applicants}?job=${encodeURIComponent(selectedJob?.id || '')}`)}
+              />
             ))}
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+function SummaryGraph({ data }) {
+  if (!data.length) {
+    return <p className="mt-4 text-sm text-[#4b5563] dark:text-[#b8d4e8]">Loading graph data...</p>;
+  }
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  const safeTotal = total > 0 ? total : 1;
+  let currentAngle = 0;
+  const gradientStops = data
+    .map((item) => {
+      const angle = (item.value / safeTotal) * 360;
+      const start = currentAngle;
+      const end = currentAngle + angle;
+      currentAngle = end;
+      return `${item.color} ${start}deg ${end}deg`;
+    })
+    .join(', ');
+
+  return (
+    <div className="mt-5 grid gap-6 md:grid-cols-[220px_minmax(0,1fr)] md:items-center">
+      <div className="flex justify-center md:justify-start">
+        <div className="relative h-44 w-44" role="img" aria-label="Overview summary donut chart">
+          <div className="h-full w-full rounded-full" style={{ background: `conic-gradient(${gradientStops || '#d1d5db 0deg 360deg'})` }} />
+          <div className="absolute inset-[18%] flex items-center justify-center rounded-full bg-white text-center dark:bg-[#162842]">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#6b7280] dark:text-[#9fb4ca]">Total</p>
+              <p className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">{total}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="space-y-3">
+        {data.map((item) => {
+          const percent = Math.round((item.value / safeTotal) * 100);
+          return (
+            <div key={item.label} className="flex items-center justify-between rounded-xl border border-[#d6d3c9] px-3 py-2 dark:border-[#2a4a6f]">
+              <div className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+                <span className="text-sm font-medium text-[#344e41] dark:text-[#dcecff]">{item.label}</span>
+              </div>
+              <div className="text-sm font-semibold text-[#3a5a40] dark:text-white">
+                {item.value} <span className="text-xs font-medium text-[#6b7280] dark:text-[#9fb4ca]">({percent}%)</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

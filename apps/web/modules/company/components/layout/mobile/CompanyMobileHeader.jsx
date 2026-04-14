@@ -1,9 +1,9 @@
 import React from 'react';
-import { Moon, Sun, Menu } from 'lucide-react';
+import { Moon, Sun, Menu, Bell } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
 
-export default function CompanyMobileHeader({ title, user, onOpenMobileNav }) {
+export default function CompanyMobileHeader({ onOpenMobileNav, unreadNotificationCount = 0 }) {
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -34,6 +34,17 @@ export default function CompanyMobileHeader({ title, user, onOpenMobileNav }) {
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => navigate(COMPANY_PATHS.notifications)}
+            className="relative inline-flex h-10 w-10 items-center justify-center text-[#344e41] dark:text-white hover:text-[#3a5a40] dark:hover:text-[#b8d4e8] transition-colors"
+            aria-label="Open notifications"
+          >
+            <Bell className="w-5 h-5 text-[#344e41] dark:text-white" />
+            {unreadNotificationCount > 0 ? (
+              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#588157] dark:bg-[#3ba9d6]" />
+            ) : null}
+          </button>
           <button
             type="button"
             onClick={toggleTheme}
