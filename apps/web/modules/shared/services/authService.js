@@ -14,6 +14,16 @@ if (typeof window !== 'undefined') {
 }
 
 const getErrorMessage = (error, fallbackMessage) => error?.message || fallbackMessage;
+const normalizeAccountType = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'company') return 'company';
+  if (normalized === 'developer' || normalized === 'employee' || normalized === 'user') return 'developer';
+  return null;
+};
+const getUserAccountType = (user) => (
+  normalizeAccountType(user?.accountType) || normalizeAccountType(user?.account_type) || normalizeAccountType(user?.type)
+);
+const isCompanyAccount = (user) => getUserAccountType(user) === 'company';
 const isEndpointCoolingDown = (key) => (endpointCooldowns.get(key) || 0) > Date.now();
 const markEndpointFailed = (key) => {
   endpointCooldowns.set(key, Date.now() + SERVER_COOLDOWN_MS);
@@ -131,7 +141,12 @@ const persistUser = (user) => {
     return null;
   }
 
-  const mergedUser = mergeWithProfileCache(user);
+  const canonicalAccountType = getUserAccountType(user);
+  const mergedUser = mergeWithProfileCache({
+    ...user,
+    ...(canonicalAccountType ? { accountType: canonicalAccountType } : {}),
+    ...(canonicalAccountType === 'company' ? { type: 'company' } : {}),
+  });
   getSessionStorage().setItem(USER_STORAGE_KEY, JSON.stringify(mergedUser));
   saveProfileCacheForUser(mergedUser);
   return mergedUser;
@@ -146,6 +161,7 @@ export const getCachedProfileForEmail = (email) => {
   const cache = readProfileCache();
   return cache[emailKey] || null;
 };
+export { normalizeAccountType, getUserAccountType, isCompanyAccount };
 
 export const registerUser = async (userData) => {
   const payload = { ...(userData || {}) };

@@ -72,8 +72,8 @@
 
 .orbit-shell {
   isolation: isolate;
-  -webkit-mask-image: linear-gradient(to right, transparent 0, black 56px, black calc(100% - 56px), transparent 100%);
-  mask-image: linear-gradient(to right, transparent 0, black 56px, black calc(100% - 56px), transparent 100%);
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 
 @media (min-width: 1024px) {
@@ -86,4 +86,34 @@
 .orbit-track {
   will-change: transform;
   transform: translate3d(0, 0, 0);
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(88, 129, 87, 0.35) transparent;
+}
+
+html::-webkit-scrollbar {
+  width: 8px;
+}
+
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb {
+  background-color: rgba(88, 129, 87, 0.35);
+  border-radius: 999px;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  html {
+    scrollbar-width: none;
+  }
+
+  html::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
 }

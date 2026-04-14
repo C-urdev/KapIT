@@ -556,12 +556,12 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
 function ApplicationsPanel({ applications }) {
   return (
     <div className="mx-auto w-full max-w-[min(100%,1200px)] rounded-[24px] border border-[#a3b18a] bg-white p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
-      <div className="flex items-start gap-4">
+      <div className="flex flex-col min-[420px]:flex-row items-start gap-4">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#14304d] dark:text-[#7dc4ff]">
           <FileCheck2 className="h-6 w-6" />
         </div>
         <div>
-          <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Applications</h2>
+          <h2 className="text-xl min-[420px]:text-2xl font-extrabold text-[#3a5a40] dark:text-white">Applications</h2>
           {applications.length === 0 ? (
             <div className="mt-5 rounded-2xl border border-dashed border-[#bfd0af] bg-[#f8fbf6] p-4 text-sm text-[#5f6f52] dark:border-[#2a4a6f] dark:bg-[#102235] dark:text-[#d5e6f5]">
               No applications yet. Start applying to jobs and they will appear here automatically.
@@ -598,12 +598,12 @@ function ApplicationsPanel({ applications }) {
 function SavedJobsPanel({ savedJobs, savedPosts }) {
   return (
     <div className="mx-auto w-full max-w-[min(100%,1200px)] rounded-[24px] border border-[#a3b18a] bg-white p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
-      <div className="flex items-start gap-4">
+      <div className="flex flex-col min-[420px]:flex-row items-start gap-4">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#14304d] dark:text-[#7dc4ff]">
           <Bookmark className="h-6 w-6" />
         </div>
         <div className="w-full">
-          <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Saved Jobs</h2>
+          <h2 className="text-xl min-[420px]:text-2xl font-extrabold text-[#3a5a40] dark:text-white">Saved Jobs</h2>
           {savedJobs.length === 0 && savedPosts.length === 0 ? (
             <div className="mt-5 rounded-2xl border border-dashed border-[#bfd0af] bg-[#f8fbf6] p-4 text-sm text-[#5f6f52] dark:border-[#2a4a6f] dark:bg-[#102235] dark:text-[#d5e6f5]">
               Nothing saved yet. Use the bookmark buttons on job listings or posts to save them here.
@@ -669,12 +669,12 @@ function TipsPanel() {
   return (
     <div className="mx-auto w-full max-w-[min(100%,1200px)] space-y-5">
       <div className="rounded-[24px] border border-[#a3b18a] bg-white p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
-        <div className="flex items-start gap-4">
+        <div className="flex flex-col min-[420px]:flex-row items-start gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#14304d] dark:text-[#7dc4ff]">
             <Lightbulb className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Tips</h2>
+            <h2 className="text-xl min-[420px]:text-2xl font-extrabold text-[#3a5a40] dark:text-white">Tips</h2>
           </div>
         </div>
       </div>
@@ -721,12 +721,12 @@ function VerifiedProfilesPanel() {
   return (
     <div className="mx-auto w-full max-w-[min(100%,1200px)] space-y-5">
       <div className="rounded-[24px] border border-[#a3b18a] bg-white p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
-        <div className="flex items-start gap-4">
+        <div className="flex flex-col min-[420px]:flex-row items-start gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#14304d] dark:text-[#7dc4ff]">
             <BadgeCheck className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Verified Users & Companies</h2>
+            <h2 className="text-xl min-[420px]:text-2xl font-extrabold text-[#3a5a40] dark:text-white">Verified Users & Companies</h2>
           </div>
         </div>
       </div>

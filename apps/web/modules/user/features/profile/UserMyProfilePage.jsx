@@ -161,7 +161,7 @@ export default function UserMyProfilePage({
               </div>
               <div className="space-y-0.5 max-w-[460px]">
                 <div className="mb-2 sm:mb-2.5 flex flex-wrap items-center gap-2">
-                  <h1 className="text-[2rem] sm:text-[2.2rem] font-bold text-[#1f3a2a] dark:text-white leading-[1.05] -mt-1 sm:-mt-1.5">{displayName}</h1>
+                  <h1 className="text-[1.7rem] min-[420px]:text-[2rem] sm:text-[2.2rem] font-bold text-[#1f3a2a] dark:text-white leading-[1.05] -mt-1 sm:-mt-1.5">{displayName}</h1>
                   {user?.isPremium ? <PremiumBadge /> : null}
                 </div>
                 <p className="text-[1rem] sm:text-[1.05rem] leading-[1.15] font-medium text-[#2f4e39] dark:text-[#b8d4e8]">{profileSubtitle}</p>
@@ -178,10 +178,10 @@ export default function UserMyProfilePage({
               </div>
             </div>
 
-            <div className="flex w-full items-center gap-2 sm:w-auto">
+            <div className="flex w-full items-stretch sm:items-center gap-2 sm:w-auto">
                 <button
                   onClick={() => setEditing(true)}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#3a5a40] px-4 py-2 text-white font-semibold transition-colors hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] sm:w-auto"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#3a5a40] px-4 py-2 text-sm min-[420px]:text-base text-white font-semibold transition-colors hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] sm:w-auto"
                 >
                   <Edit3 className="w-4 h-4" />
                   Edit Profile
@@ -255,7 +255,7 @@ export default function UserMyProfilePage({
               <input value={formData.socials} onChange={(e) => setFormData({ ...formData, socials: e.target.value })} placeholder="Socials" className="input-base" />
               <textarea value={formData.bio} onChange={(e) => setFormData({ ...formData, bio: e.target.value })} placeholder="Bio" className="input-base min-h-24" />
             </div>
-            <div className="mt-4 flex justify-end gap-2">
+            <div className="mt-4 flex flex-col-reverse min-[420px]:flex-row justify-end gap-2">
               <button onClick={() => setEditing(false)} className="px-4 py-2 rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white">
                 Cancel
               </button>
@@ -274,7 +274,7 @@ function InfoRow({ icon: Icon, text }) {
   return (
     <div className="flex items-center gap-2 text-sm text-[#344e41] dark:text-[#b8d4e8]">
       <Icon className="w-4 h-4 text-[#588157] dark:text-[#3ba9d6]" />
-      <span>{text}</span>
+      <span className="min-w-0 break-words">{text}</span>
     </div>
   );
 }

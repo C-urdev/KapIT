@@ -72,30 +72,32 @@ export default function CompanyApplicantsPage() {
         <div>
           <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Applicants</h2>
         </div>
-        <button
-          type="button"
-          onClick={async () => {
-            await Promise.all([refetch(), refetchAnalytics()]);
-          }}
-          className="px-4 py-2.5 rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
-        >
-          Refresh
-        </button>
-        {plan?.isPremium ? (
+        <div className="flex w-full sm:w-auto flex-wrap items-stretch sm:items-center gap-2">
           <button
             type="button"
-            onClick={() => {
-              const firstJobId = applicants[0]?.job?.id;
-              if (firstJobId) {
-                handleRankApplicants(firstJobId);
-              }
+            onClick={async () => {
+              await Promise.all([refetch(), refetchAnalytics()]);
             }}
-            disabled={!applicants[0]?.job?.id || rankingJobId != null}
-            className="px-4 py-2.5 rounded-xl bg-[#2f6b4f] text-white font-semibold hover:bg-[#285b44] disabled:opacity-60"
+            className="px-4 py-2.5 rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors w-full min-[420px]:w-auto"
           >
-            {rankingJobId ? 'Ranking...' : 'Refresh AI ranking'}
+            Refresh
           </button>
-        ) : null}
+          {plan?.isPremium ? (
+            <button
+              type="button"
+              onClick={() => {
+                const firstJobId = applicants[0]?.job?.id;
+                if (firstJobId) {
+                  handleRankApplicants(firstJobId);
+                }
+              }}
+              disabled={!applicants[0]?.job?.id || rankingJobId != null}
+              className="px-4 py-2.5 rounded-xl bg-[#2f6b4f] text-white font-semibold hover:bg-[#285b44] disabled:opacity-60 w-full min-[420px]:w-auto"
+            >
+              {rankingJobId ? 'Ranking...' : 'Refresh AI ranking'}
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

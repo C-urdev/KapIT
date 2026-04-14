@@ -172,10 +172,10 @@ export default function CompanySearchDevelopersPage() {
                 />
                 <button
                   type="submit"
-                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#3a5a40] px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#344e41] hover:shadow-md hover:shadow-[#344e41]/15 dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] dark:hover:shadow-[#3ba9d6]/20"
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#3a5a40] px-3.5 min-[420px]:px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#344e41] hover:shadow-md hover:shadow-[#344e41]/15 dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] dark:hover:shadow-[#3ba9d6]/20"
                 >
                   <Search className="h-4 w-4" />
-                  Search
+                  <span className="hidden min-[380px]:inline">Search</span>
                 </button>
               </div>
             </div>
