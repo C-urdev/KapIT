@@ -26,7 +26,7 @@ function OverviewTab({ active, label, count, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`whitespace-nowrap rounded-xl border px-4 py-2 text-sm font-semibold transition-colors ${active ? 'border-[#3a5a40] bg-[#3a5a40] text-white dark:border-[#3ba9d6] dark:bg-[#3ba9d6] dark:text-[#0a1628]' : 'border-[#d6d3c9] bg-white text-[#3a5a40] hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#162842] dark:text-white dark:hover:bg-[#1e3a5f]'}`}
+      className={`rounded-xl border px-4 py-2 text-xs sm:text-sm font-semibold transition-colors ${active ? 'border-[#3a5a40] bg-[#3a5a40] text-white dark:border-[#3ba9d6] dark:bg-[#3ba9d6] dark:text-[#0a1628]' : 'border-[#d6d3c9] bg-white text-[#3a5a40] hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#162842] dark:text-white dark:hover:bg-[#1e3a5f]'}`}
     >
       {label} ({count})
     </button>
@@ -207,7 +207,7 @@ export default function CompanyDashboardPage() {
       </div>
 
       <section className="space-y-4">
-        <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1">
+        <div className="flex flex-wrap items-center gap-2 pb-1">
           <OverviewTab active={statusTab === 'open'} label="Open" count={openJobs.length} onClick={() => setStatusTab('open')} />
           <OverviewTab active={statusTab === 'draft'} label="Draft" count={draftJobs.length} onClick={() => setStatusTab('draft')} />
           <OverviewTab active={statusTab === 'closed'} label="Closed" count={closedJobs.length} onClick={() => setStatusTab('closed')} />

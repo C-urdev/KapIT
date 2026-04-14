@@ -186,19 +186,19 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
 
               <form onSubmit={handleSearch} className="mt-16 sm:mt-20">
                 <div className="mx-auto max-w-5xl">
-                  <div className="flex flex-col gap-2 rounded-2xl bg-white/85 dark:bg-[#0f2139]/85 border border-[#a3b18a] dark:border-[#2a4a6f] shadow-lg shadow-black/5 dark:shadow-[#3ba9d6]/10 p-2 backdrop-blur sm:flex-row sm:items-stretch">
+                  <div className="flex items-stretch gap-2 overflow-hidden rounded-3xl bg-white/85 dark:bg-[#0f2139]/85 border border-[#a3b18a] dark:border-[#2a4a6f] shadow-lg shadow-black/5 dark:shadow-[#3ba9d6]/10 p-2 backdrop-blur">
                     <div className="flex min-w-0 flex-1 items-center pl-3">
                       <Search className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 text-[#588157] dark:text-[#3ba9d6]" />
                       <input
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="Search developers, skills, or services..."
-                        className="min-w-0 flex-1 bg-transparent px-3 sm:px-4 py-4 text-base sm:text-lg text-[#102a1b] dark:text-white placeholder:text-[#344e41]/70 dark:placeholder:text-[#b8d4e8]/70 outline-none"
+                        className="min-w-0 flex-1 bg-transparent px-3 sm:px-4 py-3.5 sm:py-4 text-base sm:text-lg text-[#102a1b] dark:text-white placeholder:text-[#344e41]/70 dark:placeholder:text-[#b8d4e8]/70 outline-none"
                       />
                     </div>
                     <button
                       type="submit"
-                      className="shrink-0 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] px-5 sm:px-8 min-w-[112px] sm:min-w-0 text-white text-base sm:text-lg font-semibold transition-colors"
+                      className="shrink-0 self-stretch appearance-none border-0 rounded-xl sm:rounded-2xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] px-3 sm:px-8 min-w-[92px] sm:min-w-0 text-[0.88rem] sm:text-lg text-white font-semibold leading-none transition-colors"
                     >
                       Search
                     </button>
@@ -242,7 +242,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
           </div>
         </div>
 
-        <div className="sticky top-[72px] z-20 relative bg-white/95 dark:bg-[#0f2139]/95 backdrop-blur">
+        <div className="relative z-20 bg-white/95 dark:bg-[#0f2139]/95 backdrop-blur lg:sticky lg:top-[72px]">
           <ThinSectionLine className="top-0" />
           <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-4 sm:py-5">
             <div className="flex flex-col md:flex-row items-center justify-center md:justify-between gap-4">
@@ -386,6 +386,7 @@ function CategoryCard({ icon: Icon, title, onClick, className = '' }) {
 }
 
 function MobileCategoryCarousel({ categories, onCategoryClick }) {
+  const viewportRef = useRef(null);
   const trackRef = useRef(null);
   const segmentRef = useRef(null);
   const frameRef = useRef(0);
@@ -408,9 +409,10 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
   const repeatedCategoryGroups = useMemo(() => [categories, categories, categories], [categories]);
 
   useEffect(() => {
+    const viewport = viewportRef.current;
     const track = trackRef.current;
     const segment = segmentRef.current;
-    if (!track || !segment) return undefined;
+    if (!viewport || !track || !segment) return undefined;
 
     const applyTransform = () => {
       track.style.transform = `translate3d(${offsetRef.current}px, 0, 0)`;
@@ -502,7 +504,7 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
             { threshold: 0.08 }
           )
         : null;
-    intersectionObserver?.observe(track);
+    intersectionObserver?.observe(viewport);
 
     frameRef.current = window.requestAnimationFrame(tick);
 
@@ -568,12 +570,14 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
   };
 
   const handleTouchStart = (event) => {
+    if (typeof window !== 'undefined' && 'PointerEvent' in window) return;
     const touch = event.touches?.[0];
     if (!touch) return;
     beginDrag({ clientX: touch.clientX });
   };
 
   const handleTouchMove = (event) => {
+    if (typeof window !== 'undefined' && 'PointerEvent' in window) return;
     const touch = event.touches?.[0];
     if (!touch) return;
     moveDrag(touch.clientX);
@@ -583,6 +587,33 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
   };
 
   const handleTouchEnd = () => {
+    if (typeof window !== 'undefined' && 'PointerEvent' in window) return;
+    if (dragStateRef.current.active) {
+      endDrag();
+    }
+  };
+
+  const handlePointerDown = (event) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) {
+      return;
+    }
+    beginDrag({ pointerId: event.pointerId, clientX: event.clientX });
+    trackRef.current?.setPointerCapture?.(event.pointerId);
+  };
+
+  const handlePointerMove = (event) => {
+    moveDrag(event.clientX);
+  };
+
+  const handlePointerUp = () => {
+    const track = trackRef.current;
+    if (track && dragStateRef.current.pointerId !== null) {
+      track.releasePointerCapture?.(dragStateRef.current.pointerId);
+    }
+    endDrag();
+  };
+
+  const handlePointerLeave = () => {
     if (dragStateRef.current.active) {
       endDrag();
     }
@@ -602,13 +633,18 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
 
   return (
     <div className="relative -mx-3 px-3 pt-4 pb-1 sm:-mx-6 sm:px-6">
-      <div className="relative overflow-hidden">
+      <div ref={viewportRef} className="relative overflow-hidden">
         <div
           ref={trackRef}
           className={`relative flex w-max items-stretch py-2 select-none ${
             isInteracting ? 'cursor-grabbing' : 'cursor-grab'
           }`}
           style={{ touchAction: 'pan-y pinch-zoom' }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          onPointerLeave={handlePointerLeave}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -639,6 +675,7 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
 }
 
 function CategoryOrbitRow({ categories, onCategoryClick }) {
+  const viewportRef = useRef(null);
   const trackRef = useRef(null);
   const segmentRef = useRef(null);
   const frameRef = useRef(0);
@@ -660,9 +697,10 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
   const repeatedCategoryGroups = useMemo(() => [categories, categories, categories], [categories]);
 
   useEffect(() => {
+    const viewport = viewportRef.current;
     const track = trackRef.current;
     const segment = segmentRef.current;
-    if (!track || !segment) return undefined;
+    if (!viewport || !track || !segment) return undefined;
 
     const applyTransform = () => {
       track.style.transform = `translate3d(${offsetRef.current}px, 0, 0)`;
@@ -747,7 +785,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
             { threshold: 0.08 }
           )
         : null;
-    intersectionObserver?.observe(track);
+    intersectionObserver?.observe(viewport);
 
     frameRef.current = window.requestAnimationFrame(tick);
 
@@ -840,12 +878,14 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
   };
 
   const handleTouchStart = (event) => {
+    if (typeof window !== 'undefined' && 'PointerEvent' in window) return;
     const touch = event.touches?.[0];
     if (!touch) return;
     beginDrag({ clientX: touch.clientX });
   };
 
   const handleTouchMove = (event) => {
+    if (typeof window !== 'undefined' && 'PointerEvent' in window) return;
     const touch = event.touches?.[0];
     if (!touch) return;
     moveDrag(touch.clientX);
@@ -855,6 +895,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
   };
 
   const handleTouchEnd = () => {
+    if (typeof window !== 'undefined' && 'PointerEvent' in window) return;
     if (dragStateRef.current.active) {
       endDrag();
     }
@@ -874,7 +915,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
 
   return (
     <div className="relative overflow-hidden px-0 pt-4 pb-2 sm:px-2 sm:pt-5 sm:pb-3">
-      <div className="orbit-shell relative overflow-hidden">
+      <div ref={viewportRef} className="orbit-shell relative overflow-hidden">
         <div
           ref={trackRef}
           className={`orbit-track relative flex w-max items-stretch py-5 sm:py-6 select-none ${

@@ -183,6 +183,8 @@ function ActionRow({
   onHire,
   wrap = false,
 }) {
+  const compactActionClass = wrap ? 'w-full min-[420px]:w-auto justify-center' : 'w-auto';
+
   return (
     <div className={`flex items-center gap-2.5 ${wrap ? 'flex-wrap' : 'flex-wrap xl:justify-end'}`}>
       {resumeUrl ? (
@@ -190,7 +192,7 @@ function ActionRow({
           href={resumeUrl}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl border border-[#a3b18a] px-2.5 py-2 text-xs font-medium text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#1e3a5f] xl:px-3 xl:text-sm"
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#a3b18a] px-2.5 py-2 text-xs font-medium text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#1e3a5f] xl:px-3 xl:text-sm ${compactActionClass}`}
         >
           <FileText className="h-4 w-4 shrink-0 text-[#588157] dark:text-[#7fd0ee]" />
           Resume
@@ -199,7 +201,7 @@ function ActionRow({
       <button
         type="button"
         onClick={() => onViewProfile?.(user)}
-        className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl border border-[#a3b18a] px-2.5 py-2 text-xs font-medium text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#1e3a5f] xl:px-3 xl:text-sm"
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#a3b18a] px-2.5 py-2 text-xs font-medium text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#1e3a5f] xl:px-3 xl:text-sm ${compactActionClass}`}
       >
         <User className="h-4 w-4 shrink-0 text-[#588157] dark:text-[#7fd0ee]" />
         Profile
@@ -208,7 +210,7 @@ function ActionRow({
         type="button"
         onClick={() => onMessage?.(user)}
         disabled={actionLoading}
-        className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl bg-[#3a5a40] px-2.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#344e41] disabled:opacity-60 dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] xl:px-3 xl:text-sm"
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#3a5a40] px-2.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#344e41] disabled:opacity-60 dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] xl:px-3 xl:text-sm ${compactActionClass}`}
       >
         {actionLoading ? 'Wait...' : 'Message'}
       </button>
@@ -216,7 +218,7 @@ function ActionRow({
         type="button"
         onClick={() => onReview?.(applicant)}
         disabled={!canReview}
-        className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl border border-[#a3b18a] px-2.5 py-2 text-xs font-medium text-[#344e41] transition-colors hover:bg-[#f5f5f2] disabled:opacity-60 dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#1e3a5f] xl:px-3 xl:text-sm"
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#a3b18a] px-2.5 py-2 text-xs font-medium text-[#344e41] transition-colors hover:bg-[#f5f5f2] disabled:opacity-60 dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#1e3a5f] xl:px-3 xl:text-sm ${compactActionClass}`}
       >
         <Eye className="h-4 w-4 shrink-0 text-[#588157] dark:text-[#7fd0ee]" />
         {isReviewed ? 'Reviewed' : actionLoading ? 'Saving...' : 'Review'}
@@ -225,7 +227,7 @@ function ActionRow({
         type="button"
         onClick={() => onReject?.(applicant)}
         disabled={!canReject}
-        className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl border border-rose-200 px-2.5 py-2 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-60 dark:border-rose-500/40 dark:text-rose-300 dark:hover:bg-rose-950/20 xl:px-3 xl:text-sm"
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-rose-200 px-2.5 py-2 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-60 dark:border-rose-500/40 dark:text-rose-300 dark:hover:bg-rose-950/20 xl:px-3 xl:text-sm ${compactActionClass}`}
       >
         <XCircle className="h-4 w-4 shrink-0" />
         {isRejected ? 'Rejected' : actionLoading ? 'Saving...' : 'Reject'}
@@ -234,7 +236,7 @@ function ActionRow({
         type="button"
         onClick={() => onHire?.(applicant)}
         disabled={!canHire}
-        className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl bg-[#2f6b4f] px-2.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#285b44] disabled:opacity-60 dark:bg-[#278bb6] dark:hover:bg-[#3ba9d6] xl:px-3 xl:text-sm"
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#2f6b4f] px-2.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#285b44] disabled:opacity-60 dark:bg-[#278bb6] dark:hover:bg-[#3ba9d6] xl:px-3 xl:text-sm ${compactActionClass}`}
       >
         <CheckCircle2 className="h-4 w-4 shrink-0" />
         {isAccepted ? 'Hired' : actionLoading ? 'Hiring...' : 'Hire'}

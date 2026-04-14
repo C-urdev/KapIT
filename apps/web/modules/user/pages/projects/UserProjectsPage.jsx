@@ -211,7 +211,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
     <div className="mx-auto w-full max-w-[min(100%,1120px)]">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-[2.15rem] font-black tracking-[-0.03em] text-[#3a5a40] dark:text-white">
+          <h1 className="text-[1.75rem] min-[420px]:text-[2.15rem] font-black tracking-[-0.03em] text-[#3a5a40] dark:text-white">
             {userType === 'employee' ? 'My Projects' : 'Projects Library'}
           </h1>
         </div>
@@ -220,7 +220,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
           <button
             type="button"
             onClick={openCreateModal}
-            className="inline-flex items-center gap-2 rounded-2xl bg-[#3a5a40] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(58,90,64,0.18)] transition-colors hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de]"
+            className="inline-flex w-full min-[420px]:w-auto items-center justify-center gap-2 rounded-2xl bg-[#3a5a40] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(58,90,64,0.18)] transition-colors hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de]"
           >
             <Plus className="h-4 w-4" />
             New Project
@@ -233,7 +233,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
             <>
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <h2 className="text-[1.95rem] font-black tracking-[-0.03em] text-[#31572c] dark:text-white">
+                  <h2 className="text-[1.55rem] min-[420px]:text-[1.95rem] font-black tracking-[-0.03em] text-[#31572c] dark:text-white">
                     {userType === 'employee' ? 'My Projects' : 'All Projects'}
                   </h2>
                 </div>
@@ -505,7 +505,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
 
               {error ? <p className="text-sm font-medium text-[#b42318] dark:text-[#ffb4b4]">{error}</p> : null}
 
-              <div className="flex justify-end gap-3">
+              <div className="flex flex-col-reverse min-[420px]:flex-row justify-end gap-3">
                 <button
                   type="button"
                   onClick={resetModal}

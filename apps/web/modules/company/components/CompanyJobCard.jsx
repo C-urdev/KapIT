@@ -38,11 +38,11 @@ export default function CompanyJobCard({ job, onManage, onViewDetails, onClose, 
           </div>
         </div>
 
-        <div className="flex flex-wrap 2xl:justify-end gap-2 2xl:flex-[0_0_30%]">
+        <div className="flex flex-wrap items-stretch 2xl:justify-end gap-2 2xl:flex-[0_0_30%]">
           <button
             type="button"
             onClick={() => onViewDetails?.(job)}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+            className="inline-flex w-full min-[420px]:w-auto items-center justify-center gap-2 px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
           >
             <Eye className="w-4 h-4 text-[#588157] dark:text-[#3ba9d6]" />
             View details
@@ -51,7 +51,7 @@ export default function CompanyJobCard({ job, onManage, onViewDetails, onClose, 
             <button
               type="button"
               onClick={() => onManage(job)}
-              className="px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+              className="w-full min-[420px]:w-auto px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
             >
               Manage
             </button>
@@ -61,7 +61,7 @@ export default function CompanyJobCard({ job, onManage, onViewDetails, onClose, 
               type="button"
               onClick={() => onClose(job)}
               disabled={actionLoading}
-              className="px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] disabled:opacity-60 transition-colors"
+              className="w-full min-[420px]:w-auto px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] disabled:opacity-60 transition-colors"
             >
               {actionLoading ? 'Updating...' : 'Close listing'}
             </button>
@@ -71,7 +71,7 @@ export default function CompanyJobCard({ job, onManage, onViewDetails, onClose, 
               type="button"
               onClick={() => onPayNow(job)}
               disabled={actionLoading}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white text-sm font-semibold disabled:opacity-60 transition-colors"
+              className="inline-flex w-full min-[420px]:w-auto items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white text-sm font-semibold disabled:opacity-60 transition-colors"
             >
               <WalletCards className="w-4 h-4" />
               {actionLoading ? 'Opening checkout...' : 'Pay now'}
@@ -82,7 +82,7 @@ export default function CompanyJobCard({ job, onManage, onViewDetails, onClose, 
               type="button"
               onClick={() => onReopen(job)}
               disabled={actionLoading}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white text-sm font-semibold disabled:opacity-60 transition-colors"
+              className="inline-flex w-full min-[420px]:w-auto items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white text-sm font-semibold disabled:opacity-60 transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
               {actionLoading ? 'Reopening...' : 'Reopen'}
@@ -93,7 +93,7 @@ export default function CompanyJobCard({ job, onManage, onViewDetails, onClose, 
               type="button"
               onClick={() => onDelete(job)}
               disabled={actionLoading}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-red-200 dark:border-red-500/40 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/20 text-sm disabled:opacity-60 transition-colors"
+              className="inline-flex w-full min-[420px]:w-auto items-center justify-center gap-2 px-3 py-2 rounded-lg border border-red-200 dark:border-red-500/40 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/20 text-sm disabled:opacity-60 transition-colors"
             >
               <Trash2 className="w-4 h-4" />
               {actionLoading ? 'Deleting...' : 'Delete'}

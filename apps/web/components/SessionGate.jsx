@@ -2,13 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getCurrentUser, getStoredUser, logoutUser, updateStoredUser } from '@sharedServices/authService';
+import {
+  getCurrentUser,
+  getStoredUser,
+  getUserAccountType,
+  isCompanyAccount,
+  logoutUser,
+  normalizeAccountType,
+  updateStoredUser,
+} from '@sharedServices/authService';
 
 const resolveDashboardPath = (user) =>
-  user?.accountType === 'company' || user?.type === 'company' ? '/company/dashboard' : '/dashboard/user';
+  isCompanyAccount(user) ? '/company/dashboard' : '/dashboard/user';
 
 const resolveOnboardingPath = (user) =>
-  user?.accountType === 'company' || user?.type === 'company'
+  isCompanyAccount(user)
     ? '/onboarding/company-profile'
     : '/onboarding/developer-profile';
 
@@ -51,7 +59,9 @@ export default function SessionGate({
           return;
         }
 
-        if (requiredAccountType && nextUser.accountType !== requiredAccountType && nextUser.type !== requiredAccountType) {
+        const requiredType = normalizeAccountType(requiredAccountType);
+        const userType = getUserAccountType(nextUser);
+        if (requiredType && userType !== requiredType) {
           router.replace(resolveDashboardPath(nextUser));
           return;
         }

@@ -2,15 +2,16 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import AuthPage from '@sharedPages/auth/AuthPage';
+import { isCompanyAccount, normalizeAccountType } from '@sharedServices/authService';
 
 const resolvePostAuthPath = (user) => {
-  if (!user?.profileCompleted) {
-    return user?.accountType === 'company' || user?.type === 'company'
+  if (user?.profileCompleted === false) {
+    return isCompanyAccount(user)
       ? '/onboarding/company-profile'
       : '/onboarding/developer-profile';
   }
 
-  return user?.accountType === 'company' || user?.type === 'company'
+  return isCompanyAccount(user)
     ? '/company/dashboard'
     : '/dashboard/user';
 };
@@ -18,12 +19,13 @@ const resolvePostAuthPath = (user) => {
 export default function AuthPageClient({ initialMode = 'login' }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const accountType = searchParams.get('type') || null;
+  const accountType = normalizeAccountType(searchParams.get('type')) || null;
+  const normalizedInitialMode = initialMode === 'signup' && !accountType ? 'login' : initialMode;
 
   return (
     <AuthPage
       accountType={accountType}
-      initialMode={initialMode}
+      initialMode={normalizedInitialMode}
       onBack={() => router.push('/')}
       onRequestAccountType={() => router.push('/')}
       onBeginSignup={(signupData) => {

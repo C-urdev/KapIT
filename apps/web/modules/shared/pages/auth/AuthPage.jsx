@@ -89,7 +89,22 @@ export default function AuthPage({
         );
       }
     } catch (err) {
-      setError(err.message || 'An error occurred');
+      const rawMessage = String(err?.message || '').trim();
+      if (authMode === 'login') {
+        const normalized = rawMessage.toLowerCase();
+        if (
+          normalized.includes('user not found') ||
+          normalized.includes('account not found') ||
+          normalized.includes('not registered') ||
+          normalized.includes('does not exist')
+        ) {
+          setError('Account not registered. Please create an account first.');
+        } else {
+          setError(rawMessage || 'Unable to sign in. Please check your email and password.');
+        }
+      } else {
+        setError(rawMessage || 'An error occurred');
+      }
     } finally {
       setLoading(false);
     }

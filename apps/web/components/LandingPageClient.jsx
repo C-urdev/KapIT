@@ -4,12 +4,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import LandingPage from '@sharedPages/landing/LandingPage';
-import { getCurrentUser } from '@sharedServices/authService';
+import { getCurrentUser, isCompanyAccount } from '@sharedServices/authService';
 
 const SelectAccountTypeModal = dynamic(() => import('@sharedComponents/auth/SelectAccountTypeModal'));
 
 const resolveDashboardPath = (user) => (
-  user?.accountType === 'company' || user?.type === 'company'
+  isCompanyAccount(user)
     ? '/company/dashboard'
     : '/dashboard/user'
 );
