@@ -1,6 +1,7 @@
 const pool = require('../config/database');
 const { ensureBaseUserSchemaReady } = require('../config/runtimeSchema');
 const { useMigrationManagedSchema } = require('../config/schemaManagementMode');
+const { logger } = require('../config/logger');
 
 let notificationsTableReady = false;
 let notificationsTablePromise = null;
@@ -268,7 +269,7 @@ const listNotifications = async (req, res) => {
 
     return res.json({ success: true, notifications });
   } catch (error) {
-    console.error('List notifications error:', error);
+    logger.error('List notifications error:', error);
     return res.json({
       success: true,
       notifications: [],
@@ -314,7 +315,7 @@ const getUnreadNotificationCount = async (req, res) => {
       unreadCount,
     });
   } catch (error) {
-    console.error('Unread notification count error:', error);
+    logger.error('Unread notification count error:', error);
     return res.json({
       success: true,
       unreadCount: 0,
@@ -349,7 +350,7 @@ const markNotificationsRead = async (req, res) => {
       updatedCount: Number(result.rowCount || 0),
     });
   } catch (error) {
-    console.error('Mark notifications read error:', error);
+    logger.error('Mark notifications read error:', error);
     return res.json({
       success: true,
       updatedCount: 0,

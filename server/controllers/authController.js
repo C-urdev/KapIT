@@ -6,6 +6,7 @@ const { ensureBaseUserSchemaReady, ensureHiringSchemaReady, ensureOnboardingSche
 const { withJobAvailability, closeExpiredJobs } = require('../services/jobAvailabilityService');
 const { getPremiumStateForUser, requirePremiumApplicantFeature } = require('../services/planAccessService');
 const { isAiConfigured, matchJobsForCandidate } = require('../services/aiService');
+const { logger } = require('../config/logger');
 const {
   attachSessionCookies,
   clearSessionCookies,
@@ -242,7 +243,7 @@ const register = async (req, res) => {
       user: serializeUser(user),
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    logger.error('Registration error:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Server error during registration',
@@ -317,7 +318,7 @@ const login = async (req, res) => {
         await client.query('UPDATE users SET profile_completed = $1 WHERE id = $2', [computedProfileCompleted, user.id]);
         user.profile_completed = computedProfileCompleted;
       } catch (error) {
-        console.error('Failed to persist profile_completed on login:', error);
+        logger.error('Failed to persist profile_completed on login:', error);
       }
     }
 
@@ -337,7 +338,7 @@ const login = async (req, res) => {
       user: serializeUser(user),
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login error:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Server error during login',
@@ -409,7 +410,7 @@ const logout = async (req, res) => {
       }
     }
   } catch (error) {
-    console.warn('Logout session cleanup warning:', error?.message || error);
+    logger.warn('Logout session cleanup warning:', error?.message || error);
   }
 
   clearSessionCookies(res);
@@ -454,7 +455,7 @@ const getCurrentUser = async (req, res) => {
           });
         }
       } catch (error) {
-        console.error('Failed to persist profile_completed on /me:', error);
+        logger.error('Failed to persist profile_completed on /me:', error);
       }
     }
 
@@ -463,7 +464,7 @@ const getCurrentUser = async (req, res) => {
       user: serializeUser(user),
     });
   } catch (error) {
-    console.error('Get user error:', error);
+    logger.error('Get user error:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Server error',
@@ -638,7 +639,7 @@ const getPublicProfile = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get public profile error:', error);
+    logger.error('Get public profile error:', error);
     return res.status(500).json({
       success: false,
       message: 'Server error while fetching profile',
@@ -701,7 +702,7 @@ const searchUsers = async (req, res) => {
 
     return res.json({ success: true, results });
   } catch (error) {
-    console.error('Search users error:', error);
+    logger.error('Search users error:', error);
     return res.status(500).json({
       success: false,
       message: 'Server error during search',
@@ -808,7 +809,7 @@ const updateMyProfile = async (req, res) => {
       });
     }
 
-    console.error('Update profile error:', error);
+    logger.error('Update profile error:', error);
     return res.status(500).json({
       success: false,
       message: 'Server error while updating profile',
@@ -886,7 +887,7 @@ const getFeaturedCompaniesByRecentHires = async (req, res) => {
 
     return res.json({ success: true, companies });
   } catch (error) {
-    console.error('Featured companies error:', error);
+    logger.error('Featured companies error:', error);
     return res.status(500).json({
       success: false,
       message: 'Could not load featured companies',
@@ -1086,7 +1087,7 @@ const getJobsFeed = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get jobs feed error:', error);
+    logger.error('Get jobs feed error:', error);
     return res.json({
       success: true,
       jobs: [],
@@ -1139,7 +1140,7 @@ const getSavedJobs = async (req, res) => {
     const savedJobs = result.rows.map((row) => withJobAvailability(serializeSavedJobRow(row)));
     return res.json({ success: true, savedJobs });
   } catch (error) {
-    console.error('Get saved jobs error:', error);
+    logger.error('Get saved jobs error:', error);
     return res.status(500).json({ success: false, message: 'Server error while fetching saved jobs.' });
   } finally {
     client?.release();
@@ -1184,7 +1185,7 @@ const saveJob = async (req, res) => {
 
     return res.status(201).json({ success: true, saved: true, jobId });
   } catch (error) {
-    console.error('Save job error:', error);
+    logger.error('Save job error:', error);
     return res.status(500).json({ success: false, message: 'Server error while saving job.' });
   } finally {
     client?.release();
@@ -1216,7 +1217,7 @@ const removeSavedJob = async (req, res) => {
 
     return res.json({ success: true, removed: true, jobId });
   } catch (error) {
-    console.error('Remove saved job error:', error);
+    logger.error('Remove saved job error:', error);
     return res.status(500).json({ success: false, message: 'Server error while removing saved job.' });
   } finally {
     client?.release();
@@ -1276,7 +1277,7 @@ const getMyApplications = async (req, res) => {
 
     return res.json({ success: true, applications });
   } catch (error) {
-    console.error('Get my applications error:', error);
+    logger.error('Get my applications error:', error);
     return res.status(500).json({
       success: false,
       message: 'Server error while fetching your applications',
@@ -1442,7 +1443,7 @@ const applyToJob = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
-    console.error('Apply to job error:', error);
+    logger.error('Apply to job error:', error);
     return res.status(500).json({
       success: false,
       message: 'Server error while applying to job',

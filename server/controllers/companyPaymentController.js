@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const { ensureBaseUserSchemaReady, ensureHiringSchemaReady } = require('../config/runtimeSchema');
+const { logger } = require('../config/logger');
 const {
   JOB_POST_PLANS,
   getPaymentProviderAvailability,
@@ -19,7 +20,7 @@ const listJobPostingPlans = async (req, res) => {
   try {
     return res.json({ success: true, plans: JOB_POST_PLANS });
   } catch (error) {
-    console.error('List job posting plans error:', error);
+    logger.error('List job posting plans error:', error);
     return res.status(500).json({ success: false, message: 'Server error while loading plans' });
   }
 };
@@ -28,7 +29,7 @@ const listPaymentProviders = async (req, res) => {
   try {
     return res.json({ success: true, providers: getPaymentProviderAvailability() });
   } catch (error) {
-    console.error('List payment providers error:', error);
+    logger.error('List payment providers error:', error);
     return res.status(500).json({ success: false, message: 'Server error while loading payment providers' });
   }
 };
@@ -70,7 +71,7 @@ const createCheckoutSession = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
-    console.error('Create checkout session error:', error);
+    logger.error('Create checkout session error:', error);
     return res.status(400).json({ success: false, message: error?.message || 'Failed to start checkout.' });
   } finally {
     client?.release();
@@ -135,7 +136,7 @@ const verifyStripeCheckout = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
-    console.error('Verify Stripe checkout error:', error);
+    logger.error('Verify Stripe checkout error:', error);
     return res.status(400).json({ success: false, message: error?.message || 'Failed to verify Stripe payment.' });
   } finally {
     client?.release();
@@ -206,7 +207,7 @@ const capturePayPalCheckout = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
-    console.error('Capture PayPal checkout error:', error);
+    logger.error('Capture PayPal checkout error:', error);
     return res.status(400).json({ success: false, message: error?.message || 'Failed to capture PayPal payment.' });
   } finally {
     client?.release();
@@ -238,7 +239,7 @@ const cancelCheckoutSession = async (req, res) => {
 
     return res.json({ success: true, payment: updated || payment });
   } catch (error) {
-    console.error('Cancel checkout session error:', error);
+    logger.error('Cancel checkout session error:', error);
     return res.status(400).json({ success: false, message: error?.message || 'Failed to cancel payment.' });
   } finally {
     client?.release();
@@ -276,7 +277,7 @@ const completeLocalBypassCheckout = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
-    console.error('Complete localhost bypass checkout error:', error);
+    logger.error('Complete localhost bypass checkout error:', error);
     return res.status(400).json({ success: false, message: error?.message || 'Failed to complete localhost bypass payment.' });
   } finally {
     client?.release();

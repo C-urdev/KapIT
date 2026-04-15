@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const { ensureBaseUserSchemaReady, ensureMessagingSchemaReady } = require('../config/runtimeSchema');
+const { logger } = require('../config/logger');
 const {
   compareUserThread,
   buildParityReport,
@@ -30,7 +31,7 @@ const listMigrationHealth = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Messaging migration health error:', error);
+    logger.error('Messaging migration health error:', error);
     return res.status(500).json({
       success: false,
       message: 'Unable to fetch messaging migration health.',
@@ -64,7 +65,7 @@ const getThreadComparison = async (req, res) => {
       comparison,
     });
   } catch (error) {
-    console.error('Messaging thread comparison error:', error);
+    logger.error('Messaging thread comparison error:', error);
     return res.status(500).json({
       success: false,
       message: 'Unable to compare messaging thread.',
@@ -88,7 +89,7 @@ const getParityReport = async (req, res) => {
       report,
     });
   } catch (error) {
-    console.error('Messaging parity report error:', error);
+    logger.error('Messaging parity report error:', error);
     return res.status(500).json({
       success: false,
       message: 'Unable to build messaging parity report.',

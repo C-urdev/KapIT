@@ -8,25 +8,28 @@ process.env.DATABASE_URL ||= 'postgres://test:test@localhost:5432/test';
 
 const { createApp } = require('../app');
 
-test('GET /api/health returns service status', async () => {
-  const app = createApp();
-  const response = await request(app).get('/api/health');
+test('response envelope rollout: legacy mode keeps existing success payload shape', async () => {
+  const previous = process.env.SUCCESS_RESPONSE_DATA_ENVELOPE;
+  delete process.env.SUCCESS_RESPONSE_DATA_ENVELOPE;
 
-  assert.equal(response.status, 200);
-  assert.equal(response.body.success, true);
-  assert.equal(response.body.message, 'Server is running');
+  try {
+    const app = createApp();
+    const response = await request(app).get('/health');
+
+    assert.equal(response.status, 200);
+    assert.equal(response.body.success, true);
+    assert.equal(response.body.message, 'Server is running');
+    assert.equal(Object.prototype.hasOwnProperty.call(response.body, 'data'), false);
+  } finally {
+    if (previous == null) {
+      delete process.env.SUCCESS_RESPONSE_DATA_ENVELOPE;
+    } else {
+      process.env.SUCCESS_RESPONSE_DATA_ENVELOPE = previous;
+    }
+  }
 });
 
-test('GET /health returns liveness status', async () => {
-  const app = createApp();
-  const response = await request(app).get('/health');
-
-  assert.equal(response.status, 200);
-  assert.equal(response.body.success, true);
-  assert.equal(response.body.message, 'Server is running');
-});
-
-test('GET /health uses success data envelope when compatibility flag is enabled', async () => {
+test('response envelope rollout: new mode wraps payload under data', async () => {
   const previous = process.env.SUCCESS_RESPONSE_DATA_ENVELOPE;
   process.env.SUCCESS_RESPONSE_DATA_ENVELOPE = 'true';
 
@@ -37,6 +40,7 @@ test('GET /health uses success data envelope when compatibility flag is enabled'
     assert.equal(response.status, 200);
     assert.equal(response.body.success, true);
     assert.deepEqual(response.body.data, { message: 'Server is running' });
+    assert.equal(Object.prototype.hasOwnProperty.call(response.body, 'message'), false);
   } finally {
     if (previous == null) {
       delete process.env.SUCCESS_RESPONSE_DATA_ENVELOPE;

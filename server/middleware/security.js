@@ -1,5 +1,6 @@
 const { getRedisClient } = require('../config/redis');
 const helmet = require('helmet');
+const { logger } = require('../config/logger');
 
 const WINDOW_MS = 15 * 60 * 1000;
 const MAX_LOGIN_ATTEMPTS = Number(process.env.LOGIN_RATE_LIMIT_MAX || 10);
@@ -91,7 +92,7 @@ const createRateLimiter = ({
         return next();
       })
       .catch((error) => {
-        console.error(`Rate limiter "${storeName}" failed:`, error?.message || error);
+        logger.error(`Rate limiter "${storeName}" failed:`, error?.message || error);
         return next();
       });
   };
@@ -149,7 +150,7 @@ const loginRateLimiter = (req, res, next) => {
       return next();
     })
     .catch((error) => {
-      console.error('Login rate limiter failed:', error?.message || error);
+      logger.error('Login rate limiter failed:', error?.message || error);
       return next();
     });
 };
@@ -164,7 +165,7 @@ const clearLoginRateLimit = (req) => {
       return redis.del(getLimiterBucket({ storeName: 'login-attempts', key }));
     })
     .catch((error) => {
-      console.warn('Failed to clear login rate limiter state:', error?.message || error);
+      logger.warn('Failed to clear login rate limiter state:', error?.message || error);
     });
 };
 
