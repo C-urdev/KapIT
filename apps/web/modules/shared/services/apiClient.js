@@ -34,7 +34,7 @@ const getCsrfToken = () => readCookie(CSRF_COOKIE_NAME);
 const isHtmlDocument = (value) => /<!doctype html>|<html[\s>]/i.test(String(value || ''));
 
 const getResponseErrorMessage = ({ response, data, resolvedPath }) => {
-  const message = String(data?.message || '').trim();
+  const message = String(data?.message || data?.error || '').trim();
 
   if (isHtmlDocument(message)) {
     if (response.status === 404) {
