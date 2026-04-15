@@ -1,8 +1,6 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-const dotenv = require('dotenv');
-const path = require('path');
 const authRoutes = require('./routes/authRoutes');
 const messagesRoutes = require('./routes/messagesRoutes');
 const notificationsRoutes = require('./routes/notificationsRoutes');
@@ -22,9 +20,9 @@ const {
   companyWriteRateLimiter,
   developerApiRateLimiter,
 } = require('./middleware/security');
+const { initEnvironment } = require('./config/env');
 
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
-dotenv.config({ path: path.resolve(__dirname, '..', '.env.local'), override: true });
+initEnvironment();
 
 const ensureSchemaReady = async () => warmRuntimeSchemas();
 

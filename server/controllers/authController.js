@@ -324,8 +324,6 @@ const login = async (req, res) => {
             submittedPasswordLength: String(password || '').length,
             submittedPasswordPreview: String(password || '').slice(0, 20),
             submittedPasswordCharCodes: Array.from(String(password || '')).map((char) => char.charCodeAt(0)),
-            hardcodedIlovenait1Matches: email === 'nait@gmail.com' ? await bcrypt.compare('Ilovenait1', user.password) : undefined,
-            hardcodedFoundit1Matches: email === 'founditcompany@gmail.com' ? await bcrypt.compare('Foundit1', user.password) : undefined,
           }
         } : {})
       });
