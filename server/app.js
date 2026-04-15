@@ -1,7 +1,7 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-const { installConsoleBridge, requestContextMiddleware } = require('./config/logger');
+const { logger, installConsoleBridge, requestContextMiddleware } = require('./config/logger');
 const authRoutes = require('./routes/authRoutes');
 const messagesRoutes = require('./routes/messagesRoutes');
 const notificationsRoutes = require('./routes/notificationsRoutes');
@@ -33,6 +33,8 @@ const ensureSchemaReady = async () => warmRuntimeSchemas();
 const createApp = () => {
   const app = express();
   const allowedOrigins = getAllowedOrigins();
+  const successDataEnvelopeEnabled =
+    String(process.env.SUCCESS_RESPONSE_DATA_ENVELOPE || '').toLowerCase() === 'true';
 
   app.disable('x-powered-by');
   app.use(requestContextMiddleware);
@@ -73,6 +75,20 @@ const createApp = () => {
   app.use((req, res, next) => {
     const originalJson = res.json.bind(res);
     res.json = (payload) => {
+      if (
+        successDataEnvelopeEnabled &&
+        payload &&
+        typeof payload === 'object' &&
+        payload.success === true &&
+        !Object.prototype.hasOwnProperty.call(payload, 'data')
+      ) {
+        const { success, ...rest } = payload;
+        return originalJson({
+          success: true,
+          data: rest,
+        });
+      }
+
       if (
         payload &&
         typeof payload === 'object' &&
@@ -136,7 +152,7 @@ const createApp = () => {
       });
     }
 
-    console.error(err?.stack || err);
+    logger.error({ err }, 'Unhandled application error');
     res.status(500).json({
       success: false,
       error: 'Something went wrong!',

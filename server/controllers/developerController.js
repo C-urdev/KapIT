@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { logger } = require('../config/logger');
 const fs = require('fs/promises');
 const { ensureBaseUserSchemaReady, ensureOnboardingSchemaReady } = require('../config/runtimeSchema');
 const { getPremiumStateForUser, requirePremiumApplicantFeature } = require('../services/planAccessService');
@@ -134,7 +135,7 @@ const getMyDeveloperProfile = async (req, res) => {
     const result = await client.query('SELECT * FROM developer_profiles WHERE user_id = $1', [req.user.id]);
     return res.json({ success: true, profile: result.rows[0] || null });
   } catch (error) {
-    console.error('Get developer profile error:', error);
+    logger.error('Get developer profile error:', error);
     return res.json({
       success: true,
       profile: null,
@@ -315,7 +316,7 @@ const upsertMyDeveloperProfile = async (req, res) => {
     if (String(error?.code) === '23505') {
       return res.status(400).json({ success: false, message: 'Username already taken' });
     }
-    console.error('Upsert developer profile error:', error);
+    logger.error('Upsert developer profile error:', error);
     return res.status(500).json({ success: false, message: 'Server error while saving profile' });
   } finally {
     client?.release();
@@ -376,7 +377,7 @@ const uploadMyResume = async (req, res) => {
       size: stored.size,
     });
   } catch (error) {
-    console.error('Upload resume error:', error);
+    logger.error('Upload resume error:', error);
     return res.status(error.statusCode || 500).json({
       success: false,
       message: error?.message || 'Server error while uploading resume.',
@@ -420,7 +421,7 @@ const downloadResume = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Resume file is no longer available.' });
     }
 
-    console.error('Download resume error:', error);
+    logger.error('Download resume error:', error);
     return res.status(error.statusCode || 500).json({
       success: false,
       message: error?.message || 'Server error while downloading resume.',
@@ -479,7 +480,7 @@ const analyzeMyResume = async (req, res) => {
 
     return res.json({ success: true, analysis: analysis.analysis || analysis });
   } catch (error) {
-    console.error('Analyze resume error:', error);
+    logger.error('Analyze resume error:', error);
     return res.status(error.statusCode || 500).json({
       success: false,
       message: error?.message || 'Server error while analyzing resume.',

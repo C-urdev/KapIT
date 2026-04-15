@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { logger } = require('../config/logger');
 const { createNotification, ensureNotificationsTable } = require('./notificationsController');
 const { ensureBaseUserSchemaReady, ensureHiringSchemaReady, ensureOnboardingSchemaReady } = require('../config/runtimeSchema');
 const {
@@ -165,7 +166,7 @@ const getCompanyProfile = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get company profile error:', error);
+    logger.error('Get company profile error:', error);
     return res.status(500).json({ success: false, message: 'Server error while fetching company profile' });
   } finally {
     client?.release();
@@ -180,7 +181,7 @@ const createJob = async (req, res) => {
       message: 'Direct job publishing is disabled. Complete the verified payment flow before publishing a job.',
     });
   } catch (error) {
-    console.error('Create job error:', error);
+    logger.error('Create job error:', error);
     return res.status(500).json({ success: false, message: 'Server error while creating job' });
   }
 };
@@ -212,7 +213,7 @@ const createDraftJob = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
-    console.error('Create draft job error:', error);
+    logger.error('Create draft job error:', error);
     return res.status(400).json({ success: false, message: error?.message || 'Server error while creating draft job' });
   } finally {
     client?.release();
@@ -254,7 +255,7 @@ const getJobs = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get jobs error:', error);
+    logger.error('Get jobs error:', error);
     return res.status(500).json({ success: false, message: 'Server error while fetching jobs' });
   } finally {
     client?.release();
@@ -333,7 +334,7 @@ const getApplicants = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get applicants error:', error);
+    logger.error('Get applicants error:', error);
     return res.status(500).json({ success: false, message: 'Server error while fetching applicants' });
   } finally {
     client?.release();
@@ -550,7 +551,7 @@ const updateApplicantStatus = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
-    console.error('Update applicant status error:', error);
+    logger.error('Update applicant status error:', error);
     return res.status(500).json({ success: false, message: 'Server error while updating applicant status' });
   } finally {
     client?.release();
@@ -622,7 +623,7 @@ const updateJobStatus = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
-    console.error('Update job status error:', error);
+    logger.error('Update job status error:', error);
     return res.status(500).json({ success: false, message: 'Server error while updating job status' });
   } finally {
     client?.release();
@@ -637,7 +638,7 @@ const reopenJob = async (req, res) => {
       message: 'Direct job reopening is disabled. Reopen the posting through the verified payment flow.',
     });
   } catch (error) {
-    console.error('Reopen job error:', error);
+    logger.error('Reopen job error:', error);
     return res.status(500).json({ success: false, message: 'Server error while reopening job' });
   }
 };
@@ -681,7 +682,7 @@ const deleteJob = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
-    console.error('Delete job error:', error);
+    logger.error('Delete job error:', error);
     return res.status(500).json({ success: false, message: 'Server error while deleting job' });
   } finally {
     client?.release();
@@ -834,7 +835,7 @@ const getDevelopers = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get developers error:', error);
+    logger.error('Get developers error:', error);
     return res.status(500).json({ success: false, message: 'Server error while searching developers' });
   } finally {
     client?.release();
@@ -943,7 +944,7 @@ const rankApplicantsForJob = async (req, res) => {
     rankings.sort((left, right) => right.matchPercentage - left.matchPercentage);
     return res.json({ success: true, rankings });
   } catch (error) {
-    console.error('Rank applicants for job error:', error);
+    logger.error('Rank applicants for job error:', error);
     return res.status(error.statusCode || 500).json({
       success: false,
       message: error?.message || 'Server error while ranking applicants.',
@@ -1006,7 +1007,7 @@ const getAnalytics = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get analytics error:', error);
+    logger.error('Get analytics error:', error);
     return res.status(500).json({ success: false, message: 'Server error while fetching analytics' });
   } finally {
     client?.release();
@@ -1095,7 +1096,7 @@ const updateCompanyProfile = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
-    console.error('Update company profile error:', error);
+    logger.error('Update company profile error:', error);
     return res.status(500).json({ success: false, message: 'Server error while updating profile' });
   } finally {
     client?.release();
@@ -1233,7 +1234,7 @@ const updateCompanyOnboardingProfile = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
-    console.error('Update company onboarding profile error:', error);
+    logger.error('Update company onboarding profile error:', error);
     return res.status(500).json({ success: false, message: 'Server error while saving profile' });
   } finally {
     client?.release();
@@ -1256,5 +1257,3 @@ module.exports = {
   updateCompanyProfile,
   updateCompanyOnboardingProfile,
 };
-
-

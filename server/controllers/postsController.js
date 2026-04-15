@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const { ensureBaseUserSchemaReady } = require('../config/runtimeSchema');
+const { logger } = require('../config/logger');
 
 let postsTableReady = false;
 let postsTablePromise = null;
@@ -240,7 +241,7 @@ const listFeedPosts = async (req, res) => {
       posts: result.rows.map(toPostDto),
     });
   } catch (error) {
-    console.error('List feed posts error:', error);
+    logger.error('List feed posts error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to load feed posts.',
@@ -277,7 +278,7 @@ const listMyPosts = async (req, res) => {
       posts: result.rows.map(toPostDto),
     });
   } catch (error) {
-    console.error('List my posts error:', error);
+    logger.error('List my posts error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to load your posts.',
@@ -321,7 +322,7 @@ const listProfilePosts = async (req, res) => {
       posts: result.rows.map(toPostDto),
     });
   } catch (error) {
-    console.error('List profile posts error:', error);
+    logger.error('List profile posts error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to load profile posts.',
@@ -363,7 +364,7 @@ const createPost = async (req, res) => {
       post: toPostDto(postRow),
     });
   } catch (error) {
-    console.error('Create post error:', error);
+    logger.error('Create post error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to create post.',
@@ -398,7 +399,7 @@ const deletePost = async (req, res) => {
       deleted: result.rowCount > 0,
     });
   } catch (error) {
-    console.error('Delete post error:', error);
+    logger.error('Delete post error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to delete post.',
@@ -460,7 +461,7 @@ const reactToPost = async (req, res) => {
     const refreshed = await readPostWithOwner(client, postId);
     return res.json({ success: true, post: toPostDto(refreshed) });
   } catch (error) {
-    console.error('React to post error:', error);
+    logger.error('React to post error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to update post reaction.',
@@ -547,7 +548,7 @@ const addCommentToPost = async (req, res) => {
     const refreshed = await readPostWithOwner(client, postId);
     return res.json({ success: true, post: toPostDto(refreshed) });
   } catch (error) {
-    console.error('Add comment to post error:', error);
+    logger.error('Add comment to post error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to add comment.',
@@ -640,7 +641,7 @@ const reactToCommentOnPost = async (req, res) => {
     const refreshed = await readPostWithOwner(client, postId);
     return res.json({ success: true, post: toPostDto(refreshed) });
   } catch (error) {
-    console.error('React to comment error:', error);
+    logger.error('React to comment error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to update comment reaction.',
@@ -763,7 +764,7 @@ const toggleSharePost = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
-    console.error('Toggle share post error:', error);
+    logger.error('Toggle share post error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to update shared post.',
@@ -808,7 +809,7 @@ const listSavedPosts = async (req, res) => {
       savedPosts: posts,
     });
   } catch (error) {
-    console.error('List saved posts error:', error);
+    logger.error('List saved posts error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to load saved posts.',
@@ -849,7 +850,7 @@ const savePost = async (req, res) => {
       postId,
     });
   } catch (error) {
-    console.error('Save post error:', error);
+    logger.error('Save post error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to save post.',
@@ -885,7 +886,7 @@ const removeSavedPost = async (req, res) => {
       postId,
     });
   } catch (error) {
-    console.error('Remove saved post error:', error);
+    logger.error('Remove saved post error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to remove saved post.',

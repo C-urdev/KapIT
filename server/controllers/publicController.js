@@ -1,6 +1,7 @@
 const pool = require('../config/database');
 const { ensureBaseUserSchemaReady, ensureHiringSchemaReady } = require('../config/runtimeSchema');
 const { closeExpiredJobs, withJobAvailability } = require('../services/jobAvailabilityService');
+const { logger } = require('../config/logger');
 
 const slugify = (value) =>
   String(value || '')
@@ -94,7 +95,7 @@ const listPublicJobs = async (req, res) => {
       jobs: result.rows.map((row) => withJobAvailability(serializePublicJob(row))).filter((job) => job.acceptsApplications),
     });
   } catch (error) {
-    console.error('Public jobs error:', error);
+    logger.error('Public jobs error:', error);
     return res.status(500).json({
       success: false,
       message: 'Server error while fetching public jobs.',
@@ -157,7 +158,7 @@ const getPublicJobBySlug = async (req, res) => {
       job: withJobAvailability(serializePublicJob(result.rows[0])),
     });
   } catch (error) {
-    console.error('Public job detail error:', error);
+    logger.error('Public job detail error:', error);
     return res.status(500).json({
       success: false,
       message: 'Server error while fetching the job.',
@@ -232,7 +233,7 @@ const getPublicCompanyProfile = async (req, res) => {
       profile: company,
     });
   } catch (error) {
-    console.error('Public company profile error:', error);
+    logger.error('Public company profile error:', error);
     return res.status(500).json({
       success: false,
       message: 'Server error while fetching the company profile.',

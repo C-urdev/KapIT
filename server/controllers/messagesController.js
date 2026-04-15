@@ -2,6 +2,7 @@ const pool = require('../config/database');
 const { createNotification, ensureNotificationsTable } = require('./notificationsController');
 const { ensureBaseUserSchemaReady, ensureMessagingSchemaReady } = require('../config/runtimeSchema');
 const { useMigrationManagedSchema } = require('../config/schemaManagementMode');
+const { logger } = require('../config/logger');
 const {
   ensureDirectConversation,
   insertConversationMessage,
@@ -212,7 +213,7 @@ const logMessagingMigrationEvent = (event, payload) => {
     return;
   }
 
-  console.info(`[messaging-migration] ${event}`, payload);
+  logger.info(`[messaging-migration] ${event}`, payload);
 };
 
 const listConversations = async (req, res) => {
@@ -306,7 +307,7 @@ const listConversations = async (req, res) => {
 
     res.json({ success: true, conversations, source: 'legacy' });
   } catch (error) {
-    console.error('List conversations error:', error);
+    logger.error('List conversations error:', error);
     res.json({
       success: true,
       conversations: [],
@@ -480,7 +481,7 @@ const listMessages = async (req, res) => {
 
     res.json({ success: true, messages, hasMore, source: 'legacy' });
   } catch (error) {
-    console.error('List messages error:', error);
+    logger.error('List messages error:', error);
     res.json({
       success: true,
       messages: [],
@@ -644,7 +645,7 @@ const sendMessage = async (req, res) => {
       errorMessage: error?.message || String(error),
       errorCode: error?.code || '',
     });
-    console.error('Send message error:', error);
+    logger.error('Send message error:', error);
     res.status(500).json({ success: false, message: 'Server error while sending message' });
   } finally {
     if (client) {

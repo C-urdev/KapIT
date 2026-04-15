@@ -4,6 +4,7 @@ const { getJobPostPlanById, JOB_POST_PLANS } = require('./jobPostingPlans');
 const { getOrCreateCompanyForUserId, serializeJobRow } = require('./companyService');
 const { createPublishedJobForCompany, publishDraftJobForCompany } = require('./jobService');
 const { getRedisClient } = require('../config/redis');
+const { logger } = require('../config/logger');
 
 let stripeClient = null;
 
@@ -121,7 +122,7 @@ const withRetry = async (action, { label }) => {
       }
 
       const backoffMs = PAYMENT_API_RETRY_BASE_MS * (2 ** (attempt - 1));
-      console.warn(`${label} failed (attempt ${attempt}/${PAYMENT_API_RETRY_MAX}). Retrying in ${backoffMs}ms.`);
+      logger.warn(`${label} failed (attempt ${attempt}/${PAYMENT_API_RETRY_MAX}). Retrying in ${backoffMs}ms.`);
       await wait(backoffMs);
     }
   }
