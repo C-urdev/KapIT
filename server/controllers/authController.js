@@ -243,7 +243,7 @@ const register = async (req, res) => {
       user: serializeUser(user),
     });
   } catch (error) {
-    logger.error('Registration error:', error);
+    logger.error({ err: error }, 'Registration error');
     res.status(500).json({ 
       success: false, 
       message: 'Server error during registration',
@@ -338,7 +338,7 @@ const login = async (req, res) => {
       user: serializeUser(user),
     });
   } catch (error) {
-    logger.error('Login error:', error);
+    logger.error({ err: error }, 'Login error');
     res.status(500).json({ 
       success: false, 
       message: 'Server error during login',
@@ -1478,4 +1478,3 @@ module.exports = {
   getMyApplications,
   applyToJob,
 };
-
