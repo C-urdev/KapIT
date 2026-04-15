@@ -260,21 +260,19 @@ const register = async (req, res) => {
   }
 };
 
-const verifyPasswordWithCompatibility = async (plainPassword, storedPassword) => {
+const verifyPasswordSecurely = async (plainPassword, storedPassword) => {
   const normalizedStoredPassword = String(storedPassword || '');
   const normalizedPlainPassword = String(plainPassword || '');
 
   if (!normalizedStoredPassword) {
-    return { isValid: false, needsUpgrade: false };
+    return false;
   }
 
-  if (BCRYPT_HASH_PREFIX.test(normalizedStoredPassword)) {
-    const isValid = await bcrypt.compare(normalizedPlainPassword, normalizedStoredPassword);
-    return { isValid, needsUpgrade: false };
+  if (!BCRYPT_HASH_PREFIX.test(normalizedStoredPassword)) {
+    return false;
   }
 
-  const isValid = normalizedPlainPassword === normalizedStoredPassword;
-  return { isValid, needsUpgrade: isValid };
+  return bcrypt.compare(normalizedPlainPassword, normalizedStoredPassword);
 };
 
 // @desc    Login user
@@ -299,44 +297,18 @@ const login = async (req, res) => {
       return res.status(401).json({ 
         success: false, 
         message: 'Invalid email or password',
-        ...(isDev ? { debugLogin: { stage: 'user_lookup', emailChecked: email, userFound: false } } : {})
       });
     }
 
     const user = result.rows[0];
 
-    const passwordCheck = await verifyPasswordWithCompatibility(password, user.password);
+    const isPasswordValid = await verifyPasswordSecurely(password, user.password);
 
-    if (!passwordCheck.isValid) {
+    if (!isPasswordValid) {
       return res.status(401).json({ 
         success: false, 
         message: 'Invalid email or password',
-        ...(isDev ? {
-          debugLogin: {
-            stage: 'password_check',
-            emailChecked: email,
-            userFound: true,
-            username: user.username,
-            userType: user.user_type,
-            accountType: user.account_type || (user.user_type === 'company' ? 'company' : 'developer'),
-            passwordCheck: passwordCheck,
-            passwordPrefix: String(user.password || '').slice(0, 12),
-            submittedPasswordLength: String(password || '').length,
-            submittedPasswordPreview: String(password || '').slice(0, 20),
-            submittedPasswordCharCodes: Array.from(String(password || '')).map((char) => char.charCodeAt(0)),
-          }
-        } : {})
       });
-    }
-
-    if (passwordCheck.needsUpgrade) {
-      try {
-        const upgradedPasswordHash = await bcrypt.hash(password, SALT_ROUNDS);
-        await client.query('UPDATE users SET password = $1 WHERE id = $2', [upgradedPasswordHash, user.id]);
-        user.password = upgradedPasswordHash;
-      } catch (error) {
-        console.warn('Password hash upgrade skipped:', error?.message || error);
-      }
     }
 
     const computedProfileCompleted = computeProfileCompleted(user.user_type, user, user.account_type);
@@ -355,7 +327,6 @@ const login = async (req, res) => {
     res.json({
       success: true,
       message: 'Login successful',
-      ...(isDev ? { debugLogin: { stage: 'success', emailChecked: email, userFound: true, username: user.username } } : {}),
       session: {
         strategy: 'cookie',
         accessTokenTtl: process.env.JWT_ACCESS_EXPIRE || '20m',

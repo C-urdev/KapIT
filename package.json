@@ -17,6 +17,7 @@
     "audit": "npm audit --audit-level=high",
     "audit:ci": "npm audit --audit-level=high --omit=dev",
     "build": "node scripts/run-web.js build",
+    "test": "node --test \"server/tests/**/*.test.cjs\"",
     "next:dev": "node scripts/run-web.js dev",
     "next:build": "node scripts/run-web.js build",
     "fastapi:dev": "cd services/ai-fastapi && uvicorn main:app --reload --port 8000"
@@ -28,11 +29,16 @@
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "express-validator": "^7.0.1",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.11.3",
-    "stripe": "^18.3.0"
+    "pino": "^10.3.1",
+    "redis": "^5.12.1",
+    "stripe": "^18.3.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2"
   }
 }

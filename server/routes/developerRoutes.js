@@ -1,6 +1,8 @@
 const express = require('express');
 const { verifyToken, requireCsrfForCookieAuth } = require('../middleware/auth');
 const { getMyDeveloperProfile, upsertMyDeveloperProfile, uploadMyResume, downloadResume, analyzeMyResume } = require('../controllers/developerController');
+const { validateRequest } = require('../middleware/validateRequest');
+const { writeSchemas } = require('../validation/writeSchemas');
 
 const router = express.Router();
 const resumeUploadParser = express.raw({
@@ -20,8 +22,8 @@ router.get('/resumes/:storedName', verifyToken, downloadResume);
 router.use(verifyToken, requireDeveloperAccount);
 
 router.get('/profile', getMyDeveloperProfile);
-router.put('/profile', requireCsrfForCookieAuth, upsertMyDeveloperProfile);
-router.post('/resume', requireCsrfForCookieAuth, resumeUploadParser, uploadMyResume);
-router.post('/ai/resume-analysis', requireCsrfForCookieAuth, analyzeMyResume);
+router.put('/profile', requireCsrfForCookieAuth, validateRequest(writeSchemas.developerProfileUpdate), upsertMyDeveloperProfile);
+router.post('/resume', requireCsrfForCookieAuth, validateRequest(writeSchemas.developerResumeUpload), resumeUploadParser, uploadMyResume);
+router.post('/ai/resume-analysis', requireCsrfForCookieAuth, validateRequest(writeSchemas.developerResumeAnalysis), analyzeMyResume);
 
 module.exports = router;

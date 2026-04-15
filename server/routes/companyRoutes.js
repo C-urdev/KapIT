@@ -25,6 +25,8 @@ const {
   cancelCheckoutSession,
   completeLocalBypassCheckout,
 } = require('../controllers/companyPaymentController');
+const { validateRequest } = require('../middleware/validateRequest');
+const { writeSchemas } = require('../validation/writeSchemas');
 
 const router = express.Router();
 
@@ -38,25 +40,25 @@ const requireCompanyAccount = (req, res, next) => {
 router.use(verifyToken, requireCompanyAccount);
 
 router.get('/profile', getCompanyProfile);
-router.post('/jobs/draft', requireCsrfForCookieAuth, createDraftJob);
+router.post('/jobs/draft', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyDraftJob), createDraftJob);
 router.get('/payments/plans', listJobPostingPlans);
 router.get('/payments/providers', listPaymentProviders);
-router.post('/payments/checkout-session', requireCsrfForCookieAuth, createCheckoutSession);
-router.post('/payments/localhost-bypass', requireCsrfForCookieAuth, completeLocalBypassCheckout);
-router.post('/payments/stripe/verify', requireCsrfForCookieAuth, verifyStripeCheckout);
-router.post('/payments/paypal/capture', requireCsrfForCookieAuth, capturePayPalCheckout);
-router.post('/payments/:paymentId/cancel', requireCsrfForCookieAuth, cancelCheckoutSession);
-router.post('/jobs', requireCsrfForCookieAuth, createJob);
+router.post('/payments/checkout-session', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyCheckoutSession), createCheckoutSession);
+router.post('/payments/localhost-bypass', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyLocalBypass), completeLocalBypassCheckout);
+router.post('/payments/stripe/verify', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyStripeVerify), verifyStripeCheckout);
+router.post('/payments/paypal/capture', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyPaypalCapture), capturePayPalCheckout);
+router.post('/payments/:paymentId/cancel', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyCancel), cancelCheckoutSession);
+router.post('/jobs', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyJobsCreate), createJob);
 router.get('/jobs', getJobs);
-router.patch('/jobs/:jobId/status', requireCsrfForCookieAuth, updateJobStatus);
-router.post('/jobs/:jobId/reopen', requireCsrfForCookieAuth, reopenJob);
-router.delete('/jobs/:jobId', requireCsrfForCookieAuth, deleteJob);
+router.patch('/jobs/:jobId/status', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyJobStatus), updateJobStatus);
+router.post('/jobs/:jobId/reopen', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyJobReopen), reopenJob);
+router.delete('/jobs/:jobId', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyDeleteJob), deleteJob);
 router.get('/jobs/:jobId/ai/rank-applicants', rankApplicantsForJob);
 router.get('/applicants', getApplicants);
-router.patch('/applications/:applicationId/status', requireCsrfForCookieAuth, updateApplicantStatus);
+router.patch('/applications/:applicationId/status', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyApplicationStatus), updateApplicantStatus);
 router.get('/developers', getDevelopers);
 router.get('/analytics', getAnalytics);
-router.put('/profile', requireCsrfForCookieAuth, updateCompanyProfile);
-router.put('/onboarding/profile', requireCsrfForCookieAuth, updateCompanyOnboardingProfile);
+router.put('/profile', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyProfileUpdate), updateCompanyProfile);
+router.put('/onboarding/profile', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyOnboardingUpdate), updateCompanyOnboardingProfile);
 
 module.exports = router;

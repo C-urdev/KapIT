@@ -1,30 +1,19 @@
-const rateLimitStores = new Map();
+const { getRedisClient } = require('../config/redis');
+const helmet = require('helmet');
 
 const WINDOW_MS = 15 * 60 * 1000;
 const MAX_LOGIN_ATTEMPTS = Number(process.env.LOGIN_RATE_LIMIT_MAX || 10);
+const isProduction = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
 
-const getStore = (storeName) => {
-  if (!rateLimitStores.has(storeName)) {
-    rateLimitStores.set(storeName, new Map());
-  }
-
-  return rateLimitStores.get(storeName);
-};
+// Rate limiting strategy: fail-open.
+// Availability is prioritized when Redis is degraded/unreachable so auth/API traffic
+// does not become a single-point outage. Monitor Redis health and alert on failures.
 
 const normalizeKey = (value) => String(value || '').trim().toLowerCase();
 
 const getLoginRateLimitKey = (req) => {
   const email = normalizeKey(req.body?.email);
   return `${req.ip}:${email || 'anonymous'}`;
-};
-
-const cleanupExpiredEntries = (store) => {
-  const now = Date.now();
-  for (const [key, entry] of store.entries()) {
-    if ((entry?.resetAt || 0) <= now) {
-      store.delete(key);
-    }
-  }
 };
 
 const getClientIdentity = (req) => normalizeKey(req.user?.id || req.ip || 'anonymous');
@@ -38,6 +27,32 @@ const setRateLimitHeaders = (res, { max, remaining, resetAt }) => {
   res.setHeader('Retry-After', String(retryAfterSeconds));
 };
 
+const getLimiterBucket = ({ storeName, key }) => `rl:${storeName}:${key}`;
+
+const touchRateLimitBucket = async ({ storeName, key, windowMs }) => {
+  const redis = await getRedisClient();
+  if (!redis) {
+    return null;
+  }
+
+  const bucket = getLimiterBucket({ storeName, key });
+  const count = await redis.incr(bucket);
+  if (count === 1) {
+    await redis.pExpire(bucket, windowMs);
+  }
+
+  let ttlMs = await redis.pTTL(bucket);
+  if (ttlMs < 0) {
+    await redis.pExpire(bucket, windowMs);
+    ttlMs = windowMs;
+  }
+
+  return {
+    count,
+    resetAt: Date.now() + ttlMs,
+  };
+};
+
 const createRateLimiter = ({
   storeName,
   windowMs,
@@ -46,116 +61,111 @@ const createRateLimiter = ({
   keyGenerator = getClientIdentity,
   skip,
 }) => {
-  const store = getStore(storeName);
-
   return (req, res, next) => {
     if (typeof skip === 'function' && skip(req)) {
       return next();
     }
 
-    cleanupExpiredEntries(store);
-
-    const now = Date.now();
     const key = String(keyGenerator(req) || 'anonymous');
-    const existing = store.get(key);
 
-    if (!existing || existing.resetAt <= now) {
-      const nextEntry = {
-        count: 1,
-        resetAt: now + windowMs,
-      };
+    touchRateLimitBucket({ storeName, key, windowMs })
+      .then((result) => {
+        if (!result) {
+          // Redis unavailable: fail open to preserve API reliability.
+          return next();
+        }
 
-      store.set(key, nextEntry);
-      setRateLimitHeaders(res, {
-        max,
-        remaining: max - nextEntry.count,
-        resetAt: nextEntry.resetAt,
+        setRateLimitHeaders(res, {
+          max,
+          remaining: max - result.count,
+          resetAt: result.resetAt,
+        });
+
+        if (result.count > max) {
+          return res.status(429).json({
+            success: false,
+            message,
+          });
+        }
+
+        return next();
+      })
+      .catch((error) => {
+        console.error(`Rate limiter "${storeName}" failed:`, error?.message || error);
+        return next();
       });
-      return next();
-    }
-
-    if (existing.count >= max) {
-      setRateLimitHeaders(res, {
-        max,
-        remaining: 0,
-        resetAt: existing.resetAt,
-      });
-      return res.status(429).json({
-        success: false,
-        message,
-      });
-    }
-
-    existing.count += 1;
-    store.set(key, existing);
-    setRateLimitHeaders(res, {
-      max,
-      remaining: max - existing.count,
-      resetAt: existing.resetAt,
-    });
-    return next();
   };
 };
 
-const securityHeaders = (req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-  res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
-  res.setHeader(
-    'Content-Security-Policy',
-    "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https: http:; font-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
-  );
-  next();
-};
+const securityHeaders = helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      connectSrc: ["'self'", 'https:', 'http:'],
+      fontSrc: ["'self'", 'data:', 'https:'],
+      frameAncestors: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+    },
+  },
+  hsts: isProduction
+    ? {
+        maxAge: Number(process.env.HSTS_MAX_AGE || 31536000),
+        includeSubDomains: true,
+        preload: true,
+      }
+    : false,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  frameguard: { action: 'deny' },
+  crossOriginOpenerPolicy: { policy: 'same-origin' },
+  crossOriginResourcePolicy: { policy: 'same-site' },
+  xPoweredBy: true,
+});
 
 const loginRateLimiter = (req, res, next) => {
-  const store = getStore('login-attempts');
-  cleanupExpiredEntries(store);
   const key = getLoginRateLimitKey(req);
-  const now = Date.now();
-  const existing = store.get(key);
+  touchRateLimitBucket({ storeName: 'login-attempts', key, windowMs: WINDOW_MS })
+    .then((result) => {
+      if (!result) {
+        return next();
+      }
 
-  if (!existing || existing.resetAt <= now) {
-    const nextEntry = {
-      count: 1,
-      resetAt: now + WINDOW_MS,
-    };
-    store.set(key, nextEntry);
-    setRateLimitHeaders(res, {
-      max: MAX_LOGIN_ATTEMPTS,
-      remaining: MAX_LOGIN_ATTEMPTS - nextEntry.count,
-      resetAt: nextEntry.resetAt,
-    });
-    return next();
-  }
+      setRateLimitHeaders(res, {
+        max: MAX_LOGIN_ATTEMPTS,
+        remaining: MAX_LOGIN_ATTEMPTS - result.count,
+        resetAt: result.resetAt,
+      });
 
-  if (existing.count >= MAX_LOGIN_ATTEMPTS) {
-    setRateLimitHeaders(res, {
-      max: MAX_LOGIN_ATTEMPTS,
-      remaining: 0,
-      resetAt: existing.resetAt,
-    });
-    return res.status(429).json({
-      success: false,
-      message: 'Too many login attempts. Please try again later.',
-    });
-  }
+      if (result.count > MAX_LOGIN_ATTEMPTS) {
+        return res.status(429).json({
+          success: false,
+          message: 'Too many login attempts. Please try again later.',
+        });
+      }
 
-  existing.count += 1;
-  store.set(key, existing);
-  setRateLimitHeaders(res, {
-    max: MAX_LOGIN_ATTEMPTS,
-    remaining: MAX_LOGIN_ATTEMPTS - existing.count,
-    resetAt: existing.resetAt,
-  });
-  return next();
+      return next();
+    })
+    .catch((error) => {
+      console.error('Login rate limiter failed:', error?.message || error);
+      return next();
+    });
 };
 
 const clearLoginRateLimit = (req) => {
-  getStore('login-attempts').delete(getLoginRateLimitKey(req));
+  const key = getLoginRateLimitKey(req);
+  getRedisClient()
+    .then((redis) => {
+      if (!redis) {
+        return;
+      }
+      return redis.del(getLimiterBucket({ storeName: 'login-attempts', key }));
+    })
+    .catch((error) => {
+      console.warn('Failed to clear login rate limiter state:', error?.message || error);
+    });
 };
 
 const authApiRateLimiter = createRateLimiter({

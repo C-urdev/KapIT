@@ -1,6 +1,7 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const { installConsoleBridge, requestContextMiddleware } = require('./config/logger');
 const authRoutes = require('./routes/authRoutes');
 const messagesRoutes = require('./routes/messagesRoutes');
 const notificationsRoutes = require('./routes/notificationsRoutes');
@@ -9,6 +10,7 @@ const developerRoutes = require('./routes/developerRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const { warmRuntimeSchemas } = require('./config/runtimeSchema');
 const { normalizeOrigin, isKapitVercelOrigin, getAllowedOrigins } = require('./config/origins');
+const pool = require('./config/database');
 const {
   securityHeaders,
   authApiRateLimiter,
@@ -20,8 +22,10 @@ const {
   companyWriteRateLimiter,
   developerApiRateLimiter,
 } = require('./middleware/security');
+const { validateWriteRequests } = require('./middleware/writeValidation');
 const { initEnvironment } = require('./config/env');
 
+installConsoleBridge();
 initEnvironment();
 
 const ensureSchemaReady = async () => warmRuntimeSchemas();
@@ -31,6 +35,7 @@ const createApp = () => {
   const allowedOrigins = getAllowedOrigins();
 
   app.disable('x-powered-by');
+  app.use(requestContextMiddleware);
   app.use(securityHeaders);
   app.use(
     cors({
@@ -63,6 +68,28 @@ const createApp = () => {
       parameterLimit: Number(process.env.URLENCODED_PARAMETER_LIMIT || 200),
     })
   );
+  app.use(validateWriteRequests);
+
+  app.use((req, res, next) => {
+    const originalJson = res.json.bind(res);
+    res.json = (payload) => {
+      if (
+        payload &&
+        typeof payload === 'object' &&
+        payload.success === false &&
+        !Object.prototype.hasOwnProperty.call(payload, 'error')
+      ) {
+        const normalizedError = String(payload.message || 'Request failed.');
+        const normalized = { success: false, error: normalizedError };
+        if (Array.isArray(payload.errors)) {
+          normalized.details = payload.errors;
+        }
+        return originalJson(normalized);
+      }
+      return originalJson(payload);
+    };
+    next();
+  });
 
   app.use('/api/auth', authApiRateLimiter, authRoutes);
   app.use('/api/public', publicApiRateLimiter, publicRoutes);
@@ -71,6 +98,32 @@ const createApp = () => {
   app.use('/api/company', companyApiRateLimiter, companyWriteRateLimiter, companyRoutes);
   app.use('/api/developer', developerApiRateLimiter, developerRoutes);
 
+  app.get('/health', (req, res) => {
+    res.json({ success: true, message: 'Server is running' });
+  });
+
+  app.get('/ready', async (req, res) => {
+    try {
+      await pool.query('SELECT 1');
+      return res.json({
+        success: true,
+        message: 'Server is ready',
+        checks: {
+          database: 'ok',
+        },
+      });
+    } catch (error) {
+      return res.status(503).json({
+        success: false,
+        message: 'Server is not ready',
+        checks: {
+          database: 'unavailable',
+        },
+      });
+    }
+  });
+
+  // Backward-compatible alias for older clients/probes.
   app.get('/api/health', (req, res) => {
     res.json({ success: true, message: 'Server is running' });
   });
@@ -79,21 +132,21 @@ const createApp = () => {
     if (err?.type === 'entity.too.large') {
       return res.status(413).json({
         success: false,
-        message: 'Request body too large.',
+        error: 'Request body too large.',
       });
     }
 
-    console.error(err.stack);
+    console.error(err?.stack || err);
     res.status(500).json({
       success: false,
-      message: 'Something went wrong!',
+      error: 'Something went wrong!',
     });
   });
 
   app.use((req, res) => {
     res.status(404).json({
       success: false,
-      message: 'Route not found',
+      error: 'Route not found',
     });
   });
 

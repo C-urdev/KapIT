@@ -6,20 +6,14 @@ const {
   getPaymentRecordForCompany,
   getOrCreateCompanyForUserId,
   normalizeProvider,
-  startJobPostCheckout,
+  assertLocalBypassAllowed,
+  startJobPostCheckoutIdempotent,
   completeLocalBypassPayment,
   extractStripeVerification,
   capturePayPalOrder,
   finalizeVerifiedPayment,
   updatePaymentRecord,
 } = require('../services/paymentService');
-
-const isLocalPaymentBypassEnabled = () => String(process.env.ENABLE_LOCAL_PAYMENT_BYPASS || '').trim().toLowerCase() === 'true';
-
-const isLocalhostRequest = (req) => {
-  const host = String(req.hostname || req.get('host') || '').toLowerCase();
-  return host.includes('localhost') || host.includes('127.0.0.1') || host.includes('::1');
-};
 
 const listJobPostingPlans = async (req, res) => {
   try {
@@ -52,7 +46,8 @@ const createCheckoutSession = async (req, res) => {
     const planId = req.body?.planId;
     const draft = req.body?.draft || {};
     const jobId = req.body?.jobId == null ? null : Number(req.body.jobId);
-    const data = await startJobPostCheckout({
+    const idempotencyKey = String(req.get('x-idempotency-key') || req.body?.idempotencyKey || '').trim();
+    const data = await startJobPostCheckoutIdempotent({
       client,
       req,
       companyUserId: req.user.id,
@@ -60,6 +55,7 @@ const createCheckoutSession = async (req, res) => {
       planId,
       draft,
       jobId: Number.isFinite(jobId) ? jobId : null,
+      idempotencyKey,
     });
 
     await client.query('COMMIT');
@@ -68,6 +64,7 @@ const createCheckoutSession = async (req, res) => {
       paymentId: data.payment.id,
       checkoutUrl: data.checkoutUrl,
       plan: data.plan,
+      idempotencyKey: data.idempotencyKey || idempotencyKey || null,
     });
   } catch (error) {
     if (client) {
@@ -90,7 +87,7 @@ const verifyStripeCheckout = async (req, res) => {
     await client.query('BEGIN');
 
     const company = await getOrCreateCompanyForUserId(client, req.user.id);
-    const payment = await getPaymentRecordForCompany(client, req.body?.paymentId, company.id);
+    const payment = await getPaymentRecordForCompany(client, req.body?.paymentId, company.id, { forUpdate: true });
     if (!payment) {
       await client.query('ROLLBACK');
       return res.status(404).json({ success: false, message: 'Payment record not found.' });
@@ -155,7 +152,7 @@ const capturePayPalCheckout = async (req, res) => {
     await client.query('BEGIN');
 
     const company = await getOrCreateCompanyForUserId(client, req.user.id);
-    const payment = await getPaymentRecordForCompany(client, req.body?.paymentId, company.id);
+    const payment = await getPaymentRecordForCompany(client, req.body?.paymentId, company.id, { forUpdate: true });
     if (!payment) {
       await client.query('ROLLBACK');
       return res.status(404).json({ success: false, message: 'Payment record not found.' });
@@ -252,9 +249,7 @@ const completeLocalBypassCheckout = async (req, res) => {
   let client;
 
   try {
-    if (!isLocalPaymentBypassEnabled() || !isLocalhostRequest(req)) {
-      return res.status(404).json({ success: false, message: 'Route not found' });
-    }
+    assertLocalBypassAllowed(req);
 
     await ensureBaseUserSchemaReady();
     await ensureHiringSchemaReady();

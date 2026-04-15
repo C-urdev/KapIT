@@ -3,10 +3,15 @@ const Stripe = require('stripe');
 const { getJobPostPlanById, JOB_POST_PLANS } = require('./jobPostingPlans');
 const { getOrCreateCompanyForUserId, serializeJobRow } = require('./companyService');
 const { createPublishedJobForCompany, publishDraftJobForCompany } = require('./jobService');
+const { getRedisClient } = require('../config/redis');
 
 let stripeClient = null;
 
 const PAYMENT_PROVIDERS = new Set(['stripe', 'paypal']);
+const PAYMENT_API_TIMEOUT_MS = Math.max(1000, Number(process.env.PAYMENT_API_TIMEOUT_MS || 10000));
+const PAYMENT_API_RETRY_MAX = Math.max(1, Number(process.env.PAYMENT_API_RETRY_MAX || 3));
+const PAYMENT_API_RETRY_BASE_MS = Math.max(50, Number(process.env.PAYMENT_API_RETRY_BASE_MS || 300));
+const PAYMENT_IDEMPOTENCY_TTL_SECONDS = Math.max(60, Number(process.env.PAYMENT_IDEMPOTENCY_TTL_SECONDS || 86400));
 
 const getPaymentProviderAvailability = () => ({
   stripe: {
@@ -30,7 +35,10 @@ const getStripeClient = () => {
   }
 
   if (!stripeClient) {
-    stripeClient = new Stripe(secretKey);
+    stripeClient = new Stripe(secretKey, {
+      timeout: PAYMENT_API_TIMEOUT_MS,
+      maxNetworkRetries: Math.max(0, PAYMENT_API_RETRY_MAX - 1),
+    });
   }
 
   return stripeClient;
@@ -72,6 +80,66 @@ const getClientBaseUrl = (req) => {
 };
 
 const normalizeProvider = (provider) => String(provider || '').trim().toLowerCase();
+const normalizeIdempotencyKey = (raw) => String(raw || '').trim();
+const buildPaymentIdempotencyRedisKey = (companyUserId, idempotencyKey) =>
+  `payment:idempotency:${companyUserId}:${idempotencyKey}`;
+
+const createPaymentError = (message, retryable = false) => {
+  const error = new Error(message);
+  error.retryable = retryable;
+  return error;
+};
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const isRetryableError = (error) => {
+  if (!error) {
+    return false;
+  }
+
+  if (error.retryable === true) {
+    return true;
+  }
+
+  const code = String(error.code || '').toUpperCase();
+  if (['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT', 'ECONNABORTED', 'EPIPE', 'ENOTFOUND'].includes(code)) {
+    return true;
+  }
+
+  return error.name === 'AbortError';
+};
+
+const withRetry = async (action, { label }) => {
+  let lastError;
+  for (let attempt = 1; attempt <= PAYMENT_API_RETRY_MAX; attempt += 1) {
+    try {
+      return await action();
+    } catch (error) {
+      lastError = error;
+      if (attempt >= PAYMENT_API_RETRY_MAX || !isRetryableError(error)) {
+        throw error;
+      }
+
+      const backoffMs = PAYMENT_API_RETRY_BASE_MS * (2 ** (attempt - 1));
+      console.warn(`${label} failed (attempt ${attempt}/${PAYMENT_API_RETRY_MAX}). Retrying in ${backoffMs}ms.`);
+      await wait(backoffMs);
+    }
+  }
+
+  throw lastError || new Error(`${label} failed.`);
+};
+
+const fetchWithTimeout = async (url, options = {}) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), PAYMENT_API_TIMEOUT_MS);
+  timeout.unref?.();
+
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+};
 
 const assertValidProvider = (provider) => {
   const normalized = normalizeProvider(provider);
@@ -127,13 +195,15 @@ const createPaymentRecord = async (client, { companyId, provider, plan, draft, j
   return result.rows[0];
 };
 
-const getPaymentRecordForCompany = async (client, paymentId, companyId) => {
+const getPaymentRecordForCompany = async (client, paymentId, companyId, options = {}) => {
+  const lockClause = options.forUpdate ? 'FOR UPDATE' : '';
   const result = await client.query(
     `SELECT *
      FROM job_post_payments
      WHERE id = $1::uuid
        AND company_id = $2
-     LIMIT 1`,
+     LIMIT 1
+     ${lockClause}`,
     [paymentId, companyId]
   );
 
@@ -176,37 +246,40 @@ const buildCancelUrl = (clientBaseUrl, provider, paymentId) =>
 
 const createStripeCheckout = async ({ companyId, payment, plan, clientBaseUrl }) => {
   const stripe = getStripeClient();
-  const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    success_url: `${buildSuccessUrl(clientBaseUrl, 'stripe', payment.id)}&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: buildCancelUrl(clientBaseUrl, 'stripe', payment.id),
-    payment_method_types: ['card'],
-    line_items: [
-      {
-        quantity: 1,
-        price_data: {
-          currency: 'php',
-          unit_amount: Number(plan.price) * 100,
-          product_data: {
-            name: `KapIT Job Post - ${plan.label}`,
-            description: `${plan.description}. Publish one company job post for ${plan.durationLabel}.`,
+  const session = await withRetry(
+    () => stripe.checkout.sessions.create({
+      mode: 'payment',
+      success_url: `${buildSuccessUrl(clientBaseUrl, 'stripe', payment.id)}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: buildCancelUrl(clientBaseUrl, 'stripe', payment.id),
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: 'php',
+            unit_amount: Number(plan.price) * 100,
+            product_data: {
+              name: `KapIT Job Post - ${plan.label}`,
+              description: `${plan.description}. Publish one company job post for ${plan.durationLabel}.`,
+            },
           },
         },
-      },
-    ],
-    metadata: {
-      companyId,
-      paymentId: payment.id,
-      planId: plan.id,
-    },
-    payment_intent_data: {
+      ],
       metadata: {
         companyId,
         paymentId: payment.id,
         planId: plan.id,
       },
-    },
-  });
+      payment_intent_data: {
+        metadata: {
+          companyId,
+          paymentId: payment.id,
+          planId: plan.id,
+        },
+      },
+    }),
+    { label: 'Stripe checkout session creation' }
+  );
 
   return {
     checkoutUrl: session.url,
@@ -217,17 +290,23 @@ const createStripeCheckout = async ({ companyId, payment, plan, clientBaseUrl })
 const getPayPalAccessToken = async () => {
   const { clientId, clientSecret } = getPayPalCredentials();
   const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-  const response = await fetch(`${getPayPalBaseUrl()}/v1/oauth2/token`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${auth}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: 'grant_type=client_credentials',
-  });
+  const response = await withRetry(
+    () => fetchWithTimeout(`${getPayPalBaseUrl()}/v1/oauth2/token`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${auth}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: 'grant_type=client_credentials',
+    }),
+    { label: 'PayPal token request' }
+  );
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok || !data?.access_token) {
+    if (response.status >= 500) {
+      throw createPaymentError(data?.error_description || 'PayPal auth temporary failure.', true);
+    }
     throw new Error(data?.error_description || 'Failed to authenticate with PayPal.');
   }
 
@@ -236,38 +315,44 @@ const getPayPalAccessToken = async () => {
 
 const createPayPalOrder = async ({ payment, plan, clientBaseUrl }) => {
   const accessToken = await getPayPalAccessToken();
-  const response = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-      'PayPal-Request-Id': payment.id,
-    },
-    body: JSON.stringify({
-      intent: 'CAPTURE',
-      purchase_units: [
-        {
-          reference_id: payment.id,
-          custom_id: payment.id,
-          description: `KapIT Job Post - ${plan.label}`,
-          amount: {
-            currency_code: 'PHP',
-            value: formatPhpAmount(plan.price),
-          },
-        },
-      ],
-      application_context: {
-        brand_name: 'KapIT',
-        user_action: 'PAY_NOW',
-        shipping_preference: 'NO_SHIPPING',
-        return_url: buildSuccessUrl(clientBaseUrl, 'paypal', payment.id),
-        cancel_url: buildCancelUrl(clientBaseUrl, 'paypal', payment.id),
+  const response = await withRetry(
+    () => fetchWithTimeout(`${getPayPalBaseUrl()}/v2/checkout/orders`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'PayPal-Request-Id': payment.id,
       },
+      body: JSON.stringify({
+        intent: 'CAPTURE',
+        purchase_units: [
+          {
+            reference_id: payment.id,
+            custom_id: payment.id,
+            description: `KapIT Job Post - ${plan.label}`,
+            amount: {
+              currency_code: 'PHP',
+              value: formatPhpAmount(plan.price),
+            },
+          },
+        ],
+        application_context: {
+          brand_name: 'KapIT',
+          user_action: 'PAY_NOW',
+          shipping_preference: 'NO_SHIPPING',
+          return_url: buildSuccessUrl(clientBaseUrl, 'paypal', payment.id),
+          cancel_url: buildCancelUrl(clientBaseUrl, 'paypal', payment.id),
+        },
+      }),
     }),
-  });
+    { label: 'PayPal order creation' }
+  );
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok || !Array.isArray(data?.links)) {
+    if (response.status >= 500) {
+      throw createPaymentError(data?.message || 'PayPal order creation temporary failure.', true);
+    }
     throw new Error(data?.message || 'Failed to create PayPal order.');
   }
 
@@ -340,6 +425,123 @@ const startJobPostCheckout = async ({ client, req, companyUserId, provider, plan
   };
 };
 
+const startJobPostCheckoutIdempotent = async ({
+  client,
+  req,
+  companyUserId,
+  provider,
+  planId,
+  draft,
+  jobId = null,
+  idempotencyKey,
+}) => {
+  const normalizedKey = normalizeIdempotencyKey(idempotencyKey);
+  if (!normalizedKey) {
+    return startJobPostCheckout({
+      client,
+      req,
+      companyUserId,
+      provider,
+      planId,
+      draft,
+      jobId,
+    });
+  }
+
+  const redis = await getRedisClient();
+  if (!redis) {
+    return startJobPostCheckout({
+      client,
+      req,
+      companyUserId,
+      provider,
+      planId,
+      draft,
+      jobId,
+    });
+  }
+
+  const redisKey = buildPaymentIdempotencyRedisKey(companyUserId, normalizedKey);
+  const cached = await redis.get(redisKey);
+  if (cached) {
+    const parsed = JSON.parse(cached);
+    if (parsed?.paymentId && parsed?.checkoutUrl && parsed?.plan) {
+      return {
+        payment: { id: parsed.paymentId },
+        plan: parsed.plan,
+        checkoutUrl: parsed.checkoutUrl,
+        idempotencyKey: normalizedKey,
+      };
+    }
+  }
+
+  const lockKey = `${redisKey}:lock`;
+  const acquired = await redis.set(lockKey, '1', { NX: true, EX: 30 });
+  if (!acquired) {
+    const pendingCached = await redis.get(redisKey);
+    if (pendingCached) {
+      const parsed = JSON.parse(pendingCached);
+      if (parsed?.paymentId && parsed?.checkoutUrl && parsed?.plan) {
+        return {
+          payment: { id: parsed.paymentId },
+          plan: parsed.plan,
+          checkoutUrl: parsed.checkoutUrl,
+          idempotencyKey: normalizedKey,
+        };
+      }
+    }
+    throw new Error('This payment request is already in progress. Please retry with the same idempotency key.');
+  }
+
+  try {
+    const result = await startJobPostCheckout({
+      client,
+      req,
+      companyUserId,
+      provider,
+      planId,
+      draft,
+      jobId,
+    });
+
+    await redis.set(
+      redisKey,
+      JSON.stringify({
+        paymentId: result.payment.id,
+        checkoutUrl: result.checkoutUrl,
+        plan: result.plan,
+        cachedAt: new Date().toISOString(),
+      }),
+      { EX: PAYMENT_IDEMPOTENCY_TTL_SECONDS }
+    );
+
+    return {
+      ...result,
+      idempotencyKey: normalizedKey,
+    };
+  } finally {
+    await redis.del(lockKey);
+  }
+};
+
+const assertLocalBypassAllowed = (req) => {
+  const isProduction = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+  if (isProduction) {
+    throw new Error('Local payment bypass is forbidden in production.');
+  }
+
+  const bypassEnabled = String(process.env.ENABLE_LOCAL_PAYMENT_BYPASS || '').trim().toLowerCase() === 'true';
+  if (!bypassEnabled) {
+    throw new Error('Local payment bypass is disabled.');
+  }
+
+  const host = String(req.hostname || req.get('host') || '').toLowerCase();
+  const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1') || host.includes('::1');
+  if (!isLocalhost) {
+    throw new Error('Local payment bypass is only allowed from localhost.');
+  }
+};
+
 const completeLocalBypassPayment = async ({ client, companyUserId, provider, planId, draft, jobId = null, payerEmail = null }) => {
   const normalizedProvider = assertValidProvider(provider);
   const plan = getJobPostPlanById(planId);
@@ -401,9 +603,12 @@ const completeLocalBypassPayment = async ({ client, companyUserId, provider, pla
 
 const extractStripeVerification = async (sessionId) => {
   const stripe = getStripeClient();
-  const session = await stripe.checkout.sessions.retrieve(sessionId, {
-    expand: ['payment_intent'],
-  });
+  const session = await withRetry(
+    () => stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ['payment_intent'],
+    }),
+    { label: 'Stripe session verification' }
+  );
 
   if (!session || session.payment_status !== 'paid') {
     throw new Error('Stripe payment is not marked as paid yet.');
@@ -424,16 +629,22 @@ const extractStripeVerification = async (sessionId) => {
 
 const capturePayPalOrder = async (orderId) => {
   const accessToken = await getPayPalAccessToken();
-  const response = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders/${encodeURIComponent(orderId)}/capture`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-  });
+  const response = await withRetry(
+    () => fetchWithTimeout(`${getPayPalBaseUrl()}/v2/checkout/orders/${encodeURIComponent(orderId)}/capture`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    }),
+    { label: 'PayPal order capture' }
+  );
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if (response.status >= 500) {
+      throw createPaymentError(data?.message || 'PayPal capture temporary failure.', true);
+    }
     const issue = data?.details?.[0]?.description || data?.message;
     throw new Error(issue || 'Failed to capture PayPal payment.');
   }
@@ -457,6 +668,30 @@ const finalizeVerifiedPayment = async ({ client, companyUserId, payment, verific
   const company = await getOrCreateCompanyForUserId(client, companyUserId);
   if (payment.company_id !== company.id) {
     throw new Error('Payment does not belong to this company.');
+  }
+
+  const paymentStatus = String(payment.status || '').toLowerCase();
+  if (paymentStatus === 'paid' && payment.job_id) {
+    const existingJobResult = await client.query(
+      `SELECT *
+       FROM jobs
+       WHERE id = $1
+         AND company_id = $2
+       LIMIT 1`,
+      [payment.job_id, company.id]
+    );
+    if (!existingJobResult.rows.length) {
+      throw new Error('Payment is marked paid but linked job is missing.');
+    }
+
+    return {
+      payment,
+      job: serializeJobRow(existingJobResult.rows[0]),
+    };
+  }
+
+  if (!['pending', 'processing'].includes(paymentStatus)) {
+    throw new Error(`Payment cannot be finalized from status "${payment.status}".`);
   }
 
   const plan = getJobPostPlanById(payment.plan_id);
@@ -494,7 +729,9 @@ module.exports = {
   getPaymentRecordForCompany,
   getOrCreateCompanyForUserId,
   normalizeProvider,
+  assertLocalBypassAllowed,
   startJobPostCheckout,
+  startJobPostCheckoutIdempotent,
   completeLocalBypassPayment,
   extractStripeVerification,
   capturePayPalOrder,
