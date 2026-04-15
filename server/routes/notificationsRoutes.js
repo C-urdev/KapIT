@@ -6,9 +6,11 @@ const {
   getUnreadNotificationCount,
   markNotificationsRead,
 } = require('../controllers/notificationsController');
+const { validateRequest } = require('../middleware/validateRequest');
+const { writeSchemas } = require('../validation/writeSchemas');
 
 router.get('/', verifyToken, listNotifications);
 router.get('/unread-count', verifyToken, getUnreadNotificationCount);
-router.patch('/read', requireCsrfForCookieAuth, verifyToken, markNotificationsRead);
+router.patch('/read', requireCsrfForCookieAuth, verifyToken, validateRequest(writeSchemas.notificationsRead), markNotificationsRead);
 
 module.exports = router;

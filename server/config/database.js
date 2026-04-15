@@ -3,17 +3,42 @@ require('dotenv').config();
 
 const isSupabaseHost = (host) => typeof host === 'string' && host.includes('supabase.co');
 const shouldLogStartup = process.env.QUIET_STARTUP !== 'true';
+const isDevelopment = process.env.NODE_ENV === 'development';
+const max = Number(process.env.DB_POOL_MAX || 20);
+const idleTimeoutMillis = Number(process.env.DB_IDLE_TIMEOUT_MS || 30000);
+const connectionTimeoutMillis = Number(process.env.DB_CONNECTION_TIMEOUT_MS || 10000);
+
+const resolveSslConfig = (host) => {
+  const explicitDisable = process.env.DB_SSL === 'false';
+  if (explicitDisable && isDevelopment) {
+    return false;
+  }
+
+  const explicitEnable = process.env.DB_SSL === 'true';
+  if (explicitEnable || isSupabaseHost(host) || process.env.DATABASE_URL) {
+    return { rejectUnauthorized: true };
+  }
+
+  // Default to secure SSL outside development, even without explicit flags.
+  if (!isDevelopment) {
+    return { rejectUnauthorized: true };
+  }
+
+  return false;
+};
 
 const createPoolConfig = () => {
   if (process.env.DATABASE_URL) {
     return {
       connectionString: process.env.DATABASE_URL,
-      ssl: process.env.DB_SSL === 'false' ? false : { rejectUnauthorized: false },
+      ssl: resolveSslConfig(),
+      max,
+      idleTimeoutMillis,
+      connectionTimeoutMillis,
     };
   }
 
   const host = process.env.DB_HOST;
-  const sslEnabled = process.env.DB_SSL === 'true' || isSupabaseHost(host);
 
   return {
     host,
@@ -21,7 +46,10 @@ const createPoolConfig = () => {
     database: process.env.DB_NAME,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    ssl: sslEnabled ? { rejectUnauthorized: false } : false,
+    ssl: resolveSslConfig(host),
+    max,
+    idleTimeoutMillis,
+    connectionTimeoutMillis,
   };
 };
 
