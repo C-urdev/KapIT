@@ -14,6 +14,8 @@
     "migrate:messages:verify": "node server/scripts/backfillLegacyMessagesToConversations.js --verify",
     "migrate:messages:parity": "node server/scripts/verifyMessagingParity.js",
     "migrate:messages:parity:strict": "node server/scripts/verifyMessagingParity.js --fail-on-mismatch",
+    "audit": "npm audit --audit-level=high",
+    "audit:ci": "npm audit --audit-level=high --omit=dev",
     "build": "node scripts/run-web.js build",
     "next:dev": "node scripts/run-web.js dev",
     "next:build": "node scripts/run-web.js build",
