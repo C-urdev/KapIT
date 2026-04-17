@@ -20,7 +20,7 @@ export function ActionButton({ icon: Icon, label, onClick, active = false, accen
 
 export function ReactionPicker({ selectedReaction, onSelect }) {
   return (
-    <div className="absolute -top-[4.25rem] left-3 z-10 rounded-full border border-[#bfd0af] bg-white/96 px-2 py-2 shadow-[0_10px_30px_rgba(58,90,64,0.16)] backdrop-blur-sm dark:border-[#2a4a6f] dark:bg-[#243244]/96">
+    <div className="absolute -top-[4.25rem] left-3 z-10 rounded-full border border-[#bfd0af] bg-[#f8fbf6]/96 px-2 py-2 shadow-[0_10px_30px_rgba(58,90,64,0.16)] backdrop-blur-sm dark:border-[#2a4a6f] dark:bg-[#243244]/96">
       <div className="flex items-center gap-1">
         {REACTION_OPTIONS.map((reaction) => (
           <button key={reaction.key} type="button" onClick={() => onSelect(reaction.key)} className={`flex h-11 w-11 items-center justify-center rounded-full text-[1.6rem] transition-transform hover:-translate-y-1 ${selectedReaction === reaction.key ? 'bg-[#eef6ee] dark:bg-[#16314d]' : ''}`} aria-label={reaction.label} title={reaction.label}>

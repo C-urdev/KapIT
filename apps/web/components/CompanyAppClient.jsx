@@ -2,12 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { logoutUser } from '@sharedServices/authService';
-import ConfirmModal from '@sharedComponents/ui/ConfirmModal';
+import { logoutAndRedirect } from '@sharedServices/authService';
 import SessionGate from './SessionGate';
 import CompanyLayout from '@companyLayouts/CompanyLayout';
 import { COMPANY_PATHS, setCompanyNavigator } from '@companyFeatures/companyUtils';
-import { primeCompanyWorkspaceData } from '@companyFeatures/companyHooks';
+import { primeCompanyProfileData, primeCompanyWorkspaceData } from '@companyFeatures/companyHooks';
 import CompanyDashboardPage from '@companyPages/CompanyDashboardPage';
 import CompanyPostJobPage from '@companyPages/CompanyPostJobPage';
 import CompanyPostJobPaymentPage from '@companyPages/CompanyPostJobPaymentPage';
@@ -17,6 +16,7 @@ import CompanyMessagesPage from '@companyPages/CompanyMessagesPage';
 import CompanyNotificationsPage from '@companyPages/CompanyNotificationsPage';
 import CompanySearchDevelopersPage from '@companyPages/CompanySearchDevelopersPage';
 import CompanyProfilePage from '@companyPages/CompanyProfilePage';
+import CompanySettingsPage from '@companyPages/CompanySettingsPage';
 import CompanyPublicProfilePage from '@companyPages/CompanyPublicProfilePage';
 import HelpPage from '@sharedPages/help/HelpPage';
 
@@ -29,6 +29,9 @@ function renderCompanyRoute(pathname, user, updateUser, onBackFromHelp, onMessag
   if (pathname === COMPANY_PATHS.notifications) return <CompanyNotificationsPage onReadAll={() => {}} />;
   if (pathname === COMPANY_PATHS.search) return <CompanySearchDevelopersPage />;
   if (pathname === COMPANY_PATHS.help) return <HelpPage onBack={onBackFromHelp} />;
+  if (pathname === COMPANY_PATHS.settings) {
+    return <CompanySettingsPage user={user} onUpdated={(company, form) => updateUser({ companyName: form?.name, profileImage: form?.logo, bio: form?.shortDescription, address: form?.location, website: form?.website })} />;
+  }
   if (pathname === COMPANY_PATHS.profile) {
     return <CompanyProfilePage user={user} onUpdated={(company, form) => updateUser({ companyName: form?.name, profileImage: form?.logo, bio: form?.shortDescription || form?.description, address: form?.location, website: form?.website })} />;
   }
@@ -62,17 +65,26 @@ export default function CompanyAppClient() {
     const prefetchCandidates = [
       COMPANY_PATHS.dashboard,
       COMPANY_PATHS.jobs,
-      COMPANY_PATHS.applicants,
-      COMPANY_PATHS.messages,
-      COMPANY_PATHS.notifications,
-      COMPANY_PATHS.search,
-      COMPANY_PATHS.profile,
       COMPANY_PATHS.postJob,
     ];
 
-    prefetchCandidates.forEach((targetPath) => {
-      router.prefetch?.(targetPath);
-    });
+    const schedulePrefetch = () => {
+      prefetchCandidates.forEach((targetPath) => {
+        router.prefetch?.(targetPath);
+      });
+    };
+
+    if (typeof window !== 'undefined' && window.navigator?.connection?.saveData) {
+      return;
+    }
+
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(schedulePrefetch, { timeout: 1200 });
+      return () => window.cancelIdleCallback?.(id);
+    }
+
+    const timer = window.setTimeout(schedulePrefetch, 350);
+    return () => window.clearTimeout(timer);
   }, [router]);
 
   useEffect(() => {
@@ -82,16 +94,16 @@ export default function CompanyAppClient() {
   }, [normalizedPathname]);
 
   useEffect(() => {
-    if (normalizedPathname !== COMPANY_PATHS.dashboard) {
+    if (normalizedPathname === COMPANY_PATHS.help) {
       return;
     }
-
-    void primeCompanyWorkspaceData();
+    void primeCompanyWorkspaceData({ includeApplicants: normalizedPathname === COMPANY_PATHS.applicants });
   }, [normalizedPathname]);
 
   useEffect(() => {
     const schedulePreload = () => {
-      void primeCompanyWorkspaceData();
+      void primeCompanyWorkspaceData({ includeApplicants: false });
+      void primeCompanyProfileData();
     };
 
     if (typeof window === 'undefined') {
@@ -107,33 +119,70 @@ export default function CompanyAppClient() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const handleLogout = async () => {
-    await logoutUser();
-    router.replace('/');
-    router.refresh();
+  const handleLogout = () => {
+    logoutAndRedirect('/');
   };
 
   return (
     <>
       <SessionGate requiredAccountType="company" redirectTo="/">
         {({ user, updateUser }) => (
-          <CompanyLayout
-            pathname={normalizedPathname}
-            user={user}
-            onLogout={handleLogout}
-            onHelp={() => router.push(COMPANY_PATHS.help)}
-            messagesThreadOpen={mobileMessagesThreadOpen}
-          >
-            {renderCompanyRoute(
-              normalizedPathname,
-              user,
-              updateUser,
-              () => router.push(COMPANY_PATHS.dashboard),
-              (open) => setMobileMessagesThreadOpen(Boolean(open)),
-            )}
-          </CompanyLayout>
+          <>
+            <CompanyWorkspaceBootstrap user={user} updateUser={updateUser} />
+            <CompanyLayout
+              pathname={normalizedPathname}
+              user={user}
+              onLogout={handleLogout}
+              onHelp={() => router.push(COMPANY_PATHS.help)}
+              messagesThreadOpen={mobileMessagesThreadOpen}
+            >
+              {renderCompanyRoute(
+                normalizedPathname,
+                user,
+                updateUser,
+                () => router.push(COMPANY_PATHS.dashboard),
+                (open) => setMobileMessagesThreadOpen(Boolean(open)),
+              )}
+            </CompanyLayout>
+          </>
         )}
       </SessionGate>
     </>
   );
+}
+
+function CompanyWorkspaceBootstrap({ user, updateUser }) {
+  useEffect(() => {
+    let cancelled = false;
+
+    const hydrateCompanyProfile = async () => {
+      try {
+        const profileData = await primeCompanyProfileData();
+        const company = profileData?.company || {};
+        if (cancelled) {
+          return;
+        }
+
+        const updates = {
+          companyName: String(company?.name || user?.companyName || user?.username || '').trim(),
+          profileImage: String(company?.logo || user?.profileImage || '').trim(),
+          bio: String(company?.short_description || company?.description || user?.bio || '').trim(),
+          address: String(company?.location || user?.address || '').trim(),
+          website: String(company?.website || user?.website || '').trim(),
+        };
+
+        updateUser(updates);
+      } catch {
+        // Keep existing user snapshot if preloading profile fails.
+      }
+    };
+
+    void hydrateCompanyProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  return null;
 }

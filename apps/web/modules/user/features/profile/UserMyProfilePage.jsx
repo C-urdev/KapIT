@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Edit3, GraduationCap, Instagram, MapPin, Mail, Pencil, Phone, User } from 'lucide-react';
+import { Edit3, GraduationCap, Link2, MapPin, Mail, Pencil, Phone, User } from 'lucide-react';
 import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
 import { Avatar } from '@userPages/home/CenterFeedPostShared';
 import FeedPostCard from '@userPages/home/FeedPostCard';
@@ -141,7 +141,7 @@ export default function UserMyProfilePage({
 
   return (
     <div className="mx-auto w-full max-w-[min(100%,1180px)] space-y-5">
-      <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl overflow-hidden">
+      <div className="bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl overflow-hidden">
         <div className="h-16 sm:h-20 bg-gradient-to-r from-[#588157] to-[#3a5a40] dark:from-[#2d8bb8] dark:to-[#3ba9d6]" />
         <div className="px-6 sm:px-8 py-6 min-h-[170px]">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
@@ -171,7 +171,7 @@ export default function UserMyProfilePage({
                 {user?.bio && <p className="text-[0.92rem] sm:text-[0.95rem] leading-[1.2] text-[#344e41] dark:text-[#b8d4e8]">{user.bio}</p>}
                 {user?.socials && (
                   <div className="flex items-center gap-2 text-[0.9rem] sm:text-[0.95rem] leading-[1.15] text-[#2f4e39] dark:text-[#b8d4e8]">
-                    <Instagram className="w-4 h-4" />
+                    <Link2 className="w-4 h-4" />
                     <span className="truncate">{user.socials}</span>
                   </div>
                 )}
@@ -191,7 +191,7 @@ export default function UserMyProfilePage({
         </div>
       </div>
 
-      <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-5 sm:p-6">
+      <div className="bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-5 sm:p-6">
         <button
           onClick={onOpenComposer}
           className="w-full text-left px-5 py-4 bg-[#f5f5f2] dark:bg-[#1e3a5f] border border-[#a3b18a] dark:border-[#2a4a6f] rounded-full text-[#344e41] dark:text-[#b8d4e8] hover:bg-[#dad7cd] dark:hover:bg-[#0f2139] transition-colors"
@@ -201,7 +201,7 @@ export default function UserMyProfilePage({
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-5">
-        <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-5 space-y-3 min-h-[280px]">
+        <div className="bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-5 space-y-3 min-h-[280px]">
           <h3 className="text-lg font-semibold text-[#3a5a40] dark:text-white">Personal details</h3>
           <InfoRow icon={User} text={displayName} />
           {user?.address && <InfoRow icon={MapPin} text={user.address} />}
@@ -211,7 +211,7 @@ export default function UserMyProfilePage({
         </div>
 
         <div className="space-y-4">
-          <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-5">
+          <div className="bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-5">
             <h3 className="text-xl font-semibold text-[#3a5a40] dark:text-white">Posts</h3>
           </div>
 
@@ -239,7 +239,7 @@ export default function UserMyProfilePage({
               />
             ))
           ) : (
-            <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-16 text-center min-h-[280px] flex items-center justify-center">
+            <div className="bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-16 text-center min-h-[280px] flex items-center justify-center">
               <p className="text-[#344e41] dark:text-[#b8d4e8]">No posts yet.</p>
             </div>
           )}
@@ -248,7 +248,7 @@ export default function UserMyProfilePage({
 
       {editing && (
         <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-xl bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-5">
+          <div className="w-full max-w-xl bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-5">
             <h3 className="text-xl font-bold text-[#3a5a40] dark:text-white mb-4">Edit Profile</h3>
             <div className="grid grid-cols-1 gap-3">
               <input value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} placeholder="Username" className="input-base" />
@@ -278,4 +278,3 @@ function InfoRow({ icon: Icon, text }) {
     </div>
   );
 }
-

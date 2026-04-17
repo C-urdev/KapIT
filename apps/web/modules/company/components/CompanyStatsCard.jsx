@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function CompanyStatsCard({ label, value, helper, icon: Icon }) {
   return (
-    <div className="rounded-xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] shadow-lg shadow-black/5 dark:shadow-black/20 p-3.5 sm:p-5 transition-colors duration-300">
+    <div className="rounded-xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] shadow-lg shadow-black/5 dark:shadow-black/20 p-3.5 sm:p-5 transition-colors duration-300">
       <div className="flex items-start justify-between gap-3 sm:gap-4">
         <div>
           <p className="text-[11px] sm:text-xs font-semibold text-[#4b5563] dark:text-[#b8d4e8]">{label}</p>

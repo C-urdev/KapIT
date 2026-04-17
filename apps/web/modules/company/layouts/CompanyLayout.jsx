@@ -18,6 +18,7 @@ const TITLES = {
   [COMPANY_PATHS.messages]: 'Messages',
   [COMPANY_PATHS.notifications]: 'Notifications',
   [COMPANY_PATHS.search]: 'Search Developers',
+  [COMPANY_PATHS.settings]: 'Settings',
   [COMPANY_PATHS.profile]: 'Company Profile',
   [COMPANY_PATHS.publicProfile]: 'Public Profile',
 };
@@ -115,15 +116,15 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
         className={`${
           isMessagesPage
             ? (hideMobileChromeForThread
-              ? 'h-[100dvh] pt-0 pb-0 xl:h-[calc(100dvh-4rem)] xl:pt-16 xl:pb-0'
-              : 'h-[100dvh] pt-16 pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pt-16 sm:pb-[calc(4rem+env(safe-area-inset-bottom))] xl:h-[calc(100dvh-4rem)] xl:pt-16 xl:pb-0')
+              ? 'h-[100dvh] pt-0 pb-0 xl:h-[100dvh] xl:pt-[5.125rem] xl:pb-0'
+              : 'h-[100dvh] pt-16 pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pt-16 sm:pb-[calc(4rem+env(safe-area-inset-bottom))] xl:h-[100dvh] xl:pt-[5.125rem] xl:pb-0')
             : 'min-h-screen pt-[5.5rem] sm:pt-[6rem] xl:pt-20'
         } transition-[padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? 'xl:pl-20' : 'xl:pl-72'}`}
       >
         <main
           className={`mx-auto w-full max-w-[min(100%,1800px)] ${
             isMessagesPage
-              ? 'h-full min-h-0 overflow-hidden px-0 py-0 sm:px-3'
+              ? 'h-full min-h-0 overflow-hidden px-0 py-2 sm:px-3 sm:py-3 xl:px-4 xl:py-4'
               : 'px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-4 sm:py-6 pb-24 md:pb-10'
           }`}
           style={isMessagesPage ? undefined : { paddingBottom: 'max(6rem, calc(4.5rem + env(safe-area-inset-bottom)))' }}

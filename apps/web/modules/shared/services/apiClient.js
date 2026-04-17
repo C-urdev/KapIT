@@ -34,7 +34,21 @@ const getCsrfToken = () => readCookie(CSRF_COOKIE_NAME);
 const isHtmlDocument = (value) => /<!doctype html>|<html[\s>]/i.test(String(value || ''));
 
 const getResponseErrorMessage = ({ response, data, resolvedPath }) => {
+  if (String(data?.error || '').trim().toLowerCase() === 'validation error') {
+    const firstDetail = Array.isArray(data?.details) ? data.details[0] : null;
+    const detailPath = String(firstDetail?.path || '').trim();
+    const detailMessage = String(firstDetail?.message || '').trim();
+    if (detailPath || detailMessage) {
+      return `Validation error${detailPath ? ` at "${detailPath}"` : ''}${detailMessage ? `: ${detailMessage}` : ''}`;
+    }
+  }
+
   const message = String(data?.message || data?.error || '').trim();
+  const normalizedMessage = message.toLowerCase();
+
+  if (response.status === 500 && normalizedMessage === 'internal server error') {
+    return 'The API restarted while processing your request. Please retry in a moment.';
+  }
 
   if (isHtmlDocument(message)) {
     if (response.status === 404) {
@@ -131,12 +145,21 @@ export const apiRequest = async (path, options = {}) => {
         ? `${API_BASE}${normalizedPath.slice(4)}`
         : `${baseUrl}${normalizedPath}`;
 
-  const response = await fetch(resolvedPath, {
-    credentials: 'include',
-    ...rest,
-    method,
-    headers: buildHeaders(method, headers),
-  });
+  let response;
+  try {
+    response = await fetch(resolvedPath, {
+      credentials: 'include',
+      ...rest,
+      method,
+      headers: buildHeaders(method, headers),
+    });
+  } catch (error) {
+    const networkMessage = String(error?.message || '').toLowerCase();
+    if (networkMessage.includes('econnreset') || networkMessage.includes('fetch failed')) {
+      throw new Error('The API connection was reset while the server was restarting. Please retry.');
+    }
+    throw error;
+  }
 
   const data = await safeParseResponse(response);
   if (response.status === 401 && retryOnUnauthorized) {

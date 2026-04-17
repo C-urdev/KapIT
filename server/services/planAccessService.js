@@ -96,19 +96,13 @@ const getCompanyActiveJobCount = async (client, companyId) => {
 
 const assertCompanyCanCreateDraftJob = async (client, { userId, companyId }) => {
   const plan = await getPremiumStateForCompanyUser(client, userId, companyId);
-  if (plan.isPremium) {
-    return plan;
-  }
-
   const activeJobCount = await getCompanyActiveJobCount(client, companyId);
-  if (activeJobCount >= FREE_COMPANY_ACTIVE_JOB_LIMIT) {
-    throw new Error(`Free employer accounts can keep up to ${FREE_COMPANY_ACTIVE_JOB_LIMIT} draft or active jobs at a time. Upgrade to premium to post more.`);
-  }
-
+  // Company accounts use pay-per-post publishing, so draft creation should
+  // not be blocked by premium tier or draft/open job count limits.
   return {
     ...plan,
     activeJobCount,
-    freeCompanyActiveJobLimit: FREE_COMPANY_ACTIVE_JOB_LIMIT,
+    freeCompanyActiveJobLimit: null,
   };
 };
 

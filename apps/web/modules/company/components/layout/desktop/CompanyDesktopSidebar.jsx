@@ -1,11 +1,12 @@
 import React from 'react';
-import { LayoutDashboard, Briefcase, MessageCircle } from 'lucide-react';
+import { LayoutDashboard, Briefcase, MessageCircle, Settings } from 'lucide-react';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
 
 const LINKS = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: COMPANY_PATHS.dashboard },
   { key: 'jobs', label: 'Manage Jobs', icon: Briefcase, path: COMPANY_PATHS.jobs },
   { key: 'messages', label: 'Messages', icon: MessageCircle, path: COMPANY_PATHS.messages },
+  { key: 'settings', label: 'Settings', icon: Settings, path: COMPANY_PATHS.settings },
 ];
 
 function SidebarButton({ collapsed, active = false, label, title, onClick, icon, text }) {
@@ -37,7 +38,7 @@ function SidebarButton({ collapsed, active = false, label, title, onClick, icon,
 
 export default function CompanyDesktopSidebar({ activePath, collapsed = false }) {
   return (
-    <aside className={`hidden xl:flex fixed top-20 bottom-0 left-0 flex-col bg-white dark:bg-[#162842] transition-[width,background-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] z-40 ${collapsed ? 'w-16' : 'w-72'}`}>
+    <aside className={`hidden xl:flex fixed top-20 bottom-0 left-0 flex-col bg-[#f8fbf6] dark:bg-[#162842] transition-[width,background-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] z-40 ${collapsed ? 'w-16' : 'w-72'}`}>
       <div className="h-1 bg-gradient-to-r from-[#588157] to-[#3a5a40] dark:from-[#2d8bb8] dark:to-[#3ba9d6]" />
       <nav className={`py-4 space-y-2 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${collapsed ? 'px-2' : 'px-5'}`}>
         {LINKS.map((link) => {

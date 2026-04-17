@@ -71,6 +71,7 @@ const fastApiBase = resolveServiceUrl({
 const nextConfig = {
   reactStrictMode: true,
   typedRoutes: false,
+  devIndicators: false,
   outputFileTracingRoot: path.resolve(process.cwd()),
   async rewrites() {
     const rules = [

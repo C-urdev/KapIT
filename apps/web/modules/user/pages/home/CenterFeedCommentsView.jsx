@@ -311,7 +311,7 @@ export default function CenterFeedCommentsView({
             <div className="relative" ref={sortMenuRef}>
               <button type="button" onClick={() => setSortMenuOpen((current) => !current)} className="inline-flex items-center gap-2 text-[1.02rem] font-semibold text-[#3a5a40] dark:text-white/92">{activeSortLabel}<ChevronDown className="h-4 w-4" /></button>
               {sortMenuOpen ? (
-                <div className="absolute left-0 top-[calc(100%+0.5rem)] z-30 min-w-40 overflow-hidden rounded-2xl border border-[#bfd0af] bg-white shadow-[0_12px_30px_rgba(58,90,64,0.12)] dark:border-white/8 dark:bg-[#34343a]">
+                <div className="absolute left-0 top-[calc(100%+0.5rem)] z-30 min-w-40 overflow-hidden rounded-2xl border border-[#bfd0af] bg-[#f8fbf6] shadow-[0_12px_30px_rgba(58,90,64,0.12)] dark:border-white/8 dark:bg-[#34343a]">
                   {SORT_OPTIONS.map((option) => (
                     <button key={option.key} type="button" onClick={() => { setSortKey(option.key); setSortMenuOpen(false); }} className={`block w-full px-4 py-3 text-left text-sm transition-colors hover:bg-[#f5f5f2] dark:hover:bg-white/10 ${sortKey === option.key ? 'font-semibold text-[#3a5a40] dark:text-white' : 'text-[#5f6f52] dark:text-white/75'}`}>
                       {option.label}
@@ -351,7 +351,7 @@ export default function CenterFeedCommentsView({
         </div>
         <div className="border-t border-[#bfd0af] bg-[#ece8de] px-4 pb-4 pt-3 dark:border-white/8 dark:bg-[#24262b]" style={{ paddingBottom: 'max(1rem, calc(env(safe-area-inset-bottom) + 0.75rem))' }}>
           {replyingTo ? (
-            <div className="mb-3 flex items-center justify-between rounded-2xl border border-[#bfd0af] bg-white px-4 py-2 text-sm dark:border-white/8 dark:bg-[#34343a]">
+            <div className="mb-3 flex items-center justify-between rounded-2xl border border-[#bfd0af] bg-[#f8fbf6] px-4 py-2 text-sm dark:border-white/8 dark:bg-[#34343a]">
               <span className="text-[#344e41] dark:text-white/82">Replying to <strong>{replyingTo.author}</strong></span>
               <button type="button" onClick={() => setReplyingTo(null)} className="text-[#5f6f52] transition-colors hover:text-[#3a5a40] dark:text-white/70 dark:hover:text-white" aria-label="Cancel reply">
                 <X className="h-4 w-4" />
@@ -359,7 +359,7 @@ export default function CenterFeedCommentsView({
             </div>
           ) : null}
           {commentImage ? (
-            <div className="mb-3 flex items-start gap-3 rounded-2xl border border-[#bfd0af] bg-white p-3 dark:border-white/8 dark:bg-[#34343a]">
+            <div className="mb-3 flex items-start gap-3 rounded-2xl border border-[#bfd0af] bg-[#f8fbf6] p-3 dark:border-white/8 dark:bg-[#34343a]">
               <img src={commentImage} alt="Selected comment attachment" className="h-16 w-16 rounded-xl object-cover" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-[#3a5a40] dark:text-white">Image ready to send</p>
@@ -369,7 +369,7 @@ export default function CenterFeedCommentsView({
           ) : null}
           <div className="flex items-center gap-3">
             <Avatar profileImage={profileImage} fallback={userInitial} sizeClass="h-11 w-11" />
-            <div className="flex min-w-0 flex-1 items-center gap-3 rounded-full border border-[#bfd0af] bg-white px-4 py-2.5 dark:border-transparent dark:bg-[#34343a]">
+            <div className="flex min-w-0 flex-1 items-center gap-3 rounded-full border border-[#bfd0af] bg-[#f8fbf6] px-4 py-2.5 dark:border-transparent dark:bg-[#34343a]">
               <input
                 type="text"
                 value={commentDraft}
@@ -388,7 +388,7 @@ export default function CenterFeedCommentsView({
               <div className="relative" data-emoji-menu="true">
                 <button type="button" onClick={() => setEmojiMenuOpen((current) => !current)} className="text-[#5f6f52] hover:text-[#3a5a40] dark:text-white/70 dark:hover:text-white" aria-label="Add emoji"><Smile className="h-6 w-6" /></button>
                 {emojiMenuOpen ? (
-                  <div className="absolute bottom-[calc(100%+0.75rem)] right-0 z-30 flex gap-1 rounded-2xl border border-[#bfd0af] bg-white p-2 shadow-[0_10px_24px_rgba(58,90,64,0.12)] dark:border-white/8 dark:bg-[#34343a]">
+                  <div className="absolute bottom-[calc(100%+0.75rem)] right-0 z-30 flex gap-1 rounded-2xl border border-[#bfd0af] bg-[#f8fbf6] p-2 shadow-[0_10px_24px_rgba(58,90,64,0.12)] dark:border-white/8 dark:bg-[#34343a]">
                     {EMOJI_OPTIONS.map((emoji) => (
                       <button key={emoji} type="button" onClick={() => { appendToDraft(emoji); setEmojiMenuOpen(false); }} className="rounded-xl px-2 py-1 text-xl transition-colors hover:bg-[#f5f5f2] dark:hover:bg-white/10">
                         {emoji}

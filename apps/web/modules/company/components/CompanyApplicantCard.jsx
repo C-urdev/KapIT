@@ -23,7 +23,7 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
 
   return (
     <>
-      <div className="rounded-2xl border border-[#d6d3c9] bg-white p-5 shadow-sm shadow-black/5 transition-colors dark:border-[#2a4a6f] dark:bg-[#162842] xl:hidden">
+      <div className="rounded-2xl border border-[#d6d3c9] bg-[#f8fbf6] p-5 shadow-sm shadow-black/5 transition-colors dark:border-[#2a4a6f] dark:bg-[#162842] xl:hidden">
         <div className="flex items-start gap-3">
           <Avatar user={user} name={name} />
           <div className="min-w-0 flex-1">
@@ -78,7 +78,7 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
         ) : null}
       </div>
 
-      <div className="hidden rounded-2xl border border-[#d6d3c9] bg-white p-6 shadow-sm shadow-black/5 transition-colors dark:border-[#2a4a6f] dark:bg-[#162842] xl:grid xl:grid-cols-[minmax(0,1.7fr)_0.95fr_0.9fr_0.95fr_minmax(17.5rem,1.35fr)] xl:items-center xl:gap-6">
+      <div className="hidden rounded-2xl border border-[#d6d3c9] bg-[#f8fbf6] p-6 shadow-sm shadow-black/5 transition-colors dark:border-[#2a4a6f] dark:bg-[#162842] xl:grid xl:grid-cols-[minmax(0,1.7fr)_0.95fr_0.9fr_0.95fr_minmax(17.5rem,1.35fr)] xl:items-center xl:gap-6">
         <div className="min-w-0">
           <div className="flex items-start gap-3">
             <Avatar user={user} name={name} />

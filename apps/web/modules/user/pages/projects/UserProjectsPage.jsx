@@ -4,7 +4,6 @@ import {
   ExternalLink,
   FileCode2,
   FolderKanban,
-  Github,
   Globe,
   Link2,
   MoreHorizontal,
@@ -229,7 +228,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
         ) : null}
       </div>
 
-      <section className="overflow-hidden rounded-[28px] border border-[#7f9775] bg-white px-4 py-5 shadow-[0_18px_50px_rgba(58,90,64,0.1)] dark:border-[#2a4a6f] dark:bg-[#162842] sm:px-6 lg:px-8">
+      <section className="overflow-hidden rounded-[28px] border border-[#7f9775] bg-[#f8fbf6] px-4 py-5 shadow-[0_18px_50px_rgba(58,90,64,0.1)] dark:border-[#2a4a6f] dark:bg-[#162842] sm:px-6 lg:px-8">
           {projects.length > 0 ? (
             <>
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -254,7 +253,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
                       key={project.id}
                       className={`relative min-h-[168px] overflow-hidden rounded-[24px] border border-white/60 p-5 shadow-[0_16px_30px_rgba(58,90,64,0.16)] ${accentClass}`}
                     >
-                      <div className="absolute left-4 top-0 h-5 w-20 rounded-b-[16px] bg-white/75 dark:bg-white/10" />
+                      <div className="absolute left-4 top-0 h-5 w-20 rounded-b-[16px] bg-[#f8fbf6]/75 dark:bg-white/10" />
                       <p className="pt-3 text-[10px] font-bold uppercase tracking-[0.22em] opacity-80">Shared Work</p>
 
                       <div className="mt-3 flex -space-x-2">
@@ -262,14 +261,14 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
                           tech.map((tag) => (
                             <div
                               key={`${project.id}-${tag}`}
-                              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/70 bg-white/80 text-[10px] font-bold text-[#31572c] shadow-sm dark:border-[#274562] dark:bg-[#dfeaf6]"
+                              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/70 bg-[#f8fbf6]/80 text-[10px] font-bold text-[#31572c] shadow-sm dark:border-[#274562] dark:bg-[#dfeaf6]"
                               title={tag}
                             >
                               {tag.slice(0, 1).toUpperCase()}
                             </div>
                           ))
                         ) : (
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/70 bg-white/80 text-[10px] font-bold text-[#31572c] shadow-sm dark:border-[#274562] dark:bg-[#dfeaf6]">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/70 bg-[#f8fbf6]/80 text-[10px] font-bold text-[#31572c] shadow-sm dark:border-[#274562] dark:bg-[#dfeaf6]">
                             P
                           </div>
                         )}
@@ -435,7 +434,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
 
       {isModalOpen ? (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-2xl border border-[#a3b18a] bg-white p-6 shadow-xl dark:border-[#1e3a5f] dark:bg-[#162842]">
+          <div className="w-full max-w-2xl rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] p-6 shadow-xl dark:border-[#1e3a5f] dark:bg-[#162842]">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold text-[#3a5a40] dark:text-white">

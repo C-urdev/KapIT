@@ -77,7 +77,7 @@ export default function ResumeUploader({
               setError('');
               onChange?.('');
             }}
-            className="inline-flex items-center gap-2 rounded-lg border border-[#a3b18a] px-3 py-2 text-sm text-[#344e41] hover:bg-white dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#a3b18a] px-3 py-2 text-sm text-[#344e41] hover:bg-[#f8fbf6] dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             <X className="h-4 w-4" />
             Remove

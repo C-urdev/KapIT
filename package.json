@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node scripts/start-dev.js",
     "server": "node server/server.js",
-    "server:watch": "nodemon server/server.js",
+    "server:watch": "node --watch server/server.js",
     "start": "node scripts/start-dev.js",
     "migrate:legacy-users": "node server/scripts/migrateLegacyUsers.js",
     "migrate:posts:reassign-owner": "node server/scripts/reassignPostOwnership.js",
@@ -40,7 +40,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14",
     "supertest": "^7.2.2"
   }
 }

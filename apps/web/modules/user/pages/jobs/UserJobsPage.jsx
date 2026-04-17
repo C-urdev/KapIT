@@ -240,7 +240,7 @@ export default function UserJobsPage({ userType, user }) {
 
       <form
         onSubmit={handleSearch}
-        className="rounded-[24px] border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] p-4 shadow-lg shadow-black/5 transition-colors duration-300 dark:shadow-black/20"
+        className="p-0"
       >
         <div className={`flex flex-col ${hasActiveFilters ? 'gap-4' : 'gap-3'}`}>
           <div className="flex flex-row items-center gap-2 sm:gap-3 w-full">

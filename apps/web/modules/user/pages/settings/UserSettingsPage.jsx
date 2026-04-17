@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  ArrowLeft,
   Bell,
   Book,
   Briefcase,
@@ -44,6 +45,7 @@ function SectionHeading({ title, subtitle }) {
 
 export default function UserSettingsPage({
   user,
+  onBack,
   onOpenAccountDetails,
   onOpenSavedJobs,
   onOpenApplications,
@@ -113,8 +115,18 @@ export default function UserSettingsPage({
   }).filter(section => section.items.length > 0 || section.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
-    <div className="mx-auto flex w-full max-w-[min(100%,760px)] flex-col bg-[#dad7cd] px-4 pb-16 pt-4 dark:bg-[#0a1628] sm:px-5 sm:pb-8 sm:pt-6">
-      <div className="sticky top-0 z-10 rounded-2xl border border-[#c8d5b9] bg-[#e9efe2]/95 px-4 pb-4 pt-4 shadow-sm backdrop-blur-md dark:border-[#1e3a5f] dark:bg-[#102235]/95 sm:pt-5">
+    <div className="mx-auto flex w-full max-w-[min(100%,760px)] flex-col bg-transparent px-4 pb-16 pt-4 sm:px-5 sm:pb-8 sm:pt-6">
+      <div className="sticky top-0 z-10 pb-3 pt-1">
+        <div className="mb-3 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-3 py-2 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#eef6ee] dark:border-[#2a4a6f] dark:bg-[#162842] dark:text-white dark:hover:bg-[#1e3a5f]"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </button>
+        </div>
         <div className="relative">
           <Search className="absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#5f6f52] dark:text-[#8fb2cf]" />
           <input

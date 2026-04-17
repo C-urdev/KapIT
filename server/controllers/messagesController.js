@@ -497,6 +497,7 @@ const listMessages = async (req, res) => {
 
 const sendMessage = async (req, res) => {
   let client;
+  let transactionStarted = false;
   let sendPhase = 'init';
   let sendMeta = {
     userId: req.user?.id || null,
@@ -512,24 +513,34 @@ const sendMessage = async (req, res) => {
     client = await pool.connect();
     await ensureMessagesTable(client);
     await client.query('BEGIN');
+    transactionStarted = true;
+
+    const rollbackIfNeeded = async () => {
+      if (!transactionStarted) {
+        return;
+      }
+
+      await client.query('ROLLBACK');
+      transactionStarted = false;
+    };
 
     const contactId = String(req.params.contact || '').trim();
     const text = req.body?.text?.trim();
 
     if (!contactId) {
-      await client.query('ROLLBACK');
+      await rollbackIfNeeded();
       return res.status(400).json({ success: false, message: 'Contact id is required' });
     }
 
     sendMeta.contactId = contactId;
 
     if (!text) {
-      await client.query('ROLLBACK');
+      await rollbackIfNeeded();
       return res.status(400).json({ success: false, message: 'Message cannot be empty' });
     }
 
     if (contactId === req.user.id) {
-      await client.query('ROLLBACK');
+      await rollbackIfNeeded();
       return res.status(400).json({ success: false, message: 'You cannot message your own account' });
     }
 
@@ -542,7 +553,7 @@ const sendMessage = async (req, res) => {
     );
 
     if (!contactResult.rows.length) {
-      await client.query('ROLLBACK');
+      await rollbackIfNeeded();
       return res.status(404).json({ success: false, message: 'Contact not found' });
     }
 
@@ -555,7 +566,7 @@ const sendMessage = async (req, res) => {
     );
 
     if (!senderResult.rows.length) {
-      await client.query('ROLLBACK');
+      await rollbackIfNeeded();
       return res.status(404).json({ success: false, message: 'Sender not found' });
     }
 
@@ -623,6 +634,7 @@ const sendMessage = async (req, res) => {
 
     sendPhase = 'commit';
     await client.query('COMMIT');
+    transactionStarted = false;
 
     const row = result.rows[0];
     res.status(201).json({
@@ -635,8 +647,14 @@ const sendMessage = async (req, res) => {
       },
     });
   } catch (error) {
-    if (client) {
-      await client.query('ROLLBACK');
+    if (client && transactionStarted) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        logger.error('Send message rollback error:', rollbackError);
+      } finally {
+        transactionStarted = false;
+      }
     }
     recordDualWriteFailure();
     logMessagingMigrationEvent('send_failure', {

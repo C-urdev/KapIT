@@ -29,6 +29,14 @@ const {
 } = require('../controllers/authRecoveryController');
 const { googleLogin, githubLogin } = require('../controllers/oauthController');
 const {
+  listUserPremiumPaymentProviders,
+  createUserPremiumCheckoutSession,
+  verifyUserPremiumStripeCheckout,
+  captureUserPremiumPayPalCheckout,
+  cancelUserPremiumCheckoutSession,
+  completeLocalBypassUserPremiumCheckout,
+} = require('../controllers/userPaymentController');
+const {
   listFeedPosts,
   listMyPosts,
   listProfilePosts,
@@ -79,6 +87,12 @@ router.get('/search', verifyToken, searchUsers);
 router.get('/profile/:id', verifyToken, getPublicProfile);
 router.patch('/profile', requireCsrfForCookieAuth, verifyToken, validateRequest(writeSchemas.authProfilePatch), updateMyProfile);
 router.patch('/terms-consent', requireCsrfForCookieAuth, verifyToken, validateRequest(writeSchemas.authTermsConsent), acceptTermsConsent);
+router.get('/premium/payments/providers', verifyToken, listUserPremiumPaymentProviders);
+router.post('/premium/payments/checkout-session', requireCsrfForCookieAuth, verifyToken, validateRequest(writeSchemas.userPremiumCheckoutSession), createUserPremiumCheckoutSession);
+router.post('/premium/payments/localhost-bypass', requireCsrfForCookieAuth, verifyToken, validateRequest(writeSchemas.userPremiumLocalBypass), completeLocalBypassUserPremiumCheckout);
+router.post('/premium/payments/stripe/verify', requireCsrfForCookieAuth, verifyToken, validateRequest(writeSchemas.userPremiumStripeVerify), verifyUserPremiumStripeCheckout);
+router.post('/premium/payments/paypal/capture', requireCsrfForCookieAuth, verifyToken, validateRequest(writeSchemas.userPremiumPaypalCapture), captureUserPremiumPayPalCheckout);
+router.post('/premium/payments/:paymentId/cancel', requireCsrfForCookieAuth, verifyToken, validateRequest(writeSchemas.userPremiumCancel), cancelUserPremiumCheckoutSession);
 router.get('/posts/feed', verifyToken, listFeedPosts);
 router.get('/posts/me', verifyToken, listMyPosts);
 router.get('/posts/profile/:userId', verifyToken, listProfilePosts);

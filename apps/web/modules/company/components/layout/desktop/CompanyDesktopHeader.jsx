@@ -111,7 +111,7 @@ export default function CompanyDesktopHeader({ title, user, onLogout, onHelp, si
             </button>
 
             {profileMenuOpen ? (
-              <div className="absolute right-0 top-[calc(100%+0.75rem)] w-64 rounded-2xl border border-[#a3b18a] bg-white p-2 shadow-[0_20px_50px_rgba(58,90,64,0.16)] dark:border-[#2a4a6f] dark:bg-[#162842] dark:shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
+              <div className="absolute right-0 top-[calc(100%+0.75rem)] w-64 rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] p-2 shadow-[0_20px_50px_rgba(58,90,64,0.16)] dark:border-[#2a4a6f] dark:bg-[#162842] dark:shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
                 <div className="mb-2 flex items-center gap-3 rounded-xl bg-[#f8fbf6] px-3 py-3 dark:bg-[#102235]">
                   <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#588157] font-bold text-white dark:bg-[#3ba9d6]">
                     {profileImage ? <img src={profileImage} alt={`${companyName} logo`} className="h-full w-full object-cover" /> : initial}
@@ -127,7 +127,7 @@ export default function CompanyDesktopHeader({ title, user, onLogout, onHelp, si
                   label="Settings"
                   onClick={() => {
                     setProfileMenuOpen(false);
-                    navigate(COMPANY_PATHS.profile);
+                    navigate(COMPANY_PATHS.settings);
                   }}
                 />
                 <ProfileMenuButton

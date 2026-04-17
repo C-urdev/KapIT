@@ -158,7 +158,7 @@ export default function CompanySearchDevelopersPage() {
 
       <form
         onSubmit={handleSearch}
-        className="rounded-[24px] border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] p-4 shadow-lg shadow-black/5 transition-colors duration-300 dark:shadow-black/20"
+        className="transition-colors duration-300"
       >
         <div className={`flex flex-col ${hasActiveFilters ? 'gap-4' : 'gap-3'}`}>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">

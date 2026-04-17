@@ -8,6 +8,7 @@ const notificationsRoutes = require('./routes/notificationsRoutes');
 const companyRoutes = require('./routes/companyRoutes');
 const developerRoutes = require('./routes/developerRoutes');
 const publicRoutes = require('./routes/publicRoutes');
+const matchRoutes = require('./routes/matchRoutes');
 const { warmRuntimeSchemas } = require('./config/runtimeSchema');
 const { normalizeOrigin, isKapitVercelOrigin, getAllowedOrigins } = require('./config/origins');
 const pool = require('./config/database');
@@ -108,6 +109,8 @@ const createApp = () => {
   });
 
   app.use('/api/auth', authApiRateLimiter, authRoutes);
+  app.use('/api/match-jobs', developerApiRateLimiter);
+  app.use('/api', matchRoutes);
   app.use('/api/public', publicApiRateLimiter, publicRoutes);
   app.use('/api/messages', messagesReadRateLimiter, messagesWriteRateLimiter, messagesRoutes);
   app.use('/api/notifications', notificationsRateLimiter, notificationsRoutes);

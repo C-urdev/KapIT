@@ -182,6 +182,34 @@ const ensureUsersProfileSchema = async () => {
       ON messages(user_id, contact_name, created_at);
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_premium_payments (
+        id UUID PRIMARY KEY,
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        provider VARCHAR(20) NOT NULL,
+        payment_context VARCHAR(40) NOT NULL DEFAULT 'user_premium',
+        currency VARCHAR(8) NOT NULL DEFAULT 'PHP',
+        amount INTEGER NOT NULL,
+        status VARCHAR(40) NOT NULL DEFAULT 'pending',
+        plan_id VARCHAR(40) NOT NULL,
+        plan_label VARCHAR(80) NOT NULL,
+        plan_duration VARCHAR(60) NOT NULL,
+        plan_duration_days INTEGER NOT NULL,
+        provider_checkout_id VARCHAR(255),
+        provider_payment_id VARCHAR(255),
+        payer_email VARCHAR(255),
+        provider_payload JSONB,
+        paid_at TIMESTAMP,
+        cancelled_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query('CREATE INDEX IF NOT EXISTS idx_user_premium_payments_user_created ON user_premium_payments(user_id, created_at DESC);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_user_premium_payments_status_created ON user_premium_payments(status, created_at DESC);');
+    await client.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_user_premium_payments_provider_checkout ON user_premium_payments(provider, provider_checkout_id) WHERE provider_checkout_id IS NOT NULL;');
+
     await client.query('COMMIT');
   } catch (error) {
     await client.query('ROLLBACK');

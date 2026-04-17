@@ -1,18 +1,15 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import ConfirmModal from '@sharedComponents/ui/ConfirmModal';
 import DeveloperProfile from '@sharedPages/onboarding/DeveloperProfileOnboardingPage';
-import { logoutUser, updateStoredUser } from '@sharedServices/authService';
+import { logoutAndRedirect, updateStoredUser } from '@sharedServices/authService';
 import { saveDeveloperProfile } from '@userFeatures/developer/userDeveloperAPI';
 import SessionGate from './SessionGate';
 
 export default function DeveloperOnboardingClient() {
   const router = useRouter();
-  const handleLogout = async () => {
-    await logoutUser();
-    router.replace('/');
+  const handleLogout = () => {
+    logoutAndRedirect('/');
   };
 
   return (

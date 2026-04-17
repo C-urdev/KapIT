@@ -12,7 +12,7 @@ function OverviewIconAction({ icon: Icon, label, onClick, variant = 'default' })
       onClick={onClick}
       className={isPrimary
         ? 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-[#588157] dark:border-[#3ba9d6] bg-[#3a5a40] dark:bg-[#1f6f96] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-[#344e41] dark:hover:bg-[#2d8bb8] hover:shadow-lg hover:shadow-black/10'
-        : 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] px-4 py-2.5 text-sm font-semibold text-[#3a5a40] dark:text-white transition-all hover:-translate-y-0.5 hover:border-[#588157] dark:hover:border-[#3ba9d6] hover:bg-[#f8fbf5] dark:hover:bg-[#1e3a5f]'}
+        : 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] px-4 py-2.5 text-sm font-semibold text-[#3a5a40] dark:text-white transition-all hover:-translate-y-0.5 hover:border-[#588157] dark:hover:border-[#3ba9d6] hover:bg-[#f8fbf5] dark:hover:bg-[#1e3a5f]'}
     >
       <Icon className={isPrimary ? 'h-4 w-4 text-white' : 'h-4 w-4 text-[#588157] dark:text-[#7fd0ee]'} />
       <span>{label}</span>
@@ -25,7 +25,7 @@ function OverviewTab({ active, label, count, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl border px-4 py-2 text-xs sm:text-sm font-semibold transition-colors ${active ? 'border-[#3a5a40] bg-[#3a5a40] text-white dark:border-[#3ba9d6] dark:bg-[#3ba9d6] dark:text-[#0a1628]' : 'border-[#d6d3c9] bg-white text-[#3a5a40] hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#162842] dark:text-white dark:hover:bg-[#1e3a5f]'}`}
+      className={`rounded-xl border px-4 py-2 text-xs sm:text-sm font-semibold transition-colors ${active ? 'border-[#3a5a40] bg-[#3a5a40] text-white dark:border-[#3ba9d6] dark:bg-[#3ba9d6] dark:text-[#0a1628]' : 'border-[#d6d3c9] bg-[#f8fbf6] text-[#3a5a40] hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#162842] dark:text-white dark:hover:bg-[#1e3a5f]'}`}
     >
       {label} ({count})
     </button>
@@ -34,7 +34,7 @@ function OverviewTab({ active, label, count, onClick }) {
 
 function FilterInput({ icon: Icon, value, onChange, placeholder }) {
   return (
-    <label className="flex min-w-0 items-center gap-2.5 rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-white dark:bg-[#162842] px-3.5 py-2.5 shadow-sm shadow-black/5 transition-colors focus-within:border-[#588157] dark:focus-within:border-[#3ba9d6]">
+    <label className="flex min-w-0 items-center gap-2.5 rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-[#f8fbf6] dark:bg-[#162842] px-3.5 py-2.5 shadow-sm shadow-black/5 transition-colors focus-within:border-[#588157] dark:focus-within:border-[#3ba9d6]">
       <Icon className="h-4 w-4 shrink-0 text-[#588157] dark:text-[#7fd0ee]" />
       <input
         value={value}
@@ -48,12 +48,17 @@ function FilterInput({ icon: Icon, value, onChange, placeholder }) {
 
 function FilterSelect({ icon: Icon, label, value, onChange, children }) {
   return (
-    <label className="flex min-w-0 items-center gap-2.5 rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-white dark:bg-[#162842] px-3.5 py-2.5 shadow-sm shadow-black/5 transition-colors focus-within:border-[#588157] dark:focus-within:border-[#3ba9d6]">
+    <label className="flex min-w-0 items-center gap-2.5 overflow-hidden rounded-xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-[#f8fbf6] dark:bg-[#162842] px-3.5 py-2.5 shadow-sm shadow-black/5 transition-colors focus-within:border-[#588157] dark:focus-within:border-[#3ba9d6]">
       <Icon className="h-4 w-4 shrink-0 text-[#588157] dark:text-[#7fd0ee]" />
-      <span className="shrink-0 text-sm font-semibold text-[#3a5a40] dark:text-white">{label}</span>
-      <select value={value} onChange={onChange} className="min-w-0 w-full bg-transparent text-sm text-[#344e41] outline-none dark:text-white">
+      <span className="hidden shrink-0 text-sm font-semibold text-[#3a5a40] dark:text-white min-[420px]:inline">{label}</span>
+      <select
+        value={value}
+        onChange={onChange}
+        className="min-w-0 w-full flex-1 appearance-none truncate bg-transparent pr-5 text-sm text-[#344e41] outline-none dark:text-white"
+      >
         {children}
       </select>
+      <ChevronDown className="h-4 w-4 shrink-0 text-[#6b7280] dark:text-[#9fb4ca]" />
     </label>
   );
 }
@@ -73,7 +78,7 @@ function CompactJobRow({ job, onManage, onOpenApplicants }) {
   const planDuration = String(job?.posting_plan_duration || '').trim();
 
   return (
-    <div className="grid grid-cols-1 gap-3 rounded-2xl bg-white dark:bg-[#162842] p-4 shadow-sm shadow-black/5 lg:grid-cols-[minmax(0,2.2fr)_0.9fr_0.8fr_0.9fr_0.8fr] lg:items-center lg:gap-5 lg:p-5">
+    <div className="grid grid-cols-1 gap-3 rounded-2xl bg-[#f8fbf6] dark:bg-[#162842] p-4 shadow-sm shadow-black/5 lg:grid-cols-[minmax(0,2.2fr)_0.9fr_0.8fr_0.9fr_0.8fr] lg:items-center lg:gap-5 lg:p-5">
       <div className="min-w-0">
         <p className="truncate text-[1.05rem] font-bold text-[#3a5a40] dark:text-white">{job?.title || 'Untitled job'}</p>
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[#4b5563] dark:text-[#b8d4e8]">
@@ -131,7 +136,7 @@ function CompactJobRow({ job, onManage, onOpenApplicants }) {
           <button
             type="button"
             onClick={() => onManage(job)}
-            className="rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] bg-white px-4 py-2.5 text-sm font-medium text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:bg-[#162842] dark:text-white dark:hover:bg-[#1e3a5f]"
+            className="rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] bg-[#f8fbf6] px-4 py-2.5 text-sm font-medium text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:bg-[#162842] dark:text-white dark:hover:bg-[#1e3a5f]"
           >
             Manage
           </button>
@@ -206,7 +211,7 @@ export default function CompanyDashboardPage() {
 
       <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[linear-gradient(135deg,#f8fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#16304a,#102235)] p-3.5 sm:p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
         <div className="flex items-start gap-2.5 sm:gap-3">
-          <div className="rounded-lg sm:rounded-xl bg-white/80 dark:bg-[#0f2139] p-2 sm:p-3 border border-[#d6d3c9] dark:border-[#2a4a6f]">
+          <div className="rounded-lg sm:rounded-xl bg-[#f8fbf6]/80 dark:bg-[#0f2139] p-2 sm:p-3 border border-[#d6d3c9] dark:border-[#2a4a6f]">
             <WalletCards className="w-4 h-4 sm:w-5 sm:h-5 text-[#3a5a40] dark:text-[#7fd0ee]" />
           </div>
           <div>
@@ -218,7 +223,7 @@ export default function CompanyDashboardPage() {
       </div>
 
       {analyticsError && <p className="text-sm text-red-600 dark:text-red-400">{analyticsError}</p>}
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
+      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
         <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Applicants snapshot graph</h3>
         <SummaryGraph data={analyticsLoading ? [] : overviewGraphData} />
       </div>
@@ -230,7 +235,7 @@ export default function CompanyDashboardPage() {
           <OverviewTab active={statusTab === 'closed'} label="Closed" count={closedJobs.length} onClick={() => setStatusTab('closed')} />
         </div>
 
-        <div className="grid grid-cols-1 gap-2.5 min-[520px]:grid-cols-2 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(180px,0.72fr)_minmax(180px,0.72fr)]">
+        <div className="grid grid-cols-1 gap-2.5 min-[520px]:grid-cols-2 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(160px,0.72fr)_minmax(160px,0.72fr)]">
           <FilterInput icon={Search} value={titleQuery} onChange={(event) => setTitleQuery(event.target.value)} placeholder="Search job titles" />
           <FilterInput icon={MapPin} value={locationQuery} onChange={(event) => setLocationQuery(event.target.value)} placeholder="Search locations" />
           <FilterSelect icon={Search} label="Sort by" value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
@@ -259,7 +264,7 @@ export default function CompanyDashboardPage() {
             ))}
           </div>
         ) : filteredJobs.length === 0 ? (
-          <div className="rounded-xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] p-6 transition-colors duration-300">
+          <div className="rounded-xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] p-6 transition-colors duration-300">
             <p className="text-[#344e41] dark:text-[#b8d4e8]">No jobs match the current filters.</p>
           </div>
         ) : (

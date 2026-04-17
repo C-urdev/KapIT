@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import health, features
+from app.routers import health, features, match_jobs
 
 app = FastAPI(title='KapIT AI Service', version='0.1.0')
 
@@ -19,3 +19,4 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(features.router, prefix='/ai', tags=['ai'])
+app.include_router(match_jobs.router, tags=['matching'])

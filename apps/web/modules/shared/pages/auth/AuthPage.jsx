@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Moon, Sun, AlertCircle, Eye, EyeOff, Github } from 'lucide-react';
+import { Moon, Sun, AlertCircle, Eye, EyeOff, GitFork } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
@@ -151,9 +151,25 @@ export default function AuthPage({
   const triggerGoogleLogin = useGoogleLogin({
     onSuccess: handleGoogleSuccess,
     onError: () => setError('Google sign-in was cancelled or failed.'),
+    onNonOAuthError: (errorResponse) => {
+      const type = String(errorResponse?.type || '').toLowerCase();
+      if (type.includes('popup_failed_to_open') || type.includes('popup')) {
+        setError('Google sign-in popup was blocked by your browser. Allow popups for this site and try again.');
+        return;
+      }
+      if (type.includes('popup_closed')) {
+        setError('Google sign-in was closed before completion.');
+        return;
+      }
+      setError('Google sign-in could not be started. Please try again.');
+    },
   });
 
   const handleGoogleClick = () => {
+    if (loading) {
+      return;
+    }
+
     if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && process.env.NODE_ENV !== 'production') {
       const email = prompt(`[Developer Mode - Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID]\n\nEnter any existing or new email to simulate logging in with Google:`);
       if (!email) return;
@@ -163,6 +179,10 @@ export default function AuthPage({
   };
 
   const handleGithubClick = () => {
+    if (loading) {
+      return;
+    }
+
     const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
     if (!clientId && process.env.NODE_ENV !== 'production') {
       const email = prompt(`[Developer Mode - Missing NEXT_PUBLIC_GITHUB_CLIENT_ID]\n\nEnter any email to simulate logging in with GitHub:`);
@@ -173,6 +193,7 @@ export default function AuthPage({
       alert("GitHub Client ID is not configured.");
       return;
     }
+    setLoading(true);
     const redirectUri = window.location.origin + '/auth/callback/github';
     window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user:email`;
   };
@@ -388,7 +409,7 @@ export default function AuthPage({
                 onClick={handleGithubClick}
                 className="flex items-center justify-center w-full px-4 py-2.5 bg-[#f0f5f1] dark:bg-[#1a3354] hover:bg-[#e2e8e4] dark:hover:bg-[#1e3a5f] border border-[#a3b18a] dark:border-[#2a4a6f] rounded-lg transition-colors disabled:opacity-50 text-[#344e41] dark:text-gray-200 font-medium"
               >
-                <Github className="w-5 h-5 mr-2 -ml-1" />
+                <GitFork className="w-5 h-5 mr-2 -ml-1" />
                 GitHub
               </button>
             </div>

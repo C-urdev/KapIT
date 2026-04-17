@@ -1,18 +1,15 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import ConfirmModal from '@sharedComponents/ui/ConfirmModal';
 import CompanyProfileOnboarding from '@sharedPages/onboarding/CompanyProfileOnboardingPage';
-import { logoutUser, updateStoredUser } from '@sharedServices/authService';
+import { logoutAndRedirect, updateStoredUser } from '@sharedServices/authService';
 import { saveCompanyProfileOnboarding } from '@companyFeatures/companyAPI';
 import SessionGate from './SessionGate';
 
 export default function CompanyOnboardingClient() {
   const router = useRouter();
-  const handleLogout = async () => {
-    await logoutUser();
-    router.replace('/');
+  const handleLogout = () => {
+    logoutAndRedirect('/');
   };
 
   return (

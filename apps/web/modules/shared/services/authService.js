@@ -2,10 +2,9 @@ import { authRequest } from './apiClient';
 
 const PROFILE_CACHE_KEY = 'kapit_profile_cache_by_email';
 const USER_STORAGE_KEY = 'user';
-const SERVER_COOLDOWN_MS = 60 * 1000;
-const endpointCooldowns = new Map();
 const getSessionStorage = () => window.sessionStorage;
 let hasClearedLegacyBrowserAuthState = false;
+let logoutRequest = null;
 
 const clearLegacyBrowserAuthStateOnce = () => {
   if (typeof window === 'undefined' || hasClearedLegacyBrowserAuthState) {
@@ -34,10 +33,6 @@ const getUserAccountType = (user) => (
   normalizeAccountType(user?.accountType) || normalizeAccountType(user?.account_type) || normalizeAccountType(user?.type)
 );
 const isCompanyAccount = (user) => getUserAccountType(user) === 'company';
-const isEndpointCoolingDown = (key) => (endpointCooldowns.get(key) || 0) > Date.now();
-const markEndpointFailed = (key) => {
-  endpointCooldowns.set(key, Date.now() + SERVER_COOLDOWN_MS);
-};
 
 const clearLocalSessionState = () => {
   clearLegacyBrowserAuthStateOnce();
@@ -355,6 +350,59 @@ export const updateMyProfile = async (updates) => {
   return data;
 };
 
+export const getUserPremiumPaymentProviders = async () => {
+  const data = await authRequest('/premium/payments/providers');
+  return data;
+};
+
+export const createUserPremiumCheckoutSession = async ({ provider }) => {
+  const data = await authRequest('/premium/payments/checkout-session', {
+    method: 'POST',
+    body: JSON.stringify({ provider }),
+  });
+  return data;
+};
+
+export const verifyUserPremiumStripeCheckout = async ({ paymentId, sessionId }) => {
+  const data = await authRequest('/premium/payments/stripe/verify', {
+    method: 'POST',
+    body: JSON.stringify({ paymentId, sessionId }),
+  });
+  if (data?.user) {
+    data.user = persistUser(data.user);
+  }
+  return data;
+};
+
+export const captureUserPremiumPayPalCheckout = async ({ paymentId, orderId }) => {
+  const data = await authRequest('/premium/payments/paypal/capture', {
+    method: 'POST',
+    body: JSON.stringify({ paymentId, orderId }),
+  });
+  if (data?.user) {
+    data.user = persistUser(data.user);
+  }
+  return data;
+};
+
+export const cancelUserPremiumCheckout = async (paymentId) => {
+  const data = await authRequest(`/premium/payments/${encodeURIComponent(paymentId)}/cancel`, {
+    method: 'POST',
+  });
+  return data;
+};
+
+export const completeUserPremiumLocalBypass = async ({ provider }) => {
+  const data = await authRequest('/premium/payments/localhost-bypass', {
+    method: 'POST',
+    body: JSON.stringify({ provider }),
+  });
+  if (data?.user) {
+    data.user = persistUser(data.user);
+  }
+  return data;
+};
+
 export const acceptTermsAndConditions = async () => {
   const data = await authRequest('/terms-consent', {
     method: 'PATCH',
@@ -374,24 +422,31 @@ export const getMyApplications = async () => {
 };
 
 export const logoutUser = async () => {
-  clearLocalSessionState();
-  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  const timeout = controller
-    ? setTimeout(() => controller.abort(), 1800)
-    : null;
-
-  try {
-    await authRequest('/logout', {
-      method: 'POST',
-      retryOnUnauthorized: false,
-      ...(controller ? { signal: controller.signal } : {}),
+  if (!logoutRequest) {
+    logoutRequest = (async () => {
+      try {
+        await authRequest('/logout', {
+          method: 'POST',
+          retryOnUnauthorized: false,
+        });
+      } catch {
+        // Clear local user state even if server-side session revocation fails.
+      } finally {
+        clearLocalSessionState();
+      }
+    })().finally(() => {
+      logoutRequest = null;
     });
-  } catch {
-    // Clear local user state even if the server cookie is already gone.
-  } finally {
-    if (timeout != null) {
-      clearTimeout(timeout);
-    }
+  }
+
+  await logoutRequest;
+};
+
+export const logoutAndRedirect = async (targetPath = '/') => {
+  await logoutUser();
+
+  if (typeof window !== 'undefined') {
+    window.location.replace(targetPath);
   }
 };
 
@@ -426,10 +481,6 @@ export const getFeaturedCompanies = async () => {
 };
 
 export const getJobsFeed = async (filters = {}) => {
-  if (isEndpointCoolingDown('auth:jobs-feed')) {
-    return { jobs: [], plan: { isPremium: false } };
-  }
-
   try {
     const params = new URLSearchParams();
     if (filters && typeof filters === 'object') {
@@ -447,7 +498,6 @@ export const getJobsFeed = async (filters = {}) => {
       plan: data?.plan || { isPremium: false },
     };
   } catch (error) {
-    markEndpointFailed('auth:jobs-feed');
     throw new Error(getErrorMessage(error, 'Failed to load jobs'));
   }
 };

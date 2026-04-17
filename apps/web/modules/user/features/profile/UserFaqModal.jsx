@@ -107,7 +107,7 @@ export default function UserFaqModal({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 min-[420px]:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="flex w-full max-w-3xl flex-col bg-white dark:bg-[#0a1628] rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] animate-in zoom-in-95 duration-200">
+      <div className="flex w-full max-w-3xl flex-col bg-[#f8fbf6] dark:bg-[#0a1628] rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] animate-in zoom-in-95 duration-200">
         
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-[#e5e7eb] dark:border-[#1e3a5f] p-4 sm:p-5">

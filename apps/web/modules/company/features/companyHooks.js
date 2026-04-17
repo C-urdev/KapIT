@@ -3,7 +3,10 @@ import { companyAPI } from './companyAPI';
 
 const EMPTY_LIST = [];
 const RESOURCE_STALE_MS = 30 * 1000;
+const WORKSPACE_PRIME_STALE_MS = 45 * 1000;
 const resourceMemoryCache = new Map();
+let workspacePrimePromise = null;
+let workspacePrimeLastAt = 0;
 
 const readCache = (key, fallback) => {
   if (typeof window === 'undefined' || !key) {
@@ -30,23 +33,43 @@ const writeCache = (key, value) => {
   }
 };
 
+const normalizeStoredCacheEntry = (entry, fallbackData) => {
+  if (entry && typeof entry === 'object' && Object.prototype.hasOwnProperty.call(entry, 'data')) {
+    return {
+      data: entry.data,
+      lastSuccessAt: Number(entry.lastSuccessAt || 0),
+    };
+  }
+
+  return {
+    data: entry == null ? fallbackData : entry,
+    lastSuccessAt: 0,
+  };
+};
+
 const getCacheSnapshot = (cacheKey, fallbackData) => {
   if (!cacheKey) {
-    return { data: fallbackData, updatedAt: 0 };
+    return { data: fallbackData, lastSuccessAt: 0 };
   }
 
   const memoryEntry = resourceMemoryCache.get(cacheKey);
   if (memoryEntry && memoryEntry.data != null) {
-    return { data: memoryEntry.data, updatedAt: Number(memoryEntry.updatedAt || 0) };
+    return {
+      data: memoryEntry.data,
+      lastSuccessAt: Number(memoryEntry.lastSuccessAt || 0),
+    };
   }
 
-  const sessionData = readCache(cacheKey, fallbackData);
+  const sessionEntry = normalizeStoredCacheEntry(readCache(cacheKey, fallbackData), fallbackData);
   resourceMemoryCache.set(cacheKey, {
     ...(memoryEntry || {}),
-    data: sessionData,
-    updatedAt: Date.now(),
+    data: sessionEntry.data,
+    lastSuccessAt: Number(sessionEntry.lastSuccessAt || 0),
   });
-  return { data: sessionData, updatedAt: Date.now() };
+  return {
+    data: sessionEntry.data,
+    lastSuccessAt: Number(sessionEntry.lastSuccessAt || 0),
+  };
 };
 
 const setCacheData = (cacheKey, value) => {
@@ -55,12 +78,16 @@ const setCacheData = (cacheKey, value) => {
   }
 
   const existing = resourceMemoryCache.get(cacheKey);
+  const nextLastSuccessAt = Date.now();
   resourceMemoryCache.set(cacheKey, {
     ...(existing || {}),
     data: value,
-    updatedAt: Date.now(),
+    lastSuccessAt: nextLastSuccessAt,
   });
-  writeCache(cacheKey, value);
+  writeCache(cacheKey, {
+    data: value,
+    lastSuccessAt: nextLastSuccessAt,
+  });
 };
 
 const getInFlightRequest = (cacheKey) => {
@@ -133,7 +160,7 @@ const useAsyncResource = (
   const [loading, setLoading] = useState(cachedData == null);
   const [error, setError] = useState('');
   const dataRef = useRef(cachedData);
-  const lastFetchRef = useRef(cacheSnapshot.updatedAt);
+  const lastFetchRef = useRef(Number(cacheSnapshot.lastSuccessAt || 0));
 
   useEffect(() => {
     dataRef.current = data;
@@ -184,6 +211,7 @@ const COMPANY_CACHE_KEYS = {
   jobs: 'kapit_company_jobs',
   applicants: 'kapit_company_applicants',
   analytics: 'kapit_company_analytics',
+  profile: 'kapit_company_profile',
 };
 
 const COMPANY_CACHE_FALLBACKS = {
@@ -197,6 +225,7 @@ const COMPANY_CACHE_FALLBACKS = {
       applicantsByStatus: {},
     },
   },
+  profile: { company: null },
 };
 
 export const useCompanyJobs = () => {
@@ -228,6 +257,12 @@ export const useCompanyAnalytics = () => {
   return { analytics: data?.analytics || null, loading, error, refetch };
 };
 
+export const primeCompanyProfileData = async () => {
+  const response = await fetchWithDedupe(COMPANY_CACHE_KEYS.profile, () => companyAPI.getProfile());
+  setCacheData(COMPANY_CACHE_KEYS.profile, response);
+  return response;
+};
+
 export const useDeveloperSearch = (query) => {
   const normalized = useMemo(() => {
     if (query && typeof query === 'object') {
@@ -248,7 +283,16 @@ export const useDeveloperSearch = (query) => {
   return { developers, loading, error, refetch };
 };
 
-export const primeCompanyWorkspaceData = async () => {
+export const primeCompanyWorkspaceData = async ({ includeApplicants = false, force = false } = {}) => {
+  const now = Date.now();
+  if (!force && workspacePrimePromise) {
+    return workspacePrimePromise;
+  }
+
+  if (!force && workspacePrimeLastAt > 0 && now - workspacePrimeLastAt < WORKSPACE_PRIME_STALE_MS) {
+    return [];
+  }
+
   const tasks = [
     {
       key: COMPANY_CACHE_KEYS.jobs,
@@ -258,19 +302,25 @@ export const primeCompanyWorkspaceData = async () => {
       key: COMPANY_CACHE_KEYS.analytics,
       fetcher: () => companyAPI.getAnalytics(),
     },
-    {
-      key: COMPANY_CACHE_KEYS.applicants,
-      fetcher: () => companyAPI.getApplicants(),
-    },
   ];
 
-  const results = await Promise.allSettled(
+  if (includeApplicants) {
+    tasks.push({
+      key: COMPANY_CACHE_KEYS.applicants,
+      fetcher: () => companyAPI.getApplicants(),
+    });
+  }
+
+  workspacePrimePromise = Promise.allSettled(
     tasks.map(async ({ key, fetcher }) => {
       const response = await fetchWithDedupe(key, fetcher);
       setCacheData(key, response);
       return response;
     }),
-  );
+  ).finally(() => {
+    workspacePrimeLastAt = Date.now();
+    workspacePrimePromise = null;
+  });
 
-  return results;
+  return workspacePrimePromise;
 };

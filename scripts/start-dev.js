@@ -13,6 +13,7 @@ const SERVER_HOST = process.env.HOST || '127.0.0.1';
 const FRONTEND_PORT = Number(process.env.NEXTJS_PORT || 3000);
 const FRONTEND_SCRIPT = process.env.FRONTEND_SCRIPT || 'dev';
 const REUSE_EXISTING_BACKEND = process.env.REUSE_EXISTING_BACKEND === 'true';
+const BACKEND_WATCH_ENABLED = process.env.BACKEND_WATCH === 'true';
 const nodeCommand = process.execPath;
 const serverEntry = path.resolve(process.cwd(), 'server/server.js');
 const webEntry = path.resolve(process.cwd(), 'scripts/run-web.js');
@@ -20,17 +21,27 @@ const isWindows = process.platform === 'win32';
 const quietStartup = process.env.QUIET_STARTUP !== 'false';
 const hideNextNetworkLine = process.env.HIDE_NEXT_NETWORK_LINE !== 'false';
 
-const runNodeScript = (entry, args = []) => {
-  return spawn(nodeCommand, [entry, ...args], {
+const buildChildEnv = () => ({
+  ...process.env,
+  QUIET_STARTUP: quietStartup ? 'true' : String(process.env.QUIET_STARTUP || ''),
+  HIDE_NEXT_NETWORK_LINE: hideNextNetworkLine ? 'true' : String(process.env.HIDE_NEXT_NETWORK_LINE || ''),
+  NEXT_TELEMETRY_DISABLED: process.env.NEXT_TELEMETRY_DISABLED || '1',
+});
+
+const runNodeScript = (entry, args = [], nodeArgs = []) => {
+  return spawn(nodeCommand, [...nodeArgs, entry, ...args], {
     stdio: 'inherit',
     shell: false,
-    env: {
-      ...process.env,
-      QUIET_STARTUP: quietStartup ? 'true' : String(process.env.QUIET_STARTUP || ''),
-      HIDE_NEXT_NETWORK_LINE: hideNextNetworkLine ? 'true' : String(process.env.HIDE_NEXT_NETWORK_LINE || ''),
-      NEXT_TELEMETRY_DISABLED: process.env.NEXT_TELEMETRY_DISABLED || '1',
-    },
+    env: buildChildEnv(),
   });
+};
+
+const runBackendServer = () => {
+  if (!BACKEND_WATCH_ENABLED) {
+    return runNodeScript(serverEntry);
+  }
+
+  return runNodeScript(serverEntry, [], ['--watch']);
 };
 
 const runPowerShell = (command) =>
@@ -183,7 +194,9 @@ const waitForServer = () => {
   socket.once('connect', () => {
     socket.end();
     serverReadyLogged = true;
-    console.log(`API ready at http://${SERVER_HOST}:${SERVER_PORT}`);
+    if (!quietStartup) {
+      console.log(`API ready at http://${SERVER_HOST}:${SERVER_PORT}`);
+    }
   });
 
   socket.once('error', () => {
@@ -197,7 +210,9 @@ const bootstrap = async () => {
 
   if (healthyServerRunning && REUSE_EXISTING_BACKEND) {
     serverReadyLogged = true;
-    console.log(`API ready at http://${SERVER_HOST}:${SERVER_PORT}`);
+    if (!quietStartup) {
+      console.log(`API ready at http://${SERVER_HOST}:${SERVER_PORT}`);
+    }
     startFrontend();
     return;
   }
@@ -222,7 +237,7 @@ const bootstrap = async () => {
     }
   }
 
-  serverProcess = runNodeScript(serverEntry);
+  serverProcess = runBackendServer();
   startFrontend();
   serverProcess.on('exit', async (code) => {
     shutdown(code ?? 0);

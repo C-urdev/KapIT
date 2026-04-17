@@ -152,7 +152,7 @@ export default function CompanyPostJobPage() {
 
       <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[linear-gradient(135deg,#f8fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#16304a,#102235)] p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
         <div className="flex items-start gap-3">
-          <div className="rounded-xl bg-white/80 dark:bg-[#0f2139] p-3 border border-[#d6d3c9] dark:border-[#2a4a6f]"><WalletCards className="w-5 h-5 text-[#3a5a40] dark:text-[#7fd0ee]" /></div>
+          <div className="rounded-xl bg-[#f8fbf6]/80 dark:bg-[#0f2139] p-3 border border-[#d6d3c9] dark:border-[#2a4a6f]"><WalletCards className="w-5 h-5 text-[#3a5a40] dark:text-[#7fd0ee]" /></div>
           <div>
             <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Payment before publishing</h3>
             <p className="mt-1 text-sm text-[#344e41] dark:text-[#dcecff]">Selecting <span className="font-semibold text-[#3a5a40] dark:text-white">Post job</span> first saves this role as a draft in your company account, then opens the secure payment window.</p>
@@ -164,7 +164,7 @@ export default function CompanyPostJobPage() {
       {paymentPending && <p className="text-sm text-[#3a5a40] dark:text-[#7fd0ee]">Draft saved. Finish the payment in the merchant window to publish this job.</p>}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-      <form onSubmit={handleSubmit} className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] shadow-lg shadow-black/5 dark:shadow-black/20 p-8 space-y-6 transition-colors duration-300">
+      <form onSubmit={handleSubmit} className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] shadow-lg shadow-black/5 dark:shadow-black/20 p-8 space-y-6 transition-colors duration-300">
         <Field label="Job title">
           <SearchableSelect value={form.selectedTitle} onChange={(selectedTitle) => setForm((prev) => ({ ...prev, selectedTitle, customTitle: selectedTitle === CUSTOM_JOB_VALUE ? prev.customTitle : '' }))} options={TECH_JOB_TITLE_OPTIONS} placeholder="Select a tech job title" searchPlaceholder="Search tech job titles" />
         </Field>
