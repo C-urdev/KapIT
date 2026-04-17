@@ -39,9 +39,9 @@ function ShortcutCard({ icon: Icon, label, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex min-h-[7.25rem] flex-col items-start gap-4 rounded-[1.35rem] bg-[#f8fbf6] px-4 py-4 text-left text-[#344e41] transition-colors hover:bg-[#eef6ee] dark:bg-[#34343a] dark:text-white dark:hover:bg-[#3b3b42]"
+      className="flex min-h-[7.25rem] flex-col items-start gap-4 rounded-[1.35rem] bg-[#f1f5eb] px-4 py-4 text-left text-[#344e41] transition-colors hover:bg-[#e9efe2] dark:bg-[#34343a] dark:text-white dark:hover:bg-[#3b3b42]"
     >
-      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#3a5a40] shadow-sm dark:bg-[#202126] dark:text-white">
+      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f8fbf6] text-[#3a5a40] shadow-sm dark:bg-[#202126] dark:text-white">
         <Icon className="h-5 w-5" />
       </span>
       <span className="text-lg font-medium leading-tight">{label}</span>
@@ -113,7 +113,7 @@ export default function UserMobileMenuDrawer({
         }`}
       >
         <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-4 pb-6 pt-4" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))', paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}>
-          <div className="rounded-[1.7rem] bg-white p-4 dark:bg-[#34343a]">
+          <div className="rounded-[1.7rem] bg-[#f8fbf6] p-4 dark:bg-[#34343a]">
             <div className="flex items-center gap-3">
               <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#588157] text-xl font-bold text-white dark:bg-[#4a4d55]">
                 {profileImage ? <img src={profileImage} alt={`${displayName} avatar`} className="h-full w-full object-cover" /> : initial}
@@ -207,9 +207,9 @@ export default function UserMobileMenuDrawer({
                     setMobileMenuOpen(false);
                     onHelp?.();
                   }}
-                  className="flex w-full items-center gap-4 rounded-[1.2rem] bg-[#f8fbf6] px-4 py-4 text-left text-[#344e41] transition-colors hover:bg-[#eef6ee] dark:bg-[#34343a] dark:text-white dark:hover:bg-[#3c4048]"
+                  className="flex w-full items-center gap-4 rounded-[1.2rem] bg-[#f1f5eb] px-4 py-4 text-left text-[#344e41] transition-colors hover:bg-[#e9efe2] dark:bg-[#34343a] dark:text-white dark:hover:bg-[#3c4048]"
                 >
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-sm dark:bg-[#202126]">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f8fbf6] shadow-sm dark:bg-[#202126]">
                     <HelpCircle className="h-5 w-5" />
                   </span>
                   <span className="text-lg font-medium">Help Center</span>
@@ -232,9 +232,9 @@ export default function UserMobileMenuDrawer({
                     setMobileMenuOpen(false);
                     onOpenSettings?.();
                   }}
-                  className="flex w-full items-center gap-4 rounded-[1.2rem] bg-[#f8fbf6] px-4 py-4 text-left text-[#344e41] transition-colors hover:bg-[#eef6ee] dark:bg-[#34343a] dark:text-white dark:hover:bg-[#3c4048]"
+                  className="flex w-full items-center gap-4 rounded-[1.2rem] bg-[#f1f5eb] px-4 py-4 text-left text-[#344e41] transition-colors hover:bg-[#e9efe2] dark:bg-[#34343a] dark:text-white dark:hover:bg-[#3c4048]"
                 >
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-sm dark:bg-[#202126]">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f8fbf6] shadow-sm dark:bg-[#202126]">
                     <Settings className="h-5 w-5" />
                   </span>
                   <span className="text-lg font-medium">Settings</span>
@@ -296,9 +296,9 @@ export default function UserMobileMenuDrawer({
                       setMobileMenuOpen(false);
                       onClick?.();
                     }}
-                    className="flex w-full items-center gap-4 rounded-[1.2rem] bg-[#f8fbf6] px-4 py-4 text-left text-[#344e41] transition-colors hover:bg-[#eef6ee] dark:bg-[#34343a] dark:text-white dark:hover:bg-[#3c4048]"
+                    className="flex w-full items-center gap-4 rounded-[1.2rem] bg-[#f1f5eb] px-4 py-4 text-left text-[#344e41] transition-colors hover:bg-[#e9efe2] dark:bg-[#34343a] dark:text-white dark:hover:bg-[#3c4048]"
                   >
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-sm dark:bg-[#202126]">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f8fbf6] shadow-sm dark:bg-[#202126]">
                       <Icon className="h-5 w-5" />
                     </span>
                     <span className="text-lg font-medium">{label}</span>
@@ -314,7 +314,7 @@ export default function UserMobileMenuDrawer({
               setMobileMenuOpen(false);
               onLogout?.();
             }}
-            className="mt-6 flex w-full items-center justify-center gap-3 rounded-[1.15rem] bg-white px-4 py-4 text-lg font-semibold text-[#d14343] transition-colors hover:bg-red-50 dark:bg-[#34343a] dark:text-white dark:hover:bg-[#3c4048]"
+            className="mt-6 flex w-full items-center justify-center gap-3 rounded-[1.15rem] bg-[#f8fbf6] px-4 py-4 text-lg font-semibold text-[#d14343] transition-colors hover:bg-[#f7e9e9] dark:bg-[#34343a] dark:text-white dark:hover:bg-[#3c4048]"
           >
             <LogOut className="h-5 w-5" />
             Log out

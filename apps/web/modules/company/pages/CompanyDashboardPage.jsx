@@ -68,7 +68,7 @@ function formatJobDate(value) {
 function CompactJobRow({ job, onManage, onOpenApplicants }) {
   const applicants = Number(job?.applicant_count || job?.applicantCount || 0);
   const status = String(job?.status || 'open').toLowerCase();
-  const statusDot = status === 'open' ? 'bg-emerald-500' : status === 'closed' ? 'bg-amber-500' : status === 'draft' ? 'bg-slate-500' : 'bg-sky-500';
+  const statusDot = status === 'open' ? 'bg-emerald-500' : status === 'closed' ? 'bg-amber-500' : status === 'draft' ? 'bg-[#8ea18c]' : 'bg-sky-500';
   const planPrice = Number(job?.posting_plan_price || job?.pay_per_use_fee || 0);
   const planDuration = String(job?.posting_plan_duration || '').trim();
 

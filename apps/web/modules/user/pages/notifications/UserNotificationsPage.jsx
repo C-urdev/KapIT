@@ -236,8 +236,8 @@ function StateBlock({ children, tone = 'default' }) {
     <div
       className={`rounded-[28px] border px-6 py-12 text-center sm:px-8 ${
         tone === 'error'
-          ? 'border-red-200 bg-white text-red-600 dark:border-red-900/50 dark:bg-[#162842] dark:text-red-400'
-          : 'border-[#c9d2bc] bg-white text-[#344e41] dark:border-[#1e3a5f] dark:bg-[#162842] dark:text-[#b8d4e8]'
+          ? 'border-red-200 bg-[#fff8f7] text-red-600 dark:border-red-900/50 dark:bg-[#162842] dark:text-red-400'
+          : 'border-[#c9d2bc] bg-[#f8fbf6] text-[#344e41] dark:border-[#1e3a5f] dark:bg-[#162842] dark:text-[#b8d4e8]'
       }`}
     >
       <p>{children}</p>
@@ -311,7 +311,7 @@ function NotificationRow({ item, expanded, onToggle, onOpenMenu, showDivider }) 
             </button>
 
             {expanded ? (
-              <div className="mt-3 rounded-2xl border border-[#d8decf] bg-white/70 p-3 dark:border-[#2a4a6f] dark:bg-[#102235]">
+              <div className="mt-3 rounded-2xl border border-[#d8decf] bg-[#f8fbf2]/90 p-3 dark:border-[#2a4a6f] dark:bg-[#102235]">
                 <p className="text-sm text-[#344e41] dark:text-[#d5e6f5]">
                   <span className="font-semibold text-[#203a28] dark:text-white">Who:</span> {actorLabel}
                 </p>
@@ -426,7 +426,7 @@ function NotificationActionSheet({ item, onClose, onDelete, onReport }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[#bfd0af] bg-white/88 px-4 py-3 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#f1f5eb] dark:border-[#314a68] dark:bg-[#243244]/92 dark:text-[#d5e6f5] dark:hover:bg-[#2b3c52]"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[#bfd0af] bg-[#f8fbf6]/92 px-4 py-3 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#f1f5eb] dark:border-[#314a68] dark:bg-[#243244]/92 dark:text-[#d5e6f5] dark:hover:bg-[#2b3c52]"
             >
               <X className="h-4 w-4" />
               Close

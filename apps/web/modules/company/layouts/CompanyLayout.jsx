@@ -160,7 +160,7 @@ function CompanyMobileBottomNav({ pathname, hidden = false }) {
   }
 
   return (
-    <div className={`xl:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#a3b18a] dark:border-[#2a4a6f] bg-white/95 dark:bg-[#162842]/95 backdrop-blur-md transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+    <div className={`xl:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#a3b18a] dark:border-[#2a4a6f] bg-[#f8fbf6]/95 dark:bg-[#162842]/95 backdrop-blur-md transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
       hidden ? 'translate-y-full' : 'translate-y-0'
     }`}>
       <div className="grid h-16 grid-cols-3 gap-1 px-2" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>

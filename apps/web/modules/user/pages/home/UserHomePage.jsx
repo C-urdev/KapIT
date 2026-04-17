@@ -109,6 +109,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   const isMessagesActive = activeNav === 'messages';
   const isSettingsActive = activeNav === 'settings';
   const isEdgeToEdgeView = isMessagesActive || isSettingsActive;
+  const pageBackgroundClass = isMessagesActive ? 'bg-white dark:bg-[#121212]' : 'bg-[#dad7cd] dark:bg-[#0a1628]';
   const hideMobileChromeForMessages = isTabletViewport && isMessagesActive && mobileThreadOpen;
   const effectiveMobileChromeHidden = mobileChromeHidden || hideMobileChromeForMessages;
   const mobileSafeAreaBottomPadding = isMobileShellViewport
@@ -437,7 +438,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   };
 
   return (
-    <div className={`min-h-[100dvh] no-scrollbar transition-colors duration-150 ease-out ${isEdgeToEdgeView ? 'bg-white dark:bg-[#121212]' : 'bg-[#dad7cd] dark:bg-[#0a1628]'}`}>
+    <div className={`min-h-[100dvh] no-scrollbar transition-colors duration-150 ease-out ${pageBackgroundClass}`}>
       <UserNavbar
         activeNav={activeNav}
         setActiveNav={updateActiveNav}

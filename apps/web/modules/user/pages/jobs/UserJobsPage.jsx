@@ -240,12 +240,12 @@ export default function UserJobsPage({ userType, user }) {
 
       <form
         onSubmit={handleSearch}
-        className="rounded-[24px] border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] p-4 shadow-lg shadow-black/5 transition-colors duration-300 dark:shadow-black/20"
+        className="rounded-[24px] border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] p-4 shadow-lg shadow-black/5 transition-colors duration-300 dark:shadow-black/20"
       >
         <div className={`flex flex-col ${hasActiveFilters ? 'gap-4' : 'gap-3'}`}>
           <div className="flex flex-row items-center gap-2 sm:gap-3 w-full">
             <div className="min-w-0 flex-1">
-              <div className="flex w-full items-center rounded-xl border border-[#a3b18a] bg-white px-1.5 min-[420px]:px-2 py-1.5 min-[420px]:py-2 transition-colors focus-within:ring-2 focus-within:ring-[#588157] dark:border-[#2a4a6f] dark:bg-[#0f2139] dark:focus-within:ring-[#3ba9d6]">
+              <div className="flex w-full items-center rounded-xl border border-[#a3b18a] bg-[#fcfdf8] px-1.5 min-[420px]:px-2 py-1.5 min-[420px]:py-2 transition-colors focus-within:ring-2 focus-within:ring-[#588157] dark:border-[#2a4a6f] dark:bg-[#0f2139] dark:focus-within:ring-[#3ba9d6]">
                 <input
                   value={filters.q}
                   onChange={(event) => handleFilterChange('q', event.target.value)}
@@ -304,7 +304,7 @@ export default function UserJobsPage({ userType, user }) {
       {loading ? (
         <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">Loading jobs...</p>
       ) : jobs.length === 0 ? (
-        <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-6">
+        <div className="bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-6">
           <p className="text-[#344e41] dark:text-[#b8d4e8]">
             {hasActiveFilters ? 'No jobs matched your current filters yet. Try broadening the search.' : 'No jobs available right now.'}
           </p>
@@ -484,7 +484,7 @@ function JobCard({ job, isSaved, isPremiumUser, onApply, onToggleSave, applying 
   const skills = Array.isArray(job?.skills) ? job.skills : [];
 
   return (
-    <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-4 sm:p-6 hover:border-[#588157] dark:hover:border-[#3ba9d6] transition-colors">
+    <div className="bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-4 sm:p-6 hover:border-[#588157] dark:hover:border-[#3ba9d6] transition-colors">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 bg-gradient-to-br from-[#588157] to-[#3a5a40] dark:from-[#2d8bb8] dark:to-[#3ba9d6] rounded-lg flex items-center justify-center flex-shrink-0">
