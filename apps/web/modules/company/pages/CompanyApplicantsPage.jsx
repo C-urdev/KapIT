@@ -139,7 +139,7 @@ export default function CompanyApplicantsPage() {
         {plan?.isPremium ? <p className="mt-2 text-sm text-[#344e41] dark:text-[#dcecff]">Premium employer AI ranking is enabled. Match scores appear after refreshing the ranking for a job.</p> : null}
       </div>
 
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
+      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
         <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Applicants snapshot graph</h3>
         <SummaryGraph data={analyticsLoading && !selectedJobId ? [] : summaryValues} />
       </div>
@@ -150,7 +150,7 @@ export default function CompanyApplicantsPage() {
       {loading ? (
         <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">Loading applicants...</p>
       ) : visibleApplicants.length === 0 ? (
-        <div className="rounded-xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] p-6 transition-colors duration-300">
+        <div className="rounded-xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] p-6 transition-colors duration-300">
           <p className="text-[#344e41] dark:text-[#b8d4e8]">
             {selectedJobId ? `No applicants yet for ${selectedJobTitle}.` : 'No applicants yet.'}
           </p>
@@ -184,7 +184,7 @@ export default function CompanyApplicantsPage() {
           {profileLoading ? (
             <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">Loading profile...</p>
           ) : (
-            <div className="bg-white dark:bg-[#0f2139] rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] p-4 transition-colors duration-300">
+            <div className="bg-[#f8fbf6] dark:bg-[#0f2139] rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] p-4 transition-colors duration-300">
               <PublicProfilePage
                 profile={profile}
                 onBack={() => setProfile(null)}
@@ -254,7 +254,7 @@ function SummaryGraph({ data }) {
 function Modal({ onClose, children }) {
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-5xl max-h-[85vh] overflow-y-auto rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] shadow-2xl shadow-black/20 dark:shadow-black/50 transition-colors duration-300">
+      <div className="w-full max-w-5xl max-h-[85vh] overflow-y-auto rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] shadow-2xl shadow-black/20 dark:shadow-black/50 transition-colors duration-300">
         <div className="p-5">{children}</div>
       </div>
     </div>

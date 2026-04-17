@@ -24,7 +24,7 @@ export default function UserApplicationsPanel({ applications }) {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[min(100%,720px)] animate-in fade-in slide-in-from-bottom-4 duration-500 bg-white dark:bg-[#162842] rounded-[32px] border border-[#d6d3c9] dark:border-[#2a4a6f] shadow-[0_32px_128px_-32px_rgba(0,0,0,0.12)] dark:shadow-black/40 overflow-hidden mb-8">
+    <div className="mx-auto w-full max-w-[min(100%,720px)] animate-in fade-in slide-in-from-bottom-4 duration-500 bg-[#f8fbf6] dark:bg-[#162842] rounded-[32px] border border-[#d6d3c9] dark:border-[#2a4a6f] shadow-[0_32px_128px_-32px_rgba(0,0,0,0.12)] dark:shadow-black/40 overflow-hidden mb-8">
       <div className="flex flex-col items-center justify-center pt-8 pb-2">
         <h2 className="text-[22px] font-extrabold text-[#1c2b1f] dark:text-white tracking-tight">Applications</h2>
         <div className="mt-1 h-1 w-8 rounded-full bg-[#3a5a40] dark:bg-[#3ba9d6] opacity-30" />
@@ -60,7 +60,7 @@ export default function UserApplicationsPanel({ applications }) {
           {filtered.map((application) => (
             <div
               key={application.jobId}
-              className="relative bg-white dark:bg-[#1a2f45] rounded-2xl p-4 flex flex-col gap-3 shadow-sm border border-[#e8f0e2] dark:border-[#1e3a5f] hover:shadow-md hover:border-[#a3b18a] dark:hover:border-[#3ba9d6] transition-all duration-200 cursor-pointer group"
+              className="relative bg-[#f8fbf6] dark:bg-[#1a2f45] rounded-2xl p-4 flex flex-col gap-3 shadow-sm border border-[#e8f0e2] dark:border-[#1e3a5f] hover:shadow-md hover:border-[#a3b18a] dark:hover:border-[#3ba9d6] transition-all duration-200 cursor-pointer group"
             >
               <div className="flex items-start gap-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#588157] to-[#3a5a40] dark:from-[#2d8bb8] dark:to-[#3ba9d6] shadow-sm">

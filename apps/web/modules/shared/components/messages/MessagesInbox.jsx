@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Building2,
   ChevronLeft,
   Image as ImageIcon,
   MessageCircle,
@@ -38,7 +39,9 @@ const normalizeConversation = (conversation) => ({
   time: formatTime(conversation.createdAt),
 });
 
-export default function MessagesInbox({ user, initialContactId = '', onThreadVisibilityChange }) {
+export default function MessagesInbox({ user, initialContactId = '', onThreadVisibilityChange, variant = 'user' }) {
+  const isCompanyVariant = variant === 'company';
+  const [introReady, setIntroReady] = React.useState(false);
   const [conversations, setConversations] = React.useState([]);
   const [selectedConversation, setSelectedConversation] = React.useState(null);
   const [messageInput, setMessageInput] = React.useState('');
@@ -57,7 +60,6 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
   const threadScrollRef = React.useRef(null);
   const imageInputRef = React.useRef(null);
   const videoInputRef = React.useRef(null);
-  const blobUrlsRef = React.useRef([]);
   const isPrependingMessagesRef = React.useRef(false);
   const messagesByConversationRef = React.useRef({});
   const threadPagingByConversationRef = React.useRef({});
@@ -261,19 +263,15 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [selectedConversation?.id, messagesByConversation, loadingMessages]);
 
-  const clearTrackedBlobUrls = React.useCallback(() => {
-    blobUrlsRef.current.forEach((blobUrl) => {
-      URL.revokeObjectURL(blobUrl);
-    });
-    blobUrlsRef.current = [];
-  }, []);
+  React.useEffect(() => {
+    if (typeof window === 'undefined') {
+      setIntroReady(true);
+      return;
+    }
 
-  React.useEffect(
-    () => () => {
-      clearTrackedBlobUrls();
-    },
-    [clearTrackedBlobUrls]
-  );
+    const frame = window.requestAnimationFrame(() => setIntroReady(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   const filteredConversations = React.useMemo(() => {
     const query = String(contactSearchQuery || '').trim().toLowerCase();
@@ -372,7 +370,6 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
 
       setSelectedConversation(updatedConversation);
       setConversations((prev) => [updatedConversation, ...prev.filter((conversation) => conversation.id !== updatedConversation.id)]);
-      clearTrackedBlobUrls();
     } catch (err) {
       setMessagesByConversation((prev) => ({
         ...prev,
@@ -406,12 +403,8 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
       return;
     }
 
-    // Insert a temporary local URL so users can send/share image references quickly.
-    const localUrl = URL.createObjectURL(file);
-    blobUrlsRef.current.push(localUrl);
-    setMessageInput((current) => `${current ? `${current} ` : ''}${localUrl}`);
     event.target.value = '';
-    setError('');
+    setError('Image uploads are temporarily unavailable. Please try again after upload support is enabled.');
   };
 
   const handleAttachVideo = () => {
@@ -430,11 +423,8 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
       return;
     }
 
-    const localUrl = URL.createObjectURL(file);
-    blobUrlsRef.current.push(localUrl);
-    setMessageInput((current) => `${current ? `${current} ` : ''}${localUrl}`);
     event.target.value = '';
-    setError('');
+    setError('Video uploads are temporarily unavailable. Please try again after upload support is enabled.');
   };
 
   const threadMessages = selectedConversation ? messagesByConversation[selectedConversation.id] || [] : [];
@@ -463,8 +453,8 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
   );
 
   return (
-    <div className="mx-auto flex h-full min-h-0 w-full max-w-[min(100%,1420px)] justify-center px-0">
-      <div className="flex h-full min-h-0 w-full overflow-hidden rounded-none border-0 bg-white shadow-none dark:bg-[#162842]">
+    <div className={`mx-auto flex h-full min-h-0 w-full ${isCompanyVariant ? 'max-w-[min(100%,1560px)] px-0 xl:px-4' : 'max-w-[min(100%,1420px)] px-0'} justify-center xl:transition-all xl:duration-300 xl:ease-out ${introReady ? 'xl:translate-y-0 xl:opacity-100' : 'xl:translate-y-1 xl:opacity-0'}`}>
+      <div className={`flex h-full min-h-0 w-full overflow-hidden rounded-none border-0 border-[#d9e0d2] ${isCompanyVariant ? 'bg-[#f0f4eb]' : 'bg-[#f5f7f2]'} shadow-none dark:border-[#244060] dark:bg-[#102235] xl:rounded-3xl xl:border`}>
         {/* Narrow icon rail — layout only; KapIT palette */}
         <aside className="hidden w-[52px] shrink-0 flex-col items-center border-r border-[#d9e0d2] bg-[#f8faf6] py-3 dark:border-[#244060] dark:bg-[#122238] md:flex md:w-14">
           <button
@@ -482,10 +472,23 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
 
         {/* Conversation list */}
         <div
-          className={`flex h-full min-h-0 w-full min-w-0 shrink-0 flex-col border-[#d9e0d2] bg-white dark:border-[#244060] dark:bg-[#162842] sm:max-w-[min(100%,320px)] md:w-[300px] md:border-r ${
+          className={`flex h-full min-h-0 w-full min-w-0 shrink-0 flex-col border-[#d9e0d2] ${isCompanyVariant ? 'bg-[#f6faf3] sm:max-w-[min(100%,340px)] md:w-[320px]' : 'bg-[#f8fbf6] sm:max-w-[min(100%,320px)] md:w-[300px]'} dark:border-[#244060] dark:bg-[#162842] md:border-r ${
             listHiddenOnMobile ? 'hidden lg:flex' : 'flex'
           }`}
         >
+          {isCompanyVariant ? (
+            <div className="border-b border-[#e4e7de] bg-[linear-gradient(180deg,#f8fbf6,#eef5ea)] px-3 py-2.5 dark:border-[#244060] dark:bg-[#162842] lg:hidden">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#e7f0e4] text-[#3a5a40] dark:bg-[#1e3a5f] dark:text-[#7dc4ff]">
+                  <Building2 className="h-4 w-4" />
+                </span>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#588157] dark:text-[#7dc4ff]">Company Inbox</p>
+                  <p className="text-sm font-semibold text-[#2f4e35] dark:text-white">Candidate Conversations</p>
+                </div>
+              </div>
+            </div>
+          ) : null}
           <div className="border-b border-[#e4e7de] px-3 py-2.5 dark:border-[#244060] sm:px-4">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6b7c6a] dark:text-[#7d9ab8]" />
@@ -504,18 +507,20 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
             {loadingConversations ? (
               <div className="p-6 text-center text-sm text-[#5c6d58] dark:text-[#7d9ab8]">Loading conversations…</div>
             ) : filteredConversations.length > 0 ? (
-              <ul className="space-y-0.5 p-2">
+              <ul className={`${isCompanyVariant ? 'space-y-0 p-0' : 'space-y-0.5 p-2'}`}>
                 {filteredConversations.map((conversation) => {
                   const active = selectedConversation?.id === conversation.id;
                   return (
-                    <li key={conversation.id}>
+                    <li key={conversation.id} className="border-b border-[#e4e7de] dark:border-[#244060]">
                       <button
                         type="button"
                         onClick={() => handleSelectConversation(conversation)}
-                        className={`flex w-full items-start gap-3 rounded-2xl px-2.5 py-2.5 text-left transition-colors ${
+                        className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${
                           active
                             ? 'bg-[#eef6ee] dark:bg-[#1e3a5f]'
-                            : 'hover:bg-[#f5f7f2] dark:hover:bg-[#142c48]'
+                            : isCompanyVariant
+                              ? 'bg-transparent hover:bg-[#f5f9f2] dark:hover:bg-[#173151]'
+                              : 'hover:bg-[#f5f7f2] dark:hover:bg-[#142c48]'
                         }`}
                       >
                         <Avatar account={conversation} />
@@ -545,14 +550,14 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
 
         {/* Thread */}
         <div
-          className={`min-h-0 min-w-0 flex-1 flex-col bg-[#f0f3ec] dark:bg-[#0a1628] ${
+          className={`min-h-0 min-w-0 flex-1 flex-col ${isCompanyVariant ? 'bg-[#edf3e5]' : 'bg-[#eef3e8]'} dark:bg-[#0a1628] ${
             threadHiddenOnMobile ? 'hidden lg:flex' : 'flex'
           }`}
         >
           {selectedConversation ? (
             <>
               <header
-                className="flex shrink-0 items-center gap-2 border-b border-[#e0e6da] bg-white px-2 pb-2.5 pt-2.5 dark:border-[#244060] dark:bg-[#162842] sm:gap-3 sm:px-4"
+                className="flex shrink-0 items-center gap-2 border-b border-[#e0e6da] bg-[#f8fbf6] px-2 pb-2.5 pt-2.5 dark:border-[#244060] dark:bg-[#162842] sm:gap-3 sm:px-4"
                 style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}
               >
                 <button
@@ -612,7 +617,7 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
                 </div>
               </div>
 
-              <footer className="shrink-0 border-t border-[#e0e6da] bg-white px-2 py-2.5 dark:border-[#244060] dark:bg-[#162842] sm:px-4" ref={composerRef}>
+              <footer className="shrink-0 border-t border-[#e0e6da] bg-[#f8fbf6] px-2 py-2.5 dark:border-[#244060] dark:bg-[#162842] sm:px-4" ref={composerRef}>
                 <div className="mx-auto flex max-w-3xl items-end gap-1.5 sm:gap-2">
                   <div className="relative shrink-0">
                     <ComposerIconButton label="Attach image or link" onClick={() => setAttachMenuOpen((current) => !current)}>
@@ -712,11 +717,15 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
               </footer>
             </>
           ) : (
-            <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#588157] dark:bg-[#14304d] dark:text-[#7dc4ff]">
-                <MessageCircle className="h-8 w-8" />
+            <div className="flex flex-1 flex-col items-center justify-center px-6 py-8 text-center lg:px-10">
+              <div className={`${isCompanyVariant ? 'w-full max-w-[440px] rounded-3xl border border-[#d5e0cc] bg-[linear-gradient(180deg,#f8fbf6,#eef5ea)] p-7 shadow-[0_16px_40px_rgba(58,90,64,0.08)] dark:border-[#244060] dark:bg-[#12253f]' : ''}`}>
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#588157] dark:bg-[#14304d] dark:text-[#7dc4ff]">
+                  <MessageCircle className="h-8 w-8" />
+                </div>
+                <p className="mt-4 max-w-sm text-sm font-medium text-[#3a5a40] dark:text-[#d5e6f5]">
+                  {isCompanyVariant ? 'Select a candidate conversation to view messages and continue hiring updates.' : 'Select a chat from the list to open the conversation.'}
+                </p>
               </div>
-              <p className="mt-4 max-w-sm text-sm font-medium text-[#3a5a40] dark:text-[#d5e6f5]">Select a chat from the list to open the conversation.</p>
             </div>
           )}
         </div>

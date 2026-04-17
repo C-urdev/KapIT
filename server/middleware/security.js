@@ -24,6 +24,22 @@ const getPasswordResetSubmitKey = (req) => `${req.ip}:reset-submit`;
 
 const getClientIdentity = (req) => normalizeKey(req.user?.id || req.ip || 'anonymous');
 const isNonActionableRequest = (req) => ['HEAD', 'OPTIONS'].includes(String(req.method || '').toUpperCase());
+const isLocalhostIp = (ip) => {
+  const normalized = String(ip || '').trim().toLowerCase();
+  return normalized === '127.0.0.1' || normalized === '::1' || normalized === '::ffff:127.0.0.1';
+};
+const shouldSkipAuthApiRateLimit = (req) => {
+  if (isNonActionableRequest(req)) {
+    return true;
+  }
+
+  // Prevent local development OAuth retries from getting rate-limited.
+  if (!isProduction && isLocalhostIp(req.ip)) {
+    return true;
+  }
+
+  return false;
+};
 
 const setRateLimitHeaders = (res, { max, remaining, resetAt }) => {
   const retryAfterSeconds = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000));
@@ -179,7 +195,7 @@ const authApiRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: Number(process.env.AUTH_API_RATE_LIMIT_MAX || 120),
   message: 'Too many authentication requests. Please try again later.',
-  skip: isNonActionableRequest,
+  skip: shouldSkipAuthApiRateLimit,
 });
 
 const publicApiRateLimiter = createRateLimiter({

@@ -7,7 +7,7 @@ export default function CompanyDeveloperCard({ developer, onViewProfile, onMessa
   const initial = name.charAt(0).toUpperCase();
 
   return (
-    <div className="rounded-xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] shadow-lg shadow-black/5 dark:shadow-black/20 p-5 transition-colors duration-300">
+    <div className="rounded-xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] shadow-lg shadow-black/5 dark:shadow-black/20 p-5 transition-colors duration-300">
       <div className="flex flex-col min-[420px]:flex-row items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
           <div className="w-10 h-10 rounded-full bg-[#f5f5f2] dark:bg-[#1e3a5f] border border-[#a3b18a] dark:border-[#2a4a6f] text-[#3a5a40] dark:text-white overflow-hidden flex items-center justify-center font-bold shrink-0 transition-colors duration-300">

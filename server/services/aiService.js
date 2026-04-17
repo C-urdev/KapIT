@@ -7,6 +7,14 @@ const normalizeBaseUrl = () =>
 
 const isAiConfigured = () => Boolean(normalizeBaseUrl());
 
+const safeJson = async (response) => {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
+};
+
 const postToFastApi = async (path, payload) => {
   const baseUrl = normalizeBaseUrl();
   if (!baseUrl) {
@@ -27,14 +35,27 @@ const postToFastApi = async (path, payload) => {
       body: JSON.stringify(payload || {}),
       signal: controller.signal,
     });
-    const data = await response.json().catch(() => ({}));
+    const data = await safeJson(response);
     if (!response.ok) {
-      const error = new Error(data?.message || `FastAPI request failed for ${path}.`);
+      const error = new Error(
+        data?.message ||
+          data?.error ||
+          (Array.isArray(data?.detail) ? data.detail.join(', ') : data?.detail) ||
+          `FastAPI request failed for ${path}.`
+      );
       error.statusCode = response.status;
       error.payload = data;
       throw error;
     }
     return data;
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      const timeoutError = new Error(`FastAPI request timed out for ${path}.`);
+      timeoutError.code = 'FASTAPI_TIMEOUT';
+      timeoutError.statusCode = 504;
+      throw timeoutError;
+    }
+    throw error;
   } finally {
     clearTimeout(timeout);
   }
@@ -77,9 +98,16 @@ const analyzeResumeProfile = async (candidate) =>
     candidate: buildCandidateProfilePayload(candidate),
   });
 
+const matchJobsBySkills = async ({ skills, experience }) =>
+  postToFastApi('/match-jobs', {
+    skills: Array.isArray(skills) ? skills : [],
+    experience: String(experience || '').trim().toLowerCase(),
+  });
+
 module.exports = {
   isAiConfigured,
   matchJobsForCandidate,
   rankCandidatesForJob,
   analyzeResumeProfile,
+  matchJobsBySkills,
 };

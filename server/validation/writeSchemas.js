@@ -17,17 +17,19 @@ const password = z
 const accountType = z.enum(['developer', 'company']);
 const userType = z.enum(['employee', 'company']);
 const provider = z.enum(['stripe', 'paypal']);
+const anyRecord = z.record(z.string(), z.any());
 
 const draftSchema = z
   .object({
-    title: z.string().min(1).max(140),
-    description: z.string().min(1).max(5000),
-    salary: z.string().max(120).optional().default(''),
-    location: z.string().max(200).optional().default(''),
-    type: z.string().max(80).optional().default(''),
-    skills: z.array(z.string().min(1).max(60)).max(50).optional().default([]),
+    title: z.coerce.string().trim().min(1).max(140),
+    description: z.coerce.string().trim().min(1).max(5000),
+    salary: z.coerce.string().trim().max(120).optional().default(''),
+    location: z.coerce.string().trim().max(200).optional().default(''),
+    type: z.coerce.string().trim().max(80).optional().default(''),
+    applicationDeadline: z.coerce.string().trim().max(40).optional().default(''),
+    skills: z.array(z.coerce.string().trim().min(1).max(60)).max(50).optional().default([]),
   })
-  .strict();
+  .passthrough();
 
 const postBody = z
   .object({
@@ -70,8 +72,13 @@ const writeSchemas = {
   authSaveJob: schema(z.object({ jobId: z.coerce.number().int().positive() }).strict()),
   authRemoveSavedJob: schema(z.object({}).strict(), z.object({ jobId: positiveIntParam })),
   authApplyJob: schema(z.object({}).strict(), z.object({ id: positiveIntParam })),
-  authProfilePatch: schema(z.record(z.any())),
+  authProfilePatch: schema(anyRecord),
   authTermsConsent: schema(z.object({ agreed: z.boolean() }).strict()),
+  userPremiumCheckoutSession: schema(z.object({ provider }).strict()),
+  userPremiumLocalBypass: schema(z.object({ provider }).strict()),
+  userPremiumStripeVerify: schema(z.object({ paymentId: uuid, sessionId: z.string().min(1).max(255) }).strict()),
+  userPremiumPaypalCapture: schema(z.object({ paymentId: uuid, orderId: z.string().min(1).max(255) }).strict()),
+  userPremiumCancel: schema(z.object({}).strict(), z.object({ paymentId: uuid })),
   authPostCreate: schema(postBody),
   authDeletePost: schema(z.object({}).strict(), z.object({ postId: positiveIntParam })),
   authReactPost: schema(postBody.pick({ reactionType: true }), z.object({ postId: positiveIntParam })),
@@ -107,17 +114,25 @@ const writeSchemas = {
   companyStripeVerify: schema(z.object({ paymentId: uuid, sessionId: z.string().min(1).max(255) }).strict()),
   companyPaypalCapture: schema(z.object({ paymentId: uuid, orderId: z.string().min(1).max(255) }).strict()),
   companyCancel: schema(z.object({}).strict(), z.object({ paymentId: uuid })),
-  companyJobsCreate: schema(z.record(z.any())),
+  companyJobsCreate: schema(anyRecord),
   companyJobStatus: schema(z.object({ status: z.string().min(1).max(32) }).strict(), z.object({ jobId: positiveIntParam })),
   companyJobReopen: schema(z.object({}).strict(), z.object({ jobId: positiveIntParam })),
   companyDeleteJob: schema(z.object({}).strict(), z.object({ jobId: positiveIntParam })),
   companyApplicationStatus: schema(z.object({ status: z.string().min(1).max(32) }).strict(), z.object({ applicationId: positiveIntParam })),
-  companyProfileUpdate: schema(z.record(z.any())),
-  companyOnboardingUpdate: schema(z.record(z.any())),
+  companyProfileUpdate: schema(anyRecord),
+  companyOnboardingUpdate: schema(anyRecord),
 
-  developerProfileUpdate: schema(z.record(z.any())),
+  developerProfileUpdate: schema(anyRecord),
   developerResumeUpload: schema(z.object({}).passthrough()),
   developerResumeAnalysis: schema(z.object({}).strict()),
+  matchJobs: schema(
+    z
+      .object({
+        skills: z.array(z.string().min(1).max(60)).min(1).max(50),
+        experience: z.enum(['intern', 'junior', 'mid', 'senior']).default('junior'),
+      })
+      .strict()
+  ),
 
   messageSend: schema(z.object({ text: z.string().min(1).max(4000) }).strict(), z.object({ contact: uuid })),
   notificationsRead: schema(z.object({}).strict()),

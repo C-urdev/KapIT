@@ -161,7 +161,7 @@ export default function CompanyProfilePage({ user, onUpdated }) {
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
       {loading && <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">Loading company profile...</p>}
 
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] shadow-lg shadow-black/5 dark:shadow-black/20 p-8 space-y-6 transition-colors duration-300">
+      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] shadow-lg shadow-black/5 dark:shadow-black/20 p-8 space-y-6 transition-colors duration-300">
         {onboardingDetails && (
           <section className="space-y-4 rounded-2xl border border-[#d8dfc9] dark:border-[#2a4a6f] bg-[#f8faf5] dark:bg-[#102235] p-5">
             <div>
@@ -288,7 +288,7 @@ function ReadOnlyField({ label, value, full = false }) {
   return (
     <div className={`${full ? 'md:col-span-2' : ''} space-y-1`}>
       <p className="text-sm font-semibold text-[#3a5a40] dark:text-white">{label}</p>
-      <div className="rounded-xl border border-[#d8dfc9] dark:border-[#2a4a6f] bg-white dark:bg-[#162842] px-4 py-3 text-sm text-[#344e41] dark:text-[#dcecff]">
+      <div className="rounded-xl border border-[#d8dfc9] dark:border-[#2a4a6f] bg-[#f8fbf6] dark:bg-[#162842] px-4 py-3 text-sm text-[#344e41] dark:text-[#dcecff]">
         {value}
       </div>
     </div>

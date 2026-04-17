@@ -109,7 +109,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   const isMessagesActive = activeNav === 'messages';
   const isSettingsActive = activeNav === 'settings';
   const isEdgeToEdgeView = isMessagesActive || isSettingsActive;
-  const pageBackgroundClass = isMessagesActive ? 'bg-white dark:bg-[#121212]' : 'bg-[#dad7cd] dark:bg-[#0a1628]';
+  const pageBackgroundClass = isMessagesActive ? 'bg-[#dad7cd] dark:bg-[#121212]' : 'bg-[#dad7cd] dark:bg-[#0a1628]';
   const hideMobileChromeForMessages = isTabletViewport && isMessagesActive && mobileThreadOpen;
   const effectiveMobileChromeHidden = mobileChromeHidden || hideMobileChromeForMessages;
   const mobileSafeAreaBottomPadding = isMobileShellViewport
@@ -469,8 +469,12 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
         style={isEdgeToEdgeView
           ? {
               paddingBottom: (isMessagesActive && mobileThreadOpen) ? 0 : mobileSafeAreaBottomPadding,
-              paddingTop: (isSettingsActive || (isMessagesActive && mobileThreadOpen)) ? 0 : 'calc(3.5rem + max(0.45rem, env(safe-area-inset-top)))',
-              height: isMobileShellViewport ? '100dvh' : 'calc(100dvh - 4rem)',
+              paddingTop: (isSettingsActive || (isMessagesActive && mobileThreadOpen))
+                ? 0
+                : isMessagesActive
+                  ? (isMobileShellViewport ? 'calc(3.5rem + max(0.45rem, env(safe-area-inset-top)))' : '0.5rem')
+                  : 'calc(3.5rem + max(0.45rem, env(safe-area-inset-top)))',
+              height: isMobileShellViewport ? '100dvh' : (isSettingsActive ? 'auto' : 'calc(100dvh - 4rem)'),
             }
           : { paddingBottom: mobileSafeAreaBottomPadding }}
       >
@@ -482,7 +486,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
                 setCanReturnToSettings(false);
                 setSettingsOpen(true);
               }}
-              className="inline-flex items-center gap-2 rounded-lg border border-[#a3b18a] bg-white px-3.5 py-2 text-sm font-semibold text-[#3a5a40] shadow-sm transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#162842] dark:text-white dark:hover:bg-[#102235]"
+              className="inline-flex items-center gap-2 rounded-lg border border-[#a3b18a] bg-[#f8fbf6] px-3.5 py-2 text-sm font-semibold text-[#3a5a40] shadow-sm transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#162842] dark:text-white dark:hover:bg-[#102235]"
             >
               <ArrowLeft className="h-4 w-4" />
               Back
@@ -584,6 +588,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
         {activeNav === 'settings' && (
           <UserSettingsPage
             user={user}
+            onBack={() => updateActiveNav('home')}
             onOpenAccountDetails={() => setSettingsOpen(true)}
             onOpenSavedJobs={() => updateActiveNav('saved-jobs')}
             onOpenApplications={() => updateActiveNav('applications')}
@@ -662,7 +667,7 @@ function TipsPanel() {
 
   return (
     <div className="mx-auto w-full max-w-[min(100%,1200px)] space-y-5">
-      <div className="rounded-[24px] border border-[#a3b18a] bg-white p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
+      <div className="rounded-[24px] border border-[#a3b18a] bg-[#f8fbf6] p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
         <div className="flex flex-col min-[420px]:flex-row items-start gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#14304d] dark:text-[#7dc4ff]">
             <Lightbulb className="h-6 w-6" />
@@ -675,7 +680,7 @@ function TipsPanel() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {tips.map((tip) => (
-          <div key={tip.title} className="rounded-[24px] border border-[#bfd0af] bg-white p-5 shadow-[0_12px_32px_rgba(58,90,64,0.06)] dark:border-[#2a4a6f] dark:bg-[#162842] dark:shadow-[0_12px_32px_rgba(0,0,0,0.18)]">
+          <div key={tip.title} className="rounded-[24px] border border-[#bfd0af] bg-[#f8fbf6] p-5 shadow-[0_12px_32px_rgba(58,90,64,0.06)] dark:border-[#2a4a6f] dark:bg-[#162842] dark:shadow-[0_12px_32px_rgba(0,0,0,0.18)]">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#588157] dark:bg-[#14304d] dark:text-[#7dc4ff]">
                 <Sparkles className="h-5 w-5" />
@@ -714,7 +719,7 @@ function VerifiedProfilesPanel() {
 
   return (
     <div className="mx-auto w-full max-w-[min(100%,1200px)] space-y-5">
-      <div className="rounded-[24px] border border-[#a3b18a] bg-white p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
+      <div className="rounded-[24px] border border-[#a3b18a] bg-[#f8fbf6] p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
         <div className="flex flex-col min-[420px]:flex-row items-start gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#14304d] dark:text-[#7dc4ff]">
             <BadgeCheck className="h-6 w-6" />
@@ -729,7 +734,7 @@ function VerifiedProfilesPanel() {
         {verifiedGroups.map((group) => {
           const Icon = group.icon;
           return (
-            <div key={group.title} className="rounded-[24px] border border-[#bfd0af] bg-white p-5 shadow-[0_12px_32px_rgba(58,90,64,0.06)] dark:border-[#2a4a6f] dark:bg-[#162842] dark:shadow-[0_12px_32px_rgba(0,0,0,0.18)]">
+            <div key={group.title} className="rounded-[24px] border border-[#bfd0af] bg-[#f8fbf6] p-5 shadow-[0_12px_32px_rgba(58,90,64,0.06)] dark:border-[#2a4a6f] dark:bg-[#162842] dark:shadow-[0_12px_32px_rgba(0,0,0,0.18)]">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#588157] dark:bg-[#14304d] dark:text-[#7dc4ff]">
                   <Icon className="h-5 w-5" />

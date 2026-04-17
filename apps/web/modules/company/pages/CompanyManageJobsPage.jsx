@@ -199,7 +199,7 @@ export default function CompanyManageJobsPage() {
         <p className="mt-2 text-sm text-[#344e41] dark:text-[#dcecff]">Every job listed here comes from the database. Unpaid jobs stay in draft until you use Pay now, while only paid jobs are published to developers.</p>
       </div>
 
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
+      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
         <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Jobs snapshot graph</h3>
         <SummaryGraph data={graphData} />
       </div>
@@ -209,7 +209,7 @@ export default function CompanyManageJobsPage() {
       {loading ? (
         <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">Loading jobs...</p>
       ) : displayJobs.length === 0 ? (
-        <div className="rounded-xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] p-6 transition-colors duration-300">
+        <div className="rounded-xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] p-6 transition-colors duration-300">
           <p className="text-[#344e41] dark:text-[#b8d4e8]">No job listings yet.</p>
         </div>
       ) : (
@@ -295,7 +295,7 @@ function JobDetailsModal({ job, onClose }) {
   return (
     <div className="fixed inset-0 z-[110] bg-black/55 backdrop-blur-sm flex items-center justify-center p-4">
       <button type="button" className="absolute inset-0" onClick={onClose} aria-label="Close job details" />
-      <div className="relative w-full max-w-4xl max-h-[85vh] overflow-y-auto rounded-3xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] p-6 shadow-2xl shadow-black/20 transition-colors duration-300">
+      <div className="relative w-full max-w-4xl max-h-[85vh] overflow-y-auto rounded-3xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] p-6 shadow-2xl shadow-black/20 transition-colors duration-300">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">{job?.title || 'Untitled job'}</h3>
@@ -339,7 +339,7 @@ function JobDetailsModal({ job, onClose }) {
               {skills.map((skill) => (
                 <span
                   key={skill}
-                  className="px-2.5 py-1 rounded-full border border-[#a3b18a] dark:border-[#2a4a6f] bg-white dark:bg-[#0f2139] text-xs text-[#344e41] dark:text-white"
+                  className="px-2.5 py-1 rounded-full border border-[#a3b18a] dark:border-[#2a4a6f] bg-[#f8fbf6] dark:bg-[#0f2139] text-xs text-[#344e41] dark:text-white"
                 >
                   {skill}
                 </span>

@@ -14,7 +14,7 @@ export default function UserLeftSidebar({ user, userType, onOpenPremium, onOpenM
 
   return (
     <div className="space-y-4">
-      <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl overflow-hidden">
+      <div className="bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl overflow-hidden">
         <div className="h-16 bg-gradient-to-r from-[#588157] to-[#3a5a40] dark:from-[#2d8bb8] dark:to-[#3ba9d6]" />
         <div className="px-4 pb-4">
           <div className="relative -mt-8 mb-3">

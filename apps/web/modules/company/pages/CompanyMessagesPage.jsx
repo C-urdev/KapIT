@@ -1,15 +1,26 @@
+'use client';
+
 import React from 'react';
 import MessagesInbox from '@sharedComponents/messages/MessagesInbox';
 
 export default function CompanyMessagesPage({ user, onThreadVisibilityChange }) {
-  const initialContactId = React.useMemo(() => {
+  const [initialContactId, setInitialContactId] = React.useState('');
+
+  React.useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
-      return String(params.get('contact') || '').trim();
+      setInitialContactId(String(params.get('contact') || '').trim());
     } catch {
-      return '';
+      setInitialContactId('');
     }
   }, []);
 
-  return <MessagesInbox user={user} initialContactId={initialContactId} onThreadVisibilityChange={onThreadVisibilityChange} />;
+  return (
+    <MessagesInbox
+      user={user}
+      initialContactId={initialContactId}
+      onThreadVisibilityChange={onThreadVisibilityChange}
+      variant="company"
+    />
+  );
 }

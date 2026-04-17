@@ -30,7 +30,7 @@ export default function CenterFeed(props) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-[#a3b18a] bg-white p-4 dark:border-[#1e3a5f] dark:bg-[#162842]">
+      <div className="rounded-xl border border-[#a3b18a] bg-[#f8fbf6] p-4 dark:border-[#1e3a5f] dark:bg-[#162842]">
         <div className="flex gap-3">
           <Avatar profileImage={profileImage} fallback={userInitial} sizeClass="h-10 w-10" />
           <button onClick={onOpenComposer} className="flex-1 rounded-full border border-[#a3b18a] bg-[#f5f5f2] px-4 py-3 text-left text-[#344e41] transition-colors hover:bg-[#dad7cd] dark:border-[#2a4a6f] dark:bg-[#1e3a5f] dark:text-[#b8d4e8] dark:hover:bg-[#0f2139]">Share an update or project...</button>
@@ -63,7 +63,7 @@ export default function CenterFeed(props) {
           savedPostIds={savedPostIds}
         />
       ) : (
-        <div className="rounded-xl border border-[#a3b18a] bg-white p-12 text-center dark:border-[#1e3a5f] dark:bg-[#162842]">
+        <div className="rounded-xl border border-[#a3b18a] bg-[#f8fbf6] p-12 text-center dark:border-[#1e3a5f] dark:bg-[#162842]">
           <div className="mx-auto max-w-sm">
             <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[#f5f5f2] dark:bg-[#1e3a5f]"><Search className="h-10 w-10 text-[#a3b18a] dark:text-[#3ba9d6]" /></div>
             <h3 className="mb-2 text-xl font-semibold text-[#3a5a40] dark:text-white">Try searching to get started</h3>

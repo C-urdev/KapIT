@@ -1,5 +1,13 @@
 import React from 'react';
 import { BadgeCheck, Brain, Check, CheckCircle2, CreditCard, Crown, Image as ImageIcon, MessageCircle, Sparkles, X } from 'lucide-react';
+import {
+  getUserPremiumPaymentProviders,
+  createUserPremiumCheckoutSession,
+  verifyUserPremiumStripeCheckout,
+  captureUserPremiumPayPalCheckout,
+  cancelUserPremiumCheckout,
+  completeUserPremiumLocalBypass,
+} from '@sharedServices/authService';
 
 const USER_PREMIUM_PAYMENT_PATH = '/premium/payment';
 const USER_PREMIUM_PAYMENT_SUCCESS = 'user-premium-payment-success';
@@ -7,19 +15,19 @@ const USER_PREMIUM_PAYMENT_SUCCESS = 'user-premium-payment-success';
 const PREMIUM_PLAN = {
   id: 'premium',
   name: 'Premium',
-  amount: 399,
-  unit: 'PHP /\nmonth',
-  subtitle: 'Unlock advanced tools that help you find better jobs faster and track every application.',
+  amount: 449,
+  unit: '/\nmonth',
+  subtitle: 'For faster, smarter job matching and better visibility. Everything in Free, plus:',
   cta: 'Upgrade to Premium',
   highlighted: true,
   features: [
-    { icon: Sparkles, text: 'Priority job access' },
-    { icon: Brain, text: 'Smart job filtering and ATS resume format support' },
-    { icon: Check, text: 'Skill matching percentage on job posts (for example: You match 88% of this job)' },
-    { icon: MessageCircle, text: 'Ghost job prevention to reduce outdated or inactive job posts' },
-    { icon: ImageIcon, text: 'See when application submission is still available based on posting period' },
-    { icon: CheckCircle2, text: 'Application status tracking through email updates' },
-    { icon: Crown, text: 'AI-assisted professional ATS resume builder using guided questions' },
+    { icon: Sparkles, text: 'Priority access to new job postings' },
+    { icon: Brain, text: 'Advanced job matching and filter' },
+    { icon: Check, text: 'ATS-optimized resume formatting' },
+    { icon: Crown, text: 'Access to pre-assessment tools' },
+    { icon: BadgeCheck, text: 'Skill match percentage' },
+    { icon: CheckCircle2, text: 'Application tracking updates via email' },
+    { icon: MessageCircle, text: 'Ghost job prevention features to detect inactive or outdated job posts' },
   ],
 };
 
@@ -28,14 +36,16 @@ const plans = [
     id: 'free',
     name: 'Free',
     amount: '0',
-    unit: 'PHP /\nmonth',
-    subtitle: 'Use essential tools for job search and applications at no monthly cost.',
+    unit: '/\nmonth',
+    subtitle: 'For getting started with your job search.',
     cta: 'Your current plan',
     features: [
-      { icon: Sparkles, text: 'Browse available jobs and apply using the standard flow' },
-      { icon: MessageCircle, text: 'Create your profile and upload your resume manually' },
-      { icon: ImageIcon, text: 'View company profiles and complete job descriptions' },
-      { icon: Brain, text: 'Premium-only tools like priority access, ATS AI tools, and smart matching are not included' },
+      { icon: Sparkles, text: 'Access to IT job listings' },
+      { icon: Brain, text: 'Basic search and filtering tools' },
+      { icon: Check, text: 'Create and manage your profile' },
+      { icon: ImageIcon, text: 'Upload your resume' },
+      { icon: MessageCircle, text: 'View company profiles' },
+      { icon: CheckCircle2, text: 'Email job alerts' },
     ],
   },
   PREMIUM_PLAN,
@@ -121,16 +131,148 @@ const notifyOpener = (payload) => {
 
 function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone = false }) {
   const [paymentMethod, setPaymentMethod] = React.useState('stripe');
+  const [providerAvailability, setProviderAvailability] = React.useState({
+    stripe: { enabled: true, label: 'Stripe', reason: '' },
+    paypal: { enabled: true, label: 'PayPal', reason: '' },
+  });
+  const [currentPaymentId, setCurrentPaymentId] = React.useState('');
   const [loading, setLoading] = React.useState(false);
+  const [verifying, setVerifying] = React.useState(false);
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState('');
   const [completedCheckout, setCompletedCheckout] = React.useState(null);
+  const handledReturnRef = React.useRef(false);
 
   const selectedProvider = PAYMENT_PROVIDERS.find((provider) => provider.id === paymentMethod) || PAYMENT_PROVIDERS[0];
+  const selectedProviderState = providerAvailability?.[selectedProvider.id] || { enabled: true, reason: '' };
   const displayName = user?.fullName || user?.username || user?.name || 'User account';
   const isLocalhostBypassAvailable = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
-  const stepState = success ? 3 : loading ? 2 : 1;
+  const stepState = success ? 3 : loading || verifying ? 2 : 1;
   const completedProvider = PAYMENT_PROVIDERS.find((provider) => provider.id === completedCheckout?.providerId) || null;
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const loadPaymentMeta = async () => {
+      try {
+        const data = await getUserPremiumPaymentProviders();
+        if (!cancelled && data?.providers) {
+          setProviderAvailability(data.providers);
+          const firstEnabled = PAYMENT_PROVIDERS.find((provider) => data.providers?.[provider.id]?.enabled);
+          if (firstEnabled) {
+            setPaymentMethod((current) => (data.providers?.[current]?.enabled ? current : firstEnabled.id));
+          }
+        }
+      } catch {
+        // Keep local fallback provider list if payment provider metadata is unavailable.
+      }
+    };
+
+    loadPaymentMeta();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (handledReturnRef.current) {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get('checkout');
+    const paymentId = params.get('payment_id') || '';
+
+    if (!checkout) {
+      return;
+    }
+
+    handledReturnRef.current = true;
+    setCurrentPaymentId(paymentId);
+
+    const cleanupUrl = () => {
+      window.history.replaceState({}, document.title, USER_PREMIUM_PAYMENT_PATH);
+    };
+
+    const handleProviderReturn = async () => {
+      if (checkout === 'cancelled') {
+        if (paymentId) {
+          try {
+            await cancelUserPremiumCheckout(paymentId);
+          } catch {
+            // Ignore cancellation persistence failures while keeping the user on free plan.
+          }
+        }
+        setError('Payment was cancelled. Your account stays on the free plan.');
+        cleanupUrl();
+        return;
+      }
+
+      setVerifying(true);
+      setError('');
+
+      try {
+        if (checkout === 'stripe-success') {
+          const sessionId = params.get('session_id');
+          if (!sessionId || !paymentId) {
+            throw new Error('Missing Stripe session details. Please try the payment again.');
+          }
+
+          const data = await verifyUserPremiumStripeCheckout({ paymentId, sessionId });
+          if (data?.user) {
+            await onConfirmUpgrade?.(data.user);
+            notifyOpener({ updates: data.user });
+          }
+          setCompletedCheckout({
+            providerId: 'stripe',
+            amount: PREMIUM_PLAN.amount,
+            planName: PREMIUM_PLAN.name,
+            billingCycle: 'monthly',
+            paymentMethod: 'Stripe',
+            reference: data?.payment?.provider_payment_id || data?.payment?.provider_checkout_id || paymentId,
+            accountHint: PAYMENT_PROVIDERS.find((provider) => provider.id === 'stripe')?.accountHint || '',
+          });
+          setSuccess('Stripe payment verified. Your premium access is now active.');
+          cleanupUrl();
+          return;
+        }
+
+        if (checkout === 'paypal-success') {
+          const orderId = params.get('token');
+          if (!orderId || !paymentId) {
+            throw new Error('Missing PayPal order details. Please try the payment again.');
+          }
+
+          const data = await captureUserPremiumPayPalCheckout({ paymentId, orderId });
+          if (data?.user) {
+            await onConfirmUpgrade?.(data.user);
+            notifyOpener({ updates: data.user });
+          }
+          setCompletedCheckout({
+            providerId: 'paypal',
+            amount: PREMIUM_PLAN.amount,
+            planName: PREMIUM_PLAN.name,
+            billingCycle: 'monthly',
+            paymentMethod: 'PayPal',
+            reference: data?.payment?.provider_payment_id || data?.payment?.provider_checkout_id || paymentId,
+            accountHint: PAYMENT_PROVIDERS.find((provider) => provider.id === 'paypal')?.accountHint || '',
+          });
+          setSuccess('PayPal payment verified. Your premium access is now active.');
+          cleanupUrl();
+          return;
+        }
+
+        throw new Error('Unknown checkout return state.');
+      } catch (verificationError) {
+        setError(verificationError?.message || 'Payment verification failed. Please try again.');
+        cleanupUrl();
+      } finally {
+        setVerifying(false);
+      }
+    };
+
+    handleProviderReturn();
+  }, [onConfirmUpgrade]);
 
   const handleConfirm = async () => {
     setLoading(true);
@@ -138,36 +280,23 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
     setSuccess('');
 
     try {
-      await onConfirmUpgrade?.({
-        isPremium: true,
-        premiumPlan: PREMIUM_PLAN.name,
-        premiumBillingAmount: PREMIUM_PLAN.amount,
-        premiumBillingCycle: 'monthly',
-        premiumPaymentMethod: selectedProvider.label,
+      if (!selectedProviderState.enabled) {
+        throw new Error(`${selectedProvider.label} is not available yet. Configure it in the server environment first.`);
+      }
+
+      const data = await createUserPremiumCheckoutSession({
+        provider: paymentMethod,
       });
-      notifyOpener({
-        updates: {
-          isPremium: true,
-          premiumPlan: PREMIUM_PLAN.name,
-          premiumBillingAmount: PREMIUM_PLAN.amount,
-          premiumBillingCycle: 'monthly',
-          premiumPaymentMethod: selectedProvider.label,
-        },
-      });
-      setCompletedCheckout({
-        providerId: paymentMethod,
-        amount: PREMIUM_PLAN.amount,
-        planName: PREMIUM_PLAN.name,
-        billingCycle: 'monthly',
-        paymentMethod: selectedProvider.label,
-        reference: `premium-${Date.now()}`,
-        accountHint: selectedProvider.accountHint,
-      });
-      setSuccess(`Payment confirmed via ${selectedProvider.label}. Your premium access is now active.`);
-    } catch (upgradeError) {
-      setError(upgradeError?.message || 'Payment was captured but premium could not be activated. Please try again.');
-    } finally {
+
+      if (!data?.checkoutUrl) {
+        throw new Error('The payment provider did not return a checkout URL.');
+      }
+
+      setCurrentPaymentId(data.paymentId || '');
+      window.location.assign(data.checkoutUrl);
+    } catch (checkoutError) {
       setLoading(false);
+      setError(checkoutError?.message || 'Unable to start the payment flow.');
     }
   };
 
@@ -181,29 +310,21 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
     setSuccess('');
 
     try {
-      await onConfirmUpgrade?.({
-        isPremium: true,
-        premiumPlan: PREMIUM_PLAN.name,
-        premiumBillingAmount: PREMIUM_PLAN.amount,
-        premiumBillingCycle: 'monthly',
-        premiumPaymentMethod: `${selectedProvider.label} (Sample)`,
+      const data = await completeUserPremiumLocalBypass({
+        provider: paymentMethod,
       });
-      notifyOpener({
-        updates: {
-          isPremium: true,
-          premiumPlan: PREMIUM_PLAN.name,
-          premiumBillingAmount: PREMIUM_PLAN.amount,
-          premiumBillingCycle: 'monthly',
-          premiumPaymentMethod: `${selectedProvider.label} (Sample)`,
-        },
-      });
+      if (data?.user) {
+        await onConfirmUpgrade?.(data.user);
+        notifyOpener({ updates: data.user });
+      }
+      setCurrentPaymentId(data?.payment?.id || '');
       setCompletedCheckout({
         providerId: paymentMethod,
         amount: PREMIUM_PLAN.amount,
         planName: PREMIUM_PLAN.name,
         billingCycle: 'monthly',
         paymentMethod: selectedProvider.label,
-        reference: `sample-${Date.now()}`,
+        reference: data?.payment?.provider_payment_id || data?.payment?.provider_checkout_id || `sample-${Date.now()}`,
         accountHint: selectedProvider.accountHint,
       });
       setSuccess('Local sample payment completed and your premium access is now active.');
@@ -212,6 +333,23 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCancel = async () => {
+    if (currentPaymentId) {
+      try {
+        await cancelUserPremiumCheckout(currentPaymentId);
+      } catch {
+        // Keep closing behavior even if cancellation persistence fails.
+      }
+    }
+
+    if (standalone) {
+      onClose?.();
+      return;
+    }
+
+    onBack?.();
   };
 
   return (
@@ -230,7 +368,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
                 <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold transition-colors ${
                   active
                     ? 'border-[#588157] bg-[#588157] text-white dark:border-[#63b3ff] dark:bg-[#63b3ff] dark:text-[#0c1728]'
-                    : 'border-[#c7d5c0] bg-white text-[#7b8a7f] dark:border-[#35506f] dark:bg-[#102139] dark:text-[#8fa8c4]'
+                    : 'border-[#c7d5c0] bg-[#f8fbf6] text-[#7b8a7f] dark:border-[#35506f] dark:bg-[#102139] dark:text-[#8fa8c4]'
                 }`}>
                   {complete ? <CheckCircle2 className="h-4 w-4" /> : step.key}
                 </span>
@@ -245,7 +383,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
       </div>
 
       <div className={completedCheckout ? 'flex justify-center' : 'grid gap-4 lg:grid-cols-[1.25fr_0.75fr] lg:gap-5'}>
-        <div className={`${completedCheckout ? 'hidden' : 'space-y-4'} rounded-[24px] border border-[#d6d3c9] dark:border-[#1e3657] bg-white/90 dark:bg-[#0f1d30] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]`}>
+        <div className={`${completedCheckout ? 'hidden' : 'space-y-4'} rounded-[24px] border border-[#d6d3c9] dark:border-[#1e3657] bg-[#f8fbf6]/90 dark:bg-[#0f1d30] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]`}>
           <div className="flex flex-col gap-3 border-b border-[#d6d3c9] dark:border-[#1e3657] pb-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm text-[#5f6f52] dark:text-[#9db6d0]">Selected plan</p>
@@ -254,7 +392,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
             </div>
             <div className="rounded-2xl border border-[#bfd0af] dark:border-[#284463] bg-[#f4f8f1] dark:bg-[#12233b] px-3 py-2.5 text-right">
               <p className="text-[11px] uppercase tracking-[0.2em] text-[#588157] dark:text-[#7dc4ff]">Status</p>
-              <p className="text-sm font-semibold text-[#102a1b] dark:text-white">{loading ? 'Processing payment' : success ? 'Activated' : 'Ready'}</p>
+              <p className="text-sm font-semibold text-[#102a1b] dark:text-white">{verifying ? 'Verifying payment' : loading ? 'Processing payment' : success ? 'Activated' : 'Ready'}</p>
             </div>
           </div>
 
@@ -283,7 +421,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
                 {PREMIUM_PLAN.features.map(({ text }) => (
                   <span
                     key={text}
-                    className="rounded-full border border-[#bfd0af] bg-white px-2.5 py-1 text-[11px] font-medium text-[#344e41] dark:border-[#274463] dark:bg-[#0f2137] dark:text-[#dcecff]"
+                    className="rounded-full border border-[#bfd0af] bg-[#f8fbf6] px-2.5 py-1 text-[11px] font-medium text-[#344e41] dark:border-[#274463] dark:bg-[#0f2137] dark:text-[#dcecff]"
                   >
                     {text}
                   </span>
@@ -320,7 +458,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3">
-                        <div className="rounded-xl border border-[#d6d3c9] dark:border-[#294664] bg-white dark:bg-[#0f2139] p-2">
+                        <div className="rounded-xl border border-[#d6d3c9] dark:border-[#294664] bg-[#f8fbf6] dark:bg-[#0f2139] p-2">
                           <Icon className="h-5 w-5 text-[#3a5a40] dark:text-[#7dc4ff]" />
                         </div>
                         <div>
@@ -356,7 +494,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
           <div className="flex flex-col gap-3 border-t border-[#e3ebf3] dark:border-[#1e3657] pt-3 sm:flex-row sm:flex-wrap">
             <button
               type="button"
-              onClick={standalone ? onClose : onBack}
+              onClick={handleCancel}
               className="w-full rounded-2xl border border-[#a3b18a] px-5 py-3 text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#294664] dark:text-white dark:hover:bg-[#17304d] sm:w-auto"
             >
               {standalone ? 'Cancel' : 'Back to plans'}
@@ -364,7 +502,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
             <button
               type="button"
               onClick={handleConfirm}
-              disabled={loading}
+              disabled={loading || verifying}
               className="w-full rounded-2xl bg-[#3a5a40] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#344e41] disabled:opacity-60 dark:bg-[#63b3ff] dark:text-[#0c1728] dark:hover:bg-[#83c5ff] sm:w-auto sm:min-w-[240px]"
             >
               {loading ? 'Processing payment...' : `Pay PHP ${PREMIUM_PLAN.amount.toLocaleString()} with ${selectedProvider.label}`}
@@ -383,7 +521,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
         </div>
 
         {completedCheckout ? (
-          <div className="w-full max-w-2xl space-y-3 rounded-[24px] border border-[#d6d3c9] dark:border-[#1e3657] bg-white/92 dark:bg-[#0f1d30] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]">
+          <div className="w-full max-w-2xl space-y-3 rounded-[24px] border border-[#d6d3c9] dark:border-[#1e3657] bg-[#f8fbf6]/92 dark:bg-[#0f1d30] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#588157] dark:text-[#7dc4ff]">Merchant summary</p>
               <h2 className="mt-1 text-xl font-semibold text-[#102a1b] dark:text-white">
@@ -453,7 +591,7 @@ export default function UserPremiumPopup({ isOpen, onClose, user, onOpenMerchant
   return (
     <div className="fixed inset-0 z-[60] bg-black/55 backdrop-blur-sm">
       <div className="flex min-h-full items-end justify-center p-2 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:items-center sm:p-4">
-        <div className="flex max-h-[min(92vh,960px)] w-full max-w-5xl flex-col overflow-hidden rounded-[24px] border border-[#a3b18a] bg-white shadow-[0_30px_80px_rgba(0,0,0,0.18)] dark:border-[#2a4a6f] dark:bg-[#162842] dark:shadow-[0_30px_80px_rgba(0,0,0,0.45)] sm:rounded-[28px]">
+        <div className="flex max-h-[min(92vh,960px)] w-full max-w-5xl flex-col overflow-hidden rounded-[24px] border border-[#a3b18a] bg-[#f8fbf6] shadow-[0_30px_80px_rgba(0,0,0,0.18)] dark:border-[#2a4a6f] dark:bg-[#162842] dark:shadow-[0_30px_80px_rgba(0,0,0,0.45)] sm:rounded-[28px]">
           <div className="flex items-start justify-between gap-4 border-b border-[#a3b18a] px-4 py-4 sm:px-5 dark:border-[#2a4a6f]">
             <div>
               <h2 className="flex items-center gap-2 text-xl sm:text-2xl font-semibold text-[#102a1b] dark:text-white">
@@ -519,7 +657,7 @@ export function UserPremiumPaymentWindow({ user, onUpgrade }) {
               <button
                 type="button"
                 onClick={handleClose}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ccd5c0] dark:border-[#294664] bg-white/80 dark:bg-[#11233a] text-[#5f6f52] dark:text-[#d3e3f4] hover:bg-white dark:hover:bg-[#17304d] transition-colors"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ccd5c0] dark:border-[#294664] bg-[#f8fbf6]/80 dark:bg-[#11233a] text-[#5f6f52] dark:text-[#d3e3f4] hover:bg-[#f8fbf6] dark:hover:bg-[#17304d] transition-colors"
                 aria-label="Close premium payment popup"
               >
                 <X className="h-5 w-5" />
@@ -541,5 +679,3 @@ export function UserPremiumPaymentWindow({ user, onUpgrade }) {
 }
 
 export { USER_PREMIUM_PAYMENT_PATH, USER_PREMIUM_PAYMENT_SUCCESS };
-
-

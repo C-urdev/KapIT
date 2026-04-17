@@ -85,7 +85,7 @@ export default function PostComposerModal({ isOpen, user, onClose, onSubmit }) {
 
   return (
     <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm flex items-center justify-center sm:p-4">
-      <div className="flex h-full w-full max-w-3xl flex-col overflow-hidden bg-white dark:bg-[#162842] sm:h-[58vh] sm:max-h-[58vh] sm:rounded-2xl sm:border sm:border-[#a3b18a] sm:dark:border-[#1e3a5f] sm:shadow-2xl">
+      <div className="flex h-full w-full max-w-3xl flex-col overflow-hidden bg-[#f8fbf6] dark:bg-[#162842] sm:h-[58vh] sm:max-h-[58vh] sm:rounded-2xl sm:border sm:border-[#a3b18a] sm:dark:border-[#1e3a5f] sm:shadow-2xl">
         <div className="flex items-center justify-between px-4 py-4 sm:px-6">
           <button
             onClick={onClose}
@@ -176,7 +176,7 @@ export default function PostComposerModal({ isOpen, user, onClose, onSubmit }) {
                 <ChevronDown className="h-4 w-4" />
               </button>
               {visibilityMenuOpen ? (
-                <div className="absolute bottom-[calc(100%+0.5rem)] left-0 z-20 min-w-40 overflow-hidden rounded-2xl border border-[#bfd0af] bg-white shadow-[0_12px_30px_rgba(58,90,64,0.12)] dark:border-[#314a68] dark:bg-[#34343a]">
+                <div className="absolute bottom-[calc(100%+0.5rem)] left-0 z-20 min-w-40 overflow-hidden rounded-2xl border border-[#bfd0af] bg-[#f8fbf6] shadow-[0_12px_30px_rgba(58,90,64,0.12)] dark:border-[#314a68] dark:bg-[#34343a]">
                   {VISIBILITY_OPTIONS.map((option) => {
                     const Icon = option.icon;
                     return (

@@ -173,7 +173,7 @@ export default function FeedPostCard({ post, user, displayName, profileImage, us
 
   if (isHidden) {
     return (
-      <article className="overflow-hidden rounded-[1.4rem] border border-[#bfd0af] bg-white text-[#344e41] shadow-[0_16px_36px_rgba(58,90,64,0.1)] dark:border-[#2f3438] dark:bg-[#23272b] dark:text-white dark:shadow-[0_16px_36px_rgba(0,0,0,0.24)]">
+      <article className="overflow-hidden rounded-[1.4rem] border border-[#bfd0af] bg-[#f8fbf6] text-[#344e41] shadow-[0_16px_36px_rgba(58,90,64,0.1)] dark:border-[#2f3438] dark:bg-[#23272b] dark:text-white dark:shadow-[0_16px_36px_rgba(0,0,0,0.24)]">
         <div className="flex items-start justify-between gap-4 px-6 pb-5 pt-6">
           <div>
             <div className="flex items-center gap-2 text-[#6b7dbb] dark:text-[#9fb4ff]">
@@ -235,7 +235,7 @@ export default function FeedPostCard({ post, user, displayName, profileImage, us
 
   return (
     <>
-      <article ref={cardRef} className="overflow-hidden rounded-[1.4rem] border border-[#a3b18a] bg-white shadow-[0_16px_36px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_16px_36px_rgba(0,0,0,0.2)]">
+      <article ref={cardRef} className="overflow-hidden rounded-[1.4rem] border border-[#a3b18a] bg-[#f8fbf6] shadow-[0_16px_36px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_16px_36px_rgba(0,0,0,0.2)]">
         <div className="flex items-start justify-between gap-3 px-4 pb-3 pt-4">
           <div className="flex min-w-0 items-center gap-3">
             <Avatar profileImage={authorProfileImage} fallback={authorInitial} sizeClass="h-11 w-11" />
@@ -262,7 +262,7 @@ export default function FeedPostCard({ post, user, displayName, profileImage, us
         {post.imageUrl ? <div className="overflow-hidden border-y border-[#d9dfcf] bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#102235]"><img src={post.imageUrl} alt="Post" className="h-auto max-h-[34rem] w-full object-cover" /></div> : null}
         <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-[#5f6f52] dark:text-[#b8d4e8]">
           <div className="flex min-w-0 items-center gap-2">
-            {reactionSummary.badges.length > 0 ? <div className="flex items-center -space-x-1">{reactionSummary.badges.map((badge) => <span key={badge} className="flex h-6 w-6 items-center justify-center rounded-full border border-white bg-white text-[13px] shadow-sm dark:border-[#162842] dark:bg-[#243244]">{badge}</span>)}</div> : null}
+            {reactionSummary.badges.length > 0 ? <div className="flex items-center -space-x-1">{reactionSummary.badges.map((badge) => <span key={badge} className="flex h-6 w-6 items-center justify-center rounded-full border border-white bg-[#f8fbf6] text-[13px] shadow-sm dark:border-[#162842] dark:bg-[#243244]">{badge}</span>)}</div> : null}
             {reactionCount > 0 ? <span>{formatCount(reactionCount)}</span> : null}
           </div>
           <div className="flex items-center gap-4"><button type="button" className="transition-colors hover:text-[#3a5a40] dark:hover:text-white" onClick={() => setCommentsViewOpen(true)}>{formatCount(commentCount)} comments</button><button type="button" className="transition-colors hover:text-[#3a5a40] dark:hover:text-white" onClick={() => setShareSheetOpen(true)}>{formatCount(shareCount)} shares</button></div>

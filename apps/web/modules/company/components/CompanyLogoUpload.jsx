@@ -27,7 +27,7 @@ export default function CompanyLogoUpload({ value, onChange, compact = false }) 
   };
 
   return (
-    <div className="rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] bg-white dark:bg-[#162842] p-4 transition-colors duration-300">
+    <div className="rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] bg-[#f8fbf6] dark:bg-[#162842] p-4 transition-colors duration-300">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-[#344e41] dark:text-white">
           <Image className="w-5 h-5 text-[#588157] dark:text-[#3ba9d6]" />

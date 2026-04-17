@@ -9,6 +9,7 @@ export const COMPANY_PATHS = {
   messages: '/company/messages',
   notifications: '/company/notifications',
   search: '/company/search',
+  settings: '/company/settings',
   profile: '/company/profile',
   publicProfile: '/company/public-profile',
 };

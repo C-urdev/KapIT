@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { loginWithGithub, isCompanyAccount } from '@sharedServices/authService';
@@ -17,14 +17,13 @@ const resolvePostAuthPath = (user) => {
     : '/dashboard/user';
 };
 
-export default function GithubCallbackPage() {
+function GithubCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState('');
 
   useEffect(() => {
     const code = searchParams.get('code');
-    const state = searchParams.get('state');
 
     if (!code) {
       setError('No authorization code received from GitHub.');
@@ -68,11 +67,25 @@ export default function GithubCallbackPage() {
   }
 
   return (
+    <LoadingView />
+  );
+}
+
+function LoadingView() {
+  return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#0a1628]">
       <div className="flex flex-col items-center gap-4">
         <Loader2 className="w-10 h-10 text-[#3a5a40] dark:text-[#3ba9d6] animate-spin" />
         <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Completing GitHub sign-in...</p>
       </div>
     </div>
+  );
+}
+
+export default function GithubCallbackPage() {
+  return (
+    <Suspense fallback={<LoadingView />}>
+      <GithubCallbackContent />
+    </Suspense>
   );
 }

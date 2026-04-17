@@ -1,18 +1,16 @@
 'use client';
 
 import SessionGate from './SessionGate';
-import { updateMyProfile } from '@sharedServices/authService';
 import { UserPremiumPaymentWindow } from '@userPages/premium/UserPremiumPopup';
 
 export default function UserPremiumPaymentClient() {
   return (
     <SessionGate requiredAccountType="developer" redirectTo="/">
-      {({ user, setUser, updateUser }) => (
+      {({ user, setUser }) => (
         <UserPremiumPaymentWindow
           user={user}
-          onUpgrade={async (updates) => {
-            const data = await updateMyProfile(updates || {});
-            const nextUser = data?.user || updateUser(updates || {});
+          onUpgrade={async (nextUserPayload) => {
+            const nextUser = nextUserPayload || user;
             setUser(nextUser);
             return nextUser;
           }}

@@ -15,6 +15,7 @@ const sanitizeDraft = (draft) => ({
   salary: String(draft?.salary || '').trim(),
   location: String(draft?.location || '').trim(),
   type: String(draft?.type || '').trim(),
+  applicationDeadline: String(draft?.applicationDeadline || '').trim(),
   skills: Array.isArray(draft?.skills) ? draft.skills : [],
 });
 
@@ -304,7 +305,7 @@ export default function CompanyPostJobPaymentPage() {
                       <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold transition-colors ${
                         active
                           ? 'border-[#588157] bg-[#588157] text-white dark:border-[#63b3ff] dark:bg-[#63b3ff] dark:text-[#0c1728]'
-                          : 'border-[#c7d5c0] bg-white text-[#7b8a7f] dark:border-[#35506f] dark:bg-[#102139] dark:text-[#8fa8c4]'
+                          : 'border-[#c7d5c0] bg-[#f8fbf6] text-[#7b8a7f] dark:border-[#35506f] dark:bg-[#102139] dark:text-[#8fa8c4]'
                       }`}>
                         {complete ? <CheckCircle2 className="h-4 w-4" /> : step.key}
                       </span>
@@ -326,7 +327,7 @@ export default function CompanyPostJobPaymentPage() {
             <button
               type="button"
               onClick={handleCancel}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ccd5c0] dark:border-[#294664] bg-white/80 dark:bg-[#11233a] text-[#5f6f52] dark:text-[#d3e3f4] hover:bg-white dark:hover:bg-[#17304d] transition-colors"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ccd5c0] dark:border-[#294664] bg-[#f8fbf6]/80 dark:bg-[#11233a] text-[#5f6f52] dark:text-[#d3e3f4] hover:bg-[#f8fbf6] dark:hover:bg-[#17304d] transition-colors"
               aria-label="Close payment popup"
             >
               <X className="h-5 w-5" />
@@ -335,7 +336,7 @@ export default function CompanyPostJobPaymentPage() {
           </div>
 
           <div className={`${completedCheckout ? 'flex justify-center' : 'grid gap-4 lg:grid-cols-[1.25fr_0.75fr]'} bg-[linear-gradient(180deg,rgba(255,255,255,0.24),rgba(245,247,240,0.08))] dark:bg-[linear-gradient(180deg,rgba(9,18,31,0.2),rgba(9,18,31,0))] p-4 sm:p-5`}>
-            <div className={`${completedCheckout ? 'hidden' : 'space-y-4'} rounded-[24px] border border-[#d6d3c9] dark:border-[#1e3657] bg-white/90 dark:bg-[#0f1d30] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]`}>
+            <div className={`${completedCheckout ? 'hidden' : 'space-y-4'} rounded-[24px] border border-[#d6d3c9] dark:border-[#1e3657] bg-[#f8fbf6]/90 dark:bg-[#0f1d30] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]`}>
               <div className="flex flex-col gap-3 border-b border-[#d6d3c9] dark:border-[#1e3657] pb-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-[#5f6f52] dark:text-[#9db6d0]">Selected plan</p>
@@ -404,7 +405,7 @@ export default function CompanyPostJobPaymentPage() {
                     {PLAN_FEATURES.map((feature) => (
                       <span
                         key={feature}
-                        className="rounded-full border border-[#bfd0af] bg-white px-2.5 py-1 text-[11px] font-medium text-[#344e41] dark:border-[#274463] dark:bg-[#0f2137] dark:text-[#dcecff]"
+                        className="rounded-full border border-[#bfd0af] bg-[#f8fbf6] px-2.5 py-1 text-[11px] font-medium text-[#344e41] dark:border-[#274463] dark:bg-[#0f2137] dark:text-[#dcecff]"
                       >
                         {feature}
                       </span>
@@ -442,7 +443,7 @@ export default function CompanyPostJobPaymentPage() {
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-start gap-3">
-                            <div className="rounded-xl border border-[#d6d3c9] dark:border-[#294664] bg-white dark:bg-[#0f2139] p-2">
+                            <div className="rounded-xl border border-[#d6d3c9] dark:border-[#294664] bg-[#f8fbf6] dark:bg-[#0f2139] p-2">
                               <Icon className="h-5 w-5 text-[#3a5a40] dark:text-[#7dc4ff]" />
                             </div>
                             <div>
@@ -522,7 +523,7 @@ export default function CompanyPostJobPaymentPage() {
             </div>
 
             {completedCheckout ? (
-              <div className="w-full max-w-2xl space-y-3 rounded-[24px] border border-[#d6d3c9] dark:border-[#1e3657] bg-white/92 dark:bg-[#0f1d30] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]">
+              <div className="w-full max-w-2xl space-y-3 rounded-[24px] border border-[#d6d3c9] dark:border-[#1e3657] bg-[#f8fbf6]/92 dark:bg-[#0f1d30] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#588157] dark:text-[#7dc4ff]">Merchant summary</p>
                   <h2 className="mt-1 text-xl font-semibold text-[#102a1b] dark:text-white">

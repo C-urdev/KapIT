@@ -15,7 +15,9 @@ const nextHost = process.env.NEXTJS_HOST;
 const nextPort = process.env.NEXTJS_PORT || '3000';
 const hideNetworkLine = process.env.HIDE_NEXT_NETWORK_LINE === 'true';
 const quietStartup = process.env.QUIET_STARTUP === 'true';
-const forceCleanNextDev = process.env.FORCE_CLEAN_NEXT_DEV === 'true';
+const hideRequestLines = scriptName === 'dev' && process.env.HIDE_NEXT_REQUEST_LINES !== 'false';
+const forceCleanNextDev = process.env.FORCE_CLEAN_NEXT_DEV !== 'false';
+const useTurbopack = scriptName === 'dev' && process.env.NEXT_USE_TURBOPACK !== 'false';
 const nextBin = path.resolve(appDirectory, 'node_modules', 'next', 'dist', 'bin', 'next');
 const command = process.execPath;
 const args = [nextBin, scriptName];
@@ -32,10 +34,14 @@ if (scriptName === 'dev' || scriptName === 'start') {
   }
 }
 
+if (useTurbopack) {
+  args.push('--turbopack');
+}
+
 const { PORT: _ignoredPort, HOST: _ignoredHost, ...forwardedEnv } = process.env;
 const normalizedNodeEnv =
   scriptName === 'build' ? 'production' : scriptName === 'dev' ? 'development' : process.env.NODE_ENV;
-const spawnStdio = hideNetworkLine || quietStartup ? ['ignore', 'pipe', 'pipe'] : 'inherit';
+const spawnStdio = hideNetworkLine || quietStartup || hideRequestLines ? ['ignore', 'pipe', 'pipe'] : 'inherit';
 
 const spawnOptions = {
   cwd: appDirectory,
@@ -68,9 +74,15 @@ try {
   });
 }
 
-if (hideNetworkLine || quietStartup) {
+if (hideNetworkLine || quietStartup || hideRequestLines) {
+  const requestLogPattern = /^\s*(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\s+\/\S+\s+\d{3}\s+in\s+\d+ms/i;
+
   const shouldSkipLine = (line) => {
     if (hideNetworkLine && line.includes('- Network:')) {
+      return true;
+    }
+
+    if (hideRequestLines && requestLogPattern.test(line.trim())) {
       return true;
     }
 
@@ -84,6 +96,10 @@ if (hideNetworkLine || quietStartup) {
       }
 
       if (line.includes('- Experiments')) {
+        return true;
+      }
+
+      if (line.includes('devtoolSegmentExplorer')) {
         return true;
       }
 

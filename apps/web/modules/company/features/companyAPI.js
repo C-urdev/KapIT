@@ -3,6 +3,18 @@ import { apiRequest } from '@sharedServices/apiClient';
 const API_BASE = '/api/company';
 const SERVER_COOLDOWN_MS = 60 * 1000;
 const endpointCooldowns = new Map();
+const unwrapEnvelope = (response) => {
+  if (
+    response &&
+    typeof response === 'object' &&
+    response.success === true &&
+    response.data &&
+    typeof response.data === 'object'
+  ) {
+    return { ...response.data, success: true };
+  }
+  return response;
+};
 
 const isServerFailure = (error) => /request failed/i.test(String(error?.message || ''));
 const getCooldownKey = (path, method) => `${String(method || 'GET').toUpperCase()}:${path}`;
@@ -18,10 +30,11 @@ const request = async (path, { method = 'GET', body, fallbackData } = {}) => {
   }
 
   try {
-    return await apiRequest(`${API_BASE}${path}`, {
+    const response = await apiRequest(`${API_BASE}${path}`, {
       method,
       body: body == null ? undefined : JSON.stringify(body),
     });
+    return unwrapEnvelope(response);
   } catch (error) {
     if (fallbackData !== undefined && isServerFailure(error)) {
       markEndpointFailed(cooldownKey);
@@ -42,12 +55,12 @@ export const companyAPI = {
   cancelPaymentCheckout: (paymentId) => request(`/payments/${paymentId}/cancel`, { method: 'POST' }),
   getProfile: () => request('/profile'),
   createJob: (jobInput) => request('/jobs', { method: 'POST', body: jobInput }),
-  getJobs: () => request('/jobs', { fallbackData: { success: true, jobs: [] } }),
+  getJobs: () => request('/jobs'),
   deleteJob: (jobId) => request(`/jobs/${jobId}`, { method: 'DELETE' }),
   updateJobStatus: (jobId, status) => request(`/jobs/${jobId}/status`, { method: 'PATCH', body: { status } }),
   reopenJob: (jobId) => request(`/jobs/${jobId}/reopen`, { method: 'POST' }),
   rankApplicantsForJob: (jobId) => request(`/jobs/${jobId}/ai/rank-applicants`),
-  getApplicants: () => request('/applicants', { fallbackData: { success: true, applicants: [] } }),
+  getApplicants: () => request('/applicants'),
   updateApplicantStatus: (applicationId, status) => request(`/applications/${applicationId}/status`, { method: 'PATCH', body: { status } }),
   searchDevelopers: (input) => {
     if (input && typeof input === 'object') {
@@ -63,17 +76,7 @@ export const companyAPI = {
     }
     return request(`/developers?q=${encodeURIComponent(input || '')}`);
   },
-  getAnalytics: () => request('/analytics', {
-    fallbackData: {
-      success: true,
-      analytics: {
-        totalJobs: 0,
-        totalApplicants: 0,
-        jobsByStatus: {},
-        applicantsByStatus: {},
-      },
-    },
-  }),
+  getAnalytics: () => request('/analytics'),
   updateProfile: (profileInput) => request('/profile', { method: 'PUT', body: profileInput }),
   saveOnboardingProfile: (profileInput) => request('/onboarding/profile', { method: 'PUT', body: profileInput }),
 };

@@ -13,6 +13,14 @@ const PAYMENT_API_TIMEOUT_MS = Math.max(1000, Number(process.env.PAYMENT_API_TIM
 const PAYMENT_API_RETRY_MAX = Math.max(1, Number(process.env.PAYMENT_API_RETRY_MAX || 3));
 const PAYMENT_API_RETRY_BASE_MS = Math.max(50, Number(process.env.PAYMENT_API_RETRY_BASE_MS || 300));
 const PAYMENT_IDEMPOTENCY_TTL_SECONDS = Math.max(60, Number(process.env.PAYMENT_IDEMPOTENCY_TTL_SECONDS || 86400));
+const USER_PREMIUM_PLAN = Object.freeze({
+  id: 'premium-monthly',
+  label: 'Premium',
+  price: 449,
+  durationLabel: 'monthly',
+  durationDays: 30,
+  description: 'Premium applicant subscription',
+});
 
 const getPaymentProviderAvailability = () => ({
   stripe: {
@@ -156,6 +164,7 @@ const normalizeDraftPayload = (draft) => ({
   salary: String(draft?.salary || '').trim(),
   location: String(draft?.location || '').trim(),
   type: String(draft?.type || '').trim(),
+  applicationDeadline: String(draft?.applicationDeadline || '').trim(),
   skills: Array.isArray(draft?.skills) ? draft.skills.map((item) => String(item).trim()).filter(Boolean) : [],
 });
 
@@ -244,6 +253,12 @@ const buildSuccessUrl = (clientBaseUrl, provider, paymentId) =>
 
 const buildCancelUrl = (clientBaseUrl, provider, paymentId) =>
   `${clientBaseUrl}/company/post-job/payment?checkout=cancelled&provider=${encodeURIComponent(provider)}&payment_id=${encodeURIComponent(paymentId)}`;
+
+const buildUserPremiumSuccessUrl = (clientBaseUrl, provider, paymentId) =>
+  `${clientBaseUrl}/premium/payment?checkout=${provider}-success&payment_id=${encodeURIComponent(paymentId)}`;
+
+const buildUserPremiumCancelUrl = (clientBaseUrl, provider, paymentId) =>
+  `${clientBaseUrl}/premium/payment?checkout=cancelled&provider=${encodeURIComponent(provider)}&payment_id=${encodeURIComponent(paymentId)}`;
 
 const createStripeCheckout = async ({ companyId, payment, plan, clientBaseUrl }) => {
   const stripe = getStripeClient();
@@ -366,6 +381,294 @@ const createPayPalOrder = async ({ payment, plan, clientBaseUrl }) => {
     checkoutUrl: approvalLink,
     providerCheckoutId: data.id,
   };
+};
+
+const createUserPremiumPaymentRecord = async (client, { userId, provider, plan }) => {
+  const recordId = crypto.randomUUID();
+  const result = await client.query(
+    `INSERT INTO user_premium_payments (
+       id,
+       user_id,
+       provider,
+       payment_context,
+       currency,
+       amount,
+       status,
+       plan_id,
+       plan_label,
+       plan_duration,
+       plan_duration_days
+     )
+     VALUES ($1, $2, $3, 'user_premium', 'PHP', $4, 'pending', $5, $6, $7, $8)
+     RETURNING *`,
+    [
+      recordId,
+      userId,
+      provider,
+      plan.price,
+      plan.id,
+      plan.label,
+      plan.durationLabel,
+      plan.durationDays,
+    ]
+  );
+
+  return result.rows[0];
+};
+
+const getUserPremiumPaymentRecord = async (client, paymentId, userId, options = {}) => {
+  const lockClause = options.forUpdate ? 'FOR UPDATE' : '';
+  const result = await client.query(
+    `SELECT *
+     FROM user_premium_payments
+     WHERE id = $1::uuid
+       AND user_id = $2::uuid
+     LIMIT 1
+     ${lockClause}`,
+    [paymentId, userId]
+  );
+
+  return result.rows[0] || null;
+};
+
+const createUserPremiumStripeCheckout = async ({ userId, payment, plan, clientBaseUrl }) => {
+  const stripe = getStripeClient();
+  const session = await withRetry(
+    () => stripe.checkout.sessions.create({
+      mode: 'payment',
+      success_url: `${buildUserPremiumSuccessUrl(clientBaseUrl, 'stripe', payment.id)}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: buildUserPremiumCancelUrl(clientBaseUrl, 'stripe', payment.id),
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: 'php',
+            unit_amount: Number(plan.price) * 100,
+            product_data: {
+              name: `KapIT ${plan.label} Subscription`,
+              description: `${plan.description}.`,
+            },
+          },
+        },
+      ],
+      metadata: {
+        userId,
+        paymentId: payment.id,
+        planId: plan.id,
+        context: 'user_premium',
+      },
+      payment_intent_data: {
+        metadata: {
+          userId,
+          paymentId: payment.id,
+          planId: plan.id,
+          context: 'user_premium',
+        },
+      },
+    }),
+    { label: 'Stripe user premium checkout session creation' }
+  );
+
+  return {
+    checkoutUrl: session.url,
+    providerCheckoutId: session.id,
+  };
+};
+
+const createUserPremiumPayPalOrder = async ({ payment, plan, clientBaseUrl }) => {
+  const accessToken = await getPayPalAccessToken();
+  const response = await withRetry(
+    () => fetchWithTimeout(`${getPayPalBaseUrl()}/v2/checkout/orders`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'PayPal-Request-Id': payment.id,
+      },
+      body: JSON.stringify({
+        intent: 'CAPTURE',
+        purchase_units: [
+          {
+            reference_id: payment.id,
+            custom_id: payment.id,
+            description: `KapIT ${plan.label} Subscription`,
+            amount: {
+              currency_code: 'PHP',
+              value: formatPhpAmount(plan.price),
+            },
+          },
+        ],
+        application_context: {
+          brand_name: 'KapIT',
+          user_action: 'PAY_NOW',
+          shipping_preference: 'NO_SHIPPING',
+          return_url: buildUserPremiumSuccessUrl(clientBaseUrl, 'paypal', payment.id),
+          cancel_url: buildUserPremiumCancelUrl(clientBaseUrl, 'paypal', payment.id),
+        },
+      }),
+    }),
+    { label: 'PayPal user premium order creation' }
+  );
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !Array.isArray(data?.links)) {
+    if (response.status >= 500) {
+      throw createPaymentError(data?.message || 'PayPal order creation temporary failure.', true);
+    }
+    throw new Error(data?.message || 'Failed to create PayPal order.');
+  }
+
+  const approvalLink = data.links.find((link) => link.rel === 'approve')?.href;
+  if (!approvalLink) {
+    throw new Error('PayPal did not return an approval URL.');
+  }
+
+  return {
+    checkoutUrl: approvalLink,
+    providerCheckoutId: data.id,
+  };
+};
+
+const startUserPremiumCheckout = async ({ client, req, userId, provider }) => {
+  const normalizedProvider = assertValidProvider(provider);
+  const plan = USER_PREMIUM_PLAN;
+
+  const payment = await createUserPremiumPaymentRecord(client, {
+    userId,
+    provider: normalizedProvider,
+    plan,
+  });
+  const clientBaseUrl = getClientBaseUrl(req);
+
+  const checkout =
+    normalizedProvider === 'stripe'
+      ? await createUserPremiumStripeCheckout({ userId, payment, plan, clientBaseUrl })
+      : await createUserPremiumPayPalOrder({ payment, plan, clientBaseUrl });
+
+  const saved = await updateUserPremiumPaymentRecord(client, payment.id, {
+    provider_checkout_id: checkout.providerCheckoutId,
+  });
+
+  return {
+    payment: saved || payment,
+    plan,
+    checkoutUrl: checkout.checkoutUrl,
+  };
+};
+
+const updateUserPremiumPaymentRecord = async (client, paymentId, fields) => {
+  const assignments = [];
+  const values = [];
+  let index = 1;
+
+  Object.entries(fields).forEach(([key, value]) => {
+    assignments.push(`${key} = $${index}`);
+    values.push(value);
+    index += 1;
+  });
+
+  if (!assignments.length) {
+    return null;
+  }
+
+  values.push(paymentId);
+  const result = await client.query(
+    `UPDATE user_premium_payments
+     SET ${assignments.join(', ')},
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $${index}::uuid
+     RETURNING *`,
+    values
+  );
+
+  return result.rows[0] || null;
+};
+
+const finalizeVerifiedUserPremiumPayment = async ({ client, userId, payment, verification }) => {
+  if (String(payment.user_id) !== String(userId)) {
+    throw new Error('Payment does not belong to this user.');
+  }
+
+  const paymentStatus = String(payment.status || '').toLowerCase();
+  if (paymentStatus === 'paid') {
+    const userResult = await client.query(
+      `UPDATE users
+       SET is_premium = true
+       WHERE id = $1::uuid
+       RETURNING *`,
+      [userId]
+    );
+    if (!userResult.rows.length) {
+      throw new Error('User not found.');
+    }
+    return {
+      payment,
+      user: userResult.rows[0],
+    };
+  }
+
+  if (!['pending', 'processing'].includes(paymentStatus)) {
+    throw new Error(`Payment cannot be finalized from status "${payment.status}".`);
+  }
+
+  const providerAmount = Math.round(Number(verification.amount || 0));
+  if (providerAmount !== Number(payment.amount || 0)) {
+    throw new Error('Verified payment amount does not match the premium plan.');
+  }
+
+  const savedPayment = await updateUserPremiumPaymentRecord(client, payment.id, {
+    provider_checkout_id: verification.providerCheckoutId,
+    provider_payment_id: verification.providerPaymentId,
+    payer_email: verification.payerEmail,
+    provider_payload: JSON.stringify(verification.rawPayload),
+    status: verification.status,
+    paid_at: new Date(),
+  });
+
+  const userResult = await client.query(
+    `UPDATE users
+     SET is_premium = true
+     WHERE id = $1::uuid
+     RETURNING *`,
+    [userId]
+  );
+  if (!userResult.rows.length) {
+    throw new Error('User not found.');
+  }
+
+  return {
+    payment: savedPayment || payment,
+    user: userResult.rows[0],
+  };
+};
+
+const completeLocalBypassUserPremiumPayment = async ({ client, userId, provider, payerEmail = null }) => {
+  const normalizedProvider = assertValidProvider(provider);
+  const plan = USER_PREMIUM_PLAN;
+
+  const payment = await createUserPremiumPaymentRecord(client, {
+    userId,
+    provider: normalizedProvider,
+    plan,
+  });
+
+  return finalizeVerifiedUserPremiumPayment({
+    client,
+    userId,
+    payment,
+    verification: {
+      providerCheckoutId: `localhost-checkout-${payment.id}`,
+      providerPaymentId: `localhost-paid-${Date.now()}`,
+      payerEmail,
+      status: 'paid',
+      rawPayload: {
+        bypass: true,
+        source: 'localhost-env-flag',
+      },
+      amount: Number(plan.price || 0),
+    },
+  });
 };
 
 const startJobPostCheckout = async ({ client, req, companyUserId, provider, planId, draft, jobId = null }) => {
@@ -526,6 +829,30 @@ const startJobPostCheckoutIdempotent = async ({
 };
 
 const assertLocalBypassAllowed = (req) => {
+  const toHostname = (raw) => {
+    const value = String(raw || '').trim().toLowerCase();
+    if (!value) {
+      return '';
+    }
+
+    try {
+      const asUrl = value.includes('://') ? new URL(value) : new URL(`http://${value}`);
+      return String(asUrl.hostname || '').trim().toLowerCase();
+    } catch {
+      return '';
+    }
+  };
+
+  const isLoopbackHost = (raw) => {
+    const hostname = toHostname(raw);
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+  };
+
+  const isLoopbackIp = (raw) => {
+    const ip = String(raw || '').trim().toLowerCase();
+    return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+  };
+
   const isProduction = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
   if (isProduction) {
     throw new Error('Local payment bypass is forbidden in production.');
@@ -536,9 +863,17 @@ const assertLocalBypassAllowed = (req) => {
     throw new Error('Local payment bypass is disabled.');
   }
 
-  const host = String(req.hostname || req.get('host') || '').toLowerCase();
-  const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1') || host.includes('::1');
-  if (!isLocalhost) {
+  const hostHeader = req.get('x-forwarded-host') || req.get('host') || req.hostname;
+  const originHeader = req.get('origin');
+  const refererHeader = req.get('referer');
+  const requestIp = req.ip || req.socket?.remoteAddress || '';
+
+  const hostAllowed = isLoopbackHost(hostHeader);
+  const originAllowed = !originHeader || isLoopbackHost(originHeader);
+  const refererAllowed = !refererHeader || isLoopbackHost(refererHeader);
+  const ipAllowed = isLoopbackIp(requestIp);
+
+  if (!hostAllowed || !originAllowed || !refererAllowed || !ipAllowed) {
     throw new Error('Local payment bypass is only allowed from localhost.');
   }
 };
@@ -726,16 +1061,22 @@ const finalizeVerifiedPayment = async ({ client, companyUserId, payment, verific
 
 module.exports = {
   JOB_POST_PLANS,
+  USER_PREMIUM_PLAN,
   getPaymentProviderAvailability,
   getPaymentRecordForCompany,
+  getUserPremiumPaymentRecord,
   getOrCreateCompanyForUserId,
   normalizeProvider,
   assertLocalBypassAllowed,
   startJobPostCheckout,
   startJobPostCheckoutIdempotent,
+  startUserPremiumCheckout,
   completeLocalBypassPayment,
+  completeLocalBypassUserPremiumPayment,
   extractStripeVerification,
   capturePayPalOrder,
   finalizeVerifiedPayment,
+  finalizeVerifiedUserPremiumPayment,
   updatePaymentRecord,
+  updateUserPremiumPaymentRecord,
 };

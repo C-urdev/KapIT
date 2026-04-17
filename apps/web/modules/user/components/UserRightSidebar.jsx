@@ -45,7 +45,7 @@ export default function UserRightSidebar({ userType }) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-4">
+      <div className="bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-[#3a5a40] dark:text-white flex items-center gap-2">
             <Award className="w-5 h-5 text-yellow-500 dark:text-yellow-400" />
@@ -84,7 +84,7 @@ export default function UserRightSidebar({ userType }) {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-4">
+      <div className="bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-4">
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp className="w-5 h-5 text-[#588157] dark:text-[#3ba9d6]" />
           <h3 className="font-semibold text-[#3a5a40] dark:text-white">
