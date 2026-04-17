@@ -19,25 +19,25 @@ function SettingsRow({ icon: Icon, title, subtitle, onClick, rightElement }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-between px-4 py-3 sm:py-4 text-left transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+      className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors duration-150 hover:bg-[#eef6ee] dark:hover:bg-[#1e3a5f]/55 sm:py-4"
     >
       <div className="flex items-center gap-4">
-        <Icon className="h-6 w-6 text-[#3a5a40] dark:text-white/80" />
+        <Icon className="h-5 w-5 text-[#3a5a40] dark:text-[#b8d4e8] sm:h-6 sm:w-6" />
         <div>
-          <p className="text-[17px] font-semibold text-[#1c2b1f] dark:text-white leading-snug">{title}</p>
-          {subtitle && <p className="text-sm text-[#5f6f52] dark:text-white/60 leading-snug">{subtitle}</p>}
+          <p className="text-[16px] font-semibold text-[#1c2b1f] leading-snug dark:text-white sm:text-[17px]">{title}</p>
+          {subtitle && <p className="text-sm leading-snug text-[#5f6f52] dark:text-[#9fb4ca]">{subtitle}</p>}
         </div>
       </div>
-      {rightElement || <ChevronRight className="h-5 w-5 text-[#8ea18c] dark:text-white/40" />}
+      {rightElement || <ChevronRight className="h-5 w-5 text-[#7c8e76] dark:text-[#7d9ab8]" />}
     </button>
   );
 }
 
 function SectionHeading({ title, subtitle }) {
   return (
-    <div className="px-4 pb-2 pt-5 sm:pt-6 bg-transparent">
-      <h2 className="text-[17px] font-bold text-[#1c2b1f] dark:text-white/95">{title}</h2>
-      {subtitle && <p className="mt-1 text-[13px] text-[#5f6f52] dark:text-white/60 leading-tight">{subtitle}</p>}
+    <div className="px-1 pb-2 pt-5 sm:pt-6">
+      <h2 className="text-[17px] font-bold text-[#1c2b1f] dark:text-white">{title}</h2>
+      {subtitle && <p className="mt-1 text-[13px] leading-tight text-[#5f6f52] dark:text-[#9fb4ca]">{subtitle}</p>}
     </div>
   );
 }
@@ -75,8 +75,8 @@ export default function UserSettingsPage({
           subtitle: theme === 'dark' ? 'On' : 'Off', 
           onClick: toggleTheme,
           rightElement: (
-            <div className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${theme === 'dark' ? 'bg-[#3ba9d6]' : 'bg-[#dce5d4]'}`}>
-              <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition duration-200 ease-in-out shadow-sm ${theme === 'dark' ? 'translate-x-5' : 'translate-x-0'}`} />
+            <div className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-150 ease-out focus:outline-none ${theme === 'dark' ? 'bg-[#3ba9d6]' : 'bg-[#c8d5b9]'}`}>
+              <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition duration-150 ease-out ${theme === 'dark' ? 'translate-x-5' : 'translate-x-0'}`} />
             </div>
           )
         },
@@ -113,42 +113,42 @@ export default function UserSettingsPage({
   }).filter(section => section.items.length > 0 || section.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
-    <div className="mx-auto flex w-full max-w-[min(100%,720px)] flex-col bg-white dark:bg-[#121212] animate-in slide-in-from-bottom-4 fade-in duration-500 ease-out">
-      {/* Search Header */}
-      <div className="sticky top-0 z-10 bg-white/95 px-4 pt-6 pb-4 backdrop-blur-md dark:bg-[#121212]/95 sm:pt-8">
+    <div className="mx-auto flex w-full max-w-[min(100%,760px)] flex-col bg-[#dad7cd] px-4 pb-16 pt-4 dark:bg-[#0a1628] sm:px-5 sm:pb-8 sm:pt-6">
+      <div className="sticky top-0 z-10 rounded-2xl border border-[#c8d5b9] bg-[#e9efe2]/95 px-4 pb-4 pt-4 shadow-sm backdrop-blur-md dark:border-[#1e3a5f] dark:bg-[#102235]/95 sm:pt-5">
         <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#5f6f52] dark:text-white/50" />
+          <Search className="absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#5f6f52] dark:text-[#8fb2cf]" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search settings"
-            className="w-full rounded-[20px] border-0 bg-[#f0f4ec] py-2 pl-10 pr-4 text-[15px] font-medium text-[#1c2b1f] outline-none placeholder:text-[#5f6f52] focus:ring-2 focus:ring-[#3a5a40]/20 dark:bg-[#202124] dark:text-white dark:placeholder:text-white/50 dark:focus:ring-white/10"
+            className="w-full rounded-[20px] border border-[#bfd0af] bg-[#f8fbf6] py-2.5 pl-10 pr-4 text-[15px] font-medium text-[#1c2b1f] outline-none placeholder:text-[#6b7c6a] focus:ring-2 focus:ring-[#588157]/25 dark:border-[#2a4a6f] dark:bg-[#162842] dark:text-white dark:placeholder:text-[#8ba9c0] dark:focus:ring-[#3ba9d6]/25"
           />
         </div>
       </div>
 
-      <div className="flex-1 pb-16 sm:pb-8">
+      <div className="flex-1">
         {filteredData.length > 0 ? (
           filteredData.map((section, idx) => (
-            <React.Fragment key={idx}>
+            <section key={idx}>
               <SectionHeading title={section.title} subtitle={section.subtitle} />
-              <div className="bg-white dark:bg-[#121212]">
+              <div className="overflow-hidden rounded-2xl border border-[#bfd0af] bg-[#f8fbf6] shadow-sm shadow-black/5 dark:border-[#2a4a6f] dark:bg-[#162842]">
                 {section.items.map((item, itemIdx) => (
-                  <SettingsRow
-                    key={itemIdx}
-                    icon={item.icon}
-                    title={item.title}
-                    subtitle={item.subtitle}
-                    onClick={item.onClick}
-                    rightElement={item.rightElement}
-                  />
+                  <div key={itemIdx} className={itemIdx > 0 ? 'border-t border-[#d8e3cc] dark:border-[#2a4a6f]' : ''}>
+                    <SettingsRow
+                      icon={item.icon}
+                      title={item.title}
+                      subtitle={item.subtitle}
+                      onClick={item.onClick}
+                      rightElement={item.rightElement}
+                    />
+                  </div>
                 ))}
               </div>
-            </React.Fragment>
+            </section>
           ))
         ) : (
-          <div className="pt-20 text-center">
+          <div className="rounded-2xl border border-[#bfd0af] bg-[#f8fbf6] px-4 py-10 text-center shadow-sm shadow-black/5 dark:border-[#2a4a6f] dark:bg-[#162842]">
             <p className="text-[#5f6f52] dark:text-[#b8d4e8]">No settings match your search.</p>
           </div>
         )}

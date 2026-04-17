@@ -219,8 +219,8 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
 
   return (
     <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 min-[420px]:p-6">
-      <div className="flex w-full max-w-2xl flex-col bg-white dark:bg-[#0a1628] rounded-2xl shadow-2xl overflow-hidden max-h-[90vh]">
-        <div className="flex shrink-0 items-center justify-between border-b border-[#e5e7eb] dark:border-[#1e3a5f] p-4 sm:p-5">
+      <div className="flex w-full max-w-2xl flex-col bg-[#f8fbf6] dark:bg-[#0a1628] rounded-2xl shadow-2xl overflow-hidden max-h-[90vh]">
+        <div className="flex shrink-0 items-center justify-between border-b border-[#d8e0cf] dark:border-[#1e3a5f] p-4 sm:p-5">
           <div>
             <h3 className="text-[19px] font-bold text-[#1c2b1f] dark:text-white">Edit Profile Details</h3>
             <p className="text-sm text-[#5f6f52] dark:text-[#b8d4e8] mt-0.5">Update your personal and professional information.</p>
@@ -321,7 +321,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
             </div>
           </main>
           
-          <div className="shrink-0 flex items-center justify-end gap-3 border-t border-[#e5e7eb] dark:border-[#1e3a5f] bg-[#f9fafb] p-4 dark:bg-[#162842]">
+          <div className="shrink-0 flex items-center justify-end gap-3 border-t border-[#d8e0cf] dark:border-[#1e3a5f] bg-[#f2f7ef] p-4 dark:bg-[#162842]">
             <button onClick={onClose} className="px-5 py-2 rounded-xl font-semibold text-[#5f6f52] transition-colors hover:bg-black/5 dark:text-[#b8d4e8] dark:hover:bg-white/10">
               Cancel
             </button>
@@ -338,7 +338,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
 
 function SettingsCard({ title, icon: Icon, children }) {
   return (
-    <section className="bg-white dark:bg-[#162842] border border-[#dce5d4] dark:border-[#1e3a5f] rounded-2xl p-5 shadow-sm">
+    <section className="bg-[#f8fbf6] dark:bg-[#162842] border border-[#dce5d4] dark:border-[#1e3a5f] rounded-2xl p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-4 border-b border-[#f0f4ec] dark:border-white/5 pb-3">
         <Icon className="w-5 h-5 text-[#3a5a40] dark:text-[#3ba9d6]" />
         <h5 className="font-bold text-[15px] text-[#1c2b1f] dark:text-white">{title}</h5>

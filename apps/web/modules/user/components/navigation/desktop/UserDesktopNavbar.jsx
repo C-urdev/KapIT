@@ -86,7 +86,7 @@ export default function UserDesktopNavbar({
               className="w-full rounded-full border border-[#a3b18a] bg-[#f5f5f2] py-2 pl-10 pr-3 text-sm text-[#344e41] transition-colors placeholder:text-[#5f6f52] focus:outline-none focus:ring-2 focus:ring-[#588157] dark:border-[#2a4a6f] dark:bg-[#1e3a5f] dark:text-white dark:placeholder:text-[#7d9ab8] dark:focus:ring-[#3ba9d6]"
             />
             {searchOpen && searchQuery.trim() && (
-              <div className="absolute top-full left-0 right-0 mt-2 max-h-80 overflow-y-auto bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl shadow-xl z-50">
+              <div className="absolute top-full left-0 right-0 mt-2 max-h-80 overflow-y-auto bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl shadow-xl z-50">
                 {searchLoading && (
                   <p className="px-4 py-3 text-sm text-[#344e41] dark:text-[#b8d4e8]">Searching...</p>
                 )}
@@ -108,7 +108,7 @@ export default function UserDesktopNavbar({
                       setSearchOpen(false);
                       onOpenPublicProfile?.(result);
                     }}
-                    className="w-full text-left px-4 py-3 border-b last:border-b-0 border-[#e5e7eb] dark:border-[#1e3a5f] hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+                    className="w-full text-left px-4 py-3 border-b last:border-b-0 border-[#d6d3c9] dark:border-[#1e3a5f] hover:bg-[#f1f5eb] dark:hover:bg-[#1e3a5f] transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-[#588157] dark:bg-[#3ba9d6] text-white flex items-center justify-center overflow-hidden shrink-0 font-bold">
@@ -185,7 +185,7 @@ export default function UserDesktopNavbar({
           </button>
 
           {profileMenuOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl shadow-lg overflow-hidden z-50">
+            <div className="absolute right-0 mt-2 w-48 bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl shadow-lg overflow-hidden z-50">
               <button
                 onClick={() => {
                   setProfileMenuOpen(false);

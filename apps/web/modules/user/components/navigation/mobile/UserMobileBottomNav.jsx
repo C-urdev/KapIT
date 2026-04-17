@@ -25,7 +25,7 @@ function MobileBottomNavButton({ icon: Icon, label, active, onClick, badgeCount 
 export default function UserMobileBottomNav({ activeNav, setActiveNav, unreadNotificationCount = 0, hiddenOnScroll = false }) {
   return (
     <div
-      className={`xl:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-[#a3b18a] bg-white/95 backdrop-blur-xl transition-transform duration-150 ease-out dark:border-white/10 dark:bg-[#1c1f24]/95 ${
+      className={`xl:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-[#a3b18a] bg-[#f8fbf6]/95 backdrop-blur-xl transition-transform duration-150 ease-out dark:border-white/10 dark:bg-[#1c1f24]/95 ${
         hiddenOnScroll ? 'translate-y-full' : 'translate-y-0'
       }`}
     >

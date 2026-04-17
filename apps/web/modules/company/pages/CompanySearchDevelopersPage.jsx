@@ -158,12 +158,12 @@ export default function CompanySearchDevelopersPage() {
 
       <form
         onSubmit={handleSearch}
-        className="rounded-[24px] border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] p-4 shadow-lg shadow-black/5 transition-colors duration-300 dark:shadow-black/20"
+        className="rounded-[24px] border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] p-4 shadow-lg shadow-black/5 transition-colors duration-300 dark:shadow-black/20"
       >
         <div className={`flex flex-col ${hasActiveFilters ? 'gap-4' : 'gap-3'}`}>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="min-w-0 flex-1">
-              <div className="flex w-full items-center rounded-xl border border-[#a3b18a] bg-white px-2 py-2 transition-colors focus-within:ring-2 focus-within:ring-[#588157] dark:border-[#2a4a6f] dark:bg-[#0f2139] dark:focus-within:ring-[#3ba9d6]">
+              <div className="flex w-full items-center rounded-xl border border-[#a3b18a] bg-[#fcfdf8] px-2 py-2 transition-colors focus-within:ring-2 focus-within:ring-[#588157] dark:border-[#2a4a6f] dark:bg-[#0f2139] dark:focus-within:ring-[#3ba9d6]">
                 <input
                   value={filters.q}
                   onChange={(event) => handleFilterChange('q', event.target.value)}
@@ -232,7 +232,7 @@ export default function CompanySearchDevelopersPage() {
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-[#a3b18a] bg-white p-6 text-sm text-[#344e41] shadow-lg shadow-black/5 transition-colors duration-300 dark:border-[#1e3a5f] dark:bg-[#162842] dark:text-[#dcecff] dark:shadow-black/20">
+        <div className="rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] p-6 text-sm text-[#344e41] shadow-lg shadow-black/5 transition-colors duration-300 dark:border-[#1e3a5f] dark:bg-[#162842] dark:text-[#dcecff] dark:shadow-black/20">
           No developers matched your current search yet. Try a broader keyword or open Filters to adjust the details.
         </div>
       )}
@@ -242,7 +242,7 @@ export default function CompanySearchDevelopersPage() {
           {profileLoading ? (
             <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">Loading profile...</p>
           ) : (
-            <div className="rounded-xl border border-[#a3b18a] bg-white p-4 transition-colors duration-300 dark:border-[#2a4a6f] dark:bg-[#0f2139]">
+            <div className="rounded-xl border border-[#a3b18a] bg-[#f8fbf6] p-4 transition-colors duration-300 dark:border-[#2a4a6f] dark:bg-[#0f2139]">
               <PublicProfilePage profile={profile} onBack={() => setProfile(null)} onMessage={handleMessage} viewer={viewer} />
             </div>
           )}
@@ -409,8 +409,8 @@ function SelectField({ value, onChange, children }) {
 function Modal({ title, onClose, children }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="max-h-[85vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-[#a3b18a] bg-white shadow-2xl shadow-black/20 transition-colors duration-300 dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-black/50">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#a3b18a] bg-white/90 px-5 py-4 backdrop-blur transition-colors duration-300 dark:border-[#1e3a5f] dark:bg-[#162842]/90">
+      <div className="max-h-[85vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] shadow-2xl shadow-black/20 transition-colors duration-300 dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-black/50">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#a3b18a] bg-[#f8fbf6]/90 px-5 py-4 backdrop-blur transition-colors duration-300 dark:border-[#1e3a5f] dark:bg-[#162842]/90">
           <div className="font-bold text-[#3a5a40] dark:text-white">{title}</div>
           <button
             type="button"
