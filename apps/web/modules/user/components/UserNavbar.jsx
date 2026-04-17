@@ -113,12 +113,21 @@ export default function UserNavbar({
 
   const shouldKeepNavbarVisible = searchOpen || mobileMenuVisible;
 
+  // Fully hide the primary navbar when exploring settings to create a native app environment
+  if (activeNav === 'settings') {
+    return null;
+  }
+
   return (
     <>
       <nav
-        className={`sticky top-0 z-50 border-b border-[#a3b18a] bg-white shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] dark:border-white/10 dark:bg-[#1c1f24] dark:shadow-[0_6px_24px_rgba(0,0,0,0.18)] xl:border-[#a3b18a] xl:bg-white xl:shadow-sm dark:xl:border-[#1e3a5f] dark:xl:bg-[#0a1628] ${
-          mobileHidden && !shouldKeepNavbarVisible ? '-translate-y-full xl:translate-y-0' : 'translate-y-0'
-        }`}
+        className={`${
+          activeNav === 'messages' ? 'fixed left-0 right-0 w-full xl:inset-auto xl:w-auto xl:sticky' : 'sticky'
+        } top-0 z-50 bg-white transition-transform duration-150 ease-out dark:bg-[#1c1f24] xl:bg-white dark:xl:bg-[#0a1628] ${
+          activeNav === 'messages'
+            ? 'border-transparent shadow-none dark:border-transparent dark:shadow-none'
+            : 'border-b border-[#a3b18a] shadow-sm dark:border-white/10 dark:shadow-[0_6px_24px_rgba(0,0,0,0.18)] xl:border-[#a3b18a] xl:shadow-sm dark:xl:border-[#1e3a5f]'
+        } ${mobileHidden && !shouldKeepNavbarVisible ? '-translate-y-full xl:translate-y-0' : 'translate-y-0'}`}
       >
         <div className="mx-auto w-full max-w-[min(100%,1800px)] px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9">
           <div className="hidden min-w-0 xl:block">

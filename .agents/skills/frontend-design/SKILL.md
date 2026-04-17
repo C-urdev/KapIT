@@ -1,5 +1,9 @@
-# Skill Name: Frontend Architect
-# Description: Use when I ask to "design a UI," "style a component," or "use Tailwind."
+---
+name: frontend-design
+description: Use when I ask to "redesign", "style this", or "use Tailwind".
+metadata:
+  tags: frontend, ui, ux, tailwind, responsive
+---
 
 ## Instructions
 1. Always use Tailwind CSS utility classes.

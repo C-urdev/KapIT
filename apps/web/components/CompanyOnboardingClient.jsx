@@ -10,10 +10,7 @@ import SessionGate from './SessionGate';
 
 export default function CompanyOnboardingClient() {
   const router = useRouter();
-  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
-
-  const confirmLogout = async () => {
-    setLogoutConfirmOpen(false);
+  const handleLogout = async () => {
     await logoutUser();
     router.replace('/');
   };
@@ -24,7 +21,7 @@ export default function CompanyOnboardingClient() {
         {({ user, setUser }) => (
           <CompanyProfileOnboarding
             user={user}
-            onLogout={() => setLogoutConfirmOpen(true)}
+            onLogout={handleLogout}
             onSubmit={async (profileData) => {
               const data = await saveCompanyProfileOnboarding(profileData);
               const updatedUser = data?.user
@@ -38,17 +35,6 @@ export default function CompanyOnboardingClient() {
           />
         )}
       </SessionGate>
-
-      <ConfirmModal
-        open={logoutConfirmOpen}
-        title="Log out?"
-        message="Are you sure to log out?"
-        confirmLabel="Log out"
-        cancelLabel="Stay signed in"
-        tone="danger"
-        onCancel={() => setLogoutConfirmOpen(false)}
-        onConfirm={confirmLogout}
-      />
     </>
   );
 }

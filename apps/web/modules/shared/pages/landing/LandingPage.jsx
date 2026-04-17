@@ -198,7 +198,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
                     </div>
                     <button
                       type="submit"
-                      className="shrink-0 self-stretch appearance-none border-0 rounded-xl sm:rounded-2xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] px-3 sm:px-8 min-w-[92px] sm:min-w-0 text-[0.88rem] sm:text-lg text-white font-semibold leading-none transition-colors"
+                      className="shrink-0 my-0.5 mr-0.5 sm:my-1.5 sm:mr-1.5 appearance-none border-0 rounded-xl sm:rounded-[1.15rem] bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] px-4 py-2 sm:px-8 sm:py-3.5 min-w-[75px] sm:min-w-0 text-[0.95rem] text-white font-semibold leading-none shadow transition-all active:scale-95"
                     >
                       Search
                     </button>
@@ -213,27 +213,27 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
                           setQuery(tag);
                           scrollTo(categoriesRef);
                         }}
-                        className="px-4 py-2 rounded-full text-sm font-semibold border border-[#a3b18a] dark:border-[#2a4a6f] bg-white/70 dark:bg-[#162842]/60 text-[#344e41] dark:text-[#b8d4e8] hover:bg-white dark:hover:bg-[#1e3a5f] transition-colors"
+                        className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold border border-[#a3b18a] dark:border-[#2a4a6f] bg-white/70 dark:bg-[#162842]/60 text-[#344e41] dark:text-[#b8d4e8] hover:bg-white dark:hover:bg-[#1e3a5f] transition-colors"
                       >
                         {tag}
                       </button>
                     ))}
                   </div>
 
-                  <div className="mt-14 flex flex-col sm:flex-row items-center justify-center gap-5">
+                  <div className="mt-12 sm:mt-14 flex flex-row flex-wrap items-center justify-center gap-3 sm:gap-5">
                     <button
                       type="button"
                       onClick={handleOpenAccountChoice}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl bg-white/85 dark:bg-[#162842]/70 border border-[#a3b18a] dark:border-[#2a4a6f] text-[#102a1b] dark:text-white text-base sm:text-lg font-semibold hover:bg-white dark:hover:bg-[#1e3a5f] transition-colors backdrop-blur"
+                      className="w-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-5 py-3 sm:px-7 sm:py-4 rounded-xl bg-white/85 dark:bg-[#162842]/70 border border-[#a3b18a] dark:border-[#2a4a6f] text-[#102a1b] dark:text-white text-[0.95rem] sm:text-lg font-semibold hover:bg-white dark:hover:bg-[#1e3a5f] transition-colors backdrop-blur"
                     >
-                      Find Developers <ArrowRight className="w-4 h-4" />
+                      Find Developers <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </button>
                     <button
                       type="button"
                       onClick={handleJoinDeveloperClick}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white text-base sm:text-lg font-semibold transition-colors"
+                      className="w-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-5 py-3 sm:px-7 sm:py-4 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white text-[0.95rem] sm:text-lg font-semibold transition-colors"
                     >
-                      Join as Developer <ArrowRight className="w-4 h-4" />
+                      Join as Developer <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </button>
                   </div>
                 </div>

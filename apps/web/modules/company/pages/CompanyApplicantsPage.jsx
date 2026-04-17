@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import ApplicantCard from '@companyComponents/CompanyApplicantCard';
 import { companyAPI } from '@companyFeatures/companyAPI';
 import { useCompanyAnalytics, useCompanyApplicants } from '@companyFeatures/companyHooks';
@@ -7,6 +8,7 @@ import { getPublicProfile, getStoredUser } from '@sharedServices/authService';
 import PublicProfilePage from '@sharedPages/public-profile/PublicProfilePage';
 
 export default function CompanyApplicantsPage() {
+  const searchParams = useSearchParams();
   const viewer = getStoredUser();
   const { applicants, plan, loading, error, refetch } = useCompanyApplicants();
   const { analytics, loading: analyticsLoading, error: analyticsError, refetch: refetchAnalytics } = useCompanyAnalytics();
@@ -15,15 +17,42 @@ export default function CompanyApplicantsPage() {
   const [actionApplicantId, setActionApplicantId] = useState(null);
   const [feedback, setFeedback] = useState('');
   const [rankingJobId, setRankingJobId] = useState(null);
-  const statuses = analytics?.applicantsByStatus || {};
-  const statusEntries = Object.entries(statuses);
+  const selectedJobId = useMemo(
+    () => String(searchParams?.get('job') || '').trim(),
+    [searchParams],
+  );
+  const selectedJobTitleFromQuery = useMemo(
+    () => String(searchParams?.get('title') || '').trim(),
+    [searchParams],
+  );
+  const selectedJobTitle = useMemo(() => {
+    if (!selectedJobId) {
+      return '';
+    }
+
+    const fromList = applicants.find((item) => String(item?.job?.id || '') === selectedJobId)?.job?.title;
+    if (fromList) {
+      return String(fromList);
+    }
+
+    if (selectedJobTitleFromQuery) {
+      return selectedJobTitleFromQuery;
+    }
+
+    return `Job #${selectedJobId}`;
+  }, [applicants, selectedJobId, selectedJobTitleFromQuery]);
+  const visibleApplicants = useMemo(() => {
+    if (!selectedJobId) {
+      return applicants;
+    }
+    return applicants.filter((item) => String(item?.job?.id || '') === selectedJobId);
+  }, [applicants, selectedJobId]);
   const summaryValues = useMemo(
     () => [
-      { label: 'Total jobs', value: Number(analytics?.totalJobs ?? 0), color: '#3a5a40' },
-      { label: 'Total applicants', value: Number(analytics?.totalApplicants ?? applicants.length ?? 0), color: '#588157' },
-      { label: 'Pipeline statuses', value: Number(statusEntries.length), color: '#7aa17b' },
+      { label: 'Total jobs', value: selectedJobId ? 1 : Number(analytics?.totalJobs ?? 0), color: '#3a5a40' },
+      { label: 'Total applicants', value: selectedJobId ? Number(visibleApplicants.length) : Number(analytics?.totalApplicants ?? applicants.length ?? 0), color: '#588157' },
     ],
-    [analytics?.totalApplicants, analytics?.totalJobs, applicants.length, statusEntries.length],
+    [analytics?.totalApplicants, analytics?.totalJobs, applicants.length, selectedJobId, visibleApplicants.length],
   );
 
   const handleViewProfile = async (user) => {
@@ -79,18 +108,23 @@ export default function CompanyApplicantsPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Applicants</h2>
+          {selectedJobId ? (
+            <p className="mt-1 text-sm text-[#4b5563] dark:text-[#b8d4e8]">
+              Showing applicants for <span className="font-semibold text-[#3a5a40] dark:text-white">{selectedJobTitle}</span>
+            </p>
+          ) : null}
         </div>
         <div className="flex w-full sm:w-auto flex-wrap items-stretch sm:items-center gap-2">
           {plan?.isPremium ? (
             <button
               type="button"
               onClick={() => {
-                const firstJobId = applicants[0]?.job?.id;
+                const firstJobId = selectedJobId || visibleApplicants[0]?.job?.id;
                 if (firstJobId) {
                   handleRankApplicants(firstJobId);
                 }
               }}
-              disabled={!applicants[0]?.job?.id || rankingJobId != null}
+              disabled={!(selectedJobId || visibleApplicants[0]?.job?.id) || rankingJobId != null}
               className="px-4 py-2.5 rounded-xl bg-[#2f6b4f] text-white font-semibold hover:bg-[#285b44] disabled:opacity-60 w-full min-[420px]:w-auto"
             >
               {rankingJobId ? 'Ranking...' : 'Refresh AI ranking'}
@@ -107,25 +141,7 @@ export default function CompanyApplicantsPage() {
 
       <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
         <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Applicants snapshot graph</h3>
-        <SummaryGraph data={analyticsLoading ? [] : summaryValues} />
-        <div className="mt-5 border-t border-[#d6d3c9] dark:border-[#2a4a6f] pt-4">
-          <h4 className="text-sm font-semibold text-[#3a5a40] dark:text-white">Pipeline overview</h4>
-          {statusEntries.length > 0 ? (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {statusEntries.map(([status, count]) => (
-                <div
-                  key={status}
-                  className="inline-flex items-center gap-2 rounded-full border border-[#cfdac1] dark:border-[#2a4a6f] bg-[#f5f5f2] dark:bg-[#0f2139] px-3 py-1.5 text-sm text-[#344e41] dark:text-[#dcecff]"
-                >
-                  <span className="font-semibold capitalize text-[#3a5a40] dark:text-white">{status}</span>
-                  <span>{count}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="mt-3 text-sm text-[#4b5563] dark:text-[#b8d4e8]">{analyticsLoading ? 'Loading status data...' : 'No applicant status data yet.'}</p>
-          )}
-        </div>
+        <SummaryGraph data={analyticsLoading && !selectedJobId ? [] : summaryValues} />
       </div>
 
       {feedback && <p className="text-sm text-[#3a5a40] dark:text-[#7fd0ee]">{feedback}</p>}
@@ -133,9 +149,11 @@ export default function CompanyApplicantsPage() {
       {analyticsError && <p className="text-sm text-red-600 dark:text-red-400">{analyticsError}</p>}
       {loading ? (
         <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">Loading applicants...</p>
-      ) : applicants.length === 0 ? (
+      ) : visibleApplicants.length === 0 ? (
         <div className="rounded-xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] p-6 transition-colors duration-300">
-          <p className="text-[#344e41] dark:text-[#b8d4e8]">No applicants yet.</p>
+          <p className="text-[#344e41] dark:text-[#b8d4e8]">
+            {selectedJobId ? `No applicants yet for ${selectedJobTitle}.` : 'No applicants yet.'}
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -146,7 +164,7 @@ export default function CompanyApplicantsPage() {
             <div>Applicant Status</div>
             <div className="text-center">Action</div>
           </div>
-          {applicants.map((applicant) => (
+          {visibleApplicants.map((applicant) => (
             <ApplicantCard
               key={applicant.id}
               applicant={applicant}
@@ -207,29 +225,23 @@ function SummaryGraph({ data }) {
   };
 
   return (
-    <div className="mt-5 grid gap-6 md:grid-cols-[220px_minmax(0,1fr)] md:items-center">
-      <div className="flex justify-center md:justify-start">
-        <div className="relative h-44 w-44" role="img" aria-label="Applicants summary donut chart">
+    <div className="mt-5 grid grid-cols-[120px_minmax(0,1fr)] items-center gap-4 sm:grid-cols-[170px_minmax(0,1fr)] sm:gap-5">
+      <div className="flex justify-center">
+        <div className="h-28 w-28 sm:h-40 sm:w-40" role="img" aria-label="Applicants summary donut chart">
           <div className="h-full w-full rounded-full" style={donutStyle} />
-          <div className="absolute inset-[18%] flex items-center justify-center rounded-full bg-white text-center dark:bg-[#162842]">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#6b7280] dark:text-[#9fb4ca]">Total</p>
-              <p className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">{total}</p>
-            </div>
-          </div>
         </div>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {data.map((item) => {
           const percent = Math.round((item.value / safeTotal) * 100);
           return (
             <div key={item.label} className="flex items-center justify-between rounded-xl border border-[#d6d3c9] px-3 py-2 dark:border-[#2a4a6f]">
               <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-                <span className="text-sm font-medium text-[#344e41] dark:text-[#dcecff]">{item.label}</span>
+                <span className="text-xs sm:text-sm font-medium text-[#344e41] dark:text-[#dcecff]">{item.label}</span>
               </div>
-              <div className="text-sm font-semibold text-[#3a5a40] dark:text-white">
-                {item.value} <span className="text-xs font-medium text-[#6b7280] dark:text-[#9fb4ca]">({percent}%)</span>
+              <div className="text-xs sm:text-sm font-semibold text-[#3a5a40] dark:text-white">
+                {item.value} <span className="text-[11px] font-medium text-[#6b7280] dark:text-[#9fb4ca]">({percent}%)</span>
               </div>
             </div>
           );
@@ -248,7 +260,3 @@ function Modal({ onClose, children }) {
     </div>
   );
 }
-
-
-
-

@@ -1,17 +1,32 @@
 import path from 'path';
 
 const isProduction = process.env.NODE_ENV === 'production';
+const isDeploymentBuild = process.env.CI === 'true'
+  || process.env.VERCEL === '1'
+  || process.env.RENDER === 'true'
+  || Boolean(process.env.RAILWAY_ENVIRONMENT);
 
 const normalizeUrl = (value) => String(value || '').trim().replace(/\/$/, '');
 
 const isLocalUrl = (value) => /^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?(?:\/|$)/i.test(value);
 
-const resolveServiceUrl = ({ serverEnvKey, publicEnvKey, devFallback, label, requiredInProduction = true }) => {
-  const configured = normalizeUrl(process.env[serverEnvKey] || process.env[publicEnvKey]);
+const resolveServiceUrl = ({
+  serverEnvKey,
+  publicEnvKey,
+  productionServerEnvKey,
+  productionPublicEnvKey,
+  devFallback,
+  label,
+  requiredInProduction = true,
+}) => {
+  const productionConfigured = isProduction
+    ? normalizeUrl(process.env[productionServerEnvKey] || process.env[productionPublicEnvKey])
+    : '';
+  const configured = productionConfigured || normalizeUrl(process.env[serverEnvKey] || process.env[publicEnvKey]);
 
   if (!configured) {
-    if (isProduction && requiredInProduction) {
-      throw new Error(`${label} is required in production. Set ${serverEnvKey} or ${publicEnvKey}.`);
+    if (isProduction && requiredInProduction && isDeploymentBuild) {
+      throw new Error(`${label} is required in production deployment. Set ${productionServerEnvKey || serverEnvKey} or ${productionPublicEnvKey || publicEnvKey}.`);
     }
 
     return normalizeUrl(devFallback);
@@ -27,8 +42,8 @@ const resolveServiceUrl = ({ serverEnvKey, publicEnvKey, devFallback, label, req
     return '';
   }
 
-  if (isProduction && isLocalUrl(configured)) {
-    throw new Error(`${label} cannot point to localhost in production: ${configured}`);
+  if (isProduction && isLocalUrl(configured) && isDeploymentBuild) {
+    throw new Error(`${label} cannot point to localhost in production deployment: ${configured}`);
   }
 
   return configured;
@@ -37,6 +52,8 @@ const resolveServiceUrl = ({ serverEnvKey, publicEnvKey, devFallback, label, req
 const expressApiBase = resolveServiceUrl({
   serverEnvKey: 'EXPRESS_API_URL',
   publicEnvKey: 'NEXT_PUBLIC_EXPRESS_API_URL',
+  productionServerEnvKey: 'EXPRESS_API_URL_PRODUCTION',
+  productionPublicEnvKey: 'NEXT_PUBLIC_EXPRESS_API_URL_PRODUCTION',
   devFallback: 'http://127.0.0.1:5001/api',
   label: 'Express API URL',
 });
@@ -44,6 +61,8 @@ const expressApiBase = resolveServiceUrl({
 const fastApiBase = resolveServiceUrl({
   serverEnvKey: 'FASTAPI_URL',
   publicEnvKey: 'NEXT_PUBLIC_FASTAPI_URL',
+  productionServerEnvKey: 'FASTAPI_URL_PRODUCTION',
+  productionPublicEnvKey: 'NEXT_PUBLIC_FASTAPI_URL_PRODUCTION',
   devFallback: '',
   label: 'FastAPI URL',
   requiredInProduction: false,

@@ -1,5 +1,9 @@
-# Skill Name: Growth Engineer
-# Description: Use for "SEO audit," "marketing copy," or "metadata."
+---
+name: marketing-seo
+description: Use for "audit", "marketing copy", or "metadata".
+metadata:
+  tags: seo, marketing, metadata, copywriting
+---
 
 ## Instructions
 1. Generate SEO-friendly meta tags for all React pages.

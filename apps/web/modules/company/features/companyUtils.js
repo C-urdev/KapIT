@@ -13,6 +13,17 @@ export const COMPANY_PATHS = {
   publicProfile: '/company/public-profile',
 };
 
+let navigateWithRouter = null;
+
+export const setCompanyNavigator = (handler) => {
+  navigateWithRouter = typeof handler === 'function' ? handler : null;
+  return () => {
+    if (navigateWithRouter === handler) {
+      navigateWithRouter = null;
+    }
+  };
+};
+
 export const isCompanyRoute = (pathname) => typeof pathname === 'string' && pathname.startsWith('/company/');
 
 export const getCompanyRouteKey = (pathname) => {
@@ -40,6 +51,12 @@ export const navigate = (to) => {
     return;
   }
 
+  if (navigateWithRouter) {
+    navigateWithRouter(nextPathWithSearch);
+    return;
+  }
+
+  // Keep transitions instant even before router binding is attached.
   window.history.pushState({}, '', nextPathWithSearch);
   window.dispatchEvent(new PopStateEvent('popstate'));
 };

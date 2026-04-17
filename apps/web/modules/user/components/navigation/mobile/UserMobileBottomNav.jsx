@@ -5,9 +5,9 @@ function MobileBottomNavButton({ icon: Icon, label, active, onClick, badgeCount 
   return (
     <button
       onClick={onClick}
-      className={`relative flex min-h-[3.8rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+      className={`relative flex min-h-[3.8rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 transition-colors duration-150 ease-out ${
         active
-          ? 'bg-[#eef6ee] text-[#588157] shadow-sm shadow-[#588157]/10 -translate-y-0.5 dark:bg-white/10 dark:text-white dark:shadow-[0_10px_24px_rgba(0,0,0,0.18)]'
+          ? 'bg-[#eef6ee] text-[#588157] shadow-sm shadow-[#588157]/10 dark:bg-white/10 dark:text-white dark:shadow-[0_10px_24px_rgba(0,0,0,0.18)]'
           : 'text-[#344e41] dark:text-white/72'
       }`}
     >
@@ -16,8 +16,8 @@ function MobileBottomNavButton({ icon: Icon, label, active, onClick, badgeCount 
           {badgeCount > 99 ? '99+' : badgeCount}
         </span>
       ) : null}
-      <Icon className={`w-5 h-5 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${active ? 'scale-105' : 'scale-100'}`} />
-      <span className={`text-[11px] font-medium leading-none transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${active ? 'translate-y-0' : 'translate-y-0.5'}`}>{label}</span>
+      <Icon className={`w-5 h-5 transition-transform duration-150 ease-out ${active ? 'scale-[1.02]' : 'scale-100'}`} />
+      <span className="text-[11px] font-medium leading-none">{label}</span>
     </button>
   );
 }
@@ -25,7 +25,7 @@ function MobileBottomNavButton({ icon: Icon, label, active, onClick, badgeCount 
 export default function UserMobileBottomNav({ activeNav, setActiveNav, unreadNotificationCount = 0, hiddenOnScroll = false }) {
   return (
     <div
-      className={`xl:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-[#a3b18a] bg-white/95 backdrop-blur-xl transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] dark:border-white/10 dark:bg-[#1c1f24]/95 ${
+      className={`xl:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-[#a3b18a] bg-white/95 backdrop-blur-xl transition-transform duration-150 ease-out dark:border-white/10 dark:bg-[#1c1f24]/95 ${
         hiddenOnScroll ? 'translate-y-full' : 'translate-y-0'
       }`}
     >

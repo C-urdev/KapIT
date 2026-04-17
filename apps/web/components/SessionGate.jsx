@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  acceptTermsAndConditions,
   getCurrentUser,
   getStoredUser,
   getUserAccountType,
@@ -11,6 +12,7 @@ import {
   normalizeAccountType,
   updateStoredUser,
 } from '@sharedServices/authService';
+import TermsAndConditionsModal from '@sharedComponents/modals/TermsAndConditionsModal';
 
 const resolveDashboardPath = (user) =>
   isCompanyAccount(user) ? '/company/dashboard' : '/dashboard/user';
@@ -29,20 +31,35 @@ export default function SessionGate({
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
+  const [termsActionLoading, setTermsActionLoading] = useState(false);
+  const [termsActionError, setTermsActionError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
 
     const bootstrap = async () => {
       const storedUser = getStoredUser();
+      const requiredType = normalizeAccountType(requiredAccountType);
+
       if (!cancelled && storedUser) {
-        setUser(storedUser);
+        const storedUserType = getUserAccountType(storedUser);
+        if (requiredType && storedUserType !== requiredType) {
+          router.replace(resolveDashboardPath(storedUser));
+          setLoading(false);
+          return;
+        }
 
         if (!allowIncompleteProfile && storedUser.profileCompleted === false) {
           router.replace(resolveOnboardingPath(storedUser));
           setLoading(false);
           return;
         }
+
+        setUser(storedUser);
+        setTermsModalOpen(!storedUser.termsAccepted);
+        // Keep UI responsive on route changes: validate session in background.
+        setLoading(false);
       }
 
       try {
@@ -59,7 +76,6 @@ export default function SessionGate({
           return;
         }
 
-        const requiredType = normalizeAccountType(requiredAccountType);
         const userType = getUserAccountType(nextUser);
         if (requiredType && userType !== requiredType) {
           router.replace(resolveDashboardPath(nextUser));
@@ -72,6 +88,7 @@ export default function SessionGate({
         }
 
         setUser(nextUser);
+        setTermsModalOpen(!nextUser.termsAccepted);
       } catch {
         if (!cancelled) {
           await logoutUser();
@@ -104,13 +121,61 @@ export default function SessionGate({
     return null;
   }
 
-  return children({
-    user,
-    setUser,
-    updateUser(updates) {
-      const nextUser = updateStoredUser(updates || {});
+  const handleAgreeToTerms = async () => {
+    setTermsActionLoading(true);
+    setTermsActionError('');
+
+    try {
+      const data = await acceptTermsAndConditions();
+      const nextUser = data?.user || null;
+
+      if (!nextUser) {
+        throw new Error('Unable to confirm terms consent.');
+      }
+
       setUser(nextUser);
-      return nextUser;
-    },
-  });
+      setTermsModalOpen(false);
+    } catch (error) {
+      setTermsActionError(String(error?.message || 'Unable to save your terms consent right now.'));
+    } finally {
+      setTermsActionLoading(false);
+    }
+  };
+
+  const handleDeclineTerms = async () => {
+    setTermsActionLoading(true);
+    setTermsActionError('');
+
+    try {
+      await logoutUser();
+    } finally {
+      setTermsActionLoading(false);
+      setUser(null);
+      router.replace(redirectTo);
+    }
+  };
+
+  return (
+    <>
+      {children({
+        user,
+        setUser,
+        updateUser(updates) {
+          const nextUser = updateStoredUser(updates || {});
+          setUser(nextUser);
+          return nextUser;
+        },
+      })}
+      <TermsAndConditionsModal
+        isOpen={termsModalOpen}
+        onClose={() => {}}
+        showDecisionActions
+        onAgree={handleAgreeToTerms}
+        onDecline={handleDeclineTerms}
+        decisionLoading={termsActionLoading}
+        decisionError={termsActionError}
+        disableClose
+      />
+    </>
+  );
 }

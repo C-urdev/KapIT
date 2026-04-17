@@ -16,18 +16,16 @@ const nextPort = process.env.NEXTJS_PORT || '3000';
 const hideNetworkLine = process.env.HIDE_NEXT_NETWORK_LINE === 'true';
 const quietStartup = process.env.QUIET_STARTUP === 'true';
 const forceCleanNextDev = process.env.FORCE_CLEAN_NEXT_DEV === 'true';
-const isWindows = process.platform === 'win32';
-const command = isWindows ? 'cmd.exe' : 'npm';
-const args = isWindows
-  ? ['/c', 'npm', '--silent', 'run', scriptName]
-  : ['--silent', 'run', scriptName];
+const nextBin = path.resolve(appDirectory, 'node_modules', 'next', 'dist', 'bin', 'next');
+const command = process.execPath;
+const args = [nextBin, scriptName];
 
 if (scriptName === 'dev' && forceCleanNextDev) {
   fs.rmSync(path.join(appDirectory, '.next'), { recursive: true, force: true });
 }
 
 if (scriptName === 'dev' || scriptName === 'start') {
-  args.push('--', '-p', nextPort);
+  args.push('-p', nextPort);
 
   if (nextHost) {
     args.push('-H', nextHost);
@@ -37,20 +35,38 @@ if (scriptName === 'dev' || scriptName === 'start') {
 const { PORT: _ignoredPort, HOST: _ignoredHost, ...forwardedEnv } = process.env;
 const normalizedNodeEnv =
   scriptName === 'build' ? 'production' : scriptName === 'dev' ? 'development' : process.env.NODE_ENV;
+const spawnStdio = hideNetworkLine || quietStartup ? ['ignore', 'pipe', 'pipe'] : 'inherit';
 
-const child = spawn(command, args, {
+const spawnOptions = {
   cwd: appDirectory,
   env: {
     ...forwardedEnv,
     ...(normalizedNodeEnv ? { NODE_ENV: normalizedNodeEnv } : {}),
     PORT: nextPort,
-    HOST: nextHost,
+    ...(nextHost ? { HOST: nextHost } : {}),
     INIT_CWD: appDirectory,
     npm_config_local_prefix: appDirectory,
   },
-  stdio: hideNetworkLine || quietStartup ? ['inherit', 'pipe', 'pipe'] : 'inherit',
+  stdio: spawnStdio,
   shell: false,
-});
+};
+
+let child;
+try {
+  child = spawn(command, args, spawnOptions);
+} catch (error) {
+  const canRetryWithShell =
+    process.platform === 'win32' && (error?.code === 'EINVAL' || error?.code === 'EPERM');
+
+  if (!canRetryWithShell) {
+    throw error;
+  }
+
+  child = spawn(command, args, {
+    ...spawnOptions,
+    shell: true,
+  });
+}
 
 if (hideNetworkLine || quietStartup) {
   const shouldSkipLine = (line) => {
@@ -106,6 +122,11 @@ if (hideNetworkLine || quietStartup) {
   forward(child.stdout, process.stdout);
   forward(child.stderr, process.stderr);
 }
+
+child.on('error', (error) => {
+  console.error(`Failed to start Next.js process: ${error.message}`);
+  process.exit(1);
+});
 
 child.on('exit', (code) => {
   process.exit(code ?? 0);
