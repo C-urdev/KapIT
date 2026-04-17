@@ -11,7 +11,13 @@ const getRedisClient = async () => {
   if (!redisUrl) {
     if (!warnedMissingUrl) {
       warnedMissingUrl = true;
-      console.warn('REDIS_URL is not configured. Rate limiting will run in fail-open mode.');
+      const message = 'REDIS_URL is not configured. Rate limiting will run in fail-open mode.';
+      const env = String(process.env.NODE_ENV || '').toLowerCase();
+      if (env === 'production') {
+        console.warn(message);
+      } else if (process.env.LOG_REDIS_STATUS === 'true') {
+        console.info(message);
+      }
     }
     return null;
   }

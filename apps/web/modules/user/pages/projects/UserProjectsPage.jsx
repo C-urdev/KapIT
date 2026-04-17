@@ -209,7 +209,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
 
   return (
     <div className="mx-auto w-full max-w-[min(100%,1120px)]">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="mb-6 flex flex-row items-center justify-between gap-4">
         <div>
           <h1 className="text-[1.75rem] min-[420px]:text-[2.15rem] font-black tracking-[-0.03em] text-[#3a5a40] dark:text-white">
             {userType === 'employee' ? 'My Projects' : 'Projects Library'}
@@ -220,10 +220,11 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
           <button
             type="button"
             onClick={openCreateModal}
-            className="inline-flex w-full min-[420px]:w-auto items-center justify-center gap-2 rounded-2xl bg-[#3a5a40] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(58,90,64,0.18)] transition-colors hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de]"
+            className="inline-flex items-center justify-center gap-1.5 min-[420px]:gap-2 rounded-[14px] min-[420px]:rounded-2xl bg-[#3a5a40] px-3.5 py-2 min-[420px]:px-5 min-[420px]:py-3 text-[13px] min-[420px]:text-sm font-semibold text-white shadow-[0_12px_24px_rgba(58,90,64,0.18)] transition-colors hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de]"
           >
             <Plus className="h-4 w-4" />
-            New Project
+            <span className="hidden min-[360px]:inline">New Project</span>
+            <span className="inline min-[360px]:hidden">Add</span>
           </button>
         ) : null}
       </div>

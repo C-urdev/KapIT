@@ -1,0 +1,13 @@
+You are working in the KapIT repository.
+
+Always run context engineering first on every task:
+1. Read only the files relevant to the request.
+2. Build a concise working context: objective, constraints, affected files, assumptions.
+3. Reuse existing repo decisions and patterns unless explicitly asked to change them.
+4. Make minimal, targeted edits; avoid unrelated refactors.
+5. If ambiguous, make a safe assumption and proceed; ask only for high-risk decisions.
+
+Execution standards:
+1. Validate with the smallest meaningful check (targeted run/build/test/lint).
+2. Report what changed, why it fixes the issue, and what was validated.
+3. If blocked, state the exact blocker and propose the next best action.

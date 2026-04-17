@@ -183,20 +183,13 @@ export default function CompanyManageJobsPage() {
         <div>
           <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Manage jobs</h2>
         </div>
-        <div className="flex w-full sm:w-auto flex-wrap items-stretch sm:items-center gap-2">
+        <div className="flex w-full sm:w-auto flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => navigate(COMPANY_PATHS.postJob)}
-            className="px-4 py-2.5 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold transition-colors w-full min-[420px]:w-auto"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white text-sm font-semibold transition-colors"
           >
             Post job
-          </button>
-          <button
-            type="button"
-            onClick={refetch}
-            className="px-4 py-2.5 rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors w-full min-[420px]:w-auto"
-          >
-            Refresh
           </button>
         </div>
       </div>
@@ -270,29 +263,23 @@ function SummaryGraph({ data }) {
     .join(', ');
 
   return (
-    <div className="mt-5 grid gap-6 md:grid-cols-[220px_minmax(0,1fr)] md:items-center">
-      <div className="flex justify-center md:justify-start">
-        <div className="relative h-44 w-44" role="img" aria-label="Manage jobs summary donut chart">
+    <div className="mt-5 grid grid-cols-[120px_minmax(0,1fr)] items-center gap-4 sm:grid-cols-[170px_minmax(0,1fr)] sm:gap-5">
+      <div className="flex justify-center">
+        <div className="h-28 w-28 sm:h-40 sm:w-40" role="img" aria-label="Manage jobs summary donut chart">
           <div className="h-full w-full rounded-full" style={{ background: `conic-gradient(${gradientStops || '#d1d5db 0deg 360deg'})` }} />
-          <div className="absolute inset-[18%] flex items-center justify-center rounded-full bg-white text-center dark:bg-[#162842]">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#6b7280] dark:text-[#9fb4ca]">Total</p>
-              <p className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">{total}</p>
-            </div>
-          </div>
         </div>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {data.map((item) => {
           const percent = Math.round((item.value / safeTotal) * 100);
           return (
             <div key={item.label} className="flex items-center justify-between rounded-xl border border-[#d6d3c9] px-3 py-2 dark:border-[#2a4a6f]">
               <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-                <span className="text-sm font-medium text-[#344e41] dark:text-[#dcecff]">{item.label}</span>
+                <span className="text-xs sm:text-sm font-medium text-[#344e41] dark:text-[#dcecff]">{item.label}</span>
               </div>
-              <div className="text-sm font-semibold text-[#3a5a40] dark:text-white">
-                {item.value} <span className="text-xs font-medium text-[#6b7280] dark:text-[#9fb4ca]">({percent}%)</span>
+              <div className="text-xs sm:text-sm font-semibold text-[#3a5a40] dark:text-white">
+                {item.value} <span className="text-[11px] font-medium text-[#6b7280] dark:text-[#9fb4ca]">({percent}%)</span>
               </div>
             </div>
           );
@@ -375,6 +362,3 @@ function DetailBlock({ label, value }) {
     </div>
   );
 }
-
-
-

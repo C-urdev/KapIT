@@ -14,7 +14,14 @@ import { USER_PREMIUM_PAYMENT_PATH, USER_PREMIUM_PAYMENT_SUCCESS } from '@userPa
 import PostComposerModal from '@userFeatures/posts/UserPostComposerModal';
 import UserMyProfilePage from '@userFeatures/profile/UserMyProfilePage';
 import UserAccountSettingsModal from '@userFeatures/profile/UserAccountSettingsModal';
+import UserFaqModal from '@userFeatures/profile/UserFaqModal';
+import TermsAndConditionsModal from '@sharedComponents/modals/TermsAndConditionsModal';
+import PrivacyPolicyModal from '@sharedComponents/modals/PrivacyPolicyModal';
+import CookiesPolicyModal from '@sharedComponents/modals/CookiesPolicyModal';
+import UserSettingsPage from '@userPages/settings/UserSettingsPage';
 import UserMobileBottomNav from '@userComponents/navigation/mobile/UserMobileBottomNav';
+import UserApplicationsPanel from './UserApplicationsPanel';
+import UserSavedJobsPanel from './UserSavedJobsPanel';
 import {
   addCommentToPost,
   createPost,
@@ -30,11 +37,11 @@ import {
 } from '@sharedServices/postService';
 import { getMyApplications, getPublicProfile, getSavedJobs } from '@sharedServices/authService';
 import { getUnreadNotificationCount } from '@sharedServices/notificationsService';
-import { ArrowLeft, BadgeCheck, Bookmark, Building2, FileCheck2, Lightbulb, Sparkles, UserCircle } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Building2, Lightbulb, Sparkles, UserCircle } from 'lucide-react';
 import { getApplicationsForUser } from '@userFeatures/activity/userActivityStorage';
 
 const USER_NAV_QUERY_KEY = 'tab';
-const USER_NAV_TABS = new Set(['home', 'jobs', 'projects', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'help', 'tips', 'verified']);
+const USER_NAV_TABS = new Set(['home', 'jobs', 'projects', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'help', 'tips', 'verified', 'settings']);
 
 const getUserNavFromUrl = () => {
   if (typeof window === 'undefined') {
@@ -70,6 +77,20 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   const [premiumPopupOpen, setPremiumPopupOpen] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [faqOpen, setFaqOpen] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [cookiesOpen, setCookiesOpen] = useState(false);
+  useEffect(() => {
+    const pagesWithNoScroll = ['jobs', 'saved-jobs', 'applications'];
+    if (pagesWithNoScroll.includes(activeNav)) {
+      document.documentElement.classList.add('no-scrollbar');
+    } else {
+      document.documentElement.classList.remove('no-scrollbar');
+    }
+    return () => document.documentElement.classList.remove('no-scrollbar');
+  }, [activeNav]);
+
   const [canReturnToSettings, setCanReturnToSettings] = useState(false);
   const [posts, setPosts] = useState([]);
   const [feedPosts, setFeedPosts] = useState([]);
@@ -80,11 +101,18 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   const [savedPosts, setSavedPosts] = useState([]);
   const [applications, setApplications] = useState([]);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [isTabletViewport, setIsTabletViewport] = useState(false);
   const [isMobileShellViewport, setIsMobileShellViewport] = useState(false);
   const [mobileChromeHidden, setMobileChromeHidden] = useState(false);
+  const [mobileThreadOpen, setMobileThreadOpen] = useState(false);
   const lastScrollYRef = useRef(0);
+  const isMessagesActive = activeNav === 'messages';
+  const isSettingsActive = activeNav === 'settings';
+  const isEdgeToEdgeView = isMessagesActive || isSettingsActive;
+  const hideMobileChromeForMessages = isTabletViewport && isMessagesActive && mobileThreadOpen;
+  const effectiveMobileChromeHidden = mobileChromeHidden || hideMobileChromeForMessages;
   const mobileSafeAreaBottomPadding = isMobileShellViewport
-    ? mobileChromeHidden
+    ? effectiveMobileChromeHidden
       ? 'max(1.75rem, calc(env(safe-area-inset-bottom) + 1rem))'
       : 'max(7rem, calc(env(safe-area-inset-bottom) + 5.75rem))'
     : undefined;
@@ -137,19 +165,23 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
     }
 
     const mediaQueryMobile = window.matchMedia('(max-width: 767px)');
+    const mediaQueryTablet = window.matchMedia('(max-width: 1023px)');
     const mediaQueryShell = window.matchMedia('(max-width: 1279px)');
 
     const syncViewportState = () => {
       setIsMobileViewport(mediaQueryMobile.matches);
+      setIsTabletViewport(mediaQueryTablet.matches);
       setIsMobileShellViewport(mediaQueryShell.matches);
     };
 
     syncViewportState();
     mediaQueryMobile.addEventListener('change', syncViewportState);
+    mediaQueryTablet.addEventListener('change', syncViewportState);
     mediaQueryShell.addEventListener('change', syncViewportState);
 
     return () => {
       mediaQueryMobile.removeEventListener('change', syncViewportState);
+      mediaQueryTablet.removeEventListener('change', syncViewportState);
       mediaQueryShell.removeEventListener('change', syncViewportState);
     };
   }, []);
@@ -308,6 +340,12 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
     return () => window.removeEventListener('scroll', handleScroll);
   }, [activeNav, isMobileShellViewport]);
 
+  useEffect(() => {
+    if (activeNav !== 'messages') {
+      setMobileThreadOpen(false);
+    }
+  }, [activeNav]);
+
   const handleOpenPremiumMerchantWindow = () => {
     if (isMobileViewport) {
       setPremiumPopupOpen(false);
@@ -399,17 +437,17 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   };
 
   return (
-    <div className="min-h-screen bg-[#dad7cd] dark:bg-[#0a1628]">
+    <div className={`min-h-[100dvh] no-scrollbar transition-colors duration-150 ease-out ${isEdgeToEdgeView ? 'bg-white dark:bg-[#121212]' : 'bg-[#dad7cd] dark:bg-[#0a1628]'}`}>
       <UserNavbar
         activeNav={activeNav}
         setActiveNav={updateActiveNav}
         user={user}
-        mobileHidden={mobileChromeHidden}
+        mobileHidden={effectiveMobileChromeHidden}
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
         onHelp={() => updateActiveNav('help', { preserveSettingsReturn: true })}
         onLogout={onLogout}
-        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenSettings={() => updateActiveNav('settings')}
         onOpenTips={() => updateActiveNav('tips')}
         onOpenVerifiedDirectory={() => updateActiveNav('verified')}
         onOpenPremium={() => setPremiumPopupOpen(true)}
@@ -422,8 +460,18 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
       />
 
       <div
-        className="mx-auto w-full max-w-[min(100%,1800px)] px-3 pb-28 pt-4 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 xl:py-6 xl:pb-8"
-        style={{ paddingBottom: mobileSafeAreaBottomPadding }}
+        className={`mx-auto w-full ${
+          isEdgeToEdgeView
+            ? 'max-w-none px-0 pt-0'
+            : 'max-w-[min(100%,1800px)] pb-28 pt-4 px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 xl:py-6 xl:pb-8'
+        }`}
+        style={isEdgeToEdgeView
+          ? {
+              paddingBottom: (isMessagesActive && mobileThreadOpen) ? 0 : mobileSafeAreaBottomPadding,
+              paddingTop: (isSettingsActive || (isMessagesActive && mobileThreadOpen)) ? 0 : 'calc(3.5rem + max(0.45rem, env(safe-area-inset-top)))',
+              height: isMobileShellViewport ? '100dvh' : 'calc(100dvh - 4rem)',
+            }
+          : { paddingBottom: mobileSafeAreaBottomPadding }}
       >
         {canReturnToSettings && ['my-profile', 'projects', 'saved-jobs', 'applications'].includes(activeNav) && (
           <div className="mb-4">
@@ -495,17 +543,25 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
         {activeNav === 'jobs' && <UserJobsPage userType={userType} user={user} />}
         {activeNav === 'projects' && <UserProjectsPage userType={userType} user={user} onUpdateUser={onUpdateUser} />}
         {activeNav === 'saved-jobs' && (
-          <SavedJobsPanel
+          <UserSavedJobsPanel
             savedJobs={savedJobs}
             savedPosts={savedPosts}
           />
         )}
         {activeNav === 'applications' && (
-          <ApplicationsPanel
+          <UserApplicationsPanel
             applications={applications}
           />
         )}
-        {activeNav === 'messages' && <UserMessagesPage user={user} initialContactId={messageTargetId} />}
+        {activeNav === 'messages' && (
+          <UserMessagesPage
+            user={user}
+            initialContactId={messageTargetId}
+            onThreadVisibilityChange={(open) => {
+              setMobileThreadOpen(Boolean(open));
+            }}
+          />
+        )}
         {activeNav === 'notifications' && <UserNotificationsPage user={user} onReadAll={() => setUnreadNotificationCount(0)} />}
         {activeNav === 'help' && <HelpPage onBack={() => updateActiveNav('home')} />}
         {activeNav === 'tips' && <TipsPanel />}
@@ -522,6 +578,20 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
             onAddComment={handleAddComment}
             onReactToComment={handleReactToComment}
             onToggleSharePost={handleToggleSharePost}
+          />
+        )}
+        {activeNav === 'settings' && (
+          <UserSettingsPage
+            user={user}
+            onOpenAccountDetails={() => setSettingsOpen(true)}
+            onOpenSavedJobs={() => updateActiveNav('saved-jobs')}
+            onOpenApplications={() => updateActiveNav('applications')}
+            onOpenNotifications={() => updateActiveNav('notifications')}
+            onOpenFaq={() => setFaqOpen(true)}
+            onOpenTerms={() => setTermsOpen(true)}
+            onOpenPrivacy={() => setPrivacyOpen(true)}
+            onOpenCookies={() => setCookiesOpen(true)}
+            onBack={() => updateActiveNav('home')}
           />
         )}
       </div>
@@ -543,105 +613,28 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
         onOpenSavedJobs={() => updateActiveNav('saved-jobs', { fromSettings: true })}
         onOpenApplications={() => updateActiveNav('applications', { fromSettings: true })}
       />
+      <UserFaqModal
+        isOpen={faqOpen}
+        onClose={() => setFaqOpen(false)}
+      />
+      <TermsAndConditionsModal
+        isOpen={termsOpen}
+        onClose={() => setTermsOpen(false)}
+      />
+      <PrivacyPolicyModal
+        isOpen={privacyOpen}
+        onClose={() => setPrivacyOpen(false)}
+      />
+      <CookiesPolicyModal
+        isOpen={cookiesOpen}
+        onClose={() => setCookiesOpen(false)}
+      />
       <UserMobileBottomNav
         activeNav={activeNav}
         setActiveNav={updateActiveNav}
-        hiddenOnScroll={mobileChromeHidden}
+        hiddenOnScroll={effectiveMobileChromeHidden}
         unreadNotificationCount={unreadNotificationCount}
       />
-    </div>
-  );
-}
-
-function ApplicationsPanel({ applications }) {
-  return (
-    <div className="mx-auto w-full max-w-[min(100%,1200px)] rounded-[24px] border border-[#a3b18a] bg-white p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
-      <div className="flex flex-col min-[420px]:flex-row items-start gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#14304d] dark:text-[#7dc4ff]">
-          <FileCheck2 className="h-6 w-6" />
-        </div>
-        <div>
-          <h2 className="text-xl min-[420px]:text-2xl font-extrabold text-[#3a5a40] dark:text-white">Applications</h2>
-          {applications.length === 0 ? (
-            <div className="mt-5 rounded-2xl border border-dashed border-[#bfd0af] bg-[#f8fbf6] p-4 text-sm text-[#5f6f52] dark:border-[#2a4a6f] dark:bg-[#102235] dark:text-[#d5e6f5]">
-              No applications yet. Start applying to jobs and they will appear here automatically.
-            </div>
-          ) : (
-            <div className="mt-5 space-y-3">
-              {applications.map((application) => (
-                <div key={application.jobId} className="rounded-2xl border border-[#bfd0af] bg-[#f8fbf6] p-4 dark:border-[#2a4a6f] dark:bg-[#102235]">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <h3 className="font-semibold text-[#3a5a40] dark:text-white">{application.title}</h3>
-                      <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">{application.company?.name || 'Company'}</p>
-                    </div>
-                    <span className="rounded-full border border-[#bfd0af] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#588157] dark:border-[#2a4a6f] dark:text-[#7dc4ff]">
-                      {application.status || 'pending'}
-                    </span>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-3 text-sm text-[#5f6f52] dark:text-[#d5e6f5]">
-                    {application.location ? <span>{application.location}</span> : null}
-                    {application.type ? <span>{application.type}</span> : null}
-                    {application.salary ? <span>{application.salary}</span> : null}
-                    <span>Applied {new Date(application.appliedAt).toLocaleString()}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SavedJobsPanel({ savedJobs, savedPosts }) {
-  return (
-    <div className="mx-auto w-full max-w-[min(100%,1200px)] rounded-[24px] border border-[#a3b18a] bg-white p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
-      <div className="flex flex-col min-[420px]:flex-row items-start gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#14304d] dark:text-[#7dc4ff]">
-          <Bookmark className="h-6 w-6" />
-        </div>
-        <div className="w-full">
-          <h2 className="text-xl min-[420px]:text-2xl font-extrabold text-[#3a5a40] dark:text-white">Saved Jobs</h2>
-          {savedJobs.length === 0 && savedPosts.length === 0 ? (
-            <div className="mt-5 rounded-2xl border border-dashed border-[#bfd0af] bg-[#f8fbf6] p-4 text-sm text-[#5f6f52] dark:border-[#2a4a6f] dark:bg-[#102235] dark:text-[#d5e6f5]">
-              Nothing saved yet. Use the bookmark buttons on job listings or posts to save them here.
-            </div>
-          ) : (
-            <div className="mt-5 space-y-5">
-              {savedJobs.length > 0 ? (
-                <div className="space-y-3">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-[#588157] dark:text-[#7dc4ff]">Saved job listings</h3>
-                  {savedJobs.map((job) => (
-                    <div key={job.id} className="rounded-2xl border border-[#bfd0af] bg-[#f8fbf6] p-4 dark:border-[#2a4a6f] dark:bg-[#102235]">
-                      <h4 className="font-semibold text-[#3a5a40] dark:text-white">{job.title}</h4>
-                      <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">{job.company?.name || 'Company'}</p>
-                      <div className="mt-2 flex flex-wrap gap-3 text-sm text-[#5f6f52] dark:text-[#d5e6f5]">
-                        {job.location ? <span>{job.location}</span> : null}
-                        {job.type ? <span>{job.type}</span> : null}
-                        {job.salary ? <span>{job.salary}</span> : null}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-
-              {savedPosts.length > 0 ? (
-                <div className="space-y-3">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-[#588157] dark:text-[#7dc4ff]">Saved posts</h3>
-                  {savedPosts.map((post) => (
-                    <div key={post.id} className="rounded-2xl border border-[#bfd0af] bg-[#f8fbf6] p-4 dark:border-[#2a4a6f] dark:bg-[#102235]">
-                      <p className="whitespace-pre-wrap text-sm text-[#344e41] dark:text-[#d5e6f5]">{post.content || 'No content'}</p>
-                      <p className="mt-2 text-xs text-[#5f6f52] dark:text-[#b8d4e8]">Saved {new Date(post.savedAt || post.createdAt).toLocaleString()}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

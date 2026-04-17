@@ -7,6 +7,7 @@ const RELOAD_GUARD_KEY = 'kapit-reload-version';
 
 export default function ReleaseSync({ currentVersion }) {
   useEffect(() => {
+    if (process.env.NODE_ENV !== 'production') return undefined;
     if (!currentVersion) return undefined;
 
     let intervalId;

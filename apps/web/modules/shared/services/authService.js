@@ -5,13 +5,23 @@ const USER_STORAGE_KEY = 'user';
 const SERVER_COOLDOWN_MS = 60 * 1000;
 const endpointCooldowns = new Map();
 const getSessionStorage = () => window.sessionStorage;
+let hasClearedLegacyBrowserAuthState = false;
 
-if (typeof window !== 'undefined') {
-  window.localStorage.removeItem('token');
-  window.localStorage.removeItem('user');
-  window.localStorage.removeItem(PROFILE_CACHE_KEY);
-  window.sessionStorage.removeItem('token');
-}
+const clearLegacyBrowserAuthStateOnce = () => {
+  if (typeof window === 'undefined' || hasClearedLegacyBrowserAuthState) {
+    return;
+  }
+
+  hasClearedLegacyBrowserAuthState = true;
+  try {
+    window.localStorage.removeItem('token');
+    window.localStorage.removeItem('user');
+    window.localStorage.removeItem(PROFILE_CACHE_KEY);
+    window.sessionStorage.removeItem('token');
+  } catch {
+    // Ignore storage access failures from restricted browser contexts.
+  }
+};
 
 const getErrorMessage = (error, fallbackMessage) => error?.message || fallbackMessage;
 const normalizeAccountType = (value) => {
@@ -29,7 +39,20 @@ const markEndpointFailed = (key) => {
   endpointCooldowns.set(key, Date.now() + SERVER_COOLDOWN_MS);
 };
 
+const clearLocalSessionState = () => {
+  clearLegacyBrowserAuthStateOnce();
+  try {
+    const storage = getSessionStorage();
+    storage.removeItem(USER_STORAGE_KEY);
+    storage.removeItem(PROFILE_CACHE_KEY);
+    storage.removeItem('token');
+  } catch {
+    // Ignore storage access failures.
+  }
+};
+
 const getStoredUserSafe = () => {
+  clearLegacyBrowserAuthStateOnce();
   try {
     const raw = getSessionStorage().getItem(USER_STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
@@ -39,6 +62,7 @@ const getStoredUserSafe = () => {
 };
 
 const readProfileCache = () => {
+  clearLegacyBrowserAuthStateOnce();
   try {
     const raw = getSessionStorage().getItem(PROFILE_CACHE_KEY);
     return raw ? JSON.parse(raw) : {};
@@ -48,6 +72,7 @@ const readProfileCache = () => {
 };
 
 const writeProfileCache = (cache) => {
+  clearLegacyBrowserAuthStateOnce();
   getSessionStorage().setItem(PROFILE_CACHE_KEY, JSON.stringify(cache));
 };
 
@@ -106,6 +131,8 @@ const pickLocalProfileFields = (user) => ({
   projectDescription: user?.projectDescription || '',
   budgetRange: user?.budgetRange || '',
   timeline: user?.timeline || '',
+  termsAccepted: Boolean(user?.termsAccepted),
+  termsAcceptedAt: user?.termsAcceptedAt || null,
   profileCompleted: Boolean(user?.profileCompleted),
 });
 
@@ -137,6 +164,7 @@ const mergeWithProfileCache = (user) => {
 };
 
 const persistUser = (user) => {
+  clearLegacyBrowserAuthStateOnce();
   if (!user) {
     return null;
   }
@@ -209,6 +237,90 @@ export const loginUser = async (credentials) => {
   return data;
 };
 
+export const loginWithGoogle = async (credential) => {
+  const data = await authRequest('/google', {
+    method: 'POST',
+    body: JSON.stringify({ credential }),
+    retryOnUnauthorized: false,
+  });
+
+  if (data?.user) {
+    data.user = persistUser(data.user);
+  }
+
+  return data;
+};
+
+export const loginWithGithub = async (code) => {
+  const data = await authRequest('/github', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+    retryOnUnauthorized: false,
+  });
+
+  if (data?.user) {
+    data.user = persistUser(data.user);
+  }
+
+  return data;
+};
+
+export const sendRegistrationOtp = async ({ email }) => {
+  return authRequest('/send-registration-otp', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+    retryOnUnauthorized: false,
+  });
+};
+
+export const verifyRegistrationOtp = async ({ email, code }) => {
+  return authRequest('/verify-registration-otp', {
+    method: 'POST',
+    body: JSON.stringify({ email, code }),
+    retryOnUnauthorized: false,
+  });
+};
+
+export const requestPasswordReset = async ({ email }) => {
+  return authRequest('/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+    retryOnUnauthorized: false,
+  });
+};
+
+export const resetPasswordWithToken = async ({ token, newPassword }) => {
+  return authRequest('/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, new_password: newPassword }),
+    retryOnUnauthorized: false,
+  });
+};
+
+export const sendPasswordResetOtp = async ({ email }) => {
+  return authRequest('/forgot-password-otp', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+    retryOnUnauthorized: false,
+  });
+};
+
+export const verifyPasswordResetOtp = async ({ email, code }) => {
+  return authRequest('/verify-otp', {
+    method: 'POST',
+    body: JSON.stringify({ email, code }),
+    retryOnUnauthorized: false,
+  });
+};
+
+export const resetPasswordWithOtp = async ({ resetToken, newPassword }) => {
+  return authRequest('/reset-password-otp', {
+    method: 'POST',
+    body: JSON.stringify({ resetToken, new_password: newPassword }),
+    retryOnUnauthorized: false,
+  });
+};
+
 export const refreshCurrentSession = async () => {
   const data = await authRequest('/refresh', {
     method: 'POST',
@@ -243,22 +355,44 @@ export const updateMyProfile = async (updates) => {
   return data;
 };
 
+export const acceptTermsAndConditions = async () => {
+  const data = await authRequest('/terms-consent', {
+    method: 'PATCH',
+    body: JSON.stringify({ agreed: true }),
+  });
+
+  if (data?.user) {
+    data.user = persistUser(data.user);
+  }
+
+  return data;
+};
+
 export const getMyApplications = async () => {
   const data = await authRequest('/applications');
   return Array.isArray(data?.applications) ? data.applications : [];
 };
 
 export const logoutUser = async () => {
+  clearLocalSessionState();
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timeout = controller
+    ? setTimeout(() => controller.abort(), 1800)
+    : null;
+
   try {
     await authRequest('/logout', {
       method: 'POST',
       retryOnUnauthorized: false,
+      ...(controller ? { signal: controller.signal } : {}),
     });
   } catch {
     // Clear local user state even if the server cookie is already gone.
+  } finally {
+    if (timeout != null) {
+      clearTimeout(timeout);
+    }
   }
-
-  getSessionStorage().removeItem(USER_STORAGE_KEY);
 };
 
 export const isAuthenticated = () => Boolean(getStoredUserSafe());

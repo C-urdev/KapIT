@@ -69,7 +69,7 @@ export default function CompanyMobileMenuDrawer({ open, active, user, onClose, o
           active ? 'translate-x-0 opacity-100' : '-translate-x-8 opacity-0'
         }`}
       >
-        <div className="flex-1 overflow-y-auto px-4 pb-6 pt-4" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))', paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}>
+        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-4 pb-6 pt-4" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))', paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}>
           <div className="rounded-[1.7rem] bg-white p-4 dark:bg-[#34343a]">
             <div className="flex items-center gap-3">
               <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#588157] text-xl font-bold text-white dark:bg-[#4a4d55]">

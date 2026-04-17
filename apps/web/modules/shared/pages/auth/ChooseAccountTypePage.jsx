@@ -41,6 +41,7 @@ export default function ChooseAccountTypePage({ pendingSignup, onBack, onRegiste
         email: pendingSignup.email,
         password: pendingSignup.password,
         userType: type,
+        termsAccepted: true,
       });
 
       onRegistered(
@@ -129,6 +130,5 @@ export default function ChooseAccountTypePage({ pendingSignup, onBack, onRegiste
     </div>
   );
 }
-
 
 

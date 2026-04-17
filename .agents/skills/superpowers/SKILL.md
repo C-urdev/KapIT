@@ -1,5 +1,9 @@
-# Skill Name: Superpowers
-# Description: Activate when I ask for "superpowers," "god mode," or "advanced optimization."
+---
+name: superpowers
+description: Activate when I ask for "superpowers", "god mode", or "advanced optimization".
+metadata:
+  tags: optimization, refactor, performance, ux
+---
 
 ## Instructions
 1. Proactively refactor code for performance and readability without being asked.

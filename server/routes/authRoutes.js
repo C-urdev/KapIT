@@ -17,6 +17,17 @@ const {
   getMyApplications,
   applyToJob,
 } = require('../controllers/authController');
+const { acceptTermsConsent } = require('../controllers/authTermsController');
+const {
+  forgotPassword,
+  resetPassword,
+  sendOtp,
+  verifyOtpHandler,
+  resetPasswordOtp,
+  sendRegistrationOtpCode,
+  verifyRegistrationOtpCode,
+} = require('../controllers/authRecoveryController');
+const { googleLogin, githubLogin } = require('../controllers/oauthController');
 const {
   listFeedPosts,
   listMyPosts,
@@ -32,15 +43,28 @@ const {
   removeSavedPost,
 } = require('../controllers/postsController');
 const { verifyToken, requireCsrfForCookieAuth } = require('../middleware/auth');
-const { loginRateLimiter } = require('../middleware/security');
+const { loginRateLimiter, forgotPasswordRateLimiter, resetPasswordRateLimiter } = require('../middleware/security');
 const { validateRequest } = require('../middleware/validateRequest');
 const { writeSchemas } = require('../validation/writeSchemas');
 
 // Public routes
 router.post('/register', validateRequest(writeSchemas.authRegister), register);
 router.post('/login', loginRateLimiter, validateRequest(writeSchemas.authLogin), login);
+router.post('/forgot-password', forgotPasswordRateLimiter, validateRequest(writeSchemas.authForgotPassword), forgotPassword);
+router.post('/reset-password', resetPasswordRateLimiter, validateRequest(writeSchemas.authResetPassword), resetPassword);
+router.post('/forgot-password-otp', forgotPasswordRateLimiter, validateRequest(writeSchemas.authSendOtp), sendOtp);
+router.post('/verify-otp', forgotPasswordRateLimiter, validateRequest(writeSchemas.authVerifyOtp), verifyOtpHandler);
+router.post('/reset-password-otp', resetPasswordRateLimiter, validateRequest(writeSchemas.authResetPasswordOtp), resetPasswordOtp);
+
+router.post('/send-registration-otp', validateRequest(writeSchemas.authSendOtp), sendRegistrationOtpCode);
+router.post('/verify-registration-otp', validateRequest(writeSchemas.authVerifyOtp), verifyRegistrationOtpCode);
+
 router.post('/refresh', validateRequest(writeSchemas.authRefresh), refreshSession);
 router.post('/logout', requireCsrfForCookieAuth, validateRequest(writeSchemas.authLogout), logout);
+
+// OAuth routes
+router.post('/google', loginRateLimiter, googleLogin);
+router.post('/github', loginRateLimiter, githubLogin);
 
 // Protected routes
 router.get('/me', verifyToken, getCurrentUser);
@@ -54,6 +78,7 @@ router.post('/jobs/:id/apply', requireCsrfForCookieAuth, verifyToken, validateRe
 router.get('/search', verifyToken, searchUsers);
 router.get('/profile/:id', verifyToken, getPublicProfile);
 router.patch('/profile', requireCsrfForCookieAuth, verifyToken, validateRequest(writeSchemas.authProfilePatch), updateMyProfile);
+router.patch('/terms-consent', requireCsrfForCookieAuth, verifyToken, validateRequest(writeSchemas.authTermsConsent), acceptTermsConsent);
 router.get('/posts/feed', verifyToken, listFeedPosts);
 router.get('/posts/me', verifyToken, listMyPosts);
 router.get('/posts/profile/:userId', verifyToken, listProfilePosts);

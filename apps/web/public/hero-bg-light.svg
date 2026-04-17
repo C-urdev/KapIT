@@ -1,0 +1,37 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1920" y2="1080" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7F6F1"/>
+      <stop offset="1" stop-color="#E9E5D9"/>
+    </linearGradient>
+    <radialGradient id="r1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(640 360) rotate(45) scale(760 560)">
+      <stop stop-color="#B7D3B4" stop-opacity="0.62"/>
+      <stop offset="1" stop-color="#B7D3B4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="r2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1320 670) rotate(-28) scale(840 590)">
+      <stop stop-color="#D7CDAF" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#D7CDAF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="22"/>
+    </filter>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="white" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="white" stop-opacity="0.14"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#g1)"/>
+  <g filter="url(#blur)">
+    <circle cx="640" cy="360" r="380" fill="url(#r1)"/>
+    <circle cx="1320" cy="700" r="440" fill="url(#r2)"/>
+  </g>
+
+  <g opacity="0.3">
+    <rect x="590" y="330" width="740" height="470" rx="26" fill="url(#glass)" stroke="#C8BCA2" stroke-opacity="0.42"/>
+    <rect x="640" y="380" width="640" height="320" rx="18" fill="#F2EEE3" stroke="#C8BCA2" stroke-opacity="0.34"/>
+    <rect x="520" y="800" width="880" height="56" rx="18" fill="url(#glass)" stroke="#C8BCA2" stroke-opacity="0.4"/>
+    <rect x="880" y="820" width="160" height="18" rx="9" fill="#C8BCA2" fill-opacity="0.5"/>
+  </g>
+
+</svg>

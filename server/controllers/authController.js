@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const pool = require('../config/database');
 const { createNotification, ensureNotificationsTable } = require('./notificationsController');
 const { ensureBaseUserSchemaReady, ensureHiringSchemaReady, ensureOnboardingSchemaReady } = require('../config/runtimeSchema');
@@ -14,6 +15,7 @@ const {
   revokeSessionById,
   revokeSessionByToken,
 } = require('../services/authSessionService');
+const { serializeUser } = require('../utils/authUserSerializer');
 const { clearLoginRateLimit } = require('../middleware/security');
 const isDev = process.env.NODE_ENV !== 'production';
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
@@ -54,37 +56,6 @@ const deriveAccountTypeAndUserType = ({ accountType, userType }) => {
   }
   return { accountType: '', userType: '' };
 };
-
-const serializeUser = (user) => ({
-  id: user.id,
-  username: user.username,
-  email: user.email,
-  type: user.user_type,
-  role: user.role || user.user_type,
-  accountType: user.account_type || (user.user_type === 'company' ? 'company' : 'developer'),
-  isPremium: user.is_premium,
-  profileCompleted: Boolean(user.profile_completed),
-
-  bio: user.bio || '',
-  socials: user.socials || '',
-  profileImage: user.profile_image || '',
-  phone: user.phone || '',
-  address: user.address || '',
-
-  name: user.name || '',
-  education: user.education || '',
-  vocationalCourse: user.vocational_course || '',
-  desiredJob: user.desired_job || '',
-  birthday: user.birthday ? new Date(user.birthday).toISOString().slice(0, 10) : '',
-  age: user.age == null ? '' : String(user.age),
-  sex: user.sex || '',
-
-  companyName: user.company_name || '',
-  industry: user.industry || '',
-  companySize: user.company_size || '',
-  website: user.website || '',
-  hiringFor: user.hiring_for || '',
-});
 
 const serializeSavedJobRow = (row) => ({
   id: row.job_id,
@@ -180,11 +151,43 @@ const computeProfileCompleted = (userType, merged, accountType) => {
 // @route   POST /api/auth/register
 // @access  Public
 const register = async (req, res) => {
+  const { email, password, username, userType, accountType, verificationToken, termsAccepted } = req.body;
+
+  // Validate inputs
+  if (!email || !password || !username || !userType || !accountType) {
+    return res.status(400).json({ message: 'All fields are required' });
+  }
+
+  // Developer mock bypass
+  let isValidated = false;
+  if (!verificationToken && process.env.NODE_ENV !== 'production' && email.includes('mock-')) {
+    isValidated = true;
+  } else if (verificationToken) {
+    try {
+      const decoded = jwt.verify(verificationToken, process.env.JWT_SECRET || 'kapit-otp-reset-fallback');
+      if (decoded.purpose === 'registration-validated' && decoded.email.toLowerCase() === email.toLowerCase()) {
+        isValidated = true;
+      }
+    } catch (err) {
+      return res.status(400).json({ message: 'Invalid or expired email verification token.' });
+    }
+  }
+
+  if (!isValidated) {
+    return res.status(403).json({ message: 'Email has not been verified.' });
+  }
+
+  if (!termsAccepted) {
+    return res.status(400).json({
+      success: false,
+      message: 'You must agree to the Terms & Conditions to create an account.',
+    });
+  }
+
   let client;
   
   try {
     client = await pool.connect();
-    const { username, email, password, userType, accountType } = req.body;
     const derived = deriveAccountTypeAndUserType({ accountType, userType });
     if (!derived.userType || !derived.accountType) {
       return res.status(400).json({
@@ -220,8 +223,8 @@ const register = async (req, res) => {
 
     // Insert new user
     const result = await client.query(
-      `INSERT INTO users (id, username, email, password, user_type, account_type) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
+      `INSERT INTO users (id, username, email, password, user_type, account_type, terms_accepted, terms_accepted_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, true, CURRENT_TIMESTAMP) 
        RETURNING *`,
       [crypto.randomUUID(), username, email, hashedPassword, derived.userType, derived.accountType]
     );
@@ -355,6 +358,7 @@ const login = async (req, res) => {
     }
   }
 };
+
 const refreshSession = async (req, res) => {
   try {
     const refreshCookieName = process.env.REFRESH_TOKEN_COOKIE_NAME || 'kapit_refresh_token';

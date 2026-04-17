@@ -16,6 +16,11 @@ const getLoginRateLimitKey = (req) => {
   const email = normalizeKey(req.body?.email);
   return `${req.ip}:${email || 'anonymous'}`;
 };
+const getPasswordResetRequestKey = (req) => {
+  const email = normalizeKey(req.body?.email);
+  return `${req.ip}:${email || 'anonymous'}`;
+};
+const getPasswordResetSubmitKey = (req) => `${req.ip}:reset-submit`;
 
 const getClientIdentity = (req) => normalizeKey(req.user?.id || req.ip || 'anonymous');
 const isNonActionableRequest = (req) => ['HEAD', 'OPTIONS'].includes(String(req.method || '').toUpperCase());
@@ -233,6 +238,24 @@ const developerApiRateLimiter = createRateLimiter({
   skip: isNonActionableRequest,
 });
 
+const forgotPasswordRateLimiter = createRateLimiter({
+  storeName: 'forgot-password',
+  windowMs: 60 * 60 * 1000,
+  max: Number(process.env.FORGOT_PASSWORD_RATE_LIMIT_MAX || 3),
+  message: 'Too many password reset requests. Please try again later.',
+  keyGenerator: getPasswordResetRequestKey,
+  skip: isNonActionableRequest,
+});
+
+const resetPasswordRateLimiter = createRateLimiter({
+  storeName: 'reset-password',
+  windowMs: 60 * 60 * 1000,
+  max: Number(process.env.RESET_PASSWORD_RATE_LIMIT_MAX || 3),
+  message: 'Too many password reset attempts. Please try again later.',
+  keyGenerator: getPasswordResetSubmitKey,
+  skip: isNonActionableRequest,
+});
+
 module.exports = {
   securityHeaders,
   authApiRateLimiter,
@@ -244,5 +267,7 @@ module.exports = {
   companyApiRateLimiter,
   companyWriteRateLimiter,
   developerApiRateLimiter,
+  forgotPasswordRateLimiter,
+  resetPasswordRateLimiter,
   clearLoginRateLimit,
 };

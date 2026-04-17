@@ -1,7 +1,7 @@
 import React from 'react';
 import MessagesInbox from '@sharedComponents/messages/MessagesInbox';
 
-export default function CompanyMessagesPage({ user }) {
+export default function CompanyMessagesPage({ user, onThreadVisibilityChange }) {
   const initialContactId = React.useMemo(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -11,5 +11,5 @@ export default function CompanyMessagesPage({ user }) {
     }
   }, []);
 
-  return <MessagesInbox user={user} initialContactId={initialContactId} />;
+  return <MessagesInbox user={user} initialContactId={initialContactId} onThreadVisibilityChange={onThreadVisibilityChange} />;
 }

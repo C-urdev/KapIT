@@ -38,7 +38,7 @@ const normalizeConversation = (conversation) => ({
   time: formatTime(conversation.createdAt),
 });
 
-export default function MessagesInbox({ user, initialContactId = '' }) {
+export default function MessagesInbox({ user, initialContactId = '', onThreadVisibilityChange }) {
   const [conversations, setConversations] = React.useState([]);
   const [selectedConversation, setSelectedConversation] = React.useState(null);
   const [messageInput, setMessageInput] = React.useState('');
@@ -121,9 +121,10 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
         setSelectedConversation((current) => {
           if (current) {
             const refreshed = normalized.find((conversation) => conversation.id === current.id);
-            return refreshed || current;
+            return refreshed || null;
           }
-          return normalized[0] || null;
+          // Do not auto-select the first conversation, show the chat list.
+          return null;
         });
       } catch (err) {
         if (!cancelled) {
@@ -441,6 +442,10 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
   const listHiddenOnMobile = Boolean(selectedConversation);
   const threadHiddenOnMobile = !selectedConversation;
 
+  React.useEffect(() => {
+    onThreadVisibilityChange?.(Boolean(selectedConversation));
+  }, [onThreadVisibilityChange, selectedConversation]);
+
   const handleThreadScroll = React.useCallback(
     (event) => {
       if (!selectedConversation?.id) {
@@ -458,8 +463,8 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
   );
 
   return (
-    <div className="mx-auto flex w-full max-w-[min(100%,1420px)] justify-center px-0 sm:px-0">
-      <div className="flex h-[calc(100dvh-6.75rem)] min-h-[460px] w-full overflow-hidden rounded-none border-y border-[#a3b18a] bg-white shadow-none dark:border-[#1e3a5f] dark:bg-[#162842] sm:h-[min(78vh,calc(100dvh-10rem))] sm:min-h-[380px] sm:rounded-2xl sm:border sm:shadow-[0_20px_50px_rgba(58,90,64,0.12)] sm:dark:shadow-black/30">
+    <div className="mx-auto flex h-full min-h-0 w-full max-w-[min(100%,1420px)] justify-center px-0">
+      <div className="flex h-full min-h-0 w-full overflow-hidden rounded-none border-0 bg-white shadow-none dark:bg-[#162842]">
         {/* Narrow icon rail — layout only; KapIT palette */}
         <aside className="hidden w-[52px] shrink-0 flex-col items-center border-r border-[#d9e0d2] bg-[#f8faf6] py-3 dark:border-[#244060] dark:bg-[#122238] md:flex md:w-14">
           <button
@@ -477,17 +482,10 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
 
         {/* Conversation list */}
         <div
-          className={`flex w-full min-w-0 shrink-0 flex-col border-[#d9e0d2] bg-white dark:border-[#244060] dark:bg-[#162842] sm:max-w-[min(100%,320px)] md:w-[300px] md:border-r ${
+          className={`flex h-full min-h-0 w-full min-w-0 shrink-0 flex-col border-[#d9e0d2] bg-white dark:border-[#244060] dark:bg-[#162842] sm:max-w-[min(100%,320px)] md:w-[300px] md:border-r ${
             listHiddenOnMobile ? 'hidden lg:flex' : 'flex'
           }`}
         >
-          <div className="flex items-center justify-between gap-2 border-b border-[#e4e7de] px-3 py-3 dark:border-[#244060] sm:px-4">
-            <h2 className="text-lg font-bold tracking-tight text-[#3a5a40] dark:text-white">Chats</h2>
-            <RailIconButton label="Search chats" onClick={() => searchInputRef.current?.focus()}>
-              <Search className="h-4 w-4" />
-            </RailIconButton>
-          </div>
-
           <div className="border-b border-[#e4e7de] px-3 py-2.5 dark:border-[#244060] sm:px-4">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6b7c6a] dark:text-[#7d9ab8]" />
@@ -547,20 +545,23 @@ export default function MessagesInbox({ user, initialContactId = '' }) {
 
         {/* Thread */}
         <div
-          className={`min-w-0 flex-1 flex-col bg-[#f0f3ec] dark:bg-[#0a1628] ${
+          className={`min-h-0 min-w-0 flex-1 flex-col bg-[#f0f3ec] dark:bg-[#0a1628] ${
             threadHiddenOnMobile ? 'hidden lg:flex' : 'flex'
           }`}
         >
           {selectedConversation ? (
             <>
-              <header className="flex shrink-0 items-center gap-2 border-b border-[#e0e6da] bg-white px-2 py-2.5 dark:border-[#244060] dark:bg-[#162842] sm:gap-3 sm:px-4">
+              <header
+                className="flex shrink-0 items-center gap-2 border-b border-[#e0e6da] bg-white px-2 pb-2.5 pt-2.5 dark:border-[#244060] dark:bg-[#162842] sm:gap-3 sm:px-4"
+                style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}
+              >
                 <button
                   type="button"
                   onClick={handleBackToList}
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#3a5a40] transition-colors hover:bg-[#eef6ee] lg:hidden dark:text-white dark:hover:bg-[#1e3a5f]"
+                  className="inline-flex h-9 min-[420px]:h-10 items-center justify-center gap-1 rounded-full pl-1.5 pr-3 text-[#3a5a40] transition-colors hover:bg-[#eef6ee] lg:hidden dark:text-white dark:hover:bg-[#1e3a5f]"
                   aria-label="Back to conversations"
                 >
-                  <ChevronLeft className="h-5 w-5" />
+                  <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
                 </button>
                 <Avatar account={selectedConversation} compact />
                 <div className="min-w-0 flex-1">

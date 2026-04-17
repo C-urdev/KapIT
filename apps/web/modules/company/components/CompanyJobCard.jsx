@@ -9,8 +9,8 @@ export default function CompanyJobCard({ job, onManage, onViewDetails, onClose, 
   const applicants = Number(job?.applicant_count || job?.applicantCount || 0);
 
   return (
-    <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] shadow-lg shadow-black/5 dark:shadow-black/20 px-4 py-4 transition-colors duration-300">
-      <div className="flex flex-col 2xl:flex-row 2xl:items-center gap-4 2xl:gap-5">
+    <div className="rounded-2xl bg-white dark:bg-[#162842] shadow-lg shadow-black/5 dark:shadow-black/20 px-3.5 py-3.5 transition-colors duration-300 sm:px-4 sm:py-4">
+      <div className="flex flex-col 2xl:flex-row 2xl:items-center gap-3 2xl:gap-5">
         <div className="min-w-0 2xl:flex-[1_1_auto]">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-base font-bold text-[#3a5a40] dark:text-white truncate">{job?.title || 'Untitled job'}</h3>
@@ -42,16 +42,16 @@ export default function CompanyJobCard({ job, onManage, onViewDetails, onClose, 
           <button
             type="button"
             onClick={() => onViewDetails?.(job)}
-            className="inline-flex w-full min-[420px]:w-auto items-center justify-center gap-2 px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-md sm:rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-xs sm:text-sm text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
           >
-            <Eye className="w-4 h-4 text-[#588157] dark:text-[#3ba9d6]" />
+            <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#588157] dark:text-[#3ba9d6]" />
             View details
           </button>
           {onManage ? (
             <button
               type="button"
               onClick={() => onManage(job)}
-              className="w-full min-[420px]:w-auto px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+              className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-md sm:rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-xs sm:text-sm text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
             >
               Manage
             </button>
@@ -61,7 +61,7 @@ export default function CompanyJobCard({ job, onManage, onViewDetails, onClose, 
               type="button"
               onClick={() => onClose(job)}
               disabled={actionLoading}
-              className="w-full min-[420px]:w-auto px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] disabled:opacity-60 transition-colors"
+              className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-md sm:rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-xs sm:text-sm text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] disabled:opacity-60 transition-colors"
             >
               {actionLoading ? 'Updating...' : 'Close listing'}
             </button>
@@ -71,9 +71,9 @@ export default function CompanyJobCard({ job, onManage, onViewDetails, onClose, 
               type="button"
               onClick={() => onPayNow(job)}
               disabled={actionLoading}
-              className="inline-flex w-full min-[420px]:w-auto items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white text-sm font-semibold disabled:opacity-60 transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-md sm:rounded-lg bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white text-xs sm:text-sm font-semibold disabled:opacity-60 transition-colors"
             >
-              <WalletCards className="w-4 h-4" />
+              <WalletCards className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               {actionLoading ? 'Opening checkout...' : 'Pay now'}
             </button>
           ) : null}
@@ -82,9 +82,9 @@ export default function CompanyJobCard({ job, onManage, onViewDetails, onClose, 
               type="button"
               onClick={() => onReopen(job)}
               disabled={actionLoading}
-              className="inline-flex w-full min-[420px]:w-auto items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white text-sm font-semibold disabled:opacity-60 transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-md sm:rounded-lg bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white text-xs sm:text-sm font-semibold disabled:opacity-60 transition-colors"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               {actionLoading ? 'Reopening...' : 'Reopen'}
             </button>
           ) : null}
@@ -93,9 +93,9 @@ export default function CompanyJobCard({ job, onManage, onViewDetails, onClose, 
               type="button"
               onClick={() => onDelete(job)}
               disabled={actionLoading}
-              className="inline-flex w-full min-[420px]:w-auto items-center justify-center gap-2 px-3 py-2 rounded-lg border border-red-200 dark:border-red-500/40 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/20 text-sm disabled:opacity-60 transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-md sm:rounded-lg border border-red-200 dark:border-red-500/40 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/20 text-xs sm:text-sm disabled:opacity-60 transition-colors"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               {actionLoading ? 'Deleting...' : 'Delete'}
             </button>
           ) : null}

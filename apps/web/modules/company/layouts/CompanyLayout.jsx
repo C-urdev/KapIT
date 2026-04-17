@@ -22,7 +22,9 @@ const TITLES = {
   [COMPANY_PATHS.publicProfile]: 'Public Profile',
 };
 
-export default function CompanyLayout({ pathname, user, onLogout, onHelp, children }) {
+export default function CompanyLayout({ pathname, user, onLogout, onHelp, children, messagesThreadOpen = false }) {
+  const isMessagesPage = pathname === COMPANY_PATHS.messages;
+  const hideMobileChromeForThread = isMessagesPage && messagesThreadOpen;
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [mobileNavVisible, setMobileNavVisible] = useState(false);
   const [mobileNavActive, setMobileNavActive] = useState(false);
@@ -90,12 +92,13 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
   }, [pathname]);
 
   return (
-    <div className="min-h-screen bg-[#dad7cd] dark:bg-[#0a1628] text-[#344e41] dark:text-white transition-colors duration-300">
+    <div className="min-h-screen overflow-x-hidden bg-[#dad7cd] dark:bg-[#0a1628] text-[#344e41] dark:text-white transition-colors duration-300">
       <CompanyHeader
         title={title}
         user={user}
         onLogout={onLogout}
         onHelp={onHelp}
+        mobileHidden={hideMobileChromeForThread}
         onOpenMobileNav={() => setMobileNavOpen(true)}
         sidebarCollapsed={sidebarCollapsed}
         onToggleSidebarCollapsed={() => setSidebarCollapsed((value) => !value)}
@@ -108,10 +111,22 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
         unreadNotificationCount={unreadNotificationCount}
       />
 
-      <div className={`min-h-screen pt-[5.5rem] sm:pt-[6rem] xl:pt-20 transition-[padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? 'xl:pl-20' : 'xl:pl-72'}`}>
+      <div
+        className={`${
+          isMessagesPage
+            ? (hideMobileChromeForThread
+              ? 'h-[100dvh] pt-0 pb-0 xl:h-[calc(100dvh-4rem)] xl:pt-16 xl:pb-0'
+              : 'h-[100dvh] pt-16 pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pt-16 sm:pb-[calc(4rem+env(safe-area-inset-bottom))] xl:h-[calc(100dvh-4rem)] xl:pt-16 xl:pb-0')
+            : 'min-h-screen pt-[5.5rem] sm:pt-[6rem] xl:pt-20'
+        } transition-[padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? 'xl:pl-20' : 'xl:pl-72'}`}
+      >
         <main
-          className="mx-auto w-full max-w-[min(100%,1800px)] px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-4 sm:py-6 pb-24 md:pb-10"
-          style={{ paddingBottom: 'max(6rem, calc(4.5rem + env(safe-area-inset-bottom)))' }}
+          className={`mx-auto w-full max-w-[min(100%,1800px)] ${
+            isMessagesPage
+              ? 'h-full min-h-0 overflow-hidden px-0 py-0 sm:px-3'
+              : 'px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-4 sm:py-6 pb-24 md:pb-10'
+          }`}
+          style={isMessagesPage ? undefined : { paddingBottom: 'max(6rem, calc(4.5rem + env(safe-area-inset-bottom)))' }}
         >
           {children}
         </main>
@@ -128,7 +143,7 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
         onClose={() => setMobileNavOpen(false)}
       />
 
-      <CompanyMobileBottomNav pathname={pathname} unreadNotificationCount={unreadNotificationCount} />
+      <CompanyMobileBottomNav pathname={pathname} unreadNotificationCount={unreadNotificationCount} hidden={hideMobileChromeForThread} />
     </div>
   );
 }
@@ -139,13 +154,15 @@ const MOBILE_NAV_ITEMS = [
   { path: COMPANY_PATHS.messages, label: 'Messages', icon: MessageCircle },
 ];
 
-function CompanyMobileBottomNav({ pathname }) {
+function CompanyMobileBottomNav({ pathname, hidden = false }) {
   if (pathname === COMPANY_PATHS.postJobPayment) {
     return null;
   }
 
   return (
-    <div className="xl:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#a3b18a] dark:border-[#2a4a6f] bg-white/95 dark:bg-[#162842]/95 backdrop-blur-md">
+    <div className={`xl:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#a3b18a] dark:border-[#2a4a6f] bg-white/95 dark:bg-[#162842]/95 backdrop-blur-md transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+      hidden ? 'translate-y-full' : 'translate-y-0'
+    }`}>
       <div className="grid h-16 grid-cols-3 gap-1 px-2" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {MOBILE_NAV_ITEMS.map((item) => {
           const Icon = item.icon;

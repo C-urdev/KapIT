@@ -1,5 +1,9 @@
-# Skill Name: Context Engineering
-# Description: Use when I say "optimize context," "remember this," or "summarize project."
+---
+name: context-engineering
+description: Use when I say "optimize", "remember this", or "summarize project".
+metadata:
+  tags: context, planning, focus, architecture
+---
 
 ## Instructions
 1. Prioritize files in `/server` and `/database` when discussing backend logic.

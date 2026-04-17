@@ -8,14 +8,14 @@ function NavButton({ icon: Icon, label, active, onClick, badgeCount = 0 }) {
   return (
     <button
       onClick={onClick}
-      className={`relative flex min-w-0 w-full flex-col items-center gap-1 rounded-2xl px-2.5 py-2 transition-all duration-300 ease-out group sm:px-3 sm:py-2.5 ${
+      className={`relative flex min-w-0 w-full flex-col items-center gap-1 rounded-2xl px-2.5 py-2 transition-colors duration-150 ease-out group sm:px-3 sm:py-2.5 ${
         active
           ? 'bg-[#eef6ee] text-[#588157] shadow-sm shadow-[#588157]/10 dark:bg-[#1e3a5f] dark:text-[#3ba9d6] dark:shadow-[#0a1628]/30'
           : 'text-[#344e41] dark:text-white hover:bg-[#f5f5f2] hover:text-[#3a5a40] dark:hover:bg-[#16304a] dark:hover:text-[#b8d4e8]'
       }`}
     >
       <span className="relative">
-        <Icon className={`h-5 w-5 transition-transform duration-300 sm:h-6 sm:w-6 ${active ? 'scale-105' : 'scale-100'}`} />
+        <Icon className={`h-5 w-5 sm:h-6 sm:w-6 transition-transform duration-150 ease-out ${active ? 'scale-[1.02]' : 'scale-100'}`} />
         {badgeCount > 0 ? (
           <span className="absolute -top-2 -right-3 min-w-[1.15rem] h-[1.15rem] px-1 rounded-full bg-[#d14343] text-white text-[10px] leading-none font-semibold flex items-center justify-center">
             {badgeCount > 99 ? '99+' : badgeCount}

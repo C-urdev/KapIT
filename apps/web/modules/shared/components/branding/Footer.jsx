@@ -26,35 +26,35 @@ const SECTIONS = [
 
 const FOOTER_INFO = {
   'What is KapIT?':
-    'KapIT is a marketplace that helps companies discover Filipino IT graduates and developers while giving talent a place to showcase portfolios, skills, and project-ready work.',
+    'KapIT is a digital platform that connects Filipino IT graduates and professionals with verified local and international job opportunities. It uses smart job matching, ATS-optimized resumes, and skill matching to improve hiring efficiency. With features like ghost job prevention and application tracking, KapIT ensures a transparent and reliable job search experience for both applicants and employers.',
   Careers:
-    'KapIT is focused on helping Filipino tech talent connect with companies, internships, freelance work, and early-career opportunities through one platform.',
+    'KapIT offers opportunities for individuals interested in contributing to a growing tech platform focused on improving job accessibility. Roles may include software development, quality assurance, marketing, and customer support. The team values collaboration, innovation, and user-centered solutions. Interested applicants may submit their profiles through KapIT or reach out via official contact channels for internships or future openings.',
   Press:
-    'KapIT highlights stories, launches, and platform updates centered on Filipino IT talent, hiring, and portfolio-driven discovery.',
+    'KapIT is a developing platform aimed at addressing the challenges faced by Filipino IT graduates. It focuses on improving job matching accuracy and reducing issues like outdated or inactive listings. For media inquiries, collaborations, or feature requests, interested parties may contact KapIT through its official communication channels.',
   'Create profile':
-    'Developers can create a profile to present their skills, background, and strengths to companies looking for verified IT talent.',
+    'Developers can create a profile by adding their skills, experience, education, and certifications. A complete profile helps KapIT’s system match users with relevant job opportunities based on qualifications and preferences.',
   Portfolios:
-    'KapIT lets developers showcase portfolio pieces, capstone work, and technical projects so companies can review proof of work before reaching out.',
+    'Users can showcase their projects, code samples, and designs through their profile. A strong portfolio increases visibility and improves chances of being selected by employers.',
   Projects:
-    'Developers can use KapIT to share projects and practical work that make their experience easier for companies and collaborators to evaluate.',
+    'Developers can apply to job postings and project-based opportunities. They can also display completed or ongoing projects, allowing employers to assess their skills and experience.',
   'Find talent':
-    'Companies can browse KapIT to discover Filipino developers and IT professionals based on skills, portfolios, and role fit.',
+    'Employers can search for candidates using smart filtering tools and skill-based matching. KapIT ranks applicants based on how well their profiles match job requirements, helping companies identify suitable candidates efficiently.',
   'Post projects':
-    'Hiring teams can post IT projects or role requirements to attract developers whose work and profiles match their needs.',
+    'Companies can create job listings by setting up a company profile, adding job details, and defining required skills. KapIT uses a pay-per-use job posting model, and employers have the option to re-open listings when needed to attract more applicants.',
   Pricing:
-    'KapIT supports company hiring workflows and premium options, including pricing-related features for businesses using the platform at scale.',
+    'KapIT offers a Free plan that allows basic access to job postings and applications. Premium features for users include priority job access, advanced filtering, ATS-optimized resumes, skill matching percentage, and application tracking. Employers can pay per job post and access additional tools like candidate ranking and enhanced visibility.',
   'Help Center':
-    'The Help Center is for guidance on using KapIT, from setting up profiles to finding talent and understanding the platform experience.',
+    'The Help Center provides answers to frequently asked questions about account setup, job applications, profiles, and platform features. It guides both applicants and employers in using KapIT effectively.',
   Safety:
-    'KapIT promotes safer hiring and collaboration by encouraging clear profiles, visible portfolios, and trustworthy platform interactions.',
+    'KapIT promotes a safe and reliable platform through ghost job prevention, which helps detect inactive or outdated job listings. It also ensures that only user-provided information is shared with employers and maintains responsible data handling practices.',
   Community:
-    'KapIT supports a growing community of Filipino IT graduates, developers, and companies building connections through real work and opportunities.',
+    'KapIT supports a growing community of Filipino IT professionals and employers. The platform encourages collaboration by allowing users to share experiences, showcase projects, and engage with opportunities. As the platform grows, KapIT aims to support discussions, networking, and potential events that promote learning, career growth, and connection within the IT industry.',
   Email:
-    'You can reach KapIT through email for general platform questions, hiring concerns, onboarding help, and account-related concerns.',
+    'For general inquiries and concerns: info@kapit.dev. For partnerships and business-related concerns: business@kapit.dev.',
   Facebook:
-    'KapIT uses Facebook to share updates, announcements, and community-facing information for users who follow the platform there.',
+    'Official Facebook Page: https://www.facebook.com/share/1E8xGVR69x/?mibextid=wwXlfr. This page is used for updates, announcements, and user engagement.',
   'support@kapit.dev':
-    'Use support@kapit.dev for account help, platform questions, and assistance with developer or company workflows on KapIT.',
+    'This is the main support email of KapIT. Users can contact this email for assistance with account issues, technical problems, job application concerns, or any platform-related questions. The support team aims to respond promptly and help resolve issues efficiently.',
 };
 
 export default function Footer() {

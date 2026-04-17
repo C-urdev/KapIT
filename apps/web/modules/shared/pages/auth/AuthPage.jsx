@@ -1,8 +1,12 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
-import { Moon, Sun, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Moon, Sun, AlertCircle, Eye, EyeOff, Github } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
-import { loginUser, registerUser } from '@sharedServices/authService';
+import { loginUser, registerUser, loginWithGoogle, loginWithGithub } from '@sharedServices/authService';
+import TermsAndConditionsModal from '@sharedComponents/modals/TermsAndConditionsModal';
 
 export default function AuthPage({
   userType,
@@ -11,6 +15,7 @@ export default function AuthPage({
   onBeginSignup,
   onRequestAccountType,
   onBack,
+  onForgotPassword,
   initialMode = 'login',
   onWarmRoute,
 }) {
@@ -18,6 +23,7 @@ export default function AuthPage({
   const [authMode, setAuthMode] = useState(initialMode);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [infoMessage, setInfoMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -26,10 +32,13 @@ export default function AuthPage({
     password: '',
     confirmPassword: '',
   });
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [authTermsOpen, setAuthTermsOpen] = useState(false);
 
   useEffect(() => {
     setAuthMode(initialMode);
     setError('');
+    setInfoMessage('');
   }, [initialMode]);
 
   useEffect(() => {
@@ -39,10 +48,18 @@ export default function AuthPage({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setInfoMessage('');
     setLoading(true);
 
     try {
       if (authMode === 'signup') {
+        // Validate Terms
+        if (!agreeTerms) {
+          setError('You must agree to the Terms & Conditions to create an account.');
+          setLoading(false);
+          return;
+        }
+
         // Validate passwords match
         if (formData.password !== formData.confirmPassword) {
           setError('Passwords do not match');
@@ -56,6 +73,7 @@ export default function AuthPage({
             email: formData.email,
             password: formData.password,
             accountType,
+            termsAccepted: true,
           });
 
           await onLogin?.(
@@ -71,6 +89,7 @@ export default function AuthPage({
             username: formData.username,
             email: formData.email,
             password: formData.password,
+            termsAccepted: true,
           });
         }
       } else {
@@ -109,6 +128,81 @@ export default function AuthPage({
       setLoading(false);
     }
   };
+  const handleGoogleSuccess = async (tokenResponse) => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await loginWithGoogle(tokenResponse.access_token || tokenResponse.credential);
+      if (data?.success && data?.user) {
+        onLogin(
+          { ...data.user, type: data.user?.type || userType },
+          { isNewUser: data.user.profile_completed === false }
+        );
+      } else {
+        setError(data?.message || 'Failed to sign in with Google');
+      }
+    } catch (err) {
+      setError(String(err?.message || 'An error occurred with Google sign-in'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const triggerGoogleLogin = useGoogleLogin({
+    onSuccess: handleGoogleSuccess,
+    onError: () => setError('Google sign-in was cancelled or failed.'),
+  });
+
+  const handleGoogleClick = () => {
+    if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && process.env.NODE_ENV !== 'production') {
+      const email = prompt(`[Developer Mode - Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID]\n\nEnter any existing or new email to simulate logging in with Google:`);
+      if (!email) return;
+      return handleDeveloperMock('Google', email);
+    }
+    triggerGoogleLogin();
+  };
+
+  const handleGithubClick = () => {
+    const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
+    if (!clientId && process.env.NODE_ENV !== 'production') {
+      const email = prompt(`[Developer Mode - Missing NEXT_PUBLIC_GITHUB_CLIENT_ID]\n\nEnter any email to simulate logging in with GitHub:`);
+      if (!email) return;
+      return handleDeveloperMock('GitHub', email);
+    }
+    if (!clientId) {
+      alert("GitHub Client ID is not configured.");
+      return;
+    }
+    const redirectUri = window.location.origin + '/auth/callback/github';
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user:email`;
+  };
+
+  const handleDeveloperMock = async (provider, email) => {
+    setLoading(true);
+    setError('');
+    try {
+      let data;
+      if (provider === 'Google') {
+        data = await loginWithGoogle('mock-google-' + email.split('@')[0]);
+      } else {
+        data = await loginWithGithub('mock-github-' + email.split('@')[0]);
+      }
+
+      if (data?.success && data?.user) {
+        onLogin(
+          { ...data.user, type: data.user?.type || userType },
+          { isNewUser: data.user.profile_completed === false }
+        );
+      } else {
+        setError(data?.message || `Failed to sign in with ${provider}`);
+      }
+    } catch (err) {
+      setError(String(err?.message || `An error occurred with ${provider} sign-in`));
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -143,6 +237,12 @@ export default function AuthPage({
               <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg flex items-center gap-2">
                 <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
                 <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              </div>
+            )}
+
+            {infoMessage && (
+              <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 rounded-lg">
+                <p className="text-sm text-emerald-700 dark:text-emerald-300">{infoMessage}</p>
               </div>
             )}
 
@@ -217,9 +317,36 @@ export default function AuthPage({
                 </div>
               )}
 
+              {authMode === 'signup' && (
+                <div className="flex items-start gap-3 mt-4 pt-1">
+                  <input
+                    type="checkbox"
+                    id="agreeTerms"
+                    checked={agreeTerms}
+                    onChange={(e) => setAgreeTerms(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-[#a3b18a] bg-white dark:bg-[#0f2139] text-[#3a5a40] focus:ring-[#588157] outline-none cursor-pointer"
+                  />
+                  <label htmlFor="agreeTerms" className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">
+                    I have read, understood, and agree to the{' '}
+                    <button 
+                      type="button" 
+                      onClick={() => setAuthTermsOpen(true)}
+                      className="text-[#3a5a40] dark:text-[#3ba9d6] hover:underline font-semibold"
+                    >
+                      Terms & Conditions
+                    </button>
+                    .
+                  </label>
+                </div>
+              )}
+
               {authMode === 'login' && (
                 <div className="text-right">
-                  <button type="button" className="text-sm text-[#588157] dark:text-[#3ba9d6] hover:underline">
+                  <button
+                    type="button"
+                    onClick={() => onForgotPassword?.()}
+                    className="text-sm text-[#588157] dark:text-[#3ba9d6] hover:underline"
+                  >
                     Forgot password?
                   </button>
                 </div>
@@ -234,6 +361,38 @@ export default function AuthPage({
               </button>
             </form>
 
+            <div className="mt-6 flex items-center justify-between">
+              <span className="w-1/5 border-b border-gray-300 dark:border-gray-600 lg:w-1/4"></span>
+              <span className="text-xs text-center text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">or continue with</span>
+              <span className="w-1/5 border-b border-gray-300 dark:border-gray-600 lg:w-1/4"></span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3 mt-6">
+              <button
+                type="button"
+                disabled={loading}
+                onClick={handleGoogleClick}
+                className="flex items-center justify-center w-full px-4 py-2.5 bg-[#f0f5f1] dark:bg-[#1a3354] hover:bg-[#e2e8e4] dark:hover:bg-[#1e3a5f] border border-[#a3b18a] dark:border-[#2a4a6f] rounded-lg transition-colors disabled:opacity-50 text-[#344e41] dark:text-gray-200 font-medium"
+              >
+                <svg className="w-5 h-5 mr-2 -ml-1" viewBox="0 0 24 24">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                </svg>
+                Google
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={handleGithubClick}
+                className="flex items-center justify-center w-full px-4 py-2.5 bg-[#f0f5f1] dark:bg-[#1a3354] hover:bg-[#e2e8e4] dark:hover:bg-[#1e3a5f] border border-[#a3b18a] dark:border-[#2a4a6f] rounded-lg transition-colors disabled:opacity-50 text-[#344e41] dark:text-gray-200 font-medium"
+              >
+                <Github className="w-5 h-5 mr-2 -ml-1" />
+                GitHub
+              </button>
+            </div>
+
             <div className="mt-6 text-center">
               <button
                 onClick={() => {
@@ -244,11 +403,13 @@ export default function AuthPage({
                     }
                     setAuthMode('signup');
                     setError('');
+                    setInfoMessage('');
                     return;
                   }
 
                   setAuthMode('login');
                   setError('');
+                  setInfoMessage('');
                 }}
                 className="text-sm text-[#344e41] dark:text-[#b8d4e8]"
               >
@@ -261,6 +422,12 @@ export default function AuthPage({
           </div>
         </div>
       </main>
+
+      {/* Auth-level Terms Modal Overlay */}
+      <TermsAndConditionsModal
+        isOpen={authTermsOpen}
+        onClose={() => setAuthTermsOpen(false)}
+      />
     </div>
   );
 }
