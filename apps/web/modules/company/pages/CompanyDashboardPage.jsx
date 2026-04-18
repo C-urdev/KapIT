@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Briefcase, PlusCircle, WalletCards, Search, MapPin, ChevronDown, ArrowDownUp } from 'lucide-react';
-import { useCompanyAnalytics, useCompanyJobs } from '@companyFeatures/companyHooks';
+import { useCompanyJobs } from '@companyFeatures/companyHooks';
 import { COMPANY_PATHS, formatJobStatus, navigate } from '@companyFeatures/companyUtils';
 
 function OverviewIconAction({ icon: Icon, label, onClick, variant = 'default' }) {
@@ -147,9 +147,7 @@ function CompactJobRow({ job, onManage, onOpenApplicants }) {
 }
 
 export default function CompanyDashboardPage() {
-  const { analytics, loading: analyticsLoading, error: analyticsError } = useCompanyAnalytics();
   const { jobs, loading: jobsLoading, error: jobsError } = useCompanyJobs();
-  const jobsByStatus = analytics?.jobsByStatus || {};
   const [statusTab, setStatusTab] = useState('open');
   const [titleQuery, setTitleQuery] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
@@ -162,6 +160,15 @@ export default function CompanyDashboardPage() {
     const status = String(job?.status || '').toLowerCase();
     return status !== 'open' && status !== 'draft';
   }), [jobs]);
+  const jobsByStatus = useMemo(() => jobs.reduce((acc, job) => {
+    const status = String(job?.status || '').toLowerCase() || 'unknown';
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {}), [jobs]);
+  const totalApplicants = useMemo(
+    () => jobs.reduce((sum, job) => sum + Number(job?.applicant_count || job?.applicantCount || 0), 0),
+    [jobs],
+  );
 
   const filteredJobs = useMemo(() => {
     const source = statusTab === 'open' ? openJobs : statusTab === 'draft' ? draftJobs : closedJobs;
@@ -189,12 +196,12 @@ export default function CompanyDashboardPage() {
   }, [closedJobs, draftJobs, locationQuery, openJobs, sortBy, sortOrder, statusTab, titleQuery]);
   const overviewGraphData = useMemo(
     () => [
-      { label: 'Total jobs', value: Number(analytics?.totalJobs ?? 0), color: '#3a5a40' },
+      { label: 'Total jobs', value: Number(jobs.length), color: '#3a5a40' },
       { label: 'Open jobs', value: Number(jobsByStatus.open ?? 0), color: '#6d9273' },
       { label: 'Filled jobs', value: Number(jobsByStatus.filled ?? 0), color: '#93b18e' },
-      { label: 'Total applicants', value: Number(analytics?.totalApplicants ?? 0), color: '#588157' },
+      { label: 'Total applicants', value: Number(totalApplicants), color: '#588157' },
     ],
-    [analytics?.totalApplicants, analytics?.totalJobs, jobsByStatus.filled, jobsByStatus.open],
+    [jobs.length, jobsByStatus.filled, jobsByStatus.open, totalApplicants],
   );
 
   return (
@@ -222,10 +229,9 @@ export default function CompanyDashboardPage() {
         </div>
       </div>
 
-      {analyticsError && <p className="text-sm text-red-600 dark:text-red-400">{analyticsError}</p>}
       <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
         <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Applicants snapshot graph</h3>
-        <SummaryGraph data={analyticsLoading ? [] : overviewGraphData} />
+        <SummaryGraph data={jobsLoading ? [] : overviewGraphData} />
       </div>
 
       <section className="space-y-4">

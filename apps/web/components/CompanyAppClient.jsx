@@ -97,12 +97,15 @@ export default function CompanyAppClient() {
     if (normalizedPathname === COMPANY_PATHS.help) {
       return;
     }
-    void primeCompanyWorkspaceData({ includeApplicants: normalizedPathname === COMPANY_PATHS.applicants });
+    void primeCompanyWorkspaceData({
+      includeApplicants: normalizedPathname === COMPANY_PATHS.applicants,
+      includeAnalytics: normalizedPathname === COMPANY_PATHS.applicants,
+    });
   }, [normalizedPathname]);
 
   useEffect(() => {
     const schedulePreload = () => {
-      void primeCompanyWorkspaceData({ includeApplicants: false });
+      void primeCompanyWorkspaceData({ includeApplicants: false, includeAnalytics: false });
       void primeCompanyProfileData();
     };
 

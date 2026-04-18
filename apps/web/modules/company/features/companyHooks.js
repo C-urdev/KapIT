@@ -283,7 +283,11 @@ export const useDeveloperSearch = (query) => {
   return { developers, loading, error, refetch };
 };
 
-export const primeCompanyWorkspaceData = async ({ includeApplicants = false, force = false } = {}) => {
+export const primeCompanyWorkspaceData = ({
+  includeApplicants = false,
+  includeAnalytics = false,
+  force = false,
+} = {}) => {
   const now = Date.now();
   if (!force && workspacePrimePromise) {
     return workspacePrimePromise;
@@ -293,16 +297,17 @@ export const primeCompanyWorkspaceData = async ({ includeApplicants = false, for
     return [];
   }
 
-  const tasks = [
-    {
-      key: COMPANY_CACHE_KEYS.jobs,
-      fetcher: () => companyAPI.getJobs(),
-    },
-    {
+  const tasks = [{
+    key: COMPANY_CACHE_KEYS.jobs,
+    fetcher: () => companyAPI.getJobs(),
+  }];
+
+  if (includeAnalytics) {
+    tasks.push({
       key: COMPANY_CACHE_KEYS.analytics,
       fetcher: () => companyAPI.getAnalytics(),
-    },
-  ];
+    });
+  }
 
   if (includeApplicants) {
     tasks.push({
