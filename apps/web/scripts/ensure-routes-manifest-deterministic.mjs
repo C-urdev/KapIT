@@ -13,12 +13,18 @@ const repoRootManifestSyncList = [
   'fallback-build-manifest.json',
   'images-manifest.json',
   'prerender-manifest.json',
+  'required-server-files.js',
   'required-server-files.json',
   path.join('server', 'app-paths-manifest.json'),
   path.join('server', 'functions-config-manifest.json'),
+  path.join('server', 'interception-route-rewrite-manifest.js'),
+  path.join('server', 'middleware-build-manifest.js'),
   path.join('server', 'middleware-manifest.json'),
+  path.join('server', 'next-font-manifest.js'),
   path.join('server', 'next-font-manifest.json'),
   path.join('server', 'pages-manifest.json'),
+  path.join('server', 'server-reference-manifest.js'),
+  path.join('server', 'server-reference-manifest.json'),
 ];
 
 const syncFileToRepoRoot = async (relativePath) => {
