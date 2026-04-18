@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { Moon, Sun, AlertCircle, Eye, EyeOff, GitFork } from 'lucide-react';
-import { useGoogleLogin } from '@react-oauth/google';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
 import { loginUser, registerUser, loginWithGoogle, loginWithGithub } from '@sharedServices/authService';
@@ -128,42 +127,24 @@ export default function AuthPage({
       setLoading(false);
     }
   };
-  const handleGoogleSuccess = async (tokenResponse) => {
-    setLoading(true);
-    setError('');
-    try {
-      const data = await loginWithGoogle(tokenResponse.access_token || tokenResponse.credential);
-      if (data?.success && data?.user) {
-        onLogin(
-          { ...data.user, type: data.user?.type || userType },
-          { isNewUser: data.user.profile_completed === false }
-        );
-      } else {
-        setError(data?.message || 'Failed to sign in with Google');
-      }
-    } catch (err) {
-      setError(String(err?.message || 'An error occurred with Google sign-in'));
-    } finally {
-      setLoading(false);
-    }
+  const getSocialAuthBaseUrl = () => {
+    const configuredSiteUrl = String(process.env.NEXT_PUBLIC_SITE_URL || '').trim();
+    const rawBase = configuredSiteUrl || window.location.origin;
+    return rawBase.replace(/\/+$/, '');
   };
 
-  const triggerGoogleLogin = useGoogleLogin({
-    onSuccess: handleGoogleSuccess,
-    onError: () => setError('Google sign-in was cancelled or failed.'),
-    onNonOAuthError: (errorResponse) => {
-      const type = String(errorResponse?.type || '').toLowerCase();
-      if (type.includes('popup_failed_to_open') || type.includes('popup')) {
-        setError('Google sign-in popup was blocked by your browser. Allow popups for this site and try again.');
-        return;
+  const redirectToExternalAuth = (url) => {
+    setLoading(true);
+
+    // If browser blocks or interrupts the navigation, quickly release UI lock.
+    window.setTimeout(() => {
+      if (document.visibilityState === 'visible') {
+        setLoading(false);
       }
-      if (type.includes('popup_closed')) {
-        setError('Google sign-in was closed before completion.');
-        return;
-      }
-      setError('Google sign-in could not be started. Please try again.');
-    },
-  });
+    }, 1500);
+
+    window.location.assign(url);
+  };
 
   const handleGoogleClick = () => {
     if (loading) {
@@ -175,7 +156,29 @@ export default function AuthPage({
       if (!email) return;
       return handleDeveloperMock('Google', email);
     }
-    triggerGoogleLogin();
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      alert("Google Client ID is not configured.");
+      return;
+    }
+
+    const redirectUri = `${getSocialAuthBaseUrl()}/auth/callback/google`;
+    const state = crypto.randomUUID();
+    try {
+      window.sessionStorage.setItem('oauth_google_state', state);
+    } catch {
+      // Continue without persisted state if storage is unavailable.
+    }
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: 'id_token',
+      scope: 'openid email profile',
+      state,
+      nonce: crypto.randomUUID(),
+      prompt: 'select_account',
+    });
+    redirectToExternalAuth(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
   };
 
   const handleGithubClick = () => {
@@ -193,9 +196,8 @@ export default function AuthPage({
       alert("GitHub Client ID is not configured.");
       return;
     }
-    setLoading(true);
-    const redirectUri = window.location.origin + '/auth/callback/github';
-    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user:email`;
+    const redirectUri = `${getSocialAuthBaseUrl()}/auth/callback/github`;
+    redirectToExternalAuth(`https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user:email`);
   };
 
   const handleDeveloperMock = async (provider, email) => {
