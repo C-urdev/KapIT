@@ -6,6 +6,34 @@ const sourcePath = path.join(nextDir, 'routes-manifest.json');
 const targetPath = path.join(nextDir, 'routes-manifest-deterministic.json');
 const repoRootNextDir = path.resolve(process.cwd(), '..', '..', '.next');
 const repoRootTargetPath = path.join(repoRootNextDir, 'routes-manifest-deterministic.json');
+const repoRootManifestSyncList = [
+  'BUILD_ID',
+  'app-path-routes-manifest.json',
+  'build-manifest.json',
+  'fallback-build-manifest.json',
+  'images-manifest.json',
+  'prerender-manifest.json',
+  'required-server-files.json',
+  path.join('server', 'app-paths-manifest.json'),
+  path.join('server', 'functions-config-manifest.json'),
+  path.join('server', 'middleware-manifest.json'),
+  path.join('server', 'next-font-manifest.json'),
+  path.join('server', 'pages-manifest.json'),
+];
+
+const syncFileToRepoRoot = async (relativePath) => {
+  const from = path.join(nextDir, relativePath);
+  const to = path.join(repoRootNextDir, relativePath);
+
+  try {
+    await fs.access(from);
+  } catch {
+    return;
+  }
+
+  await fs.mkdir(path.dirname(to), { recursive: true });
+  await fs.copyFile(from, to);
+};
 
 const ensureManifest = async () => {
   try {
@@ -18,9 +46,11 @@ const ensureManifest = async () => {
   }
 
   if (process.env.VERCEL === '1' || process.env.CI === 'true') {
-    const deterministicBuffer = await fs.readFile(targetPath);
     await fs.mkdir(repoRootNextDir, { recursive: true });
-    await fs.writeFile(repoRootTargetPath, deterministicBuffer);
+    await fs.copyFile(targetPath, repoRootTargetPath);
+    for (const relativePath of repoRootManifestSyncList) {
+      await syncFileToRepoRoot(relativePath);
+    }
     console.log('Synced routes-manifest-deterministic.json to repo root .next for deployment packaging');
   }
 };
