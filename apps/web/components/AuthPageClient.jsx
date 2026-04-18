@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertCircle, ArrowLeft, Loader2, Mail } from 'lucide-react';
 import AuthPage from '@sharedPages/auth/AuthPage';
@@ -9,7 +9,8 @@ import {
   normalizeAccountType, 
   registerUser, 
   sendRegistrationOtp, 
-  verifyRegistrationOtp 
+  verifyRegistrationOtp,
+  requestLocalRegistrationBypassToken,
 } from '@sharedServices/authService';
 
 const resolvePostAuthPath = (user) => {
@@ -34,6 +35,13 @@ export default function AuthPageClient({ initialMode = 'login' }) {
   const [otpCode, setOtpCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isLocalhost, setIsLocalhost] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hostname = String(window.location.hostname || '').trim().toLowerCase();
+    setIsLocalhost(hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1');
+  }, []);
 
   const handleBeginSignup = async (signupData) => {
     setLoading(true);
@@ -52,6 +60,24 @@ export default function AuthPageClient({ initialMode = 'login' }) {
     }
   };
 
+  const registerWithVerifiedToken = async (verificationToken) => {
+    const data = await registerUser({
+      username: pendingSignup.username,
+      email: pendingSignup.email,
+      password: pendingSignup.password,
+      accountType: pendingSignup.accountType || accountType || 'developer',
+      verificationToken,
+      termsAccepted: pendingSignup?.termsAccepted === true,
+    });
+
+    if (data?.user) {
+      router.replace(resolvePostAuthPath(data.user));
+      return;
+    }
+
+    throw new Error(data?.message || 'Failed to register account.');
+  };
+
   const verifyAndRegister = async () => {
     if (otpCode.length < 6) return;
     setLoading(true);
@@ -61,27 +87,33 @@ export default function AuthPageClient({ initialMode = 'login' }) {
       const verifyRes = await verifyRegistrationOtp({ email: pendingSignup.email, code: otpCode });
       if (!verifyRes.success || !verifyRes.verificationToken) {
         setError(verifyRes.message || 'Invalid verification code.');
-        setLoading(false);
         return;
       }
 
-      // Now officially register passing the secure token
-      const data = await registerUser({
-        username: pendingSignup.username,
-        email: pendingSignup.email,
-        password: pendingSignup.password,
-        accountType: pendingSignup.accountType || accountType || 'developer',
-        verificationToken: verifyRes.verificationToken,
-        termsAccepted: pendingSignup.termsAccepted === true,
-      });
-
-      if (data?.user) {
-        router.replace(resolvePostAuthPath(data.user));
-      } else {
-        setError(data?.message || 'Failed to register account.');
-      }
+      await registerWithVerifiedToken(verifyRes.verificationToken);
     } catch (err) {
-      setError('An error occurred during verification.');
+      setError(String(err?.message || 'An error occurred during verification.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLocalhostBypass = async () => {
+    if (!pendingSignup || !isLocalhost) return;
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const bypassRes = await requestLocalRegistrationBypassToken({ email: pendingSignup.email });
+      if (!bypassRes?.success || !bypassRes?.verificationToken) {
+        setError(bypassRes?.message || 'Localhost bypass is unavailable.');
+        return;
+      }
+
+      await registerWithVerifiedToken(bypassRes.verificationToken);
+    } catch (err) {
+      setError(String(err?.message || 'Unable to bypass verification on localhost.'));
     } finally {
       setLoading(false);
     }
@@ -138,8 +170,18 @@ export default function AuthPageClient({ initialMode = 'login' }) {
               disabled={loading || otpCode.length !== 6}
               className="w-full h-12 bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirm & Register'}
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirm'}
             </button>
+            {isLocalhost ? (
+              <button
+                type="button"
+                onClick={handleLocalhostBypass}
+                disabled={loading}
+                className="w-full h-11 border border-[#a3b18a] dark:border-[#2a4a6f] bg-[#f8faf7] hover:bg-[#eef3ea] dark:bg-[#0f2139] dark:hover:bg-[#163052] text-[#3a5a40] dark:text-[#b8d4e8] font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Localhost Bypass
+              </button>
+            ) : null}
           </div>
         </div>
       </div>
@@ -157,7 +199,7 @@ export default function AuthPageClient({ initialMode = 'login' }) {
         accountType={accountType}
         initialMode={normalizedInitialMode}
         onBack={() => router.push('/')}
-        onRequestAccountType={() => router.push('/')}
+        onRequestAccountType={() => router.push('/?accountTypeModal=1')}
         onForgotPassword={() => router.push('/forgot-password')}
         onBeginSignup={handleBeginSignup}
         onLogin={(user) => {

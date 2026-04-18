@@ -325,14 +325,7 @@ const issueOtp = async ({ email, ipAddress }) => {
       expiresInMinutes: OTP_TTL_MINUTES,
     });
 
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`\n=========================================\n[DEVELOPMENT] OTP Code for ${normalizedEmail}: ${code}\n=========================================\n`);
-    }
-
-    logger.info(
-      { emailDigest: digestForLogs(normalizedEmail), delivered: Boolean(emailDelivery?.delivered) },
-      'OTP issued.'
-    );
+    // Intentionally avoid logging OTP values or issuance metadata to stdout.
   } catch (error) {
     logger.error({ err: error }, 'Failed to issue OTP.');
   } finally {
@@ -381,7 +374,6 @@ const verifyOtp = async ({ email, code }) => {
       { expiresIn: '15m' }
     );
 
-    logger.info({ emailDigest: digestForLogs(normalizedEmail) }, 'OTP verified.');
     return { success: true, statusCode: 200, resetToken };
   } catch (error) {
     logger.error({ err: error }, 'OTP verification failed.');
@@ -421,7 +413,6 @@ const resetPasswordWithOtp = async ({ resetToken, newPassword, ipAddress }) => {
     // Clean up OTP rows for this email
     await client.query(`DELETE FROM password_reset_otps WHERE email = $1`, [normalizedEmail]);
 
-    logger.info({ emailDigest: digestForLogs(normalizedEmail), ipAddress }, 'Password reset via OTP succeeded.');
     return { success: true, statusCode: 200, message: 'Password has been reset successfully. You can now sign in.' };
   } catch (error) {
     logger.error({ err: error }, 'OTP password reset failed.');
@@ -465,11 +456,7 @@ const issueRegistrationOtp = async ({ email, ipAddress }) => {
       expiresInMinutes: OTP_TTL_MINUTES,
     });
 
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`\n=========================================\n[DEVELOPMENT] REGISTRATION OTP Code for ${normalizedEmail}: ${code}\n=========================================\n`);
-    }
-
-    logger.info({ emailDigest: digestForLogs(normalizedEmail), ipAddress }, 'Registration OTP issued.');
+    // Intentionally avoid logging registration OTP values or issuance metadata to stdout.
     return { success: true, statusCode: 200, message: 'Verification code sent.' };
   } catch (error) {
     logger.error({ err: error }, 'Failed to issue Registration OTP.');
@@ -518,11 +505,77 @@ const verifyRegistrationOtp = async ({ email, code }) => {
     // Mark as used
     await client.query(`UPDATE registration_otps SET used = true WHERE id = $1`, [row.id]);
 
-    logger.info({ emailDigest: digestForLogs(normalizedEmail) }, 'Registration OTP verified.');
     return { success: true, statusCode: 200, verificationToken };
   } catch (error) {
     logger.error({ err: error }, 'Registration OTP verification failed.');
     return { success: false, statusCode: 500, message: 'Unable to verify registration code.' };
+  } finally {
+    if (client) client.release();
+  }
+};
+
+const issueLocalPasswordResetBypassToken = async ({ email }) => {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) {
+    return { success: false, statusCode: 400, message: 'Invalid email address provided.' };
+  }
+
+  let client;
+  try {
+    client = await pool.connect();
+    const userResult = await client.query(
+      `SELECT id
+       FROM users
+       WHERE LOWER(email) = $1
+       LIMIT 1`,
+      [normalizedEmail]
+    );
+
+    if (!userResult.rows.length) {
+      return { success: false, statusCode: 404, message: 'No account found for this email.' };
+    }
+
+    const resetToken = jwt.sign(
+      { email: normalizedEmail, purpose: 'otp-password-reset' },
+      OTP_RESET_TOKEN_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    return { success: true, statusCode: 200, resetToken };
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to issue localhost password reset bypass token.');
+    return { success: false, statusCode: 500, message: 'Unable to create bypass token right now.' };
+  } finally {
+    if (client) client.release();
+  }
+};
+
+const issueLocalRegistrationBypassToken = async ({ email }) => {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) {
+    return { success: false, statusCode: 400, message: 'Invalid email address provided.' };
+  }
+
+  let client;
+  try {
+    client = await pool.connect();
+    await ensureOtpTable(client);
+
+    const checkResult = await client.query('SELECT 1 FROM users WHERE LOWER(email) = $1 LIMIT 1', [normalizedEmail]);
+    if (checkResult.rowCount > 0) {
+      return { success: false, statusCode: 409, message: 'An account with this email already exists.' };
+    }
+
+    const verificationToken = jwt.sign(
+      { email: normalizedEmail, purpose: 'registration-validated' },
+      OTP_RESET_TOKEN_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    return { success: true, statusCode: 200, verificationToken };
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to issue localhost registration bypass token.');
+    return { success: false, statusCode: 500, message: 'Unable to create bypass token right now.' };
   } finally {
     if (client) client.release();
   }
@@ -539,4 +592,6 @@ module.exports = {
   resetPasswordWithOtp,
   issueRegistrationOtp,
   verifyRegistrationOtp,
+  issueLocalRegistrationBypassToken,
+  issueLocalPasswordResetBypassToken,
 };

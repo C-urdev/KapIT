@@ -42,10 +42,11 @@ export default function UserDesktopNavbar({
   searchLoading,
   searchError,
   searchResults,
+  onSearchResultSelect,
+  onSearchSubmit,
   onHelp,
   onLogout,
   onOpenSettings,
-  onOpenPublicProfile,
   unreadNotificationCount = 0,
 }) {
   const { theme, toggleTheme } = useTheme();
@@ -83,6 +84,12 @@ export default function UserDesktopNavbar({
                 setSearchOpen(true);
               }}
               onFocus={() => setSearchOpen(true)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  onSearchSubmit?.({ query: searchQuery, scope: 'all' });
+                }
+              }}
               className="w-full rounded-full border border-[#a3b18a] bg-[#f5f5f2] py-2 pl-10 pr-3 text-sm text-[#344e41] transition-colors placeholder:text-[#5f6f52] focus:outline-none focus:ring-2 focus:ring-[#588157] dark:border-[#2a4a6f] dark:bg-[#1e3a5f] dark:text-white dark:placeholder:text-[#7d9ab8] dark:focus:ring-[#3ba9d6]"
             />
             {searchOpen && searchQuery.trim() && (
@@ -103,11 +110,11 @@ export default function UserDesktopNavbar({
                   <button
                     key={result.id}
                     type="button"
-                    onClick={() => {
-                      setSearchQuery(result.username || result.email || '');
-                      setSearchOpen(false);
-                      onOpenPublicProfile?.(result);
+                    onPointerDown={(event) => {
+                      event.preventDefault();
+                      onSearchResultSelect?.(result);
                     }}
+                    onClick={() => onSearchResultSelect?.(result)}
                     className="w-full text-left px-4 py-3 border-b last:border-b-0 border-[#d6d3c9] dark:border-[#1e3a5f] hover:bg-[#f1f5eb] dark:hover:bg-[#1e3a5f] transition-colors"
                   >
                     <div className="flex items-center gap-3">
@@ -120,7 +127,7 @@ export default function UserDesktopNavbar({
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-[#3a5a40] dark:text-white truncate">{result.username || result.email}</p>
+                          <p className="text-sm font-semibold text-[#3a5a40] dark:text-white truncate">{result.companyName || result.fullName || result.username || result.email}</p>
                           {result.isPremium ? <PremiumBadge compact /> : null}
                         </div>
                         <p className="text-xs text-[#344e41] dark:text-[#b8d4e8]">{result.type === 'company' ? 'Company' : 'User'} - {result.email}</p>

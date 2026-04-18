@@ -19,6 +19,24 @@ const userType = z.enum(['employee', 'company']);
 const provider = z.enum(['paypal']);
 const anyRecord = z.record(z.string(), z.any());
 
+const isAllowedImageUrl = (value) => {
+  const candidate = String(value || '').trim();
+  if (!candidate) {
+    return false;
+  }
+
+  if (/^data:image\/[a-zA-Z0-9.+-]+;base64,[a-zA-Z0-9+/=]+$/i.test(candidate)) {
+    return true;
+  }
+
+  try {
+    const parsed = new URL(candidate);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
 const draftSchema = z
   .object({
     title: z.coerce.string().trim().min(1).max(140),
@@ -33,8 +51,8 @@ const draftSchema = z
 
 const postBody = z
   .object({
-    content: z.string().min(1).max(5000),
-    imageUrl: z.string().url().max(2000).optional(),
+    content: z.string().max(5000).optional(),
+    imageUrl: z.string().max(2000000).refine(isAllowedImageUrl, 'Invalid URL').optional(),
     visibility: z.enum(['public', 'connections', 'private']).optional(),
     message: z.string().max(500).optional(),
     parentCommentId: z.coerce.number().int().positive().optional(),
@@ -65,6 +83,8 @@ const writeSchemas = {
   authForgotPassword: schema(z.object({ email }).strict()),
   authResetPassword: schema(z.object({ token: z.string().min(32).max(512), new_password: password }).strict()),
   authSendOtp: schema(z.object({ email }).strict()),
+  authLocalRegistrationBypass: schema(z.object({ email }).strict()),
+  authLocalPasswordResetBypass: schema(z.object({ email }).strict()),
   authVerifyOtp: schema(z.object({ email, code: z.string().length(6).regex(/^\d{6}$/) }).strict()),
   authResetPasswordOtp: schema(z.object({ resetToken: z.string().min(10).max(512), new_password: password }).strict()),
   authRefresh: schema(z.object({}).strict()),

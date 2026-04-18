@@ -276,6 +276,14 @@ export const verifyRegistrationOtp = async ({ email, code }) => {
   });
 };
 
+export const requestLocalRegistrationBypassToken = async ({ email }) => {
+  return authRequest('/registration/localhost-bypass', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+    retryOnUnauthorized: false,
+  });
+};
+
 export const requestPasswordReset = async ({ email }) => {
   return authRequest('/forgot-password', {
     method: 'POST',
@@ -304,6 +312,14 @@ export const verifyPasswordResetOtp = async ({ email, code }) => {
   return authRequest('/verify-otp', {
     method: 'POST',
     body: JSON.stringify({ email, code }),
+    retryOnUnauthorized: false,
+  });
+};
+
+export const requestLocalPasswordResetBypassToken = async ({ email }) => {
+  return authRequest('/verify-otp/localhost-bypass', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
     retryOnUnauthorized: false,
   });
 };
@@ -450,8 +466,10 @@ export const updateStoredUser = (updates) => {
   return nextUser;
 };
 
-export const searchAccounts = async (query) => {
-  const data = await authRequest(`/search?q=${encodeURIComponent(query)}`);
+export const searchAccounts = async (query, scope = 'all') => {
+  const normalizedScope = String(scope || 'all').trim().toLowerCase();
+  const resolvedScope = ['all', 'people', 'companies'].includes(normalizedScope) ? normalizedScope : 'all';
+  const data = await authRequest(`/search?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(resolvedScope)}`);
   return Array.isArray(data?.results) ? data.results : [];
 };
 

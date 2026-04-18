@@ -1,5 +1,32 @@
 import { authRequest } from './apiClient';
 
+const VISIBILITY_ALIASES = {
+  public: 'public',
+  connections: 'connections',
+  private: 'private',
+  'only me': 'private',
+  'onlyme': 'private',
+  friends: 'connections',
+  network: 'connections',
+};
+
+const normalizeVisibilityForApi = (value, fallback = 'private') => {
+  const normalized = String(value || '').trim().toLowerCase();
+  return VISIBILITY_ALIASES[normalized] || fallback;
+};
+
+const withOptionalImageUrl = (payload, imageUrl) => {
+  const normalizedImageUrl = String(imageUrl || '').trim();
+  if (!normalizedImageUrl) {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    imageUrl: normalizedImageUrl,
+  };
+};
+
 export const listFeedPosts = async () => {
   const data = await authRequest('/posts/feed');
   return Array.isArray(data?.posts) ? data.posts : [];
@@ -16,13 +43,17 @@ export const listProfilePosts = async (userId) => {
 };
 
 export const createPost = async ({ content, imageUrl, visibility }) => {
+  const payload = withOptionalImageUrl(
+    {
+      content: String(content || '').trim(),
+      visibility: normalizeVisibilityForApi(visibility),
+    },
+    imageUrl
+  );
+
   const data = await authRequest('/posts', {
     method: 'POST',
-    body: JSON.stringify({
-      content: String(content || '').trim(),
-      imageUrl: String(imageUrl || '').trim(),
-      visibility: String(visibility || 'Only me').trim() || 'Only me',
-    }),
+    body: JSON.stringify(payload),
   });
 
   return data?.post || null;
@@ -51,14 +82,17 @@ export const addCommentToPost = async (postId, commentInput) => {
   const content = typeof commentInput === 'string' ? commentInput : commentInput?.content;
   const imageUrl = typeof commentInput === 'string' ? '' : commentInput?.imageUrl;
   const parentCommentId = typeof commentInput === 'object' ? commentInput?.parentCommentId : null;
+  const payload = withOptionalImageUrl(
+    {
+      content: String(content || '').trim(),
+      parentCommentId: parentCommentId ? Number(parentCommentId) : null,
+    },
+    imageUrl
+  );
 
   const data = await authRequest(`/posts/${encodeURIComponent(postId)}/comments`, {
     method: 'POST',
-    body: JSON.stringify({
-      content: String(content || '').trim(),
-      imageUrl: String(imageUrl || '').trim(),
-      parentCommentId: parentCommentId ? Number(parentCommentId) : null,
-    }),
+    body: JSON.stringify(payload),
   });
 
   return data?.post || null;
@@ -84,7 +118,7 @@ export const toggleSharePost = async (postId, shareInput = {}) => {
     method: 'POST',
     body: JSON.stringify({
       message: String(shareInput?.message || '').trim(),
-      visibility: String(shareInput?.visibility || 'Only me').trim() || 'Only me',
+      visibility: normalizeVisibilityForApi(shareInput?.visibility),
     }),
   });
 

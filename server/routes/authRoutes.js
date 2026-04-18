@@ -26,6 +26,8 @@ const {
   resetPasswordOtp,
   sendRegistrationOtpCode,
   verifyRegistrationOtpCode,
+  localRegistrationBypass,
+  localPasswordResetBypass,
 } = require('../controllers/authRecoveryController');
 const { googleLogin, githubLogin } = require('../controllers/oauthController');
 const {
@@ -61,10 +63,12 @@ router.post('/forgot-password', forgotPasswordRateLimiter, validateRequest(write
 router.post('/reset-password', resetPasswordRateLimiter, validateRequest(writeSchemas.authResetPassword), resetPassword);
 router.post('/forgot-password-otp', forgotPasswordRateLimiter, validateRequest(writeSchemas.authSendOtp), sendOtp);
 router.post('/verify-otp', forgotPasswordRateLimiter, validateRequest(writeSchemas.authVerifyOtp), verifyOtpHandler);
+router.post('/verify-otp/localhost-bypass', validateRequest(writeSchemas.authLocalPasswordResetBypass), localPasswordResetBypass);
 router.post('/reset-password-otp', resetPasswordRateLimiter, validateRequest(writeSchemas.authResetPasswordOtp), resetPasswordOtp);
 
 router.post('/send-registration-otp', validateRequest(writeSchemas.authSendOtp), sendRegistrationOtpCode);
 router.post('/verify-registration-otp', validateRequest(writeSchemas.authVerifyOtp), verifyRegistrationOtpCode);
+router.post('/registration/localhost-bypass', validateRequest(writeSchemas.authLocalRegistrationBypass), localRegistrationBypass);
 
 router.post('/refresh', validateRequest(writeSchemas.authRefresh), refreshSession);
 router.post('/logout', requireCsrfForCookieAuth, validateRequest(writeSchemas.authLogout), logout);

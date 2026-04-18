@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   AlertCircle,
@@ -19,6 +19,7 @@ import KapITLogo from '@sharedComponents/branding/KapITLogo';
 import {
   sendPasswordResetOtp,
   verifyPasswordResetOtp,
+  requestLocalPasswordResetBypassToken,
   resetPasswordWithOtp,
 } from '@sharedServices/authService';
 
@@ -193,9 +194,16 @@ function StepVerify({ email, onNext, onBack }) {
   const [resending, setResending] = useState(false);
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
+  const [isLocalhost, setIsLocalhost] = useState(false);
   const inputRefs = useRef([]);
 
   const code = digits.join('');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hostname = String(window.location.hostname || '').trim().toLowerCase();
+    setIsLocalhost(hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1');
+  }, []);
 
   const handleChange = (idx, val) => {
     // Allow paste of full 6-digit code on any box
@@ -278,6 +286,28 @@ function StepVerify({ email, onNext, onBack }) {
     }
   };
 
+  const handleLocalBypass = async () => {
+    if (!isLocalhost) return;
+
+    setError('');
+    setInfo('');
+    setLoading(true);
+
+    try {
+      const data = await requestLocalPasswordResetBypassToken({ email });
+      if (!data?.success || !data?.resetToken) {
+        setError(data?.message || 'Localhost bypass is unavailable.');
+        return;
+      }
+
+      onNext(data.resetToken);
+    } catch (err) {
+      setError(String(err?.message || 'Unable to use localhost bypass.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="text-center mb-8">
@@ -332,6 +362,16 @@ function StepVerify({ email, onNext, onBack }) {
       <PrimaryButton loading={loading}>
         {loading ? 'Verifying…' : 'Verify Code'}
       </PrimaryButton>
+      {isLocalhost ? (
+        <button
+          type="button"
+          onClick={handleLocalBypass}
+          disabled={loading || resending}
+          className="w-full flex items-center justify-center border border-[#a3b18a] dark:border-[#2a4a6f] bg-[#f8faf7] hover:bg-[#eef3ea] dark:bg-[#0f2139] dark:hover:bg-[#163052] text-[#3a5a40] dark:text-[#b8d4e8] font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Localhost Bypass
+        </button>
+      ) : null}
 
       <div className="flex items-center justify-between mt-2 text-sm">
         <button

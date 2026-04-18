@@ -19,6 +19,7 @@ export default function UserNavbar({
   onOpenVerifiedDirectory,
   onOpenPremium,
   onOpenPublicProfile,
+  onSubmitSearch,
   onOpenMyProfile,
   onOpenProjects,
   onOpenSavedJobs,
@@ -29,6 +30,7 @@ export default function UserNavbar({
   const profileMenuRef = useRef(null);
   const searchRef = useRef(null);
   const mobileSearchInputRef = useRef(null);
+  const searchRequestRef = useRef(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -65,16 +67,25 @@ export default function UserNavbar({
     }
 
     const timer = setTimeout(async () => {
+      const requestId = searchRequestRef.current + 1;
+      searchRequestRef.current = requestId;
+
       try {
         setSearchLoading(true);
         setSearchError('');
         const results = await searchAccounts(query);
-        setSearchResults(results);
+        if (searchRequestRef.current === requestId) {
+          setSearchResults(results);
+        }
       } catch (error) {
-        setSearchResults([]);
-        setSearchError(error.message || 'Search failed');
+        if (searchRequestRef.current === requestId) {
+          setSearchResults([]);
+          setSearchError(error.message || 'Search failed');
+        }
       } finally {
-        setSearchLoading(false);
+        if (searchRequestRef.current === requestId) {
+          setSearchLoading(false);
+        }
       }
     }, 250);
 
@@ -110,11 +121,24 @@ export default function UserNavbar({
     setMobileMenuOpen(false);
     setSearchOpen((prev) => !prev);
   };
+  const handleSearchResultSelect = (result) => {
+    setSearchQuery(result?.companyName || result?.fullName || result?.username || result?.email || '');
+    setSearchOpen(false);
+    onOpenPublicProfile?.(result);
+  };
+  const handleSearchSubmit = () => {
+    const normalizedQuery = String(searchQuery || '').trim();
+    if (!normalizedQuery) {
+      return;
+    }
+    setSearchOpen(false);
+    onSubmitSearch?.({ query: normalizedQuery, scope: 'all' });
+  };
 
   const shouldKeepNavbarVisible = searchOpen || mobileMenuVisible;
 
-  // Fully hide the primary navbar when exploring settings to create a native app environment
-  if (activeNav === 'settings') {
+  // Fully hide the primary navbar in focused full-page views.
+  if (activeNav === 'settings' || activeNav === 'search') {
     return null;
   }
 
@@ -146,10 +170,11 @@ export default function UserNavbar({
               searchLoading={searchLoading}
               searchError={searchError}
               searchResults={searchResults}
+              onSearchResultSelect={handleSearchResultSelect}
+              onSearchSubmit={handleSearchSubmit}
               onHelp={onHelp}
               onLogout={onLogout}
               onOpenSettings={onOpenSettings}
-              onOpenPublicProfile={onOpenPublicProfile}
               unreadNotificationCount={unreadNotificationCount}
             />
           </div>
@@ -194,6 +219,12 @@ export default function UserNavbar({
                     value={searchQuery}
                     onChange={(event) => setSearchQuery(event.target.value)}
                     onFocus={() => setSearchOpen(true)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        handleSearchSubmit();
+                      }
+                    }}
                     className="w-full rounded-full border border-[#b8c4a4] bg-[#f1f3ec] py-3 pl-11 pr-4 text-base text-[#344e41] outline-none transition-colors placeholder:text-[#6b7280] focus:ring-2 focus:ring-[#588157] dark:border-white/10 dark:bg-[#3a3d42] dark:text-white dark:placeholder:text-white/40 dark:focus:ring-[#4c8dff]"
                   />
                 </div>
@@ -222,11 +253,11 @@ export default function UserNavbar({
                     <button
                       key={result.id}
                       type="button"
-                      onClick={() => {
-                        setSearchQuery(result.username || result.email || '');
-                        setSearchOpen(false);
-                        onOpenPublicProfile?.(result);
+                      onPointerDown={(event) => {
+                        event.preventDefault();
+                        handleSearchResultSelect(result);
                       }}
+                      onClick={() => handleSearchResultSelect(result)}
                       className="flex w-full items-center gap-3 rounded-2xl px-1 py-3 text-left transition-colors hover:bg-[#f1f3ec] dark:hover:bg-white/5"
                     >
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#588157] font-bold text-white dark:bg-[#4c8dff]">
@@ -242,7 +273,7 @@ export default function UserNavbar({
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-base font-semibold text-[#3a5a40] dark:text-white">
-                          {result.username || result.email}
+                          {result.companyName || result.fullName || result.username || result.email}
                         </p>
                         <p className="text-sm text-[#5f6f52] dark:text-white/65">
                           {result.type === 'company' ? 'Company' : 'User'}{result.email ? ` • ${result.email}` : ''}
@@ -268,11 +299,11 @@ export default function UserNavbar({
                     <button
                       key={result.id}
                       type="button"
-                      onClick={() => {
-                        setSearchQuery(result.username || result.email || '');
-                        setSearchOpen(false);
-                        onOpenPublicProfile?.(result);
+                      onPointerDown={(event) => {
+                        event.preventDefault();
+                        handleSearchResultSelect(result);
                       }}
+                      onClick={() => handleSearchResultSelect(result)}
                       className="flex w-full items-center gap-3 rounded-2xl px-1 py-3 text-left transition-colors hover:bg-[#f1f3ec] dark:hover:bg-white/5"
                     >
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#588157] font-bold text-white dark:bg-[#4c8dff]">
@@ -288,7 +319,7 @@ export default function UserNavbar({
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-base font-semibold text-[#3a5a40] dark:text-white">
-                          {result.username || result.email}
+                          {result.companyName || result.fullName || result.username || result.email}
                         </p>
                         <p className="text-sm text-[#5f6f52] dark:text-white/65">
                           {result.type === 'company' ? 'Company' : 'User'}{result.email ? ` • ${result.email}` : ''}
