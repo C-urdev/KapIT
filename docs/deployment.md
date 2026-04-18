@@ -14,6 +14,23 @@ Set these variables in the Vercel project for the frontend:
 
 After changing environment variables, redeploy the Vercel project.
 
+## OAuth Provider Allowlist (Required)
+
+Both providers require exact deployed URLs to be registered, otherwise login is blocked.
+
+### GitHub OAuth App
+
+In GitHub Developer Settings for the OAuth App used by `NEXT_PUBLIC_GITHUB_CLIENT_ID`:
+
+- Authorization callback URL: `https://kap-it.vercel.app/auth/callback/github`
+
+### Google OAuth Client
+
+In Google Cloud Console for the OAuth client used by `NEXT_PUBLIC_GOOGLE_CLIENT_ID`:
+
+- Authorized JavaScript origins: `https://kap-it.vercel.app`
+- Authorized redirect URIs: `https://kap-it.vercel.app/auth/callback/google`
+
 ## Backend
 
 This repo's auth and API are provided by the Express server in `server/server.js`.

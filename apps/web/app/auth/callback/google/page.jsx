@@ -1,9 +1,9 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Loader2, AlertCircle } from 'lucide-react';
-import { loginWithGithub, isCompanyAccount } from '@sharedServices/authService';
+import { isCompanyAccount, loginWithGoogle } from '@sharedServices/authService';
 
 const resolvePostAuthPath = (user) => {
   if (user?.profileCompleted === false) {
@@ -17,40 +17,66 @@ const resolvePostAuthPath = (user) => {
     : '/dashboard/user';
 };
 
-function GithubCallbackContent() {
+function parseHashParams() {
+  if (typeof window === 'undefined') {
+    return new URLSearchParams();
+  }
+  const hash = String(window.location.hash || '').replace(/^#/, '');
+  return new URLSearchParams(hash);
+}
+
+function GoogleCallbackContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const oauthError = searchParams.get('error');
+    const params = parseHashParams();
+    const oauthError = params.get('error');
     if (oauthError) {
       router.replace('/auth/login');
       return;
     }
 
-    const code = searchParams.get('code');
+    const state = params.get('state');
+    const idToken = params.get('id_token');
+    const expectedState = (() => {
+      try {
+        return window.sessionStorage.getItem('oauth_google_state');
+      } catch {
+        return null;
+      }
+    })();
 
-    if (!code) {
+    if (!idToken) {
+      router.replace('/auth/login');
+      return;
+    }
+
+    if (expectedState && state && expectedState !== state) {
       router.replace('/auth/login');
       return;
     }
 
     const processLogin = async () => {
       try {
-        const data = await loginWithGithub(code);
+        const data = await loginWithGoogle(idToken);
         if (data?.success && data?.user) {
+          try {
+            window.sessionStorage.removeItem('oauth_google_state');
+          } catch {
+            // Ignore if storage is unavailable.
+          }
           router.replace(resolvePostAuthPath(data.user));
-        } else {
-          setError(data?.message || 'GitHub authentication failed.');
+          return;
         }
-      } catch (err) {
-        setError('An unexpected error occurred during GitHub login.');
+        setError(data?.message || 'Google authentication failed.');
+      } catch {
+        setError('An unexpected error occurred during Google login.');
       }
     };
 
     processLogin();
-  }, [router, searchParams]);
+  }, [router]);
 
   if (error) {
     return (
@@ -72,9 +98,7 @@ function GithubCallbackContent() {
     );
   }
 
-  return (
-    <LoadingView />
-  );
+  return <LoadingView />;
 }
 
 function LoadingView() {
@@ -82,16 +106,16 @@ function LoadingView() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#0a1628]">
       <div className="flex flex-col items-center gap-4">
         <Loader2 className="w-10 h-10 text-[#3a5a40] dark:text-[#3ba9d6] animate-spin" />
-        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Completing GitHub sign-in...</p>
+        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Completing Google sign-in...</p>
       </div>
     </div>
   );
 }
 
-export default function GithubCallbackPage() {
+export default function GoogleCallbackPage() {
   return (
     <Suspense fallback={<LoadingView />}>
-      <GithubCallbackContent />
+      <GoogleCallbackContent />
     </Suspense>
   );
 }

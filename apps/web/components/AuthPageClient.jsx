@@ -11,7 +11,6 @@ import {
   sendRegistrationOtp, 
   verifyRegistrationOtp 
 } from '@sharedServices/authService';
-import { GoogleOAuthProvider } from '@react-oauth/google';
 
 const resolvePostAuthPath = (user) => {
   if (user?.profileCompleted === false) {
@@ -148,26 +147,24 @@ export default function AuthPageClient({ initialMode = 'login' }) {
   }
 
   return (
-    <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'mock-client-id'}>
-      <div className="relative">
-        {loading && (
-          <div className="absolute inset-0 z-50 bg-white/50 dark:bg-[#0a1628]/50 flex items-center justify-center backdrop-blur-[2px]">
-            <Loader2 className="w-10 h-10 text-[#3a5a40] dark:text-[#3ba9d6] animate-spin" />
-          </div>
-        )}
-        <AuthPage
-          accountType={accountType}
-          initialMode={normalizedInitialMode}
-          onBack={() => router.push('/')}
-          onRequestAccountType={() => router.push('/')}
-          onForgotPassword={() => router.push('/forgot-password')}
-          onBeginSignup={handleBeginSignup}
-          onLogin={(user) => {
-            router.replace(resolvePostAuthPath(user));
-          }}
-          onWarmRoute={() => {}}
-        />
-      </div>
-    </GoogleOAuthProvider>
+    <div className="relative">
+      {loading && (
+        <div className="absolute inset-0 z-50 bg-white/50 dark:bg-[#0a1628]/50 flex items-center justify-center backdrop-blur-[2px]">
+          <Loader2 className="w-10 h-10 text-[#3a5a40] dark:text-[#3ba9d6] animate-spin" />
+        </div>
+      )}
+      <AuthPage
+        accountType={accountType}
+        initialMode={normalizedInitialMode}
+        onBack={() => router.push('/')}
+        onRequestAccountType={() => router.push('/')}
+        onForgotPassword={() => router.push('/forgot-password')}
+        onBeginSignup={handleBeginSignup}
+        onLogin={(user) => {
+          router.replace(resolvePostAuthPath(user));
+        }}
+        onWarmRoute={() => {}}
+      />
+    </div>
   );
 }
