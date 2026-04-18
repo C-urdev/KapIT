@@ -35,6 +35,34 @@ export default function AuthPage({
   const [authTermsOpen, setAuthTermsOpen] = useState(false);
 
   useEffect(() => {
+    const clearStaleOauthLoading = () => {
+      if (document.visibilityState !== 'visible') {
+        return;
+      }
+      try {
+        const pending = window.sessionStorage.getItem('oauth_in_progress');
+        if (pending) {
+          window.sessionStorage.removeItem('oauth_in_progress');
+          setLoading(false);
+        }
+      } catch {
+        // Ignore storage failures.
+      }
+    };
+
+    window.addEventListener('pageshow', clearStaleOauthLoading);
+    window.addEventListener('focus', clearStaleOauthLoading);
+    document.addEventListener('visibilitychange', clearStaleOauthLoading);
+    clearStaleOauthLoading();
+
+    return () => {
+      window.removeEventListener('pageshow', clearStaleOauthLoading);
+      window.removeEventListener('focus', clearStaleOauthLoading);
+      document.removeEventListener('visibilitychange', clearStaleOauthLoading);
+    };
+  }, []);
+
+  useEffect(() => {
     setAuthMode(initialMode);
     setError('');
     setInfoMessage('');
@@ -135,10 +163,20 @@ export default function AuthPage({
 
   const redirectToExternalAuth = (url) => {
     setLoading(true);
+    try {
+      window.sessionStorage.setItem('oauth_in_progress', '1');
+    } catch {
+      // Ignore storage failures.
+    }
 
     // If browser blocks or interrupts the navigation, quickly release UI lock.
     window.setTimeout(() => {
       if (document.visibilityState === 'visible') {
+        try {
+          window.sessionStorage.removeItem('oauth_in_progress');
+        } catch {
+          // Ignore storage failures.
+        }
         setLoading(false);
       }
     }, 1500);
