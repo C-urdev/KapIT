@@ -57,6 +57,23 @@ const spawnOptions = {
   shell: false,
 };
 
+const ensureDeterministicRoutesManifest = () => {
+  if (scriptName !== 'build') {
+    return;
+  }
+
+  const nextDirectory = path.join(appDirectory, '.next');
+  const sourceManifest = path.join(nextDirectory, 'routes-manifest.json');
+  const deterministicManifest = path.join(nextDirectory, 'routes-manifest-deterministic.json');
+
+  if (fs.existsSync(deterministicManifest) || !fs.existsSync(sourceManifest)) {
+    return;
+  }
+
+  fs.copyFileSync(sourceManifest, deterministicManifest);
+  console.log('Created .next/routes-manifest-deterministic.json');
+};
+
 let child;
 try {
   child = spawn(command, args, spawnOptions);
@@ -145,6 +162,10 @@ child.on('error', (error) => {
 });
 
 child.on('exit', (code) => {
+  if ((code ?? 0) === 0) {
+    ensureDeterministicRoutesManifest();
+  }
+
   process.exit(code ?? 0);
 });
 
