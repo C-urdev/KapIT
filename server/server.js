@@ -1,3 +1,6 @@
+const { initEnvironment } = require('./config/env');
+initEnvironment();
+
 const { createApp, ensureSchemaReady } = require('./app');
 const pool = require('./config/database');
 const { closeRedisClient } = require('./config/redis');

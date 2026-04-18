@@ -35,6 +35,50 @@ test('Redis unavailable uses fail-open limiter behavior', async () => {
   assert.equal(response.body.error, 'validation error');
 });
 
+test('Redis unreachable fails open quickly', async () => {
+  const modulePath = require.resolve('../config/redis');
+  delete require.cache[modulePath];
+
+  const previousRedisUrl = process.env.REDIS_URL;
+  const previousConnectTimeout = process.env.REDIS_CONNECT_TIMEOUT_MS;
+  const previousCooldown = process.env.REDIS_FAILOPEN_COOLDOWN_MS;
+
+  process.env.REDIS_URL = 'redis://127.0.0.1:1';
+  process.env.REDIS_CONNECT_TIMEOUT_MS = '120';
+  process.env.REDIS_FAILOPEN_COOLDOWN_MS = '250';
+
+  try {
+    const { getRedisClient, closeRedisClient } = require('../config/redis');
+    const started = Date.now();
+    const redis = await getRedisClient();
+    const elapsedMs = Date.now() - started;
+
+    assert.equal(redis, null);
+    assert.ok(elapsedMs < 1500, `Expected Redis fail-open under 1500ms, received ${elapsedMs}ms`);
+    await closeRedisClient();
+  } finally {
+    if (previousRedisUrl === undefined) {
+      delete process.env.REDIS_URL;
+    } else {
+      process.env.REDIS_URL = previousRedisUrl;
+    }
+
+    if (previousConnectTimeout === undefined) {
+      delete process.env.REDIS_CONNECT_TIMEOUT_MS;
+    } else {
+      process.env.REDIS_CONNECT_TIMEOUT_MS = previousConnectTimeout;
+    }
+
+    if (previousCooldown === undefined) {
+      delete process.env.REDIS_FAILOPEN_COOLDOWN_MS;
+    } else {
+      process.env.REDIS_FAILOPEN_COOLDOWN_MS = previousCooldown;
+    }
+
+    delete require.cache[modulePath];
+  }
+});
+
 test('Payment provider timeout surfaces handled error', async () => {
   process.env.PAYPAL_CLIENT_ID = 'test-client';
   process.env.PAYPAL_CLIENT_SECRET = 'test-secret';
