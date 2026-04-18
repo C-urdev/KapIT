@@ -5,6 +5,7 @@ import UserRightSidebar from '@userComponents/UserRightSidebar';
 import CenterFeed from './UserCenterFeed';
 import UserJobsPage from '@userPages/jobs/UserJobsPage';
 import UserProjectsPage from '@userPages/projects/UserProjectsPage';
+import UserSearchResultsPage from '@userPages/search/UserSearchResultsPage';
 import UserMessagesPage from '@userPages/messages/UserMessagesPage';
 import UserNotificationsPage from '@userPages/notifications/UserNotificationsPage';
 import PublicProfilePage from '@sharedPages/public-profile/PublicProfilePage';
@@ -41,7 +42,22 @@ import { ArrowLeft, BadgeCheck, Building2, Lightbulb, Sparkles, UserCircle } fro
 import { getApplicationsForUser } from '@userFeatures/activity/userActivityStorage';
 
 const USER_NAV_QUERY_KEY = 'tab';
-const USER_NAV_TABS = new Set(['home', 'jobs', 'projects', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'help', 'tips', 'verified', 'settings']);
+const USER_PROFILE_QUERY_KEY = 'profileId';
+const USER_NAV_TABS = new Set(['home', 'jobs', 'projects', 'search', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'help', 'tips', 'verified', 'settings', 'public-profile']);
+const resolveProfileId = (value) => {
+  const normalized = String(value || '').trim();
+  return normalized || '';
+};
+const resolveProfileIdFromResult = (result) => (
+  resolveProfileId(result?.id) || resolveProfileId(result?.userId) || resolveProfileId(result?.user_id)
+);
+const getPublicProfileIdFromUrl = () => {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  return resolveProfileId(new URLSearchParams(window.location.search).get(USER_PROFILE_QUERY_KEY));
+};
 
 const getUserNavFromUrl = () => {
   if (typeof window === 'undefined') {
@@ -52,16 +68,22 @@ const getUserNavFromUrl = () => {
   return USER_NAV_TABS.has(nextTab) ? nextTab : 'home';
 };
 
-const syncUserNavToUrl = (nextNav) => {
+const syncUserNavToUrl = (nextNav, options = {}) => {
   if (typeof window === 'undefined') {
     return;
   }
 
+  const profileId = resolveProfileId(options.profileId);
   const url = new URL(window.location.href);
   if (USER_NAV_TABS.has(nextNav) && nextNav !== 'home') {
     url.searchParams.set(USER_NAV_QUERY_KEY, nextNav);
   } else {
     url.searchParams.delete(USER_NAV_QUERY_KEY);
+  }
+  if (nextNav === 'public-profile' && profileId) {
+    url.searchParams.set(USER_PROFILE_QUERY_KEY, profileId);
+  } else {
+    url.searchParams.delete(USER_PROFILE_QUERY_KEY);
   }
 
   const nextUrl = `${url.pathname}${url.search}${url.hash}`;
@@ -100,6 +122,8 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   const [savedJobs, setSavedJobs] = useState([]);
   const [savedPosts, setSavedPosts] = useState([]);
   const [applications, setApplications] = useState([]);
+  const [searchPageQuery, setSearchPageQuery] = useState('');
+  const [searchPageScope, setSearchPageScope] = useState('all');
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isTabletViewport, setIsTabletViewport] = useState(false);
   const [isMobileShellViewport, setIsMobileShellViewport] = useState(false);
@@ -108,6 +132,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   const lastScrollYRef = useRef(0);
   const isMessagesActive = activeNav === 'messages';
   const isSettingsActive = activeNav === 'settings';
+  const isSearchActive = activeNav === 'search';
   const isEdgeToEdgeView = isMessagesActive || isSettingsActive;
   const pageBackgroundClass = isMessagesActive ? 'bg-[#dad7cd] dark:bg-[#121212]' : 'bg-[#dad7cd] dark:bg-[#0a1628]';
   const hideMobileChromeForMessages = isTabletViewport && isMessagesActive && mobileThreadOpen;
@@ -135,7 +160,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
 
   const updateActiveNav = (nextNav, options = {}) => {
     setActiveNav(nextNav);
-    syncUserNavToUrl(nextNav);
+    syncUserNavToUrl(nextNav, options);
 
     if (options.fromSettings) {
       setCanReturnToSettings(true);
@@ -159,6 +184,47 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   useEffect(() => {
     syncUserNavToUrl(activeNav);
   }, [activeNav]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const syncPublicProfileFromUrl = async () => {
+      if (activeNav !== 'public-profile') {
+        return;
+      }
+
+      const profileId = getPublicProfileIdFromUrl();
+      if (!profileId || resolveProfileId(publicProfile?.id) === profileId) {
+        return;
+      }
+
+      try {
+        const profile = await getPublicProfile(profileId);
+        if (cancelled) {
+          return;
+        }
+        setPublicProfile({
+          id: profileId,
+          ...(profile || {}),
+        });
+      } catch {
+        if (cancelled) {
+          return;
+        }
+        setPublicProfile((current) => (
+          resolveProfileId(current?.id) === profileId
+            ? current
+            : { id: profileId }
+        ));
+      }
+    };
+
+    void syncPublicProfileFromUrl();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeNav, publicProfile]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -410,22 +476,38 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
     await deletePost(postId);
     await syncPostState();
   };
+  const handleSubmitSearch = ({ query, scope }) => {
+    const normalizedQuery = String(query || '').trim();
+    if (!normalizedQuery) {
+      return;
+    }
+    setSearchPageQuery(normalizedQuery);
+    setSearchPageScope(String(scope || 'all'));
+    updateActiveNav('search');
+  };
 
   const handleOpenPublicProfile = async (result) => {
-    if (!result?.id) {
+    const profileId = resolveProfileIdFromResult(result);
+    if (!profileId) {
       return;
     }
 
+    // Navigate immediately so tapping a search result always opens the profile view.
+    setPublicProfile({
+      ...(result || {}),
+      id: profileId,
+    });
+    updateActiveNav('public-profile', { profileId });
+
     try {
-      const profile = await getPublicProfile(result.id);
+      const profile = await getPublicProfile(profileId);
       setPublicProfile({
-        ...result,
+        ...(result || {}),
+        id: profileId,
         ...profile,
       });
-      setActiveNav('public-profile');
     } catch {
-      setPublicProfile(result);
-      setActiveNav('public-profile');
+      // Keep the fallback data already shown in the public profile page.
     }
   };
 
@@ -453,6 +535,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
         onOpenVerifiedDirectory={() => updateActiveNav('verified')}
         onOpenPremium={() => setPremiumPopupOpen(true)}
         onOpenPublicProfile={handleOpenPublicProfile}
+        onSubmitSearch={handleSubmitSearch}
         onOpenMyProfile={() => updateActiveNav('my-profile')}
         onOpenProjects={() => updateActiveNav('projects')}
         onOpenSavedJobs={() => updateActiveNav('saved-jobs')}
@@ -464,6 +547,8 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
         className={`mx-auto w-full ${
           isEdgeToEdgeView
             ? 'max-w-none px-0 pt-0'
+            : isSearchActive
+              ? 'max-w-[min(100%,1800px)] pb-28 pt-0 px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 xl:pt-0 xl:pb-8'
             : 'max-w-[min(100%,1800px)] pb-28 pt-4 px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 xl:py-6 xl:pb-8'
         }`}
         style={isEdgeToEdgeView
@@ -546,6 +631,14 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
         )}
 
         {activeNav === 'jobs' && <UserJobsPage userType={userType} user={user} />}
+        {activeNav === 'search' && (
+          <UserSearchResultsPage
+            initialQuery={searchPageQuery}
+            initialScope={searchPageScope}
+            onBack={() => updateActiveNav('home')}
+            onOpenPublicProfile={handleOpenPublicProfile}
+          />
+        )}
         {activeNav === 'projects' && <UserProjectsPage userType={userType} user={user} onUpdateUser={onUpdateUser} />}
         {activeNav === 'saved-jobs' && (
           <UserSavedJobsPanel

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Moon, Sun, AlertCircle, Eye, EyeOff, GitFork } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
-import { loginUser, registerUser, loginWithGoogle, loginWithGithub } from '@sharedServices/authService';
+import { loginUser, loginWithGoogle, loginWithGithub } from '@sharedServices/authService';
 import TermsAndConditionsModal from '@sharedComponents/modals/TermsAndConditionsModal';
 
 export default function AuthPage({
@@ -26,13 +26,13 @@ export default function AuthPage({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
-    username: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
-  const [agreeTerms, setAgreeTerms] = useState(false);
   const [authTermsOpen, setAuthTermsOpen] = useState(false);
+  const [pendingSignupInput, setPendingSignupInput] = useState(null);
+  const [termsDecisionError, setTermsDecisionError] = useState('');
 
   useEffect(() => {
     const clearStaleOauthLoading = () => {
@@ -66,90 +66,113 @@ export default function AuthPage({
     setAuthMode(initialMode);
     setError('');
     setInfoMessage('');
+    setAuthTermsOpen(false);
+    setPendingSignupInput(null);
+    setTermsDecisionError('');
   }, [initialMode]);
 
   useEffect(() => {
     onWarmRoute?.(authMode === 'signup' ? (accountType || 'developer') : 'login');
   }, [accountType, authMode, onWarmRoute]);
 
+  const signupAccountTypeLabel = accountType === 'company'
+    ? 'Company / Client account'
+    : accountType === 'developer'
+      ? 'IT Professional / Developer account'
+      : '';
+
+  const deriveSignupUsername = (email) => {
+    const localPart = String(email || '').split('@')[0] || '';
+    const sanitized = localPart.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 50);
+    if (sanitized.length >= 3) {
+      return sanitized;
+    }
+
+    const fallbackCore = `user${Date.now().toString().slice(-8)}`.replace(/[^a-zA-Z0-9_]/g, '');
+    return fallbackCore.slice(0, 50);
+  };
+
+  const handleSignupWithAcceptedTerms = async (signupInput) => {
+    if (!signupInput) {
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setInfoMessage('');
+    setTermsDecisionError('');
+
+    try {
+      const signupPayload = {
+        username: signupInput.username,
+        email: signupInput.email,
+        password: signupInput.password,
+        termsAccepted: true,
+        ...(accountType ? { accountType } : {}),
+      };
+
+      await onBeginSignup?.(signupPayload);
+      setAuthTermsOpen(false);
+      setPendingSignupInput(null);
+    } catch (err) {
+      const rawMessage = String(err?.message || '').trim();
+      setTermsDecisionError(rawMessage || 'Unable to create account right now.');
+      setError(rawMessage || 'Unable to create account right now.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setInfoMessage('');
+
+    if (authMode === 'signup') {
+      if (formData.password !== formData.confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
+
+      const signupInput = {
+        email: String(formData.email || '').trim().toLowerCase(),
+        password: String(formData.password || ''),
+      };
+      signupInput.username = deriveSignupUsername(signupInput.email);
+
+      setPendingSignupInput(signupInput);
+      setTermsDecisionError('');
+      setAuthTermsOpen(true);
+      return;
+    }
+
     setLoading(true);
 
     try {
-      if (authMode === 'signup') {
-        // Validate Terms
-        if (!agreeTerms) {
-          setError('You must agree to the Terms & Conditions to create an account.');
-          setLoading(false);
-          return;
-        }
+      const data = await loginUser({
+        email: formData.email,
+        password: formData.password,
+      });
 
-        // Validate passwords match
-        if (formData.password !== formData.confirmPassword) {
-          setError('Passwords do not match');
-          setLoading(false);
-          return;
-        }
-
-        if (accountType) {
-          const data = await registerUser({
-            username: formData.username,
-            email: formData.email,
-            password: formData.password,
-            accountType,
-            termsAccepted: true,
-          });
-
-          await onLogin?.(
-            {
-              ...data.user,
-              type: data.user?.type || userType,
-              accountType: data.user?.accountType || accountType,
-            },
-            { isNewUser: true }
-          );
-        } else {
-          await onBeginSignup?.({
-            username: formData.username,
-            email: formData.email,
-            password: formData.password,
-            termsAccepted: true,
-          });
-        }
-      } else {
-        // Login
-        const data = await loginUser({
-          email: formData.email,
-          password: formData.password,
-        });
-
-        await onLogin?.(
-          {
-            ...data.user,
-            type: data.user?.type || userType,
-          },
-          { isNewUser: false }
-        );
-      }
+      await onLogin?.(
+        {
+          ...data.user,
+          type: data.user?.type || userType,
+        },
+        { isNewUser: false }
+      );
     } catch (err) {
       const rawMessage = String(err?.message || '').trim();
-      if (authMode === 'login') {
-        const normalized = rawMessage.toLowerCase();
-        if (
-          normalized.includes('user not found') ||
-          normalized.includes('account not found') ||
-          normalized.includes('not registered') ||
-          normalized.includes('does not exist')
-        ) {
-          setError('Account not registered. Please create an account first.');
-        } else {
-          setError(rawMessage || 'Unable to sign in. Please check your email and password.');
-        }
+      const normalized = rawMessage.toLowerCase();
+      if (
+        normalized.includes('user not found') ||
+        normalized.includes('account not found') ||
+        normalized.includes('not registered') ||
+        normalized.includes('does not exist')
+      ) {
+        setError('Account not registered. Please create an account first.');
       } else {
-        setError(rawMessage || 'An error occurred');
+        setError(rawMessage || 'Unable to sign in. Please check your email and password.');
       }
     } finally {
       setLoading(false);
@@ -291,6 +314,11 @@ export default function AuthPage({
               <h2 className="text-3xl font-bold text-[#3a5a40] dark:text-white mb-2">
                 {authMode === 'login' ? 'Welcome Back' : 'Create Account'}
               </h2>
+              {authMode === 'signup' && signupAccountTypeLabel ? (
+                <p className="text-sm font-medium text-[#5f6f52] dark:text-[#b8d4e8]">
+                  {signupAccountTypeLabel}
+                </p>
+              ) : null}
             </div>
 
             {/* Error Message */}
@@ -308,21 +336,6 @@ export default function AuthPage({
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {authMode === 'signup' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Username
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.username}
-                    onChange={(e) => setFormData({...formData, username: e.target.value})}
-                    className="w-full px-4 py-2 border border-[#a3b18a] dark:border-[#2a4a6f] rounded-lg bg-white dark:bg-[#0f2139] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#3ba9d6] focus:border-transparent outline-none transition-colors"
-                    required
-                  />
-                </div>
-              )}
-
               <div>
                 <label className="block text-sm font-medium text-[#3a5a40] dark:text-[#b8d4e8] mb-1">Email</label>
                 <input
@@ -375,29 +388,6 @@ export default function AuthPage({
                       {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
-                </div>
-              )}
-
-              {authMode === 'signup' && (
-                <div className="flex items-start gap-3 mt-4 pt-1">
-                  <input
-                    type="checkbox"
-                    id="agreeTerms"
-                    checked={agreeTerms}
-                    onChange={(e) => setAgreeTerms(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 rounded border-[#a3b18a] bg-white dark:bg-[#0f2139] text-[#3a5a40] focus:ring-[#588157] outline-none cursor-pointer"
-                  />
-                  <label htmlFor="agreeTerms" className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">
-                    I have read, understood, and agree to the{' '}
-                    <button 
-                      type="button" 
-                      onClick={() => setAuthTermsOpen(true)}
-                      className="text-[#3a5a40] dark:text-[#3ba9d6] hover:underline font-semibold"
-                    >
-                      Terms & Conditions
-                    </button>
-                    .
-                  </label>
                 </div>
               )}
 
@@ -487,7 +477,24 @@ export default function AuthPage({
       {/* Auth-level Terms Modal Overlay */}
       <TermsAndConditionsModal
         isOpen={authTermsOpen}
-        onClose={() => setAuthTermsOpen(false)}
+        onClose={() => {
+          if (loading) return;
+          setAuthTermsOpen(false);
+          setTermsDecisionError('');
+        }}
+        showDecisionActions
+        onDecline={() => {
+          if (loading) return;
+          setAuthTermsOpen(false);
+          setPendingSignupInput(null);
+          setTermsDecisionError('');
+        }}
+        onAgree={() => handleSignupWithAcceptedTerms(pendingSignupInput)}
+        agreeLabel="Agree & Create Account"
+        declineLabel="Not Now"
+        decisionLoading={loading}
+        decisionError={termsDecisionError}
+        disableClose={loading}
       />
     </div>
   );

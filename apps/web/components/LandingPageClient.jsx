@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import LandingPage from '@sharedPages/landing/LandingPage';
 import { getCurrentUser, isCompanyAccount } from '@sharedServices/authService';
@@ -16,7 +16,9 @@ const resolveDashboardPath = (user) => (
 
 export default function LandingPageClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isAccountTypeModalOpen, setIsAccountTypeModalOpen] = useState(false);
+  const shouldOpenAccountTypeModal = searchParams.get('accountTypeModal') === '1';
 
   useEffect(() => {
     let cancelled = false;
@@ -40,6 +42,20 @@ export default function LandingPageClient() {
     };
   }, [router]);
 
+  useEffect(() => {
+    if (!shouldOpenAccountTypeModal) {
+      return;
+    }
+    setIsAccountTypeModalOpen(true);
+  }, [shouldOpenAccountTypeModal]);
+
+  const closeAccountTypeModal = () => {
+    setIsAccountTypeModalOpen(false);
+    if (shouldOpenAccountTypeModal) {
+      router.replace('/');
+    }
+  };
+
   return (
     <>
       <LandingPage
@@ -51,7 +67,7 @@ export default function LandingPageClient() {
       {isAccountTypeModalOpen ? (
         <SelectAccountTypeModal
           open={isAccountTypeModalOpen}
-          onClose={() => setIsAccountTypeModalOpen(false)}
+          onClose={closeAccountTypeModal}
           onSelect={(type) => {
             setIsAccountTypeModalOpen(false);
 

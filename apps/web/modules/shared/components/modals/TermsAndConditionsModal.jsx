@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { X, Book } from 'lucide-react';
 
 export default function TermsAndConditionsModal({
@@ -15,6 +15,89 @@ export default function TermsAndConditionsModal({
   decisionError = '',
   disableClose = false,
 }) {
+  const contentRef = useRef(null);
+  const isDraggingRef = useRef(false);
+  const dragStartYRef = useRef(0);
+  const dragStartScrollTopRef = useRef(0);
+  const [hasReadToBottom, setHasReadToBottom] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setHasReadToBottom(false);
+      return;
+    }
+
+    const checkScrollable = () => {
+      const node = contentRef.current;
+      if (!node) return;
+
+      const canScroll = node.scrollHeight > node.clientHeight + 2;
+      setHasReadToBottom(!canScroll);
+    };
+
+    const frameId = window.requestAnimationFrame(checkScrollable);
+    window.addEventListener('resize', checkScrollable);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', checkScrollable);
+    };
+  }, [isOpen]);
+
+  const handleContentScroll = (event) => {
+    const node = event.currentTarget;
+    const bottomThreshold = 16;
+    const reachedBottom =
+      node.scrollTop + node.clientHeight >= node.scrollHeight - bottomThreshold;
+
+    if (reachedBottom) {
+      setHasReadToBottom(true);
+    }
+  };
+
+  const handleMouseDown = (event) => {
+    if (event.button !== 0) return;
+
+    const node = contentRef.current;
+    if (!node) return;
+
+    isDraggingRef.current = true;
+    setIsDragging(true);
+    dragStartYRef.current = event.clientY;
+    dragStartScrollTopRef.current = node.scrollTop;
+  };
+
+  const handleMouseMove = (event) => {
+    if (!isDraggingRef.current) return;
+
+    const node = contentRef.current;
+    if (!node) return;
+
+    const deltaY = event.clientY - dragStartYRef.current;
+    node.scrollTop = dragStartScrollTopRef.current - deltaY;
+    event.preventDefault();
+  };
+
+  const endMouseDrag = () => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    if (!isOpen) {
+      isDraggingRef.current = false;
+      setIsDragging(false);
+      return;
+    }
+
+    window.addEventListener('mouseup', endMouseDrag);
+    return () => {
+      window.removeEventListener('mouseup', endMouseDrag);
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -39,7 +122,16 @@ export default function TermsAndConditionsModal({
         </div>
         
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto p-5 sm:p-7 lg:p-8 space-y-8 custom-scrollbar">
+        <main
+          ref={contentRef}
+          onScroll={handleContentScroll}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={endMouseDrag}
+          onMouseLeave={endMouseDrag}
+          className={`min-h-0 flex-1 overflow-y-auto overscroll-contain no-scrollbar touch-pan-y p-5 sm:p-7 lg:p-8 space-y-8 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
           
           <div className="text-[#4b5563] dark:text-[#b8d4e8] leading-relaxed text-[14.5px] space-y-4">
             <p>
@@ -189,7 +281,7 @@ export default function TermsAndConditionsModal({
               <button
                 type="button"
                 onClick={onAgree}
-                disabled={decisionLoading}
+                disabled={decisionLoading || !hasReadToBottom}
                 className="rounded-lg border border-[#588157] bg-[#3a5a40] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#344e41] disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#3ba9d6] dark:bg-[#1f6f96] dark:hover:bg-[#2d8bb8]"
               >
                 {decisionLoading ? 'Saving...' : agreeLabel}

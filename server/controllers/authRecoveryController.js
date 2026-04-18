@@ -6,7 +6,52 @@ const {
   resetPasswordWithOtp,
   issueRegistrationOtp,
   verifyRegistrationOtp,
+  issueLocalRegistrationBypassToken,
+  issueLocalPasswordResetBypassToken,
 } = require('../services/authService');
+
+const assertLocalBypassAllowed = (req) => {
+  const toHostname = (raw) => {
+    const value = String(raw || '').trim().toLowerCase();
+    if (!value) return '';
+
+    try {
+      const asUrl = value.includes('://') ? new URL(value) : new URL(`http://${value}`);
+      return String(asUrl.hostname || '').trim().toLowerCase();
+    } catch {
+      return '';
+    }
+  };
+
+  const isLoopbackHost = (raw) => {
+    const hostname = toHostname(raw);
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+  };
+
+  const isLoopbackIp = (raw) => {
+    const ip = String(raw || '').trim().toLowerCase();
+    return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+  };
+
+  const isProduction = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+  if (isProduction) {
+    throw new Error('Local bypass is forbidden in production.');
+  }
+
+  const hostHeader = req.get('x-forwarded-host') || req.get('host') || req.hostname;
+  const originHeader = req.get('origin');
+  const refererHeader = req.get('referer');
+  const requestIp = req.ip || req.socket?.remoteAddress || '';
+
+  const hostAllowed = isLoopbackHost(hostHeader);
+  const originAllowed = !originHeader || isLoopbackHost(originHeader);
+  const refererAllowed = !refererHeader || isLoopbackHost(refererHeader);
+  const ipAllowed = isLoopbackIp(requestIp);
+
+  if (!hostAllowed || !originAllowed || !refererAllowed || !ipAllowed) {
+    throw new Error('Local bypass is only allowed from localhost.');
+  }
+};
 
 // @desc    Send password reset link (generic response)
 // @route   POST /api/auth/forgot-password
@@ -110,6 +155,50 @@ const verifyRegistrationOtpCode = async (req, res) => {
   return res.status(result.statusCode).json({ success: false, message: result.message });
 };
 
+const localRegistrationBypass = async (req, res) => {
+  try {
+    assertLocalBypassAllowed(req);
+    const email = String(req.body?.email || '').trim();
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required.' });
+    }
+
+    const result = await issueLocalRegistrationBypassToken({ email });
+    if (result.success) {
+      return res.status(200).json({ success: true, verificationToken: result.verificationToken });
+    }
+
+    return res.status(result.statusCode).json({ success: false, message: result.message });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error?.message || 'Localhost registration bypass is unavailable.',
+    });
+  }
+};
+
+const localPasswordResetBypass = async (req, res) => {
+  try {
+    assertLocalBypassAllowed(req);
+    const email = String(req.body?.email || '').trim();
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required.' });
+    }
+
+    const result = await issueLocalPasswordResetBypassToken({ email });
+    if (result.success) {
+      return res.status(200).json({ success: true, resetToken: result.resetToken });
+    }
+
+    return res.status(result.statusCode).json({ success: false, message: result.message });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error?.message || 'Localhost password reset bypass is unavailable.',
+    });
+  }
+};
+
 module.exports = {
   forgotPassword,
   resetPassword,
@@ -118,4 +207,6 @@ module.exports = {
   resetPasswordOtp,
   sendRegistrationOtpCode,
   verifyRegistrationOtpCode,
+  localRegistrationBypass,
+  localPasswordResetBypass,
 };

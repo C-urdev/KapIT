@@ -7,6 +7,7 @@ const { ensureBaseUserSchemaReady, ensureHiringSchemaReady, ensureOnboardingSche
 const { withJobAvailability, closeExpiredJobs } = require('../services/jobAvailabilityService');
 const { getPremiumStateForUser, requirePremiumApplicantFeature } = require('../services/planAccessService');
 const { isAiConfigured, matchJobsForCandidate } = require('../services/aiService');
+const { appendSearchScopeFilterClause } = require('../services/accountSearchService');
 const { logger } = require('../config/logger');
 const {
   attachSessionCookies,
@@ -177,13 +178,6 @@ const register = async (req, res) => {
     return res.status(403).json({ message: 'Email has not been verified.' });
   }
 
-  if (!termsAccepted) {
-    return res.status(400).json({
-      success: false,
-      message: 'You must agree to the Terms & Conditions to create an account.',
-    });
-  }
-
   let client;
   
   try {
@@ -222,11 +216,12 @@ const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
     // Insert new user
+    const hasAcceptedTerms = termsAccepted === true;
     const result = await client.query(
       `INSERT INTO users (id, username, email, password, user_type, account_type, terms_accepted, terms_accepted_at) 
-       VALUES ($1, $2, $3, $4, $5, $6, true, CURRENT_TIMESTAMP) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, CASE WHEN $7 THEN CURRENT_TIMESTAMP ELSE NULL END) 
        RETURNING *`,
-      [crypto.randomUUID(), username, email, hashedPassword, derived.userType, derived.accountType]
+      [crypto.randomUUID(), username, email, hashedPassword, derived.userType, derived.accountType, hasAcceptedTerms]
     );
 
     const user = result.rows[0];
@@ -669,34 +664,39 @@ const searchUsers = async (req, res) => {
 
   try {
     const query = String(req.query.q || '').trim();
+    const scope = String(req.query.scope || 'all').trim().toLowerCase();
     if (!query) {
       return res.json({ success: true, results: [] });
     }
 
     client = await pool.connect();
     const searchPattern = `%${query}%`;
+    const values = [searchPattern, req.user.id, `${query}%`];
+    const scopeFilterSql = appendSearchScopeFilterClause({ values, scope });
 
     const result = await client.query(
-      `SELECT id, username, email, user_type, company_name, is_premium, profile_completed, profile_image
+      `SELECT id, username, email, name, user_type, company_name, is_premium, profile_completed, profile_image
        FROM users
-       WHERE (username ILIKE $1 OR email ILIKE $1 OR company_name ILIKE $1)
-         AND id <> $2
+       WHERE (username ILIKE $1 OR email ILIKE $1 OR company_name ILIKE $1 OR name ILIKE $1)
+         AND id <> $2${scopeFilterSql}
        ORDER BY
          CASE
-           WHEN company_name ILIKE $3 THEN 0
-           WHEN username ILIKE $3 THEN 1
-           WHEN email ILIKE $3 THEN 2
-           ELSE 3
-         END,
-         username ASC
+            WHEN company_name ILIKE $3 THEN 0
+            WHEN username ILIKE $3 THEN 1
+            WHEN name ILIKE $3 THEN 2
+            WHEN email ILIKE $3 THEN 3
+            ELSE 4
+          END,
+          COALESCE(NULLIF(username, ''), NULLIF(name, ''), email) ASC
        LIMIT 12`,
-      [searchPattern, req.user.id, `${query}%`]
+      values
     );
 
     const results = result.rows.map((row) => ({
       id: row.id,
       username: row.username,
       email: row.email,
+      fullName: row.name || '',
       type: row.user_type,
       companyName: row.company_name || '',
       isPremium: row.is_premium,

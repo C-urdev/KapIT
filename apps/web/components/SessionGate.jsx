@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   acceptTermsAndConditions,
@@ -35,6 +35,13 @@ export default function SessionGate({
   const [termsActionLoading, setTermsActionLoading] = useState(false);
   const [termsActionError, setTermsActionError] = useState('');
 
+  const routeAfterTermsAccepted = useCallback((nextUser) => {
+    if (!allowIncompleteProfile && nextUser?.profileCompleted === false) {
+      router.replace(resolveOnboardingPath(nextUser));
+      return;
+    }
+  }, [allowIncompleteProfile, router]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -50,14 +57,12 @@ export default function SessionGate({
           return;
         }
 
-        if (!allowIncompleteProfile && storedUser.profileCompleted === false) {
-          router.replace(resolveOnboardingPath(storedUser));
-          setLoading(false);
-          return;
-        }
-
         setUser(storedUser);
-        setTermsModalOpen(!storedUser.termsAccepted);
+        const needsTermsConsent = !storedUser.termsAccepted;
+        setTermsModalOpen(needsTermsConsent);
+        if (!needsTermsConsent) {
+          routeAfterTermsAccepted(storedUser);
+        }
         // Keep UI responsive on route changes: validate session in background.
         setLoading(false);
       }
@@ -82,13 +87,12 @@ export default function SessionGate({
           return;
         }
 
-        if (!allowIncompleteProfile && nextUser.profileCompleted === false) {
-          router.replace(resolveOnboardingPath(nextUser));
-          return;
-        }
-
         setUser(nextUser);
-        setTermsModalOpen(!nextUser.termsAccepted);
+        const needsTermsConsent = !nextUser.termsAccepted;
+        setTermsModalOpen(needsTermsConsent);
+        if (!needsTermsConsent) {
+          routeAfterTermsAccepted(nextUser);
+        }
       } catch {
         if (!cancelled) {
           await logoutUser();
@@ -107,7 +111,7 @@ export default function SessionGate({
     return () => {
       cancelled = true;
     };
-  }, [allowIncompleteProfile, redirectTo, requiredAccountType, router]);
+  }, [allowIncompleteProfile, redirectTo, requiredAccountType, routeAfterTermsAccepted, router]);
 
   if (loading) {
     return (
@@ -135,6 +139,7 @@ export default function SessionGate({
 
       setUser(nextUser);
       setTermsModalOpen(false);
+      routeAfterTermsAccepted(nextUser);
     } catch (error) {
       setTermsActionError(String(error?.message || 'Unable to save your terms consent right now.'));
     } finally {

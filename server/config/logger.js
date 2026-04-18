@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const { AsyncLocalStorage } = require('node:async_hooks');
 
 const isProduction = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
-const level = String(process.env.LOG_LEVEL || (isProduction ? 'info' : 'debug')).toLowerCase();
+const level = String(process.env.LOG_LEVEL || (isProduction ? 'info' : 'warn')).toLowerCase();
 const requestContext = new AsyncLocalStorage();
 
 const logger = pino({
