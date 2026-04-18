@@ -66,7 +66,6 @@ Set these backend environment variables:
 
 Optional backend variables:
 
-- `STRIPE_SECRET_KEY`
 - `PAYPAL_CLIENT_ID`
 - `PAYPAL_CLIENT_SECRET`
 - `PAYPAL_ENV`
@@ -77,7 +76,6 @@ From your local `.env`, copy these into Render:
 
 - `DATABASE_URL`
 - `JWT_SECRET`
-- `STRIPE_SECRET_KEY` if you use Stripe
 - `PAYPAL_CLIENT_ID` if you use PayPal
 - `PAYPAL_CLIENT_SECRET` if you use PayPal
 

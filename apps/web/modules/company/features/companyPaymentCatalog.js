@@ -1,4 +1,4 @@
-import { BadgeDollarSign, CreditCard } from 'lucide-react';
+import { BadgeDollarSign } from 'lucide-react';
 
 export const PLAN_FEATURES = [
   'Verified payment before publishing',
@@ -45,15 +45,6 @@ export const JOB_POST_PLANS = [
 ];
 
 export const PAYMENT_PROVIDERS = [
-  {
-    id: 'stripe',
-    label: 'Stripe',
-    merchantName: 'KapIT Stripe Checkout',
-    merchantCode: 'KAPIT-STRIPE-201',
-    accountHint: 'Card checkout handled by Stripe',
-    description: 'Accept secure card payments through hosted Stripe Checkout.',
-    icon: CreditCard,
-  },
   {
     id: 'paypal',
     label: 'PayPal',

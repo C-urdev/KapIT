@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS billing_subscriptions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CHECK (subject_type IN ('user', 'company')),
-  CHECK (provider IN ('stripe', 'paypal', 'manual', 'sample')),
+  CHECK (provider IN ('paypal', 'manual', 'sample')),
   CHECK (status IN ('pending', 'trialing', 'active', 'past_due', 'paused', 'cancelled', 'expired', 'incomplete')),
   CHECK (billing_interval IN ('day', 'week', 'month', 'year', 'one_time')),
   CHECK (unit_amount >= 0),
@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS billing_subscription_payments (
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CHECK (provider IN ('stripe', 'paypal', 'manual', 'sample')),
+  CHECK (provider IN ('paypal', 'manual', 'sample')),
   CHECK (status IN ('pending', 'processing', 'paid', 'failed', 'cancelled', 'refunded')),
   CHECK (amount >= 0)
 );

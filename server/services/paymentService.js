@@ -1,14 +1,16 @@
 const crypto = require('crypto');
-const Stripe = require('stripe');
 const { getJobPostPlanById, JOB_POST_PLANS } = require('./jobPostingPlans');
 const { getOrCreateCompanyForUserId, serializeJobRow } = require('./companyService');
 const { createPublishedJobForCompany, publishDraftJobForCompany } = require('./jobService');
 const { getRedisClient } = require('../config/redis');
 const { logger } = require('../config/logger');
+const {
+  hasPayPalConfig,
+  getPayPalClientId,
+  getPayPalClientSecret,
+} = require('../config/paymentEnv');
 
-let stripeClient = null;
-
-const PAYMENT_PROVIDERS = new Set(['stripe', 'paypal']);
+const PAYMENT_PROVIDERS = new Set(['paypal']);
 const PAYMENT_API_TIMEOUT_MS = Math.max(1000, Number(process.env.PAYMENT_API_TIMEOUT_MS || 10000));
 const PAYMENT_API_RETRY_MAX = Math.max(1, Number(process.env.PAYMENT_API_RETRY_MAX || 3));
 const PAYMENT_API_RETRY_BASE_MS = Math.max(50, Number(process.env.PAYMENT_API_RETRY_BASE_MS || 300));
@@ -22,44 +24,26 @@ const USER_PREMIUM_PLAN = Object.freeze({
   description: 'Premium applicant subscription',
 });
 
-const getPaymentProviderAvailability = () => ({
-  stripe: {
-    enabled: Boolean(process.env.STRIPE_SECRET_KEY),
-    label: 'Stripe',
-    reason: process.env.STRIPE_SECRET_KEY ? '' : 'Stripe is not configured yet.',
-  },
-  paypal: {
-    enabled: Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET),
-    label: 'PayPal',
-    reason: process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET ? '' : 'PayPal is not configured yet.',
-  },
-});
+const getPaymentProviderAvailability = () => {
+  const payPalEnabled = hasPayPalConfig();
+  return {
+    paypal: {
+      enabled: payPalEnabled,
+      label: 'PayPal',
+      reason: payPalEnabled ? '' : 'PayPal is not configured yet.',
+    },
+  };
+};
 
 const formatPhpAmount = (amount) => Number(amount || 0).toFixed(2);
-
-const getStripeClient = () => {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey) {
-    throw new Error('Stripe is not configured. Add STRIPE_SECRET_KEY to the server environment.');
-  }
-
-  if (!stripeClient) {
-    stripeClient = new Stripe(secretKey, {
-      timeout: PAYMENT_API_TIMEOUT_MS,
-      maxNetworkRetries: Math.max(0, PAYMENT_API_RETRY_MAX - 1),
-    });
-  }
-
-  return stripeClient;
-};
 
 const getPayPalBaseUrl = () => (String(process.env.PAYPAL_ENV || 'sandbox').trim().toLowerCase() === 'live'
   ? 'https://api-m.paypal.com'
   : 'https://api-m.sandbox.paypal.com');
 
 const getPayPalCredentials = () => {
-  const clientId = process.env.PAYPAL_CLIENT_ID;
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+  const clientId = getPayPalClientId();
+  const clientSecret = getPayPalClientSecret();
 
   if (!clientId || !clientSecret) {
     throw new Error('PayPal is not configured. Add PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET to the server environment.');
@@ -260,49 +244,6 @@ const buildUserPremiumSuccessUrl = (clientBaseUrl, provider, paymentId) =>
 const buildUserPremiumCancelUrl = (clientBaseUrl, provider, paymentId) =>
   `${clientBaseUrl}/premium/payment?checkout=cancelled&provider=${encodeURIComponent(provider)}&payment_id=${encodeURIComponent(paymentId)}`;
 
-const createStripeCheckout = async ({ companyId, payment, plan, clientBaseUrl }) => {
-  const stripe = getStripeClient();
-  const session = await withRetry(
-    () => stripe.checkout.sessions.create({
-      mode: 'payment',
-      success_url: `${buildSuccessUrl(clientBaseUrl, 'stripe', payment.id)}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: buildCancelUrl(clientBaseUrl, 'stripe', payment.id),
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: 'php',
-            unit_amount: Number(plan.price) * 100,
-            product_data: {
-              name: `KapIT Job Post - ${plan.label}`,
-              description: `${plan.description}. Publish one company job post for ${plan.durationLabel}.`,
-            },
-          },
-        },
-      ],
-      metadata: {
-        companyId,
-        paymentId: payment.id,
-        planId: plan.id,
-      },
-      payment_intent_data: {
-        metadata: {
-          companyId,
-          paymentId: payment.id,
-          planId: plan.id,
-        },
-      },
-    }),
-    { label: 'Stripe checkout session creation' }
-  );
-
-  return {
-    checkoutUrl: session.url,
-    providerCheckoutId: session.id,
-  };
-};
-
 const getPayPalAccessToken = async () => {
   const { clientId, clientSecret } = getPayPalCredentials();
   const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
@@ -431,51 +372,6 @@ const getUserPremiumPaymentRecord = async (client, paymentId, userId, options = 
   return result.rows[0] || null;
 };
 
-const createUserPremiumStripeCheckout = async ({ userId, payment, plan, clientBaseUrl }) => {
-  const stripe = getStripeClient();
-  const session = await withRetry(
-    () => stripe.checkout.sessions.create({
-      mode: 'payment',
-      success_url: `${buildUserPremiumSuccessUrl(clientBaseUrl, 'stripe', payment.id)}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: buildUserPremiumCancelUrl(clientBaseUrl, 'stripe', payment.id),
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: 'php',
-            unit_amount: Number(plan.price) * 100,
-            product_data: {
-              name: `KapIT ${plan.label} Subscription`,
-              description: `${plan.description}.`,
-            },
-          },
-        },
-      ],
-      metadata: {
-        userId,
-        paymentId: payment.id,
-        planId: plan.id,
-        context: 'user_premium',
-      },
-      payment_intent_data: {
-        metadata: {
-          userId,
-          paymentId: payment.id,
-          planId: plan.id,
-          context: 'user_premium',
-        },
-      },
-    }),
-    { label: 'Stripe user premium checkout session creation' }
-  );
-
-  return {
-    checkoutUrl: session.url,
-    providerCheckoutId: session.id,
-  };
-};
-
 const createUserPremiumPayPalOrder = async ({ payment, plan, clientBaseUrl }) => {
   const accessToken = await getPayPalAccessToken();
   const response = await withRetry(
@@ -541,10 +437,7 @@ const startUserPremiumCheckout = async ({ client, req, userId, provider }) => {
   });
   const clientBaseUrl = getClientBaseUrl(req);
 
-  const checkout =
-    normalizedProvider === 'stripe'
-      ? await createUserPremiumStripeCheckout({ userId, payment, plan, clientBaseUrl })
-      : await createUserPremiumPayPalOrder({ payment, plan, clientBaseUrl });
+  const checkout = await createUserPremiumPayPalOrder({ payment, plan, clientBaseUrl });
 
   const saved = await updateUserPremiumPaymentRecord(client, payment.id, {
     provider_checkout_id: checkout.providerCheckoutId,
@@ -713,10 +606,7 @@ const startJobPostCheckout = async ({ client, req, companyUserId, provider, plan
   });
   const clientBaseUrl = getClientBaseUrl(req);
 
-  const checkout =
-    normalizedProvider === 'stripe'
-      ? await createStripeCheckout({ companyId: company.id, payment, plan, clientBaseUrl })
-      : await createPayPalOrder({ payment, plan, clientBaseUrl });
+  const checkout = await createPayPalOrder({ payment, plan, clientBaseUrl });
 
   const saved = await updatePaymentRecord(client, payment.id, {
     provider_checkout_id: checkout.providerCheckoutId,
@@ -937,32 +827,6 @@ const completeLocalBypassPayment = async ({ client, companyUserId, provider, pla
   });
 };
 
-const extractStripeVerification = async (sessionId) => {
-  const stripe = getStripeClient();
-  const session = await withRetry(
-    () => stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ['payment_intent'],
-    }),
-    { label: 'Stripe session verification' }
-  );
-
-  if (!session || session.payment_status !== 'paid') {
-    throw new Error('Stripe payment is not marked as paid yet.');
-  }
-
-  return {
-    providerCheckoutId: session.id,
-    providerPaymentId:
-      typeof session.payment_intent === 'string'
-        ? session.payment_intent
-        : session.payment_intent?.id || null,
-    payerEmail: session.customer_details?.email || null,
-    status: 'paid',
-    rawPayload: session,
-    amount: Math.round(Number(session.amount_total || 0) / 100),
-  };
-};
-
 const capturePayPalOrder = async (orderId) => {
   const accessToken = await getPayPalAccessToken();
   const response = await withRetry(
@@ -1073,7 +937,6 @@ module.exports = {
   startUserPremiumCheckout,
   completeLocalBypassPayment,
   completeLocalBypassUserPremiumPayment,
-  extractStripeVerification,
   capturePayPalOrder,
   finalizeVerifiedPayment,
   finalizeVerifiedUserPremiumPayment,

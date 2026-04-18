@@ -10,7 +10,6 @@ const {
   assertLocalBypassAllowed,
   startJobPostCheckoutIdempotent,
   completeLocalBypassPayment,
-  extractStripeVerification,
   capturePayPalOrder,
   finalizeVerifiedPayment,
   updatePaymentRecord,
@@ -73,71 +72,6 @@ const createCheckoutSession = async (req, res) => {
     }
     logger.error('Create checkout session error:', error);
     return res.status(400).json({ success: false, message: error?.message || 'Failed to start checkout.' });
-  } finally {
-    client?.release();
-  }
-};
-
-const verifyStripeCheckout = async (req, res) => {
-  let client;
-
-  try {
-    await ensureBaseUserSchemaReady();
-    await ensureHiringSchemaReady();
-    client = await pool.connect();
-    await client.query('BEGIN');
-
-    const company = await getOrCreateCompanyForUserId(client, req.user.id);
-    const payment = await getPaymentRecordForCompany(client, req.body?.paymentId, company.id, { forUpdate: true });
-    if (!payment) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ success: false, message: 'Payment record not found.' });
-    }
-
-    if (payment.provider !== 'stripe') {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ success: false, message: 'This payment does not use Stripe.' });
-    }
-
-    if (payment.status === 'paid' && payment.job_id) {
-      const result = await finalizeVerifiedPayment({
-        client,
-        companyUserId: req.user.id,
-        payment,
-        verification: {
-          providerCheckoutId: payment.provider_checkout_id,
-          providerPaymentId: payment.provider_payment_id,
-          payerEmail: payment.payer_email,
-          status: 'paid',
-          rawPayload: payment.provider_payload || {},
-          amount: Number(payment.amount || 0),
-        },
-      });
-      await client.query('COMMIT');
-      return res.json({ success: true, payment: result.payment, job: result.job });
-    }
-
-    const verification = await extractStripeVerification(req.body?.sessionId);
-    if (payment.provider_checkout_id && payment.provider_checkout_id !== verification.providerCheckoutId) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ success: false, message: 'Stripe session does not match this payment.' });
-    }
-
-    const result = await finalizeVerifiedPayment({
-      client,
-      companyUserId: req.user.id,
-      payment,
-      verification,
-    });
-
-    await client.query('COMMIT');
-    return res.json({ success: true, payment: result.payment, job: result.job });
-  } catch (error) {
-    if (client) {
-      await client.query('ROLLBACK');
-    }
-    logger.error('Verify Stripe checkout error:', error);
-    return res.status(400).json({ success: false, message: error?.message || 'Failed to verify Stripe payment.' });
   } finally {
     client?.release();
   }
@@ -288,7 +222,6 @@ module.exports = {
   listJobPostingPlans,
   listPaymentProviders,
   createCheckoutSession,
-  verifyStripeCheckout,
   capturePayPalCheckout,
   cancelCheckoutSession,
   completeLocalBypassCheckout,
