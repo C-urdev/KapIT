@@ -15,16 +15,6 @@ const repoRootManifestSyncList = [
   'prerender-manifest.json',
   'required-server-files.js',
   'required-server-files.json',
-  path.join('server', 'app-paths-manifest.json'),
-  path.join('server', 'functions-config-manifest.json'),
-  path.join('server', 'interception-route-rewrite-manifest.js'),
-  path.join('server', 'middleware-build-manifest.js'),
-  path.join('server', 'middleware-manifest.json'),
-  path.join('server', 'next-font-manifest.js'),
-  path.join('server', 'next-font-manifest.json'),
-  path.join('server', 'pages-manifest.json'),
-  path.join('server', 'server-reference-manifest.js'),
-  path.join('server', 'server-reference-manifest.json'),
 ];
 
 const syncFileToRepoRoot = async (relativePath) => {
@@ -39,6 +29,29 @@ const syncFileToRepoRoot = async (relativePath) => {
 
   await fs.mkdir(path.dirname(to), { recursive: true });
   await fs.copyFile(from, to);
+};
+
+const syncTopLevelServerFilesToRepoRoot = async () => {
+  const sourceServerDir = path.join(nextDir, 'server');
+  const targetServerDir = path.join(repoRootNextDir, 'server');
+
+  let entries = [];
+  try {
+    entries = await fs.readdir(sourceServerDir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+
+  await fs.mkdir(targetServerDir, { recursive: true });
+  for (const entry of entries) {
+    if (!entry.isFile()) {
+      continue;
+    }
+
+    const from = path.join(sourceServerDir, entry.name);
+    const to = path.join(targetServerDir, entry.name);
+    await fs.copyFile(from, to);
+  }
 };
 
 const ensureManifest = async () => {
@@ -57,6 +70,7 @@ const ensureManifest = async () => {
     for (const relativePath of repoRootManifestSyncList) {
       await syncFileToRepoRoot(relativePath);
     }
+    await syncTopLevelServerFilesToRepoRoot();
     console.log('Synced routes-manifest-deterministic.json to repo root .next for deployment packaging');
   }
 };
