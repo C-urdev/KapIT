@@ -5,6 +5,8 @@ const isDeploymentBuild = process.env.CI === 'true'
   || process.env.VERCEL === '1'
   || process.env.RENDER === 'true'
   || Boolean(process.env.RAILWAY_ENVIRONMENT);
+const deploymentEnvHint =
+  'Set it in your deployment provider environment variables (for Vercel: Project Settings -> Environment Variables).';
 
 const normalizeUrl = (value) => String(value || '').trim().replace(/\/$/, '');
 
@@ -26,7 +28,9 @@ const resolveServiceUrl = ({
 
   if (!configured) {
     if (isProduction && requiredInProduction && isDeploymentBuild) {
-      throw new Error(`${label} is required in production deployment. Set ${productionServerEnvKey || serverEnvKey} or ${productionPublicEnvKey || publicEnvKey}.`);
+      throw new Error(
+        `${label} is required in production deployment. Set ${productionServerEnvKey || serverEnvKey} or ${productionPublicEnvKey || publicEnvKey}. ${deploymentEnvHint}`
+      );
     }
 
     return normalizeUrl(devFallback);
@@ -35,7 +39,7 @@ const resolveServiceUrl = ({
   try {
     new URL(configured);
   } catch {
-    throw new Error(`${label} is not a valid URL: ${configured}`);
+    throw new Error(`${label} is not a valid URL: ${configured}. ${deploymentEnvHint}`);
   }
 
   if (isProduction && !requiredInProduction && isLocalUrl(configured)) {
@@ -43,7 +47,7 @@ const resolveServiceUrl = ({
   }
 
   if (isProduction && isLocalUrl(configured) && isDeploymentBuild) {
-    throw new Error(`${label} cannot point to localhost in production deployment: ${configured}`);
+    throw new Error(`${label} cannot point to localhost in production deployment: ${configured}. ${deploymentEnvHint}`);
   }
 
   return configured;
