@@ -10,7 +10,6 @@ const {
   assertLocalBypassAllowed,
   startUserPremiumCheckout,
   completeLocalBypassUserPremiumPayment,
-  extractStripeVerification,
   capturePayPalOrder,
   finalizeVerifiedUserPremiumPayment,
   updateUserPremiumPaymentRecord,
@@ -58,69 +57,6 @@ const createUserPremiumCheckoutSession = async (req, res) => {
     }
     logger.error('Create user premium checkout session error:', error);
     return res.status(400).json({ success: false, message: error?.message || 'Failed to start checkout.' });
-  } finally {
-    client?.release();
-  }
-};
-
-const verifyUserPremiumStripeCheckout = async (req, res) => {
-  let client;
-
-  try {
-    await ensureBaseUserSchemaReady();
-    client = await pool.connect();
-    await client.query('BEGIN');
-
-    const payment = await getUserPremiumPaymentRecord(client, req.body?.paymentId, req.user.id, { forUpdate: true });
-    if (!payment) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ success: false, message: 'Payment record not found.' });
-    }
-
-    if (payment.provider !== 'stripe') {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ success: false, message: 'This payment does not use Stripe.' });
-    }
-
-    if (payment.status === 'paid') {
-      const result = await finalizeVerifiedUserPremiumPayment({
-        client,
-        userId: req.user.id,
-        payment,
-        verification: {
-          providerCheckoutId: payment.provider_checkout_id,
-          providerPaymentId: payment.provider_payment_id,
-          payerEmail: payment.payer_email,
-          status: 'paid',
-          rawPayload: payment.provider_payload || {},
-          amount: Number(payment.amount || 0),
-        },
-      });
-      await client.query('COMMIT');
-      return res.json({ success: true, payment: result.payment, user: serializeUser(result.user) });
-    }
-
-    const verification = await extractStripeVerification(req.body?.sessionId);
-    if (payment.provider_checkout_id && payment.provider_checkout_id !== verification.providerCheckoutId) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ success: false, message: 'Stripe session does not match this payment.' });
-    }
-
-    const result = await finalizeVerifiedUserPremiumPayment({
-      client,
-      userId: req.user.id,
-      payment,
-      verification,
-    });
-
-    await client.query('COMMIT');
-    return res.json({ success: true, payment: result.payment, user: serializeUser(result.user) });
-  } catch (error) {
-    if (client) {
-      await client.query('ROLLBACK');
-    }
-    logger.error('Verify user premium Stripe checkout error:', error);
-    return res.status(400).json({ success: false, message: error?.message || 'Failed to verify Stripe payment.' });
   } finally {
     client?.release();
   }
@@ -262,7 +198,6 @@ const completeLocalBypassUserPremiumCheckout = async (req, res) => {
 module.exports = {
   listUserPremiumPaymentProviders,
   createUserPremiumCheckoutSession,
-  verifyUserPremiumStripeCheckout,
   captureUserPremiumPayPalCheckout,
   cancelUserPremiumCheckoutSession,
   completeLocalBypassUserPremiumCheckout,

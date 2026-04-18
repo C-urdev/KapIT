@@ -10,7 +10,6 @@ Rotate these secrets if they were ever real values:
 
 - `JWT_SECRET`
 - `DATABASE_URL`
-- `STRIPE_SECRET_KEY`
 - `PAYPAL_CLIENT_ID`
 - `PAYPAL_CLIENT_SECRET`
 
@@ -39,8 +38,7 @@ Rotate these secrets if they were ever real values:
 
 1. `JWT_SECRET`
 2. `DATABASE_URL`
-3. `STRIPE_SECRET_KEY`
-4. `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` together
+3. `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` together
 
 ## 1. Rotate JWT Secret
 
@@ -95,31 +93,7 @@ Rollback:
 
 - Restore the old `DATABASE_URL` only if the new one is incorrect and you need fast recovery.
 
-## 3. Rotate Stripe Secret
-
-Expected impact:
-
-- Stripe payment session creation or verification may fail if the key is wrong.
-- Non-payment parts of the app should continue working.
-
-Steps:
-
-1. Generate or reveal the new Stripe secret in the Stripe dashboard.
-2. Replace `STRIPE_SECRET_KEY` in `.env`.
-3. Restart the backend.
-4. Keep webhook/config values aligned if you use them.
-
-Verify:
-
-1. Open the payment flow.
-2. Start a checkout session.
-3. Confirm the post-checkout verification path still works.
-
-Rollback:
-
-- Restore the previous key only if needed for recovery while you complete the provider-side rotation.
-
-## 4. Rotate PayPal Credentials
+## 3. Rotate PayPal Credentials
 
 Rotate these together:
 

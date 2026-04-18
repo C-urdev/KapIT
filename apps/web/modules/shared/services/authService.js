@@ -363,17 +363,6 @@ export const createUserPremiumCheckoutSession = async ({ provider }) => {
   return data;
 };
 
-export const verifyUserPremiumStripeCheckout = async ({ paymentId, sessionId }) => {
-  const data = await authRequest('/premium/payments/stripe/verify', {
-    method: 'POST',
-    body: JSON.stringify({ paymentId, sessionId }),
-  });
-  if (data?.user) {
-    data.user = persistUser(data.user);
-  }
-  return data;
-};
-
 export const captureUserPremiumPayPalCheckout = async ({ paymentId, orderId }) => {
   const data = await authRequest('/premium/payments/paypal/capture', {
     method: 'POST',

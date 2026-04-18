@@ -16,7 +16,7 @@ const password = z
 
 const accountType = z.enum(['developer', 'company']);
 const userType = z.enum(['employee', 'company']);
-const provider = z.enum(['stripe', 'paypal']);
+const provider = z.enum(['paypal']);
 const anyRecord = z.record(z.string(), z.any());
 
 const draftSchema = z
@@ -76,7 +76,6 @@ const writeSchemas = {
   authTermsConsent: schema(z.object({ agreed: z.boolean() }).strict()),
   userPremiumCheckoutSession: schema(z.object({ provider }).strict()),
   userPremiumLocalBypass: schema(z.object({ provider }).strict()),
-  userPremiumStripeVerify: schema(z.object({ paymentId: uuid, sessionId: z.string().min(1).max(255) }).strict()),
   userPremiumPaypalCapture: schema(z.object({ paymentId: uuid, orderId: z.string().min(1).max(255) }).strict()),
   userPremiumCancel: schema(z.object({}).strict(), z.object({ paymentId: uuid })),
   authPostCreate: schema(postBody),
@@ -111,7 +110,6 @@ const writeSchemas = {
       })
       .strict()
   ),
-  companyStripeVerify: schema(z.object({ paymentId: uuid, sessionId: z.string().min(1).max(255) }).strict()),
   companyPaypalCapture: schema(z.object({ paymentId: uuid, orderId: z.string().min(1).max(255) }).strict()),
   companyCancel: schema(z.object({}).strict(), z.object({ paymentId: uuid })),
   companyJobsCreate: schema(anyRecord),

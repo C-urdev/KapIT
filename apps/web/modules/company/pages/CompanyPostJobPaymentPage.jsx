@@ -29,9 +29,8 @@ export default function CompanyPostJobPaymentPage() {
   const [draft, setDraft] = React.useState(null);
   const [plans, setPlans] = React.useState(JOB_POST_PLANS);
   const [selectedPlanId, setSelectedPlanId] = React.useState('1-month');
-  const [paymentMethod, setPaymentMethod] = React.useState('stripe');
+  const [paymentMethod, setPaymentMethod] = React.useState('paypal');
   const [providerAvailability, setProviderAvailability] = React.useState({
-    stripe: { enabled: true, label: 'Stripe', reason: '' },
     paypal: { enabled: true, label: 'PayPal', reason: '' },
   });
   const [currentPaymentId, setCurrentPaymentId] = React.useState('');
@@ -135,26 +134,6 @@ export default function CompanyPostJobPaymentPage() {
       setError('');
 
       try {
-        if (checkout === 'stripe-success') {
-          const sessionId = params.get('session_id');
-          if (!sessionId || !paymentId) {
-            throw new Error('Missing Stripe session details. Please try the payment again.');
-          }
-
-          const data = await companyAPI.verifyStripeCheckout({ paymentId, sessionId });
-          paymentCompletedRef.current = true;
-          window.localStorage.removeItem(STORAGE_KEY);
-          setCompletedCheckout({
-            providerId: 'stripe',
-            payment: data?.payment || null,
-            job: data?.job || null,
-          });
-          setSuccess('Stripe payment verified and your job was published successfully.');
-          notifyOpener(PAYMENT_MESSAGE_TYPE, { job: data?.job || null });
-          cleanupUrl();
-          return;
-        }
-
         if (checkout === 'paypal-success') {
           const orderId = params.get('token');
           if (!orderId || !paymentId) {
@@ -447,7 +426,7 @@ export default function CompanyPostJobPaymentPage() {
                               <Icon className="h-5 w-5 text-[#3a5a40] dark:text-[#7dc4ff]" />
                             </div>
                             <div>
-                              <p className="font-semibold text-[#102a1b] dark:text-white">{provider.id === 'stripe' ? 'Stripe (Card)' : 'PayPal'}</p>
+                              <p className="font-semibold text-[#102a1b] dark:text-white">PayPal</p>
                               <p className="mt-1 text-xs leading-5 text-[#5f6f52] dark:text-[#a6bfd8]">{provider.description}</p>
                               {!providerState.enabled ? (
                                 <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-600 dark:text-amber-300">Setup needed</p>

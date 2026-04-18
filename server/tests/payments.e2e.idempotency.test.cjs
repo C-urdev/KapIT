@@ -66,8 +66,7 @@ const createPaymentServiceMock = () => {
     __state: state,
     JOB_POST_PLANS: [basePlan],
     getPaymentProviderAvailability: () => ({
-      stripe: { enabled: true, label: 'Stripe', reason: '' },
-      paypal: { enabled: false, label: 'PayPal', reason: 'disabled in test' },
+      paypal: { enabled: true, label: 'PayPal', reason: '' },
     }),
     normalizeProvider: (provider) => String(provider || '').trim().toLowerCase(),
     assertLocalBypassAllowed: () => {},
@@ -104,11 +103,11 @@ const createPaymentServiceMock = () => {
 
       state.checkoutCreateCount += 1;
       const paymentId = toUuid(state.checkoutCreateCount);
-      const checkoutId = `sess-${paymentId}`;
+      const checkoutId = `order-${paymentId}`;
       const payment = {
         id: paymentId,
         company_id: state.company.id,
-        provider: String(provider || 'stripe'),
+        provider: String(provider || 'paypal'),
         provider_checkout_id: checkoutId,
         provider_payment_id: null,
         payer_email: null,
@@ -132,17 +131,14 @@ const createPaymentServiceMock = () => {
         idempotencyKey: normalizedKey || null,
       };
     },
-    extractStripeVerification: async (sessionId) => ({
-      providerCheckoutId: String(sessionId),
-      providerPaymentId: `pi-${sessionId}`,
+    capturePayPalOrder: async (orderId) => ({
+      providerCheckoutId: String(orderId),
+      providerPaymentId: `cap-${orderId}`,
       payerEmail: 'payer@example.com',
       status: 'paid',
-      rawPayload: { source: 'mock-stripe' },
+      rawPayload: { source: 'mock-paypal' },
       amount: 499,
     }),
-    capturePayPalOrder: async () => {
-      throw new Error('PayPal not used in this test');
-    },
     finalizeVerifiedPayment: async (_args) => {
       const payment = _args.payment;
       const stored = state.payments.get(String(payment.id));
@@ -218,7 +214,7 @@ const loadAppForPaymentE2E = () => {
 };
 
 const buildCheckoutBody = (idempotencyKey) => ({
-  provider: 'stripe',
+  provider: 'paypal',
   planId: 'starter-30d',
   draft: {
     title: 'QA Integration Job',
@@ -232,7 +228,7 @@ const buildCheckoutBody = (idempotencyKey) => ({
   idempotencyKey,
 });
 
-test('payment E2E: checkout idempotency and webhook retry safety', async () => {
+test('payment E2E: checkout idempotency and PayPal capture retry safety', async () => {
   const { app, paymentService } = loadAppForPaymentE2E();
   const bearer = `Bearer ${makeCompanyToken()}`;
 
@@ -278,11 +274,11 @@ test('payment E2E: checkout idempotency and webhook retry safety', async () => {
 
   const verifyPayload = {
     paymentId: first.body.paymentId,
-    sessionId: `sess-${first.body.paymentId}`,
+    orderId: `order-${first.body.paymentId}`,
   };
 
   const verifyFirst = await request(app)
-    .post('/api/company/payments/stripe/verify')
+    .post('/api/company/payments/paypal/capture')
     .set('Authorization', bearer)
     .send(verifyPayload);
 
@@ -290,7 +286,7 @@ test('payment E2E: checkout idempotency and webhook retry safety', async () => {
   assert.equal(verifyFirst.body.success, true);
 
   const verifyRetry = await request(app)
-    .post('/api/company/payments/stripe/verify')
+    .post('/api/company/payments/paypal/capture')
     .set('Authorization', bearer)
     .send(verifyPayload);
 

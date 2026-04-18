@@ -1,5 +1,6 @@
 const dotenv = require('dotenv');
 const path = require('path');
+const { hasPayPalConfig, getPayPalClientId, getPayPalClientSecret } = require('./paymentEnv');
 
 let initialized = false;
 let environmentFilesLoaded = false;
@@ -88,7 +89,11 @@ const validateEnvironment = () => {
   requireValue('JWT_SECRET', errors);
   requireValue('JWT_REFRESH_SECRET', errors);
   requireDatabaseConfig(errors);
-  requirePaired('PAYPAL_CLIENT_ID', 'PAYPAL_CLIENT_SECRET', errors);
+  const payPalClientId = getPayPalClientId();
+  const payPalClientSecret = getPayPalClientSecret();
+  if ((payPalClientId && !payPalClientSecret) || (!payPalClientId && payPalClientSecret)) {
+    errors.push('Environment variables PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET must be set together.');
+  }
 
   validateSecretQuality('JWT_SECRET', errors);
   validateSecretQuality('JWT_REFRESH_SECRET', errors);
@@ -122,10 +127,9 @@ const validateEnvironment = () => {
       requireValue('NEXT_PUBLIC_GITHUB_CLIENT_ID', errors);
     }
 
-    const hasStripe = Boolean(readEnv('STRIPE_SECRET_KEY'));
-    const hasPayPal = Boolean(readEnv('PAYPAL_CLIENT_ID') && readEnv('PAYPAL_CLIENT_SECRET'));
-    if (!hasStripe && !hasPayPal) {
-      errors.push('Configure at least one payment provider in production (Stripe or PayPal).');
+    const hasPayPal = hasPayPalConfig();
+    if (!hasPayPal) {
+      errors.push('Configure PayPal in production (PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET).');
     }
 
     if (readEnv('ENABLE_LOCAL_PAYMENT_BYPASS').toLowerCase() === 'true') {
