@@ -1,5 +1,7 @@
 const { Pool } = require('pg');
-require('dotenv').config();
+const { loadEnvironmentFiles } = require('./env');
+
+loadEnvironmentFiles();
 
 const isSupabaseHost = (host) =>
   typeof host === 'string' && /(?:^|\.)supabase\.(?:co|com)$/i.test(host.trim());

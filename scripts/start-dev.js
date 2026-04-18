@@ -10,7 +10,8 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env.local'), override: true 
 
 const SERVER_PORT = Number(process.env.PORT || 5000);
 const SERVER_HOST = process.env.HOST || '127.0.0.1';
-const FRONTEND_PORT = Number(process.env.NEXTJS_PORT || 3000);
+const FRONTEND_HOST = process.env.NEXTJS_HOST || SERVER_HOST;
+let frontendPort = Number(process.env.NEXTJS_PORT || 3000);
 const FRONTEND_SCRIPT = process.env.FRONTEND_SCRIPT || 'dev';
 const REUSE_EXISTING_BACKEND = process.env.REUSE_EXISTING_BACKEND === 'true';
 const BACKEND_WATCH_ENABLED = process.env.BACKEND_WATCH === 'true';
@@ -82,8 +83,7 @@ const stopNodeProcessOnPort = async (port) => {
       return true;
     }
     if (output.startsWith('SKIP:')) {
-      console.error(`Port ${port} is in use by a non-Node process. Stop it manually, then run npm start again.`);
-      process.exit(1);
+      console.warn(`Port ${port} is in use by a non-Node process.`);
     }
   } catch (error) {
     console.warn(`Unable to stop process on port ${port}: ${error.message}`);
@@ -109,7 +109,7 @@ const isPortOpen = () =>
 
 const isFrontendPortOpen = () =>
   new Promise((resolve) => {
-    const socket = net.createConnection({ port: FRONTEND_PORT, host: SERVER_HOST });
+    const socket = net.createConnection({ port: frontendPort, host: FRONTEND_HOST });
 
     socket.once('connect', () => {
       socket.end();
@@ -121,6 +121,36 @@ const isFrontendPortOpen = () =>
       resolve(false);
     });
   });
+
+const isLocalHttpUrl = (value) => /^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?(?:\/|$)/i.test(String(value || '').trim());
+
+const applyFrontendPortOverride = (fromPort, nextPort) => {
+  frontendPort = nextPort;
+  process.env.NEXTJS_PORT = String(nextPort);
+
+  if (isLocalHttpUrl(process.env.CLIENT_URL)) {
+    process.env.CLIENT_URL = `http://${FRONTEND_HOST}:${nextPort}`;
+  }
+
+  if (isLocalHttpUrl(process.env.NEXT_PUBLIC_SITE_URL)) {
+    process.env.NEXT_PUBLIC_SITE_URL = `http://${FRONTEND_HOST}:${nextPort}`;
+  }
+
+  console.warn(`Frontend port ${fromPort} is in use. Falling back to http://${FRONTEND_HOST}:${nextPort}`);
+};
+
+const findAvailableFrontendPort = async (startPort, maxAttempts = 20) => {
+  for (let candidate = startPort, attempts = 0; attempts < maxAttempts; candidate += 1, attempts += 1) {
+    frontendPort = candidate;
+    // eslint-disable-next-line no-await-in-loop
+    const open = await isFrontendPortOpen();
+    if (!open) {
+      return candidate;
+    }
+  }
+
+  return null;
+};
 
 const isHealthyServerRunning = () =>
   new Promise((resolve) => {
@@ -226,13 +256,19 @@ const bootstrap = async () => {
     }
   }
 
-  if (FRONTEND_PORT !== SERVER_PORT) {
+  if (frontendPort !== SERVER_PORT) {
     const frontendPortOpen = await isFrontendPortOpen();
     if (frontendPortOpen) {
-      const stopped = await stopNodeProcessOnPort(FRONTEND_PORT);
+      const configuredFrontendPort = frontendPort;
+      const stopped = await stopNodeProcessOnPort(configuredFrontendPort);
       if (!stopped && (await isFrontendPortOpen())) {
-        console.error(`Port ${FRONTEND_PORT} is already in use. Stop the old frontend first, then run npm start again.`);
-        process.exit(1);
+        const fallbackPort = await findAvailableFrontendPort(configuredFrontendPort + 1);
+        if (fallbackPort === null) {
+          console.error(`Port ${configuredFrontendPort} is already in use and no fallback frontend port was found.`);
+          process.exit(1);
+        }
+
+        applyFrontendPortOverride(configuredFrontendPort, fallbackPort);
       }
     }
   }

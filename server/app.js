@@ -1,3 +1,6 @@
+const { initEnvironment } = require('./config/env');
+initEnvironment();
+
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
@@ -24,10 +27,8 @@ const {
   developerApiRateLimiter,
 } = require('./middleware/security');
 const { validateWriteRequests } = require('./middleware/writeValidation');
-const { initEnvironment } = require('./config/env');
 
 installConsoleBridge();
-initEnvironment();
 
 const ensureSchemaReady = async () => warmRuntimeSchemas();
 
