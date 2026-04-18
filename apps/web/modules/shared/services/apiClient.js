@@ -46,6 +46,10 @@ const getResponseErrorMessage = ({ response, data, resolvedPath }) => {
   const message = String(data?.message || data?.error || '').trim();
   const normalizedMessage = message.toLowerCase();
 
+  if (normalizedMessage.includes('router_external_target_error')) {
+    return 'The deployed API proxy could not reach the backend service. Please retry, and verify NEXT_PUBLIC_EXPRESS_API_URL/EXPRESS_API_URL point to a live HTTPS API.';
+  }
+
   if (response.status === 500 && normalizedMessage === 'internal server error') {
     return 'The API restarted while processing your request. Please retry in a moment.';
   }
@@ -87,6 +91,9 @@ const safeParseResponse = async (response) => {
 };
 
 const shouldAttachCsrf = (method) => !['GET', 'HEAD', 'OPTIONS'].includes(String(method || 'GET').toUpperCase());
+const waitFor = (ms) => new Promise((resolve) => {
+  setTimeout(resolve, ms);
+});
 
 const buildHeaders = (method, headers = {}) => {
   const nextHeaders = {
@@ -134,6 +141,7 @@ export const apiRequest = async (path, options = {}) => {
     baseUrl = API_BASE,
     headers,
     retryOnUnauthorized = true,
+    retryOnRouterExternalError = true,
     ...rest
   } = options;
   const method = String(rest.method || 'GET').toUpperCase();
@@ -171,6 +179,18 @@ export const apiRequest = async (path, options = {}) => {
   }
 
   if (!response.ok) {
+    const routerErrorMessage = String(data?.message || data?.error || '').toLowerCase();
+    if (
+      retryOnRouterExternalError &&
+      routerErrorMessage.includes('router_external_target_error')
+    ) {
+      await waitFor(1200);
+      return apiRequest(path, {
+        ...options,
+        retryOnRouterExternalError: false,
+      });
+    }
+
     throw new Error(getResponseErrorMessage({ response, data, resolvedPath }));
   }
 
