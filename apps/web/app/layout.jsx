@@ -18,7 +18,11 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
-  const buildVersion = process.env.VERCEL_GIT_COMMIT_SHA || process.env.NEXT_PUBLIC_BUILD_VERSION || 'local-dev';
+  const buildVersion =
+    process.env.NEXT_PUBLIC_BUILD_VERSION
+    || process.env.COMMIT_REF
+    || process.env.DEPLOY_ID
+    || 'local-dev';
 
   return (
     <html lang='en'>
@@ -56,4 +60,3 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
-

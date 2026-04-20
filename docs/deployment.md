@@ -4,15 +4,15 @@
 
 The production frontend domain is:
 
-- `https://kap-it.vercel.app`
+- `https://kapitdev.netlify.app`
 
-Set these variables in the Vercel project for the frontend:
+Set these variables in the Netlify project for the frontend:
 
-- `NEXT_PUBLIC_SITE_URL=https://kap-it.vercel.app`
+- `NEXT_PUBLIC_SITE_URL=https://kapitdev.netlify.app`
 - `EXPRESS_API_URL=https://<your-backend-domain>/api`
 - `NEXT_PUBLIC_EXPRESS_API_URL=https://<your-backend-domain>/api`
 
-After changing environment variables, redeploy the Vercel project.
+After changing environment variables, redeploy the Netlify project.
 
 ## OAuth Provider Allowlist (Required)
 
@@ -22,14 +22,14 @@ Both providers require exact deployed URLs to be registered, otherwise login is 
 
 In GitHub Developer Settings for the OAuth App used by `NEXT_PUBLIC_GITHUB_CLIENT_ID`:
 
-- Authorization callback URL: `https://kap-it.vercel.app/auth/callback/github`
+- Authorization callback URL: `https://kapitdev.netlify.app/auth/callback/github`
 
 ### Google OAuth Client
 
 In Google Cloud Console for the OAuth client used by `NEXT_PUBLIC_GOOGLE_CLIENT_ID`:
 
-- Authorized JavaScript origins: `https://kap-it.vercel.app`
-- Authorized redirect URIs: `https://kap-it.vercel.app/auth/callback/google`
+- Authorized JavaScript origins: `https://kapitdev.netlify.app`
+- Authorized redirect URIs: `https://kapitdev.netlify.app/auth/callback/google`
 
 ## Backend
 
@@ -47,7 +47,7 @@ Use `render.yaml` to deploy the backend on Render.
 5. Continue the setup and fill in the secret environment variables Render asks for.
 6. Create the service and wait for the first deployment to finish.
 7. Open the generated Render domain and append `/api/health`.
-8. If the health check returns JSON, copy the base domain for Vercel.
+8. If the health check returns JSON, copy the base domain for Netlify.
 
 Expected backend health endpoint:
 
@@ -60,9 +60,9 @@ Set these backend environment variables:
 - `DB_SSL=true`
 - `JWT_SECRET=<strong-random-secret>`
 - `JWT_REFRESH_SECRET=<strong-random-secret>`
-- `CLIENT_URL=https://kap-it.vercel.app`
-- `NEXT_PUBLIC_SITE_URL=https://kap-it.vercel.app`
-- `CORS_ALLOWED_ORIGINS=https://kap-it.vercel.app`
+- `CLIENT_URL=https://kapitdev.netlify.app`
+- `NEXT_PUBLIC_SITE_URL=https://kapitdev.netlify.app`
+- `CORS_ALLOWED_ORIGINS=https://kapitdev.netlify.app`
 
 Optional backend variables:
 
@@ -87,22 +87,22 @@ Set these directly in Render:
 
 - `NODE_ENV=production`
 - `DB_SSL=true`
-- `CLIENT_URL=https://kap-it.vercel.app`
-- `NEXT_PUBLIC_SITE_URL=https://kap-it.vercel.app`
-- `CORS_ALLOWED_ORIGINS=https://kap-it.vercel.app`
+- `CLIENT_URL=https://kapitdev.netlify.app`
+- `NEXT_PUBLIC_SITE_URL=https://kapitdev.netlify.app`
+- `CORS_ALLOWED_ORIGINS=https://kapitdev.netlify.app`
 
-### Connect the deployed backend to Vercel
+### Connect the deployed backend to Netlify
 
-After Render gives you a domain such as `https://kap-it-api.onrender.com`, add these in Vercel:
+After Render gives you a domain such as `https://kap-it-api.onrender.com`, add these in Netlify:
 
 - `EXPRESS_API_URL=https://kap-it-api.onrender.com/api`
 - `NEXT_PUBLIC_EXPRESS_API_URL=https://kap-it-api.onrender.com/api`
-- `NEXT_PUBLIC_SITE_URL=https://kap-it.vercel.app`
+- `NEXT_PUBLIC_SITE_URL=https://kapitdev.netlify.app`
 
 ## Verification
 
 1. Open `https://<your-backend-domain>/api/health` and confirm it returns JSON.
-2. Add the backend URL to the frontend Vercel env vars.
+2. Add the backend URL to the frontend Netlify env vars.
 3. Redeploy the frontend.
-4. Open `https://kap-it.vercel.app/auth/login`.
+4. Open `https://kapitdev.netlify.app/auth/login`.
 5. Confirm login requests no longer fail with `DNS_HOSTNAME_NOT_FOUND`.

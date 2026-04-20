@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 
 const resolveVersion = () =>
-  process.env.VERCEL_GIT_COMMIT_SHA || process.env.NEXT_PUBLIC_BUILD_VERSION || 'local-dev';
+  process.env.NEXT_PUBLIC_BUILD_VERSION
+  || process.env.COMMIT_REF
+  || process.env.DEPLOY_ID
+  || 'local-dev';
 
 export async function GET() {
   const response = NextResponse.json(

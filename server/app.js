@@ -13,7 +13,7 @@ const developerRoutes = require('./routes/developerRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const matchRoutes = require('./routes/matchRoutes');
 const { warmRuntimeSchemas } = require('./config/runtimeSchema');
-const { normalizeOrigin, isKapitVercelOrigin, getAllowedOrigins } = require('./config/origins');
+const { normalizeOrigin, isKapitPreviewOrigin, getAllowedOrigins } = require('./config/origins');
 const pool = require('./config/database');
 const {
   securityHeaders,
@@ -46,13 +46,13 @@ const createApp = () => {
       origin: (origin, callback) => {
         const normalizedOrigin = normalizeOrigin(origin);
 
-        // Same-origin browser requests, server-to-server requests, and some Vercel
-        // function invocations may omit the Origin header entirely.
+        // Same-origin browser requests, server-to-server requests, and some
+        // platform function invocations may omit the Origin header entirely.
         if (!normalizedOrigin) {
           return callback(null, true);
         }
 
-        if (allowedOrigins.includes(normalizedOrigin) || isKapitVercelOrigin(normalizedOrigin)) {
+        if (allowedOrigins.includes(normalizedOrigin) || isKapitPreviewOrigin(normalizedOrigin)) {
           return callback(null, true);
         }
 
