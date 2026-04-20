@@ -64,7 +64,7 @@ const ensureManifest = async () => {
     console.log('Created .next/routes-manifest-deterministic.json');
   }
 
-  if (process.env.VERCEL === '1' || process.env.CI === 'true') {
+  if (process.env.NETLIFY === 'true' || process.env.CI === 'true') {
     await fs.mkdir(repoRootNextDir, { recursive: true });
     await fs.copyFile(targetPath, repoRootTargetPath);
     for (const relativePath of repoRootManifestSyncList) {

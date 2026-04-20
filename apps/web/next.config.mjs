@@ -2,11 +2,12 @@ import path from 'path';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const isDeploymentBuild = process.env.CI === 'true'
-  || process.env.VERCEL === '1'
+  || process.env.NETLIFY === 'true'
+  || Boolean(process.env.DEPLOY_ID)
   || process.env.RENDER === 'true'
   || Boolean(process.env.RAILWAY_ENVIRONMENT);
 const deploymentEnvHint =
-  'Set it in your deployment provider environment variables (for Vercel: Project Settings -> Environment Variables).';
+  'Set it in your deployment provider environment variables (for Netlify: Site configuration -> Environment variables).';
 
 const normalizeUrl = (value) => String(value || '').trim().replace(/\/$/, '');
 

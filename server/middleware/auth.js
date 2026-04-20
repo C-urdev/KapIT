@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { normalizeOrigin, isKapitVercelOrigin, getAllowedOrigins } = require('../config/origins');
+const { normalizeOrigin, isKapitPreviewOrigin, getAllowedOrigins } = require('../config/origins');
 const {
   ACCESS_COOKIE_NAME,
   REFRESH_COOKIE_NAME,
@@ -145,7 +145,7 @@ const requireCsrfForCookieAuth = (req, res, next) => {
     });
   }
 
-  if (normalizedOrigin && !allowedOrigins.includes(normalizedOrigin) && !isKapitVercelOrigin(normalizedOrigin)) {
+  if (normalizedOrigin && !allowedOrigins.includes(normalizedOrigin) && !isKapitPreviewOrigin(normalizedOrigin)) {
     return res.status(403).json({
       success: false,
       message: 'Origin validation failed.',

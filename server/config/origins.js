@@ -1,7 +1,7 @@
 const normalizeOrigin = (value) => String(value || '').trim().replace(/\/+$/, '');
 
-const isKapitVercelOrigin = (origin) =>
-  /^https:\/\/(?:kap-it|kapit-website)(?:-[a-z0-9-]+)?\.vercel\.app$/i.test(origin);
+const isKapitPreviewOrigin = (origin) =>
+  /^https:\/\/(?:[^.]+\.)?kapitdev\.netlify\.app$/i.test(origin);
 
 const splitOrigins = (value) =>
   String(value || '')
@@ -14,8 +14,7 @@ const getAllowedOrigins = () =>
     process.env.CLIENT_URL,
     process.env.NEXT_PUBLIC_SITE_URL,
     ...splitOrigins(process.env.CORS_ALLOWED_ORIGINS),
-    'https://kap-it.vercel.app',
-    'https://kapit-website.vercel.app',
+    'https://kapitdev.netlify.app',
     'http://localhost:5173',
     'http://localhost:3000',
     'http://127.0.0.1:3000',
@@ -26,6 +25,6 @@ const getAllowedOrigins = () =>
 
 module.exports = {
   normalizeOrigin,
-  isKapitVercelOrigin,
+  isKapitPreviewOrigin,
   getAllowedOrigins,
 };
