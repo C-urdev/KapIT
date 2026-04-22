@@ -5,7 +5,7 @@ function MobileBottomNavButton({ icon: Icon, label, active, onClick, badgeCount 
   return (
     <button
       onClick={onClick}
-      className={`relative flex min-h-[3.8rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 transition-colors duration-150 ease-out ${
+      className={`relative flex min-h-[3.25rem] flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 transition-colors duration-150 ease-out ${
         active
           ? 'bg-[#eef6ee] text-[#588157] shadow-sm shadow-[#588157]/10 dark:bg-white/10 dark:text-white dark:shadow-[0_10px_24px_rgba(0,0,0,0.18)]'
           : 'text-[#344e41] dark:text-white/72'
@@ -29,7 +29,7 @@ export default function UserMobileBottomNav({ activeNav, setActiveNav, unreadNot
         hiddenOnScroll ? 'translate-y-full' : 'translate-y-0'
       }`}
     >
-      <div className="grid grid-cols-5 gap-1 px-2 pt-1.5" style={{ paddingBottom: 'max(0.35rem, env(safe-area-inset-bottom))' }}>
+      <div className="grid grid-cols-5 gap-1 px-2 pt-0.5" style={{ paddingBottom: 'max(0.2rem, env(safe-area-inset-bottom))' }}>
         <MobileBottomNavButton label="Home" icon={Home} active={activeNav === 'home'} onClick={() => setActiveNav('home')} />
         <MobileBottomNavButton label="Jobs" icon={Briefcase} active={activeNav === 'jobs'} onClick={() => setActiveNav('jobs')} />
         <MobileBottomNavButton label="Projects" icon={FolderKanban} active={activeNav === 'projects'} onClick={() => setActiveNav('projects')} />

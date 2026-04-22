@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import ForgotPasswordClient from '../../components/ForgotPasswordClient';
 
 export const metadata = {
-  title: 'Forgot Password | KapIT',
+  title: 'Forgot Password',
   description: 'Reset your KapIT account password with a verification code sent to your email.',
 };
 

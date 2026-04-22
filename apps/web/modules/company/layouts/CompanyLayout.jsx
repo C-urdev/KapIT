@@ -164,7 +164,7 @@ function CompanyMobileBottomNav({ pathname, hidden = false }) {
     <div className={`xl:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#a3b18a] dark:border-[#2a4a6f] bg-[#f8fbf6]/95 dark:bg-[#162842]/95 backdrop-blur-md transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
       hidden ? 'translate-y-full' : 'translate-y-0'
     }`}>
-      <div className="grid h-16 grid-cols-3 gap-1 px-2" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="grid h-[3.6rem] grid-cols-3 gap-1 px-2 pt-0.5" style={{ paddingBottom: 'max(0.2rem, env(safe-area-inset-bottom))' }}>
         {MOBILE_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = pathname === item.path;
@@ -173,7 +173,7 @@ function CompanyMobileBottomNav({ pathname, hidden = false }) {
               key={item.path}
               type="button"
               onClick={() => navigate(item.path)}
-              className={`relative flex flex-col items-center justify-center gap-1 rounded-2xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              className={`relative flex flex-col items-center justify-center gap-0.5 rounded-2xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 active
                   ? 'bg-[#eef6ee] text-[#588157] shadow-sm shadow-[#588157]/10 dark:bg-[#1e3a5f] dark:text-[#3ba9d6] -translate-y-0.5'
                   : 'text-[#344e41] dark:text-white'

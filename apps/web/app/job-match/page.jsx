@@ -4,7 +4,7 @@ import SessionGate from '../../components/SessionGate';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Job Matchmaking',
+  title: 'Job Match',
   description: 'Match your skills to open roles on KapIT.',
   robots: {
     index: false,

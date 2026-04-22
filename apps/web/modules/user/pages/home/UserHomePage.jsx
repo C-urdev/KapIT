@@ -20,6 +20,19 @@ import TermsAndConditionsModal from '@sharedComponents/modals/TermsAndConditions
 import PrivacyPolicyModal from '@sharedComponents/modals/PrivacyPolicyModal';
 import CookiesPolicyModal from '@sharedComponents/modals/CookiesPolicyModal';
 import UserSettingsPage from '@userPages/settings/UserSettingsPage';
+import {
+  UserPrivacyChangePasswordPage,
+  UserPrivacyCommentsPage,
+  UserPrivacyFollowingPage,
+  UserPrivacyLikesPage,
+  UserPrivacyMentionsPage,
+  UserPrivacySettingsPage,
+} from '@userPages/settings/UserPrivacyPages';
+import {
+  UserApplicationsSettingsPage,
+  UserNotificationSettingsPage,
+  UserSavedJobsSettingsPage,
+} from '@userPages/settings/UserSettingsUtilityPages';
 import UserMobileBottomNav from '@userComponents/navigation/mobile/UserMobileBottomNav';
 import UserApplicationsPanel from './UserApplicationsPanel';
 import UserSavedJobsPanel from './UserSavedJobsPanel';
@@ -43,7 +56,7 @@ import { getApplicationsForUser } from '@userFeatures/activity/userActivityStora
 
 const USER_NAV_QUERY_KEY = 'tab';
 const USER_PROFILE_QUERY_KEY = 'profileId';
-const USER_NAV_TABS = new Set(['home', 'jobs', 'projects', 'search', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'help', 'tips', 'verified', 'settings', 'public-profile']);
+const USER_NAV_TABS = new Set(['home', 'jobs', 'projects', 'search', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'help', 'tips', 'verified', 'settings', 'public-profile', 'settings-account', 'settings-career', 'settings-notifications', 'settings-saved-jobs', 'settings-applications', 'privacy-settings', 'privacy-change-password', 'privacy-comments', 'privacy-mentions', 'privacy-following', 'privacy-likes']);
 const resolveProfileId = (value) => {
   const normalized = String(value || '').trim();
   return normalized || '';
@@ -98,11 +111,11 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [premiumPopupOpen, setPremiumPopupOpen] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [faqOpen, setFaqOpen] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [cookiesOpen, setCookiesOpen] = useState(false);
+  const [notificationPreference, setNotificationPreference] = useState('all');
   useEffect(() => {
     const pagesWithNoScroll = ['jobs', 'saved-jobs', 'applications'];
     if (pagesWithNoScroll.includes(activeNav)) {
@@ -259,6 +272,14 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
     setSavedPosts([]);
     setApplications(getApplicationsForUser(user));
   }, [user]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const stored = String(window.localStorage.getItem('kapit_notification_preference') || '').trim();
+    if (stored === 'jobs_only' || stored === 'jobs_and_messages' || stored === 'all') {
+      setNotificationPreference(stored);
+    }
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -511,6 +532,58 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
     }
   };
 
+  const followingEntries = React.useMemo(() => {
+    const normalizeEntry = (entry, defaultType = 'User') => {
+      if (!entry) return null;
+      if (typeof entry === 'string') {
+        const name = entry.trim();
+        return name ? { name, type: defaultType } : null;
+      }
+      const name = String(entry?.name || entry?.fullName || entry?.username || entry?.companyName || entry?.email || '').trim();
+      if (!name) return null;
+      const type = String(entry?.type || entry?.accountType || defaultType).toLowerCase().includes('company') ? 'Company' : defaultType;
+      return { name, type };
+    };
+
+    const combined = [
+      ...(Array.isArray(user?.following) ? user.following : []),
+      ...(Array.isArray(user?.followings) ? user.followings : []),
+      ...(Array.isArray(user?.followingUsers) ? user.followingUsers : []),
+      ...(Array.isArray(user?.followingCompanies) ? user.followingCompanies : []),
+    ];
+
+    const seen = new Set();
+    const items = [];
+    combined.forEach((entry) => {
+      const normalized = normalizeEntry(entry, 'User');
+      if (!normalized) return;
+      const key = normalized.name.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      items.push(normalized);
+    });
+    return items;
+  }, [user]);
+
+  const likedByEntries = React.useMemo(() => {
+    const byUser = new Map();
+    (Array.isArray(posts) ? posts : []).forEach((post) => {
+      const postTitle = String(post?.content || 'Untitled post').trim().slice(0, 60) || 'Untitled post';
+      const reactions = Array.isArray(post?.reactions) ? post.reactions : [];
+      reactions.forEach((reaction) => {
+        const reactionType = String(reaction?.type || '').trim().toLowerCase();
+        if (!reactionType) return;
+        const key = String(reaction?.userKey || reaction?.username || reaction?.userName || '').trim();
+        if (!key) return;
+        const displayName = String(reaction?.userName || reaction?.username || key.split('@')[0] || 'User').trim();
+        const existing = byUser.get(key) || { name: displayName, type: 'User', meta: [] };
+        existing.meta.push(`Reacted to: ${postTitle}`);
+        byUser.set(key, existing);
+      });
+    });
+    return Array.from(byUser.values());
+  }, [posts]);
+
   const handleMessageProfile = (profile) => {
     if (!profile?.id) {
       return;
@@ -569,7 +642,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
               type="button"
               onClick={() => {
                 setCanReturnToSettings(false);
-                setSettingsOpen(true);
+                updateActiveNav('settings-account');
               }}
               className="inline-flex items-center gap-2 rounded-lg border border-[#a3b18a] bg-[#f8fbf6] px-3.5 py-2 text-sm font-semibold text-[#3a5a40] shadow-sm transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#162842] dark:text-white dark:hover:bg-[#102235]"
             >
@@ -682,15 +755,97 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
           <UserSettingsPage
             user={user}
             onBack={() => updateActiveNav('home')}
-            onOpenAccountDetails={() => setSettingsOpen(true)}
-            onOpenSavedJobs={() => updateActiveNav('saved-jobs')}
-            onOpenApplications={() => updateActiveNav('applications')}
-            onOpenNotifications={() => updateActiveNav('notifications')}
+            onOpenAccountDetails={() => updateActiveNav('settings-account')}
+            onOpenCareerPreferences={() => updateActiveNav('settings-career')}
+            onOpenPrivacySettings={() => updateActiveNav('privacy-settings')}
+            onOpenSavedJobs={() => updateActiveNav('settings-saved-jobs')}
+            onOpenApplications={() => updateActiveNav('settings-applications')}
+            onOpenNotifications={() => updateActiveNav('settings-notifications')}
             onOpenFaq={() => setFaqOpen(true)}
             onOpenTerms={() => setTermsOpen(true)}
             onOpenPrivacy={() => setPrivacyOpen(true)}
             onOpenCookies={() => setCookiesOpen(true)}
-            onBack={() => updateActiveNav('home')}
+          />
+        )}
+        {activeNav === 'settings-account' && (
+          <UserAccountSettingsModal
+            isOpen
+            asPage
+            user={user}
+            mode="account"
+            onClose={() => updateActiveNav('settings')}
+            onSave={onUpdateUser}
+          />
+        )}
+        {activeNav === 'settings-career' && (
+          <UserAccountSettingsModal
+            isOpen
+            asPage
+            user={user}
+            mode="career"
+            onClose={() => updateActiveNav('settings')}
+            onSave={onUpdateUser}
+          />
+        )}
+        {activeNav === 'settings-notifications' && (
+          <UserNotificationSettingsPage
+            onBack={() => updateActiveNav('settings')}
+            value={notificationPreference}
+            onChange={(next) => {
+              setNotificationPreference(next);
+              if (typeof window !== 'undefined') {
+                window.localStorage.setItem('kapit_notification_preference', next);
+              }
+            }}
+          />
+        )}
+        {activeNav === 'settings-saved-jobs' && (
+          <UserSavedJobsSettingsPage
+            onBack={() => updateActiveNav('settings')}
+            savedJobs={savedJobs}
+            savedPosts={savedPosts}
+          />
+        )}
+        {activeNav === 'settings-applications' && (
+          <UserApplicationsSettingsPage
+            onBack={() => updateActiveNav('settings')}
+            applications={applications}
+          />
+        )}
+        {activeNav === 'privacy-settings' && (
+          <UserPrivacySettingsPage
+            onBack={() => updateActiveNav('settings')}
+            onOpenPage={(page) => updateActiveNav(page)}
+          />
+        )}
+        {activeNav === 'privacy-change-password' && (
+          <UserPrivacyChangePasswordPage
+            onBack={() => updateActiveNav('privacy-settings')}
+            onProceed={() => window.location.assign('/forgot-password')}
+          />
+        )}
+        {activeNav === 'privacy-comments' && (
+          <UserPrivacyCommentsPage
+            onBack={() => updateActiveNav('privacy-settings')}
+            onOpenNotifications={() => updateActiveNav('settings-notifications')}
+          />
+        )}
+        {activeNav === 'privacy-mentions' && (
+          <UserPrivacyMentionsPage
+            onBack={() => updateActiveNav('privacy-settings')}
+            onOpenNotifications={() => updateActiveNav('settings-notifications')}
+          />
+        )}
+        {activeNav === 'privacy-following' && (
+          <UserPrivacyFollowingPage
+            onBack={() => updateActiveNav('privacy-settings')}
+            items={followingEntries}
+          />
+        )}
+        {activeNav === 'privacy-likes' && (
+          <UserPrivacyLikesPage
+            onBack={() => updateActiveNav('privacy-settings')}
+            items={likedByEntries}
           />
         )}
       </div>
@@ -702,16 +857,6 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
         onOpenMerchantWindow={handleOpenPremiumMerchantWindow}
       />
       <PostComposerModal isOpen={composerOpen} user={user} onClose={() => setComposerOpen(false)} onSubmit={handleCreatePost} />
-      <UserAccountSettingsModal
-        isOpen={settingsOpen}
-        user={user}
-        onClose={() => setSettingsOpen(false)}
-        onSave={onUpdateUser}
-        onOpenMyProfile={() => updateActiveNav('my-profile', { fromSettings: true })}
-        onOpenProjects={() => updateActiveNav('projects', { fromSettings: true })}
-        onOpenSavedJobs={() => updateActiveNav('saved-jobs', { fromSettings: true })}
-        onOpenApplications={() => updateActiveNav('applications', { fromSettings: true })}
-      />
       <UserFaqModal
         isOpen={faqOpen}
         onClose={() => setFaqOpen(false)}

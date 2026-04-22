@@ -3,7 +3,7 @@ import CompanyAppClient from '../../../components/CompanyAppClient';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Company Dashboard',
+  title: 'Company Workspace',
   description: 'Private company workspace for KapIT.',
   robots: {
     index: false,

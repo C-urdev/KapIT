@@ -10,15 +10,15 @@ export async function generateMetadata({ params }) {
 
     const job = data?.job;
     if (!job) {
-      return { title: 'Job not found' };
+      return { title: 'Job Details' };
     }
 
     return {
-      title: job.title,
+      title: String(job.title || 'Job Details'),
       description: job.description || `Apply for ${job.title} at ${job.company?.name || 'KapIT'}.`,
     };
   } catch {
-    return { title: 'Job not found' };
+    return { title: 'Job Details' };
   }
 }
 
