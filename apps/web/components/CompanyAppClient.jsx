@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { logoutAndRedirect } from '@sharedServices/authService';
 import SessionGate from './SessionGate';
 import CompanyLayout from '@companyLayouts/CompanyLayout';
-import { COMPANY_PATHS, setCompanyNavigator } from '@companyFeatures/companyUtils';
+import { COMPANY_PATHS, navigate, setCompanyNavigator } from '@companyFeatures/companyUtils';
 import { primeCompanyProfileData, primeCompanyWorkspaceData } from '@companyFeatures/companyHooks';
 import CompanyDashboardPage from '@companyPages/CompanyDashboardPage';
 import CompanyPostJobPage from '@companyPages/CompanyPostJobPage';
@@ -18,9 +18,10 @@ import CompanySearchDevelopersPage from '@companyPages/CompanySearchDevelopersPa
 import CompanyProfilePage from '@companyPages/CompanyProfilePage';
 import CompanySettingsPage from '@companyPages/CompanySettingsPage';
 import CompanyPublicProfilePage from '@companyPages/CompanyPublicProfilePage';
+import { CompanyInfoSettingsPage, CompanyNotificationSettingsPage } from '@companyPages/CompanySettingsUtilityPages';
 import HelpPage from '@sharedPages/help/HelpPage';
 
-function renderCompanyRoute(pathname, user, updateUser, onBackFromHelp, onMessagesThreadVisibilityChange) {
+function renderCompanyRoute(pathname, user, updateUser, onBackFromHelp, onMessagesThreadVisibilityChange, notificationPreference, setNotificationPreference) {
   if (pathname === COMPANY_PATHS.postJobPayment) return <CompanyPostJobPaymentPage />;
   if (pathname === COMPANY_PATHS.postJob) return <CompanyPostJobPage />;
   if (pathname === COMPANY_PATHS.jobs) return <CompanyManageJobsPage />;
@@ -29,8 +30,31 @@ function renderCompanyRoute(pathname, user, updateUser, onBackFromHelp, onMessag
   if (pathname === COMPANY_PATHS.notifications) return <CompanyNotificationsPage onReadAll={() => {}} />;
   if (pathname === COMPANY_PATHS.search) return <CompanySearchDevelopersPage />;
   if (pathname === COMPANY_PATHS.help) return <HelpPage onBack={onBackFromHelp} />;
+  if (pathname === COMPANY_PATHS.settingsCompanyInfo) {
+    return (
+      <CompanyInfoSettingsPage
+        user={user}
+        onBack={() => navigate(COMPANY_PATHS.settings)}
+        onUpdated={(company, form) => updateUser({ companyName: form?.name, profileImage: form?.logo, bio: form?.shortDescription, address: form?.location, website: form?.website })}
+      />
+    );
+  }
+  if (pathname === COMPANY_PATHS.settingsNotifications) {
+    return (
+      <CompanyNotificationSettingsPage
+        onBack={() => navigate(COMPANY_PATHS.settings)}
+        value={notificationPreference}
+        onChange={(next) => {
+          setNotificationPreference(next);
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem('kapit_company_notification_preference', next);
+          }
+        }}
+      />
+    );
+  }
   if (pathname === COMPANY_PATHS.settings) {
-    return <CompanySettingsPage user={user} onUpdated={(company, form) => updateUser({ companyName: form?.name, profileImage: form?.logo, bio: form?.shortDescription, address: form?.location, website: form?.website })} />;
+    return <CompanySettingsPage />;
   }
   if (pathname === COMPANY_PATHS.profile) {
     return <CompanyProfilePage user={user} onUpdated={(company, form) => updateUser({ companyName: form?.name, profileImage: form?.logo, bio: form?.shortDescription || form?.description, address: form?.location, website: form?.website })} />;
@@ -44,6 +68,7 @@ export default function CompanyAppClient() {
   const router = useRouter();
 
   const [mobileMessagesThreadOpen, setMobileMessagesThreadOpen] = useState(false);
+  const [notificationPreference, setNotificationPreference] = useState('all');
   const normalizedPathname = useMemo(() => {
     if (pathname === '/company') {
       return COMPANY_PATHS.dashboard;
@@ -92,6 +117,17 @@ export default function CompanyAppClient() {
       setMobileMessagesThreadOpen(false);
     }
   }, [normalizedPathname]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const stored = String(window.localStorage.getItem('kapit_company_notification_preference') || '').trim();
+    if (stored === 'jobs_only' || stored === 'jobs_and_messages' || stored === 'all') {
+      setNotificationPreference(stored);
+    }
+  }, []);
 
   useEffect(() => {
     if (normalizedPathname === COMPANY_PATHS.help) {
@@ -145,6 +181,8 @@ export default function CompanyAppClient() {
                 updateUser,
                 () => router.push(COMPANY_PATHS.dashboard),
                 (open) => setMobileMessagesThreadOpen(Boolean(open)),
+                notificationPreference,
+                setNotificationPreference,
               )}
             </CompanyLayout>
           </>
