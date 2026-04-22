@@ -10,6 +10,8 @@ export const COMPANY_PATHS = {
   notifications: '/company/notifications',
   search: '/company/search',
   settings: '/company/settings',
+  settingsCompanyInfo: '/company/settings/company-info',
+  settingsNotifications: '/company/settings/notifications',
   profile: '/company/profile',
   publicProfile: '/company/public-profile',
 };

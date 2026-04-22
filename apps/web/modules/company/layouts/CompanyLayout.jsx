@@ -19,6 +19,8 @@ const TITLES = {
   [COMPANY_PATHS.notifications]: 'Notifications',
   [COMPANY_PATHS.search]: 'Search Developers',
   [COMPANY_PATHS.settings]: 'Settings',
+  [COMPANY_PATHS.settingsCompanyInfo]: 'Company Information',
+  [COMPANY_PATHS.settingsNotifications]: 'Notification Settings',
   [COMPANY_PATHS.profile]: 'Company Profile',
   [COMPANY_PATHS.publicProfile]: 'Public Profile',
 };
@@ -109,6 +111,11 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
       <CompanySidebar
         activePath={pathname}
         collapsed={sidebarCollapsed}
+        user={user}
+        onHelp={onHelp}
+        onLogout={onLogout}
+        onOpenPricing={() => setPremiumOpen(true)}
+        onToggleSidebarCollapsed={() => setSidebarCollapsed((value) => !value)}
         unreadNotificationCount={unreadNotificationCount}
       />
 
