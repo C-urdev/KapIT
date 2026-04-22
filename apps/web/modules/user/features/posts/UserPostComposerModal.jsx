@@ -17,8 +17,8 @@ export default function PostComposerModal({ isOpen, user, onClose, onSubmit }) {
   const profileImage = user?.profileImage || '';
 
   const displayName = useMemo(
-    () => user?.username || user?.name || 'User',
-    [user?.username, user?.name]
+    () => user?.fullName || user?.name || user?.username || 'User',
+    [user?.fullName, user?.name, user?.username]
   );
   const selectedVisibilityIcon = VISIBILITY_OPTIONS.find((option) => option.value === visibility)?.icon || Lock;
 
@@ -85,11 +85,11 @@ export default function PostComposerModal({ isOpen, user, onClose, onSubmit }) {
 
   return (
     <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm flex items-center justify-center sm:p-4">
-      <div className="flex h-full w-full max-w-3xl flex-col overflow-hidden bg-[#f8fbf6] dark:bg-[#162842] sm:h-[58vh] sm:max-h-[58vh] sm:rounded-2xl sm:border sm:border-[#a3b18a] sm:dark:border-[#1e3a5f] sm:shadow-2xl">
+      <div className="flex h-full w-full max-w-3xl flex-col overflow-hidden bg-[#f8fbf6] dark:bg-[#22272b] sm:h-[58vh] sm:max-h-[58vh] sm:rounded-2xl sm:border sm:border-[#a3b18a] sm:dark:border-[#353c44] sm:shadow-2xl">
         <div className="flex items-center justify-between px-4 py-4 sm:px-6">
           <button
             onClick={onClose}
-            className="inline-flex h-10 w-10 items-center justify-center text-[#344e41] transition-colors hover:text-[#3a5a40] dark:text-white dark:hover:text-[#b8d4e8]"
+            className="inline-flex h-10 w-10 items-center justify-center text-[#344e41] transition-colors hover:text-[#3a5a40] dark:text-white dark:hover:text-[#d0d7dd]"
             aria-label="Close create post modal"
           >
             <X className="h-6 w-6" />
@@ -100,7 +100,7 @@ export default function PostComposerModal({ isOpen, user, onClose, onSubmit }) {
 
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-4 sm:px-6">
           <div className="mb-5 flex items-center gap-3">
-            <div className="w-12 h-12 bg-[#588157] dark:bg-[#3ba9d6] rounded-full flex items-center justify-center text-white font-semibold text-lg overflow-hidden">
+            <div className="w-12 h-12 bg-[#588157] dark:bg-[#6f9b74] rounded-full flex items-center justify-center text-white font-semibold text-lg overflow-hidden">
               {profileImage ? (
                 <img src={profileImage} alt={`${displayName} profile`} className="w-full h-full object-cover" />
               ) : (
@@ -118,7 +118,7 @@ export default function PostComposerModal({ isOpen, user, onClose, onSubmit }) {
                 key={key}
                 type="button"
                 onClick={onClick}
-                className="inline-flex items-center gap-2 rounded-2xl border border-[#d8dfc9] bg-[#f5f5f2] px-4 py-2.5 text-sm font-medium text-[#344e41] transition-colors hover:bg-[#eef6ee] dark:border-[#2a4a6f] dark:bg-[#102235] dark:text-white dark:hover:bg-[#16304a]"
+                className="inline-flex items-center gap-2 rounded-2xl border border-[#d8dfc9] bg-[#f5f5f2] px-4 py-2.5 text-sm font-medium text-[#344e41] transition-colors hover:bg-[#eef6ee] dark:border-[#444d57] dark:bg-[#202428] dark:text-white dark:hover:bg-[#31363d]"
               >
                 <Icon className="h-4 w-4" />
                 {label}
@@ -131,7 +131,7 @@ export default function PostComposerModal({ isOpen, user, onClose, onSubmit }) {
             value={content}
             onChange={(event) => setContent(event.target.value)}
             placeholder="What's on your mind?"
-            className="w-full min-h-[15rem] flex-1 resize-none bg-transparent text-[#344e41] text-2xl leading-relaxed outline-none placeholder:text-[#5f6f52] dark:text-white dark:placeholder:text-[#7d9ab8]"
+            className="w-full min-h-[15rem] flex-1 resize-none bg-transparent text-[#344e41] text-2xl leading-relaxed outline-none placeholder:text-[#5f6f52] dark:text-white dark:placeholder:text-[#adb5be]"
           />
 
           <input
@@ -143,7 +143,7 @@ export default function PostComposerModal({ isOpen, user, onClose, onSubmit }) {
           />
 
           {imageUrl ? (
-            <div className="mt-3 overflow-hidden rounded-xl border border-[#a3b18a] bg-[#f8fbf6] dark:border-[#2a4a6f] dark:bg-[#102235]">
+            <div className="mt-3 overflow-hidden rounded-xl border border-[#a3b18a] bg-[#f8fbf6] dark:border-[#444d57] dark:bg-[#202428]">
               <img src={imageUrl} alt="Selected post attachment" className="max-h-56 w-full object-cover" />
               <div className="flex justify-end p-2">
                 <button
@@ -154,7 +154,7 @@ export default function PostComposerModal({ isOpen, user, onClose, onSubmit }) {
                       imageInputRef.current.value = '';
                     }
                   }}
-                  className="text-sm font-medium text-[#3a5a40] hover:text-[#344e41] dark:text-[#b8d4e8] dark:hover:text-white"
+                  className="text-sm font-medium text-[#3a5a40] hover:text-[#344e41] dark:text-[#d0d7dd] dark:hover:text-white"
                 >
                   Remove image
                 </button>
@@ -176,7 +176,7 @@ export default function PostComposerModal({ isOpen, user, onClose, onSubmit }) {
                 <ChevronDown className="h-4 w-4" />
               </button>
               {visibilityMenuOpen ? (
-                <div className="absolute bottom-[calc(100%+0.5rem)] left-0 z-20 min-w-40 overflow-hidden rounded-2xl border border-[#bfd0af] bg-[#f8fbf6] shadow-[0_12px_30px_rgba(58,90,64,0.12)] dark:border-[#314a68] dark:bg-[#34343a]">
+                <div className="absolute bottom-[calc(100%+0.5rem)] left-0 z-20 min-w-40 overflow-hidden rounded-2xl border border-[#bfd0af] bg-[#f8fbf6] shadow-[0_12px_30px_rgba(58,90,64,0.12)] dark:border-[#4b5560] dark:bg-[#34343a]">
                   {VISIBILITY_OPTIONS.map((option) => {
                     const Icon = option.icon;
                     return (
@@ -199,7 +199,7 @@ export default function PostComposerModal({ isOpen, user, onClose, onSubmit }) {
             <button
               onClick={handlePost}
               disabled={!content.trim() && !imageUrl.trim()}
-              className="min-w-[9rem] rounded-2xl bg-[#3a5a40] px-5 py-3 text-white font-semibold transition-colors hover:bg-[#344e41] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de]"
+              className="min-w-[9rem] rounded-2xl bg-[#3a5a40] px-5 py-3 text-white font-semibold transition-colors hover:bg-[#344e41] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#6f9b74] dark:hover:bg-[#82ad86]"
             >
               Post
             </button>

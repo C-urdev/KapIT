@@ -40,22 +40,22 @@ export default function SelectAccountTypeModal({ open, onClose, onSelect }) {
         className="absolute inset-0 w-full h-full cursor-default"
       />
 
-      <div className="relative w-full max-w-4xl rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#162842] shadow-2xl dark:shadow-[#3ba9d6]/10 overflow-hidden">
-        <div className="px-5 py-4 border-b border-[#a3b18a] dark:border-[#1e3a5f] flex items-center justify-between">
+      <div className="relative w-full max-w-4xl rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-white dark:bg-[#22272b] shadow-2xl dark:shadow-[#6f9b74]/10 overflow-hidden">
+        <div className="px-5 py-4 border-b border-[#a3b18a] dark:border-[#353c44] flex items-center justify-between">
           <div className="flex items-center gap-3">
             <KapITLogo className="w-9 h-9 rounded-lg object-contain bg-white" />
             <div>
               <div className="text-lg font-extrabold text-[#3a5a40] dark:text-white">KapIT</div>
-              <div className="text-xs text-[#344e41] dark:text-[#b8d4e8]">Choose your account type</div>
+              <div className="text-xs text-[#344e41] dark:text-[#d0d7dd]">Choose your account type</div>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+            className="p-2 rounded-lg hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors"
             aria-label="Close modal"
           >
-            <X className="w-5 h-5 text-[#344e41] dark:text-[#b8d4e8]" />
+            <X className="w-5 h-5 text-[#344e41] dark:text-[#d0d7dd]" />
           </button>
         </div>
 
@@ -64,7 +64,7 @@ export default function SelectAccountTypeModal({ open, onClose, onSelect }) {
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#102a1b] dark:text-white">
               Choose your account type
             </h2>
-            <p className="mt-2 text-sm text-[#344e41] dark:text-[#b8d4e8]">
+            <p className="mt-2 text-sm text-[#344e41] dark:text-[#d0d7dd]">
               This helps us tailor your registration and profile setup.
             </p>
           </div>
@@ -73,25 +73,25 @@ export default function SelectAccountTypeModal({ open, onClose, onSelect }) {
             {CARDS.map(({ id, title, subtitle, description, icon: Icon }) => (
               <div
                 key={id}
-                className="rounded-xl shadow-lg border border-[#a3b18a] dark:border-[#2a4a6f] bg-[#f5f5f2] dark:bg-[#0f2139] p-6 flex flex-col"
+                className="rounded-xl shadow-lg border border-[#a3b18a] dark:border-[#444d57] bg-[#f5f5f2] dark:bg-[#1a1d20] p-6 flex flex-col"
               >
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#2a4a6f] flex items-center justify-center">
-                    <Icon className="w-6 h-6 text-[#588157] dark:text-[#3ba9d6]" />
+                  <div className="w-12 h-12 rounded-xl bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#444d57] flex items-center justify-center">
+                    <Icon className="w-6 h-6 text-[#588157] dark:text-[#6f9b74]" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="min-h-[4rem] text-lg font-extrabold text-[#102a1b] dark:text-white">
                       <span className="block">{title}</span>
                       <span className="block">{subtitle}</span>
                     </h3>
-                    <p className="mt-1 text-sm text-[#344e41] dark:text-[#b8d4e8]">{description}</p>
+                    <p className="mt-1 text-sm text-[#344e41] dark:text-[#d0d7dd]">{description}</p>
                   </div>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => onSelect?.(id)}
-                  className="mt-6 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold transition-colors"
+                  className="mt-6 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white font-semibold transition-colors"
                 >
                   Continue →
                 </button>
@@ -103,10 +103,10 @@ export default function SelectAccountTypeModal({ open, onClose, onSelect }) {
             <button
               type="button"
               onClick={() => onSelect?.('login')}
-              className="text-sm text-[#344e41] dark:text-[#b8d4e8]"
+              className="text-sm text-[#344e41] dark:text-[#d0d7dd]"
             >
               Already have an account?{' '}
-              <span className="font-semibold text-[#588157] dark:text-[#3ba9d6] hover:underline">Sign in</span>
+              <span className="font-semibold text-[#588157] dark:text-[#6f9b74] hover:underline">Sign in</span>
             </button>
           </div>
         </div>

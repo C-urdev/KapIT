@@ -150,21 +150,21 @@ export default function CompanyPostJobPage() {
         <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Post a job</h2>
       </div>
 
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[linear-gradient(135deg,#f8fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#16304a,#102235)] p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
+      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[linear-gradient(135deg,#f8fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#31363d,#202428)] p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
         <div className="flex items-start gap-3">
-          <div className="rounded-xl bg-[#f8fbf6]/80 dark:bg-[#0f2139] p-3 border border-[#d6d3c9] dark:border-[#2a4a6f]"><WalletCards className="w-5 h-5 text-[#3a5a40] dark:text-[#7fd0ee]" /></div>
+          <div className="rounded-xl bg-[#f8fbf6]/80 dark:bg-[#1a1d20] p-3 border border-[#d6d3c9] dark:border-[#444d57]"><WalletCards className="w-5 h-5 text-[#3a5a40] dark:text-[#f0c766]" /></div>
           <div>
             <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Payment before publishing</h3>
-            <p className="mt-1 text-sm text-[#344e41] dark:text-[#dcecff]">Selecting <span className="font-semibold text-[#3a5a40] dark:text-white">Post job</span> first saves this role as a draft in your company account, then opens the secure payment window.</p>
-            <p className="mt-1 text-sm text-[#344e41] dark:text-[#dcecff]">If checkout is canceled, the draft stays saved and unpublished so you can pay later from Manage Jobs.</p>
+            <p className="mt-1 text-sm text-[#344e41] dark:text-[#eceff2]">Selecting <span className="font-semibold text-[#3a5a40] dark:text-white">Post job</span> first saves this role as a draft in your company account, then opens the secure payment window.</p>
+            <p className="mt-1 text-sm text-[#344e41] dark:text-[#eceff2]">If checkout is canceled, the draft stays saved and unpublished so you can pay later from Manage Jobs.</p>
           </div>
         </div>
       </div>
 
-      {paymentPending && <p className="text-sm text-[#3a5a40] dark:text-[#7fd0ee]">Draft saved. Finish the payment in the merchant window to publish this job.</p>}
+      {paymentPending && <p className="text-sm text-[#3a5a40] dark:text-[#f0c766]">Draft saved. Finish the payment in the merchant window to publish this job.</p>}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-      <form onSubmit={handleSubmit} className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] shadow-lg shadow-black/5 dark:shadow-black/20 p-8 space-y-6 transition-colors duration-300">
+      <form onSubmit={handleSubmit} className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] shadow-lg shadow-black/5 dark:shadow-black/20 p-8 space-y-6 transition-colors duration-300">
         <Field label="Job title">
           <SearchableSelect value={form.selectedTitle} onChange={(selectedTitle) => setForm((prev) => ({ ...prev, selectedTitle, customTitle: selectedTitle === CUSTOM_JOB_VALUE ? prev.customTitle : '' }))} options={TECH_JOB_TITLE_OPTIONS} placeholder="Select a tech job title" searchPlaceholder="Search tech job titles" />
         </Field>
@@ -205,7 +205,7 @@ export default function CompanyPostJobPage() {
               <button
                 type="button"
                 onClick={() => setForm((prev) => ({ ...prev, salary: '', customSalary: '' }))}
-                className="mt-2 text-xs font-semibold text-[#3a5a40] hover:text-[#344e41] dark:text-[#7fd0ee] dark:hover:text-[#b8d4e8]"
+                className="mt-2 text-xs font-semibold text-[#3a5a40] hover:text-[#344e41] dark:text-[#f0c766] dark:hover:text-[#d0d7dd]"
               >
                 Back to preset salary ranges
               </button>
@@ -236,14 +236,14 @@ export default function CompanyPostJobPage() {
             <div className="space-y-3">
               <SearchableSelect value={selectedSkill} onChange={(skill) => { setSelectedSkill(skill); if (skill === OTHER_SKILL_VALUE) return; addSkill(skill); setSelectedSkill(''); }} options={TECH_SKILL_OPTIONS.filter((skill) => skill === OTHER_SKILL_VALUE || !form.skills.includes(skill))} placeholder="Select a skill" searchPlaceholder="Search tech skills" />
               {selectedSkill === OTHER_SKILL_VALUE && <input value={customSkill} onChange={(e) => { const nextValue = e.target.value; setCustomSkill(nextValue); const trimmed = nextValue.trim(); if (!trimmed) return; if (trimmed.endsWith(',') || trimmed.endsWith(';')) { addSkill(trimmed.slice(0, -1)); setCustomSkill(''); setSelectedSkill(''); } }} onBlur={() => { if (!customSkill.trim()) { setSelectedSkill(''); return; } addSkill(customSkill); setCustomSkill(''); setSelectedSkill(''); }} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSkill(customSkill); setCustomSkill(''); setSelectedSkill(''); } }} className="field" placeholder="Type other skill and press Enter" autoFocus />}
-              {form.skills.length > 0 && <div className="flex flex-wrap gap-2">{form.skills.map((skill) => <span key={skill} className="inline-flex items-center gap-2 rounded-full border border-[#a3b18a] dark:border-[#2a4a6f] bg-[#f5f5f2] dark:bg-[#0f2139] px-3 py-1 text-sm text-[#344e41] dark:text-white">{skill}<button type="button" onClick={() => removeSkill(skill)} className="text-[#5f6f52] dark:text-[#b8d4e8]" aria-label={`Remove ${skill}`}><X className="h-3.5 w-3.5" /></button></span>)}</div>}
+              {form.skills.length > 0 && <div className="flex flex-wrap gap-2">{form.skills.map((skill) => <span key={skill} className="inline-flex items-center gap-2 rounded-full border border-[#a3b18a] dark:border-[#444d57] bg-[#f5f5f2] dark:bg-[#1a1d20] px-3 py-1 text-sm text-[#344e41] dark:text-white">{skill}<button type="button" onClick={() => removeSkill(skill)} className="text-[#5f6f52] dark:text-[#d0d7dd]" aria-label={`Remove ${skill}`}><X className="h-3.5 w-3.5" /></button></span>)}</div>}
             </div>
           </Field>
         </div>
 
         <div className="flex gap-3">
-          <button type="button" onClick={() => navigate(COMPANY_PATHS.dashboard)} className="px-4 py-2.5 rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors">Cancel</button>
-          <button type="submit" className="px-4 py-2.5 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold transition-colors">Continue to payment</button>
+          <button type="button" onClick={() => navigate(COMPANY_PATHS.dashboard)} className="px-4 py-2.5 rounded-xl border border-[#a3b18a] dark:border-[#444d57] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors">Cancel</button>
+          <button type="submit" className="px-4 py-2.5 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white font-semibold transition-colors">Continue to payment</button>
         </div>
       </form>
     </div>

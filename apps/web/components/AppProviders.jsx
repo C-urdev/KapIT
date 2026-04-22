@@ -69,25 +69,39 @@ const resolveTitleText = (pathname) => {
   return segment ? toTitleCase(segment) : 'KapIT';
 };
 
-export default function AppProviders({ children }) {
+export default function AppProviders({ children, initialTheme = 'light' }) {
   const pathname = usePathname();
 
   useEffect(() => {
+    const isEventLike = (value) => {
+      if (typeof value === 'undefined' || value === null) return false;
+      return Object.prototype.toString.call(value) === '[object Event]';
+    };
+
     const handleUnhandledRejection = (event) => {
       const reason = event?.reason;
-      const isEventObject =
-        reason instanceof Event ||
-        Object.prototype.toString.call(reason) === '[object Event]';
-
-      if (!isEventObject) {
+      if (!isEventLike(reason)) {
         return;
       }
 
       event.preventDefault();
     };
 
+    const handleWindowError = (event) => {
+      if (!isEventLike(event?.error)) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    };
+
     window.addEventListener('unhandledrejection', handleUnhandledRejection);
-    return () => window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    window.addEventListener('error', handleWindowError, true);
+    return () => {
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+      window.removeEventListener('error', handleWindowError, true);
+    };
   }, []);
 
   useEffect(() => {
@@ -95,5 +109,5 @@ export default function AppProviders({ children }) {
     document.title = titleText ? `KapIT | ${titleText}` : 'KapIT';
   }, [pathname]);
 
-  return <ThemeProvider>{children}</ThemeProvider>;
+  return <ThemeProvider initialTheme={initialTheme}>{children}</ThemeProvider>;
 }

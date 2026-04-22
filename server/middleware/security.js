@@ -5,6 +5,7 @@ const { logger } = require('../config/logger');
 const WINDOW_MS = 15 * 60 * 1000;
 const MAX_LOGIN_ATTEMPTS = Number(process.env.LOGIN_RATE_LIMIT_MAX || 10);
 const isProduction = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+const devRateLimiterFailureKeys = new Set();
 
 // Rate limiting strategy: fail-open.
 // Availability is prioritized when Redis is degraded/unreachable so auth/API traffic
@@ -39,6 +40,22 @@ const shouldSkipAuthApiRateLimit = (req) => {
   }
 
   return false;
+};
+
+const logRateLimiterFailure = (label, error) => {
+  const detail = error?.message || error;
+
+  if (!isProduction) {
+    const dedupeKey = `${label}:${detail}`;
+    if (devRateLimiterFailureKeys.has(dedupeKey)) {
+      return;
+    }
+    devRateLimiterFailureKeys.add(dedupeKey);
+    logger.debug(`${label} fallback in development (fail-open):`, detail);
+    return;
+  }
+
+  logger.error(`${label} failed:`, detail);
 };
 
 const setRateLimitHeaders = (res, { max, remaining, resetAt }) => {
@@ -113,7 +130,7 @@ const createRateLimiter = ({
         return next();
       })
       .catch((error) => {
-        logger.error(`Rate limiter "${storeName}" failed:`, error?.message || error);
+        logRateLimiterFailure(`Rate limiter "${storeName}"`, error);
         return next();
       });
   };
@@ -171,7 +188,7 @@ const loginRateLimiter = (req, res, next) => {
       return next();
     })
     .catch((error) => {
-      logger.error('Login rate limiter failed:', error?.message || error);
+      logRateLimiterFailure('Login rate limiter', error);
       return next();
     });
 };

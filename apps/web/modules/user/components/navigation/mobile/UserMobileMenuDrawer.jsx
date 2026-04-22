@@ -81,7 +81,7 @@ export default function UserMobileMenuDrawer({
   onHelp,
   onLogout,
 }) {
-  const displayName = user?.fullName || user?.username || user?.email || 'User';
+  const displayName = user?.fullName || user?.name || user?.username || user?.email || 'User';
   const profileImage = user?.profileImage || '';
   const initial = displayName.charAt(0).toUpperCase();
   const userType = user?.type === 'company' || user?.accountType === 'company' ? 'company' : 'employee';

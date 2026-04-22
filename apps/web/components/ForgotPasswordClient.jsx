@@ -47,10 +47,10 @@ function StepDots({ step }) {
           key={n}
           className={`rounded-full transition-all duration-300 ${
             n === step
-              ? 'w-8 h-2.5 bg-[#3a5a40] dark:bg-[#3ba9d6]'
+              ? 'w-8 h-2.5 bg-[#3a5a40] dark:bg-[#6f9b74]'
               : n < step
-              ? 'w-2.5 h-2.5 bg-[#588157] dark:bg-[#5bc0de]'
-              : 'w-2.5 h-2.5 bg-[#d1d5db] dark:bg-[#2a4a6f]'
+              ? 'w-2.5 h-2.5 bg-[#588157] dark:bg-[#82ad86]'
+              : 'w-2.5 h-2.5 bg-[#d1d5db] dark:bg-[#444d57]'
           }`}
         />
       ))}
@@ -81,16 +81,16 @@ function Alert({ type, message }) {
 
 function InputLabel({ children }) {
   return (
-    <label className="block text-sm font-medium text-[#3a5a40] dark:text-[#b8d4e8] mb-1">
+    <label className="block text-sm font-medium text-[#3a5a40] dark:text-[#d0d7dd] mb-1">
       {children}
     </label>
   );
 }
 
 const inputCls =
-  'w-full px-4 py-2.5 border border-[#a3b18a] dark:border-[#2a4a6f] rounded-lg ' +
-  'bg-white dark:bg-[#0f2139] text-[#344e41] dark:text-white ' +
-  'focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#3ba9d6] focus:border-transparent outline-none transition-colors ' +
+  'w-full px-4 py-2.5 border border-[#a3b18a] dark:border-[#444d57] rounded-lg ' +
+  'bg-white dark:bg-[#1a1d20] text-[#344e41] dark:text-white ' +
+  'focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74] focus:border-transparent outline-none transition-colors ' +
   'disabled:opacity-50 disabled:cursor-not-allowed';
 
 function PrimaryButton({ loading, disabled, children, ...props }) {
@@ -98,7 +98,7 @@ function PrimaryButton({ loading, disabled, children, ...props }) {
     <button
       type="submit"
       disabled={loading || disabled}
-      className="w-full flex items-center justify-center gap-2 bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+      className="w-full flex items-center justify-center gap-2 bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
       {...props}
     >
       {loading && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -138,13 +138,13 @@ function StepEmail({ onNext }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#f0f5f1] dark:bg-[#1e3a5f] mb-4">
-          <Mail className="w-7 h-7 text-[#3a5a40] dark:text-[#3ba9d6]" />
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#f0f5f1] dark:bg-[#353c44] mb-4">
+          <Mail className="w-7 h-7 text-[#3a5a40] dark:text-[#6f9b74]" />
         </div>
         <h1 className="text-2xl font-bold text-[#3a5a40] dark:text-white mb-1">
           Forgot password?
         </h1>
-        <p className="text-sm text-[#6b7280] dark:text-[#9db1c4]">
+        <p className="text-sm text-[#6b7280] dark:text-[#adb5be]">
           Enter your email and we&apos;ll send a verification code.
         </p>
       </div>
@@ -176,7 +176,7 @@ function StepEmail({ onNext }) {
         <button
           type="button"
           onClick={() => router.push('/auth/login')}
-          className="inline-flex items-center gap-1 text-sm text-[#588157] dark:text-[#3ba9d6] hover:underline font-medium"
+          className="inline-flex items-center gap-1 text-sm text-[#588157] dark:text-[#6f9b74] hover:underline font-medium"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           Back to Sign In
@@ -311,15 +311,15 @@ function StepVerify({ email, onNext, onBack }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#f0f5f1] dark:bg-[#1e3a5f] mb-4">
-          <ShieldCheck className="w-7 h-7 text-[#3a5a40] dark:text-[#3ba9d6]" />
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#f0f5f1] dark:bg-[#353c44] mb-4">
+          <ShieldCheck className="w-7 h-7 text-[#3a5a40] dark:text-[#6f9b74]" />
         </div>
         <h1 className="text-2xl font-bold text-[#3a5a40] dark:text-white mb-1">
           Enter verification code
         </h1>
-        <p className="text-sm text-[#6b7280] dark:text-[#9db1c4]">
+        <p className="text-sm text-[#6b7280] dark:text-[#adb5be]">
           We sent a 6-digit code to{' '}
-          <span className="font-semibold text-[#3a5a40] dark:text-[#b8d4e8]">
+          <span className="font-semibold text-[#3a5a40] dark:text-[#d0d7dd]">
             {maskEmail(email)}
           </span>
         </p>
@@ -347,10 +347,10 @@ function StepVerify({ email, onNext, onBack }) {
             className={`w-11 h-13 sm:w-13 sm:h-14 text-center text-xl font-bold border rounded-xl outline-none transition-all
               ${
                 d
-                  ? 'border-[#588157] dark:border-[#3ba9d6] bg-[#f0f5f1] dark:bg-[#1a3354] text-[#3a5a40] dark:text-[#3ba9d6]'
-                  : 'border-[#a3b18a] dark:border-[#2a4a6f] bg-white dark:bg-[#0f2139] text-[#344e41] dark:text-white'
+                  ? 'border-[#588157] dark:border-[#6f9b74] bg-[#f0f5f1] dark:bg-[#353c44] text-[#3a5a40] dark:text-[#6f9b74]'
+                  : 'border-[#a3b18a] dark:border-[#444d57] bg-white dark:bg-[#1a1d20] text-[#344e41] dark:text-white'
               }
-              focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#3ba9d6] focus:border-transparent
+              focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74] focus:border-transparent
               disabled:opacity-50 disabled:cursor-not-allowed`}
             style={{ width: '2.75rem', height: '3.5rem' }}
             autoComplete="off"
@@ -367,7 +367,7 @@ function StepVerify({ email, onNext, onBack }) {
           type="button"
           onClick={handleLocalBypass}
           disabled={loading || resending}
-          className="w-full flex items-center justify-center border border-[#a3b18a] dark:border-[#2a4a6f] bg-[#f8faf7] hover:bg-[#eef3ea] dark:bg-[#0f2139] dark:hover:bg-[#163052] text-[#3a5a40] dark:text-[#b8d4e8] font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center border border-[#a3b18a] dark:border-[#444d57] bg-[#f8faf7] hover:bg-[#eef3ea] dark:bg-[#1a1d20] dark:hover:bg-[#31363d] text-[#3a5a40] dark:text-[#d0d7dd] font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Localhost Bypass
         </button>
@@ -377,7 +377,7 @@ function StepVerify({ email, onNext, onBack }) {
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-1 text-[#588157] dark:text-[#3ba9d6] hover:underline font-medium"
+          className="inline-flex items-center gap-1 text-[#588157] dark:text-[#6f9b74] hover:underline font-medium"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           Change email
@@ -386,7 +386,7 @@ function StepVerify({ email, onNext, onBack }) {
           type="button"
           onClick={handleResend}
           disabled={resending}
-          className="text-[#588157] dark:text-[#3ba9d6] hover:underline font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          className="text-[#588157] dark:text-[#6f9b74] hover:underline font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {resending ? 'Sending…' : 'Resend code'}
         </button>
@@ -458,13 +458,13 @@ function StepReset({ resetToken, onDone }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#f0f5f1] dark:bg-[#1e3a5f] mb-4">
-          <CheckCircle2 className="w-7 h-7 text-[#3a5a40] dark:text-[#3ba9d6]" />
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#f0f5f1] dark:bg-[#353c44] mb-4">
+          <CheckCircle2 className="w-7 h-7 text-[#3a5a40] dark:text-[#6f9b74]" />
         </div>
         <h1 className="text-2xl font-bold text-[#3a5a40] dark:text-white mb-1">
           Set new password
         </h1>
-        <p className="text-sm text-[#6b7280] dark:text-[#9db1c4]">
+        <p className="text-sm text-[#6b7280] dark:text-[#adb5be]">
           Choose a strong password for your account.
         </p>
       </div>
@@ -491,7 +491,7 @@ function StepReset({ resetToken, onDone }) {
           <button
             type="button"
             onClick={() => setShowPw((p) => !p)}
-            className="absolute inset-y-0 right-0 px-3 flex items-center text-[#3a5a40] dark:text-[#7d9ab8] hover:text-[#344e41] dark:hover:text-white"
+            className="absolute inset-y-0 right-0 px-3 flex items-center text-[#3a5a40] dark:text-[#adb5be] hover:text-[#344e41] dark:hover:text-white"
             aria-label={showPw ? 'Hide password' : 'Show password'}
           >
             {showPw ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -506,12 +506,12 @@ function StepReset({ resetToken, onDone }) {
                 <div
                   key={i}
                   className={`h-1 flex-1 rounded-full transition-all ${
-                    i <= strength ? strengthColor : 'bg-[#e5e7eb] dark:bg-[#2a4a6f]'
+                    i <= strength ? strengthColor : 'bg-[#e5e7eb] dark:bg-[#444d57]'
                   }`}
                 />
               ))}
             </div>
-            <p className="text-xs text-[#6b7280] dark:text-[#9db1c4]">{strengthLabel}</p>
+            <p className="text-xs text-[#6b7280] dark:text-[#adb5be]">{strengthLabel}</p>
           </div>
         )}
       </div>
@@ -534,7 +534,7 @@ function StepReset({ resetToken, onDone }) {
           <button
             type="button"
             onClick={() => setShowConfirm((p) => !p)}
-            className="absolute inset-y-0 right-0 px-3 flex items-center text-[#3a5a40] dark:text-[#7d9ab8] hover:text-[#344e41] dark:hover:text-white"
+            className="absolute inset-y-0 right-0 px-3 flex items-center text-[#3a5a40] dark:text-[#adb5be] hover:text-[#344e41] dark:hover:text-white"
             aria-label={showConfirm ? 'Hide confirm password' : 'Show confirm password'}
           >
             {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -551,7 +551,7 @@ function StepReset({ resetToken, onDone }) {
         )}
       </div>
 
-      <p className="text-xs text-[#6b7280] dark:text-[#9db1c4]">{PASSWORD_HINT}</p>
+      <p className="text-xs text-[#6b7280] dark:text-[#adb5be]">{PASSWORD_HINT}</p>
 
       <PrimaryButton loading={loading}>
         {loading ? 'Resetting password…' : 'Reset Password'}
@@ -571,13 +571,13 @@ function SuccessScreen() {
       </div>
       <div>
         <h1 className="text-2xl font-bold text-[#3a5a40] dark:text-white mb-2">Password reset!</h1>
-        <p className="text-sm text-[#6b7280] dark:text-[#9db1c4]">
+        <p className="text-sm text-[#6b7280] dark:text-[#adb5be]">
           Your password has been updated successfully. You can now sign in with your new password.
         </p>
       </div>
       <button
         onClick={() => router.push('/auth/login')}
-        className="w-full bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold py-3 rounded-lg transition-colors"
+        className="w-full bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white font-semibold py-3 rounded-lg transition-colors"
       >
         Continue to Sign In
       </button>
@@ -599,18 +599,18 @@ export default function ForgotPasswordClient() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="border-b border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#0a1628]">
+      <header className="border-b border-[#a3b18a] dark:border-[#353c44] bg-white dark:bg-[#121416]">
         <div className="mx-auto flex w-full max-w-[min(100%,1800px)] items-center justify-between px-3 py-4 sm:px-5 lg:px-6 xl:px-7 2xl:px-9">
           <button
             onClick={() => router.push('/')}
-            className="flex items-center gap-2 text-[#344e41] dark:text-[#b8d4e8] hover:text-[#3a5a40] dark:hover:text-white transition-colors"
+            className="flex items-center gap-2 text-[#344e41] dark:text-[#d0d7dd] hover:text-[#3a5a40] dark:hover:text-white transition-colors"
           >
             <KapITLogo className="h-9 w-9 rounded-lg object-contain bg-white" />
             <span className="text-2xl font-bold text-[#3a5a40] dark:text-white">kapIT</span>
           </button>
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-lg hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+            className="p-2 rounded-lg hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors"
             aria-label="Toggle theme"
           >
             {theme === 'light' ? (
@@ -623,9 +623,9 @@ export default function ForgotPasswordClient() {
       </header>
 
       {/* Main */}
-      <main className="flex-1 flex items-center justify-center px-3 sm:px-6 py-8 sm:py-12 bg-gradient-to-br from-[#dad7cd] to-[#f5f5f2] dark:from-[#0a1628] dark:to-[#162842]">
+      <main className="flex-1 flex items-center justify-center px-3 sm:px-6 py-8 sm:py-12 bg-gradient-to-br from-[#dad7cd] to-[#f5f5f2] dark:from-[#121416] dark:to-[#22272b]">
         <div className="w-full max-w-md">
-          <div className="bg-white dark:bg-[#162842] rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] p-5 sm:p-8 shadow-lg dark:shadow-[#3ba9d6]/10 transition-all duration-300">
+          <div className="bg-white dark:bg-[#22272b] rounded-2xl border border-[#a3b18a] dark:border-[#353c44] p-5 sm:p-8 shadow-lg dark:shadow-[#6f9b74]/10 transition-all duration-300">
             {step === 1 && (
               <StepEmail
                 onNext={(e) => {

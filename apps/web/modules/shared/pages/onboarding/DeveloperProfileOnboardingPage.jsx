@@ -161,7 +161,6 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
   const [form, setForm] = useState({
     profileImage: user?.profileImage || '',
     fullName: user?.fullName || user?.name || '',
-    username: user?.username || '',
     provinceCode: '',
     city: '',
     location: String(user?.location || user?.address || ''),
@@ -275,7 +274,6 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
   const isComplete = useMemo(() => {
     return Boolean(
       String(form.fullName).trim() &&
-        String(form.username).trim() &&
         String(form.location).trim() &&
         String(form.phoneNumber).trim() &&
         String(form.email).trim() &&
@@ -319,7 +317,7 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
       await onSubmit?.({
         profileImage: form.profileImage,
         fullName: form.fullName,
-        username: form.username,
+        username: String(form.fullName || '').trim(),
         location: form.location,
         phoneNumber: form.phoneNumber,
         email: form.email,
@@ -344,8 +342,8 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f2] text-[#344e41] dark:bg-[#0a1628] dark:text-slate-200">
-      <header className="sticky top-0 z-30 border-b border-[#a3b18a] bg-white dark:border-[#1e3a5f] dark:bg-[#0a1628]">
+    <div className="min-h-screen bg-[#f5f5f2] text-[#344e41] dark:bg-[#121416] dark:text-slate-200">
+      <header className="sticky top-0 z-30 border-b border-[#a3b18a] bg-white dark:border-[#353c44] dark:bg-[#121416]">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
           <button
             type="button"
@@ -363,7 +361,7 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
             <button
               type="button"
               onClick={toggleTheme}
-              className="rounded-lg p-2 transition-colors hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f]"
+              className="rounded-lg p-2 transition-colors hover:bg-[#f5f5f2] dark:hover:bg-[#353c44]"
               aria-label="Toggle theme"
             >
               {theme === 'light' ? <Moon className="h-5 w-5 text-[#344e41]" /> : <Sun className="h-5 w-5 text-white" />}
@@ -381,10 +379,10 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-10">
-        <div className="rounded-2xl border border-[#a3b18a] bg-white p-6 shadow-lg shadow-black/5 dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-black/30 sm:p-8">
+        <div className="rounded-2xl border border-[#a3b18a] bg-white p-6 shadow-lg shadow-black/5 dark:border-[#353c44] dark:bg-[#22272b] dark:shadow-black/30 sm:p-8">
           <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#a3b18a] bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#0f2139]">
-              <Briefcase className="h-6 w-6 text-[#588157] dark:text-[#3ba9d6]" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#a3b18a] bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#1a1d20]">
+              <Briefcase className="h-6 w-6 text-[#588157] dark:text-[#6f9b74]" />
             </div>
             <div className="min-w-0">
               <h1 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white sm:text-3xl">Complete your developer profile</h1>
@@ -394,7 +392,7 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
           <form onSubmit={handleSubmit} className="mt-8 space-y-8">
             <Section title="Profile Picture (Optional)" icon={UserCircle2}>
               <div className="flex items-center gap-4">
-                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-[#a3b18a] bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#0f2139]">
+                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-[#a3b18a] bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#1a1d20]">
                   {form.profileImage ? (
                     <img src={form.profileImage} alt="Profile" className="h-full w-full object-cover" />
                   ) : (
@@ -411,7 +409,7 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
                   />
                   <label
                     htmlFor={profileImageInputId}
-                    className="inline-flex cursor-pointer items-center rounded-lg border border-[#a3b18a] bg-[#eef6ee] px-4 py-2 text-sm font-semibold text-[#3a5a40] hover:bg-[#e3eee3] dark:border-[#2a4a6f] dark:bg-[#1e3a5f] dark:text-[#b8d4e8] dark:hover:bg-[#24496d]"
+                    className="inline-flex cursor-pointer items-center rounded-lg border border-[#a3b18a] bg-[#eef6ee] px-4 py-2 text-sm font-semibold text-[#3a5a40] hover:bg-[#e3eee3] dark:border-[#444d57] dark:bg-[#353c44] dark:text-[#d0d7dd] dark:hover:bg-[#4a535d]"
                   >
                     Upload
                   </label>
@@ -422,11 +420,8 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
 
             <Section title="Basic Information">
               <Grid>
-                <Field label="Full Name" required>
-                  <input value={form.fullName} onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))} className="field" placeholder="e.g. Juan Dela Cruz" required />
-                </Field>
-                <Field label="Username" required>
-                  <input value={form.username} onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))} className="field" placeholder="e.g. juan_dev" required />
+                <Field label="Full Name (First name, M.I., Last name)" required>
+                  <input value={form.fullName} onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))} className="field" placeholder="e.g. Juan D. Dela Cruz" title="Enter your full name in this format: First name, middle initial, last name." required />
                 </Field>
                 <Field label="Province" required>
                   <SearchableSelect
@@ -448,13 +443,13 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
                   />
                 </Field>
                 <Field label="Country">
-                  <input value="Philippines" readOnly className="field bg-[#f5f5f2] dark:bg-[#0f2139]/60" />
+                  <input value="Philippines" readOnly className="field bg-[#f5f5f2] dark:bg-[#1a1d20]/60" />
                 </Field>
                 <Field label="Phone Number" required>
                   <input value={form.phoneNumber} onChange={(e) => setForm((p) => ({ ...p, phoneNumber: e.target.value }))} className="field" placeholder="e.g. +63 9xx xxx xxxx" required />
                 </Field>
                 <Field label="Email" required>
-                  <input value={form.email} readOnly className="field bg-[#f5f5f2] dark:bg-[#0f2139]/60" />
+                  <input value={form.email} readOnly className="field bg-[#f5f5f2] dark:bg-[#1a1d20]/60" />
                 </Field>
               </Grid>
             </Section>
@@ -564,7 +559,7 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
                       aria-pressed={selected}
                       className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors active:scale-[0.99] ${
                         selected
-                          ? 'border-[#588157] bg-[#eef6ee] text-[#3a5a40] dark:border-[#3ba9d6] dark:bg-[#1e3a5f] dark:text-white'
+                          ? 'border-[#588157] bg-[#eef6ee] text-[#3a5a40] dark:border-[#6f9b74] dark:bg-[#353c44] dark:text-white'
                           : 'border-[#a3b18a] bg-[#f5f5f2] text-[#344e41] hover:bg-[#eef6ee] dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-200 dark:hover:bg-slate-900/60'
                       }`}
                     >
@@ -588,7 +583,7 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
             </Section>
 
             <div className="flex items-center justify-end gap-3">
-              <button type="submit" disabled={!isComplete || saving} className="rounded-xl bg-[#3a5a40] px-5 py-3 font-semibold text-white hover:bg-[#344e41] disabled:cursor-not-allowed disabled:opacity-60 dark:border dark:border-[#3ba9d6]/30 dark:bg-[#1e3a5f] dark:text-[#dcecff] dark:hover:bg-[#24496d]">
+              <button type="submit" disabled={!isComplete || saving} className="rounded-xl bg-[#3a5a40] px-5 py-3 font-semibold text-white hover:bg-[#344e41] disabled:cursor-not-allowed disabled:opacity-60 dark:border dark:border-[#6f9b74]/30 dark:bg-[#353c44] dark:text-[#eceff2] dark:hover:bg-[#4a535d]">
                 {saving ? 'Saving...' : 'Save profile'}
               </button>
             </div>
@@ -603,7 +598,7 @@ function Section({ title, icon: Icon, children }) {
   return (
     <section>
       <div className="flex items-center gap-2">
-        {Icon ? <Icon className="h-5 w-5 text-[#588157] dark:text-[#3ba9d6]" /> : null}
+        {Icon ? <Icon className="h-5 w-5 text-[#588157] dark:text-[#6f9b74]" /> : null}
         <h2 className="text-lg font-bold text-[#2f3e2f] dark:text-white">{title}</h2>
       </div>
       <div className="mt-4">{children}</div>

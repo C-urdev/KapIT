@@ -21,7 +21,7 @@ const getUserKey = (user) => {
   if (email) {
     return email;
   }
-  const fallback = user?.username || user?.name;
+  const fallback = user?.fullName || user?.name || user?.username;
   return fallback ? String(fallback).trim().toLowerCase() : 'anonymous';
 };
 

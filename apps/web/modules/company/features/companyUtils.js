@@ -82,16 +82,16 @@ export const statusBadgeClass = (status) => {
   if (value === 'closed')
     return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-200 dark:border-amber-500/30';
   if (value === 'filled')
-    return 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/15 dark:text-sky-200 dark:border-sky-500/30';
+    return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-200 dark:border-emerald-500/30';
   if (value === 'draft')
-    return 'bg-[#f5f5f2] text-[#5f6f52] border-[#d6d3c9] dark:bg-[#2a3342]/50 dark:text-[#c7d6e6] dark:border-[#3c4b60]';
+    return 'bg-[#f5f5f2] text-[#5f6f52] border-[#d6d3c9] dark:bg-[#2f343b]/50 dark:text-[#d8dee3] dark:border-[#444d57]';
   if (value === 'accepted')
     return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-200 dark:border-emerald-500/30';
   if (value === 'rejected')
     return 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-200 dark:border-rose-500/30';
   if (value === 'reviewed')
-    return 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-200 dark:border-blue-500/30';
-  return 'bg-[#f5f5f2] text-[#5f6f52] border-[#d6d3c9] dark:bg-[#2a3342]/50 dark:text-[#c7d6e6] dark:border-[#3c4b60]';
+    return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-200 dark:border-amber-500/30';
+  return 'bg-[#f5f5f2] text-[#5f6f52] border-[#d6d3c9] dark:bg-[#2f343b]/50 dark:text-[#d8dee3] dark:border-[#444d57]';
 };
 
 export const formatJobStatus = (status) => {

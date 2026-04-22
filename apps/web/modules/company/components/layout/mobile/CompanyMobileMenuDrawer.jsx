@@ -172,7 +172,7 @@ export default function CompanyMobileMenuDrawer({ open, active, user, onClose, o
                     onClose();
                     navigate(COMPANY_PATHS.settings);
                   }}
-                  className="flex w-full items-center gap-4 rounded-2xl bg-[#f1f5eb] px-4 py-3 text-left text-[#344e41] transition-colors hover:bg-[#e9efe2] dark:bg-[#1e3a5f] dark:text-white dark:hover:bg-[#24405d]"
+                  className="flex w-full items-center gap-4 rounded-2xl bg-[#f1f5eb] px-4 py-3 text-left text-[#344e41] transition-colors hover:bg-[#e9efe2] dark:bg-[#353c44] dark:text-white dark:hover:bg-[#3c4048]"
                 >
                   <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f8fbf6] shadow-sm dark:bg-[#202126]">
                     <Settings className="h-5 w-5" />

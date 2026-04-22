@@ -53,11 +53,11 @@
 
 @layer components {
   .input-base {
-    @apply px-4 py-2 border border-[#a3b18a] dark:border-[#2a4a6f] rounded-lg bg-white dark:bg-[#0f2139] text-[#344e41] dark:text-white outline-none focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#3ba9d6];
+    @apply px-4 py-2 border border-[#a3b18a] dark:border-[#444d57] rounded-lg bg-white dark:bg-[#1a1d20] text-[#344e41] dark:text-white outline-none focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74];
   }
 
   .field {
-    @apply w-full rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] bg-white dark:bg-[#0f2139] px-4 py-3 text-[#344e41] dark:text-white placeholder:text-[#3a5a40] dark:placeholder:text-[#7d9ab8] outline-none focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#3ba9d6] transition-colors;
+    @apply w-full rounded-xl border border-[#a3b18a] dark:border-[#444d57] bg-white dark:bg-[#1a1d20] px-4 py-3 text-[#344e41] dark:text-white placeholder:text-[#3a5a40] dark:placeholder:text-[#adb5be] outline-none focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74] transition-colors;
   }
 }
 

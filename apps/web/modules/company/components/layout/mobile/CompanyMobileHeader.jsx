@@ -13,7 +13,7 @@ export default function CompanyMobileHeader({ onOpenMobileNav, unreadNotificatio
           <button
             type="button"
             onClick={onOpenMobileNav}
-            className="inline-flex h-10 w-10 items-center justify-center text-[#344e41] dark:text-white hover:text-[#3a5a40] dark:hover:text-[#b8d4e8] transition-colors shrink-0"
+            className="inline-flex h-10 w-10 items-center justify-center text-[#344e41] dark:text-white hover:text-[#3a5a40] dark:hover:text-[#d0d7dd] transition-colors shrink-0"
             aria-label="Open menu"
           >
             <Menu className="w-5 h-5" />
@@ -37,18 +37,18 @@ export default function CompanyMobileHeader({ onOpenMobileNav, unreadNotificatio
           <button
             type="button"
             onClick={() => navigate(COMPANY_PATHS.notifications)}
-            className="relative inline-flex h-10 w-10 items-center justify-center text-[#344e41] dark:text-white hover:text-[#3a5a40] dark:hover:text-[#b8d4e8] transition-colors"
+            className="relative inline-flex h-10 w-10 items-center justify-center text-[#344e41] dark:text-white hover:text-[#3a5a40] dark:hover:text-[#d0d7dd] transition-colors"
             aria-label="Open notifications"
           >
             <Bell className="w-5 h-5 text-[#344e41] dark:text-white" />
             {unreadNotificationCount > 0 ? (
-              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#588157] dark:bg-[#3ba9d6]" />
+              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#588157] dark:bg-[#6f9b74]" />
             ) : null}
           </button>
           <button
             type="button"
             onClick={toggleTheme}
-            className="inline-flex h-10 w-10 items-center justify-center text-[#344e41] dark:text-white hover:text-[#3a5a40] dark:hover:text-[#b8d4e8] transition-colors"
+            className="inline-flex h-10 w-10 items-center justify-center text-[#344e41] dark:text-white hover:text-[#3a5a40] dark:hover:text-[#d0d7dd] transition-colors"
             aria-label="Toggle theme"
           >
             {theme === 'light' ? <Moon className="w-5 h-5 text-[#344e41]" /> : <Sun className="w-5 h-5 text-white" />}

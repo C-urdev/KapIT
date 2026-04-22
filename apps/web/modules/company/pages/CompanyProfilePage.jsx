@@ -159,11 +159,11 @@ export default function CompanyProfilePage({ user, onUpdated }) {
       </div>
 
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-      {loading && <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">Loading company profile...</p>}
+      {loading && <p className="text-sm text-[#344e41] dark:text-[#d0d7dd]">Loading company profile...</p>}
 
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] shadow-lg shadow-black/5 dark:shadow-black/20 p-8 space-y-6 transition-colors duration-300">
+      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] shadow-lg shadow-black/5 dark:shadow-black/20 p-8 space-y-6 transition-colors duration-300">
         {onboardingDetails && (
-          <section className="space-y-4 rounded-2xl border border-[#d8dfc9] dark:border-[#2a4a6f] bg-[#f8faf5] dark:bg-[#102235] p-5">
+          <section className="space-y-4 rounded-2xl border border-[#d8dfc9] dark:border-[#444d57] bg-[#f8faf5] dark:bg-[#202428] p-5">
             <div>
               <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Company onboarding details</h3>
             </div>
@@ -192,12 +192,12 @@ export default function CompanyProfilePage({ user, onUpdated }) {
         )}
 
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-[#f5f5f2] dark:bg-[#1e3a5f] border border-[#a3b18a] dark:border-[#2a4a6f] overflow-hidden text-[#3a5a40] dark:text-white flex items-center justify-center font-extrabold text-2xl transition-colors duration-300">
+          <div className="w-16 h-16 rounded-2xl bg-[#f5f5f2] dark:bg-[#353c44] border border-[#a3b18a] dark:border-[#444d57] overflow-hidden text-[#3a5a40] dark:text-white flex items-center justify-center font-extrabold text-2xl transition-colors duration-300">
             {form.logo ? <img src={form.logo} alt="Company logo" className="w-full h-full object-cover" /> : initial}
           </div>
           <div className="space-y-1">
             <div className="text-sm font-semibold text-[#3a5a40] dark:text-white">Company logo</div>
-            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] cursor-pointer text-sm transition-colors">
+            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#444d57] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] cursor-pointer text-sm transition-colors">
               Upload
               <input type="file" accept="image/*" className="hidden" onChange={handleLogoSelect} />
             </label>
@@ -231,20 +231,20 @@ export default function CompanyProfilePage({ user, onUpdated }) {
             <div>
               <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Related companies</h3>
             </div>
-            <button type="button" onClick={addRelatedCompany} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors">
+            <button type="button" onClick={addRelatedCompany} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#444d57] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors">
               <Plus className="w-4 h-4" />
               Add company
             </button>
           </div>
 
           {form.relatedCompanies.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[#a3b18a] dark:border-[#2a4a6f] p-4 text-sm text-[#344e41] dark:text-[#b8d4e8]">
+            <div className="rounded-xl border border-dashed border-[#a3b18a] dark:border-[#444d57] p-4 text-sm text-[#344e41] dark:text-[#d0d7dd]">
               No related companies added yet.
             </div>
           ) : (
             <div className="space-y-4">
               {form.relatedCompanies.map((item, index) => (
-                <div key={`related-company-${index}`} className="rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] p-4 space-y-3">
+                <div key={`related-company-${index}`} className="rounded-xl border border-[#a3b18a] dark:border-[#444d57] p-4 space-y-3">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-semibold text-[#3a5a40] dark:text-white">Related company #{index + 1}</p>
                     <button type="button" onClick={() => removeRelatedCompany(index)} className="inline-flex items-center gap-2 text-sm text-red-600 dark:text-red-300 hover:underline">
@@ -262,7 +262,7 @@ export default function CompanyProfilePage({ user, onUpdated }) {
         </section>
 
         <div className="flex justify-end">
-          <button type="button" disabled={saving || loading} onClick={handleSave} className="px-4 py-2.5 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold disabled:opacity-60 transition-colors">
+          <button type="button" disabled={saving || loading} onClick={handleSave} className="px-4 py-2.5 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white font-semibold disabled:opacity-60 transition-colors">
             {saving ? 'Saving...' : 'Save profile'}
           </button>
         </div>
@@ -288,7 +288,7 @@ function ReadOnlyField({ label, value, full = false }) {
   return (
     <div className={`${full ? 'md:col-span-2' : ''} space-y-1`}>
       <p className="text-sm font-semibold text-[#3a5a40] dark:text-white">{label}</p>
-      <div className="rounded-xl border border-[#d8dfc9] dark:border-[#2a4a6f] bg-[#f8fbf6] dark:bg-[#162842] px-4 py-3 text-sm text-[#344e41] dark:text-[#dcecff]">
+      <div className="rounded-xl border border-[#d8dfc9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#22272b] px-4 py-3 text-sm text-[#344e41] dark:text-[#eceff2]">
         {value}
       </div>
     </div>

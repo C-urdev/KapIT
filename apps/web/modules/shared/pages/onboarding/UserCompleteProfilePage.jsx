@@ -49,7 +49,6 @@ export default function CompleteProfilePage({ user, onSubmit, onLogout }) {
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     name: user?.name || '',
-    username: user?.username || '',
     address: user?.address || '',
     education: user?.education || '',
     vocationalCourse: user?.vocationalCourse || '',
@@ -68,7 +67,6 @@ export default function CompleteProfilePage({ user, onSubmit, onLogout }) {
   const desiredJobValue = isOtherJobSelected ? formData.customDesiredJob.trim() : formData.desiredJob;
   const isFormComplete = Boolean(
     formData.name.trim() &&
-      formData.username.trim() &&
       formData.address.trim() &&
       formData.education &&
       formData.desiredJob &&
@@ -107,7 +105,7 @@ export default function CompleteProfilePage({ user, onSubmit, onLogout }) {
 
     onSubmit({
       name: formData.name,
-      username: formData.username,
+      username: formData.name.trim(),
       address: formData.address,
       education: formData.education,
       vocationalCourse: formData.vocationalCourse,
@@ -121,8 +119,8 @@ export default function CompleteProfilePage({ user, onSubmit, onLogout }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f2] dark:bg-[#0a1628]">
-      <header className="border-b border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#0a1628]">
+    <div className="min-h-screen bg-[#f5f5f2] dark:bg-[#121416]">
+      <header className="border-b border-[#a3b18a] dark:border-[#353c44] bg-white dark:bg-[#121416]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-3">
@@ -134,7 +132,7 @@ export default function CompleteProfilePage({ user, onSubmit, onLogout }) {
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+              className="p-2 rounded-lg hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors"
               aria-label="Toggle theme"
             >
               {theme === 'light' ? <Moon className="w-5 h-5 text-[#344e41]" /> : <Sun className="w-5 h-5 text-white" />}
@@ -152,14 +150,14 @@ export default function CompleteProfilePage({ user, onSubmit, onLogout }) {
       </header>
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-2xl p-6 sm:p-8">
+        <div className="bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-2xl p-6 sm:p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-full bg-[#588157] dark:bg-[#3ba9d6] text-white flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-[#588157] dark:bg-[#6f9b74] text-white flex items-center justify-center">
               <User className="w-5 h-5" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-[#3a5a40] dark:text-white">Complete Your Profile</h1>
-              <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">
+              <p className="text-sm text-[#344e41] dark:text-[#d0d7dd]">
                 Finish your details before entering the homepage.
               </p>
             </div>
@@ -172,24 +170,17 @@ export default function CompleteProfilePage({ user, onSubmit, onLogout }) {
           )}
 
           <form onSubmit={handleSubmit} className="grid sm:grid-cols-2 gap-4">
-            <Field label="Name (Real Name)">
+            <Field label="Full Name (First name, M.I., Last name)">
               <input
                 type="text"
                 value={formData.name}
                 onChange={(event) => setFormData({ ...formData, name: event.target.value })}
+                placeholder="e.g. Juan D. Dela Cruz"
+                title="Enter your full name in this format: First name, middle initial, last name."
                 className="w-full input-base"
                 required
               />
-            </Field>
-
-            <Field label="Username (Profile Name)">
-              <input
-                type="text"
-                value={formData.username}
-                onChange={(event) => setFormData({ ...formData, username: event.target.value })}
-                className="w-full input-base"
-                required
-              />
+              <p className="mt-1 text-xs text-[#5f6f52] dark:text-[#adb5be]">Use your full name format: First name, middle initial, and last name.</p>
             </Field>
 
             <Field label="Address">
@@ -273,7 +264,7 @@ export default function CompleteProfilePage({ user, onSubmit, onLogout }) {
             </Field>
 
             <Field label="Age">
-              <input type="text" value={age} readOnly className="w-full input-base bg-[#f1f5f0] dark:bg-[#0f2139]" />
+              <input type="text" value={age} readOnly className="w-full input-base bg-[#f1f5f0] dark:bg-[#1a1d20]" />
             </Field>
 
             <Field label="Phone Number">
@@ -335,7 +326,7 @@ export default function CompleteProfilePage({ user, onSubmit, onLogout }) {
                 <button
                   type="submit"
                   disabled={!isFormComplete}
-                  className="w-full bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                 Save Profile
               </button>

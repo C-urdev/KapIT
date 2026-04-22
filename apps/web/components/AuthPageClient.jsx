@@ -121,8 +121,8 @@ export default function AuthPageClient({ initialMode = 'login' }) {
 
   if (pendingSignup) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#dad7cd] to-[#f5f5f2] dark:from-[#0a1628] dark:to-[#162842]">
-        <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-2xl p-8 max-w-sm w-full shadow-lg">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#dad7cd] to-[#f5f5f2] dark:from-[#121416] dark:to-[#22272b]">
+        <div className="bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-2xl p-8 max-w-sm w-full shadow-lg">
           <button 
             onClick={() => setPendingSignup(null)}
             disabled={loading}
@@ -133,11 +133,11 @@ export default function AuthPageClient({ initialMode = 'login' }) {
           </button>
           
           <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#3a5a40]/10 dark:bg-[#3ba9d6]/10 mb-4">
-              <Mail className="w-6 h-6 text-[#3a5a40] dark:text-[#3ba9d6]" />
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#3a5a40]/10 dark:bg-[#6f9b74]/10 mb-4">
+              <Mail className="w-6 h-6 text-[#3a5a40] dark:text-[#6f9b74]" />
             </div>
             <h2 className="text-2xl font-bold text-[#3a5a40] dark:text-white mb-2">Verify your email</h2>
-            <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">
+            <p className="text-sm text-[#4b5563] dark:text-[#d0d7dd]">
               We sent a verification code to <strong className="font-medium text-gray-900 dark:text-gray-200">{pendingSignup.email}</strong>. 
             </p>
           </div>
@@ -162,13 +162,13 @@ export default function AuthPageClient({ initialMode = 'login' }) {
                 }
               }}
               placeholder="000000"
-              className="w-full text-center text-3xl tracking-[0.5em] font-semibold px-4 py-3 border border-[#a3b18a] dark:border-[#2a4a6f] rounded-xl bg-white dark:bg-[#0f2139] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#3a5a40] dark:focus:ring-[#3ba9d6] outline-none transition-colors"
+              className="w-full text-center text-3xl tracking-[0.5em] font-semibold px-4 py-3 border border-[#a3b18a] dark:border-[#444d57] rounded-xl bg-white dark:bg-[#1a1d20] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#3a5a40] dark:focus:ring-[#6f9b74] outline-none transition-colors"
             />
             
             <button
               onClick={verifyAndRegister}
               disabled={loading || otpCode.length !== 6}
-              className="w-full h-12 bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full h-12 bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirm'}
             </button>
@@ -177,7 +177,7 @@ export default function AuthPageClient({ initialMode = 'login' }) {
                 type="button"
                 onClick={handleLocalhostBypass}
                 disabled={loading}
-                className="w-full h-11 border border-[#a3b18a] dark:border-[#2a4a6f] bg-[#f8faf7] hover:bg-[#eef3ea] dark:bg-[#0f2139] dark:hover:bg-[#163052] text-[#3a5a40] dark:text-[#b8d4e8] font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-11 border border-[#a3b18a] dark:border-[#444d57] bg-[#f8faf7] hover:bg-[#eef3ea] dark:bg-[#1a1d20] dark:hover:bg-[#31363d] text-[#3a5a40] dark:text-[#d0d7dd] font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Localhost Bypass
               </button>
@@ -191,8 +191,8 @@ export default function AuthPageClient({ initialMode = 'login' }) {
   return (
     <div className="relative">
       {loading && (
-        <div className="absolute inset-0 z-50 bg-white/50 dark:bg-[#0a1628]/50 flex items-center justify-center backdrop-blur-[2px]">
-          <Loader2 className="w-10 h-10 text-[#3a5a40] dark:text-[#3ba9d6] animate-spin" />
+        <div className="absolute inset-0 z-50 bg-white/50 dark:bg-[#121416]/50 flex items-center justify-center backdrop-blur-[2px]">
+          <Loader2 className="w-10 h-10 text-[#3a5a40] dark:text-[#6f9b74] animate-spin" />
         </div>
       )}
       <AuthPage

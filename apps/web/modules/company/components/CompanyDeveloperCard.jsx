@@ -7,10 +7,10 @@ export default function CompanyDeveloperCard({ developer, onViewProfile, onMessa
   const initial = name.charAt(0).toUpperCase();
 
   return (
-    <div className="rounded-xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] shadow-lg shadow-black/5 dark:shadow-black/20 p-5 transition-colors duration-300">
+    <div className="rounded-xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] shadow-lg shadow-black/5 dark:shadow-black/20 p-5 transition-colors duration-300">
       <div className="flex flex-col min-[420px]:flex-row items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-full bg-[#f5f5f2] dark:bg-[#1e3a5f] border border-[#a3b18a] dark:border-[#2a4a6f] text-[#3a5a40] dark:text-white overflow-hidden flex items-center justify-center font-bold shrink-0 transition-colors duration-300">
+          <div className="w-10 h-10 rounded-full bg-[#f5f5f2] dark:bg-[#353c44] border border-[#a3b18a] dark:border-[#444d57] text-[#3a5a40] dark:text-white overflow-hidden flex items-center justify-center font-bold shrink-0 transition-colors duration-300">
             {developer?.profileImage ? (
               <img src={developer.profileImage} alt={`${name} profile`} className="w-full h-full object-cover" />
             ) : (
@@ -19,15 +19,15 @@ export default function CompanyDeveloperCard({ developer, onViewProfile, onMessa
           </div>
           <div className="min-w-0">
             <p className="text-sm font-bold text-[#3a5a40] dark:text-white truncate">{name}</p>
-            <p className="text-xs text-[#4b5563] dark:text-[#b8d4e8] truncate">{developer?.desiredJob || developer?.education || 'IT Professional'}</p>
+            <p className="text-xs text-[#4b5563] dark:text-[#d0d7dd] truncate">{developer?.desiredJob || developer?.education || 'IT Professional'}</p>
             {developer?.address && (
-              <p className="mt-1 text-xs text-[#344e41] dark:text-[#b8d4e8] inline-flex items-center gap-1 truncate">
-                <MapPin className="w-4 h-4 text-[#588157] dark:text-[#3ba9d6]" />
+              <p className="mt-1 text-xs text-[#344e41] dark:text-[#d0d7dd] inline-flex items-center gap-1 truncate">
+                <MapPin className="w-4 h-4 text-[#588157] dark:text-[#6f9b74]" />
                 {developer.address}
               </p>
             )}
             {Number.isFinite(Number(developer?.ai?.matchPercentage)) ? (
-              <p className="mt-1 text-xs font-semibold text-[#31572c] dark:text-[#dcecff]">
+              <p className="mt-1 text-xs font-semibold text-[#31572c] dark:text-[#eceff2]">
                 Match {Number(developer.ai.matchPercentage)}% • ATS {Number(developer?.ai?.atsScore || 0)}
               </p>
             ) : null}
@@ -38,7 +38,7 @@ export default function CompanyDeveloperCard({ developer, onViewProfile, onMessa
         <button
           type="button"
           onClick={() => onMessage?.(developer)}
-          className="inline-flex w-full min-[420px]:w-auto items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white text-sm font-semibold transition-colors"
+          className="inline-flex w-full min-[420px]:w-auto items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white text-sm font-semibold transition-colors"
         >
           <MessageCircle className="w-4 h-4" />
           Message
@@ -49,7 +49,7 @@ export default function CompanyDeveloperCard({ developer, onViewProfile, onMessa
         <button
           type="button"
           onClick={() => onViewProfile?.(developer)}
-          className="w-full px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] text-sm font-semibold transition-colors"
+          className="w-full px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#444d57] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] text-sm font-semibold transition-colors"
         >
           View Profile
         </button>

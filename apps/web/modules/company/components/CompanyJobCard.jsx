@@ -9,7 +9,7 @@ export default function CompanyJobCard({ job, onManage, onViewDetails, onClose, 
   const applicants = Number(job?.applicant_count || job?.applicantCount || 0);
 
   return (
-    <div className="rounded-2xl bg-[#f8fbf6] dark:bg-[#162842] shadow-lg shadow-black/5 dark:shadow-black/20 px-3.5 py-3.5 transition-colors duration-300 sm:px-4 sm:py-4">
+    <div className="rounded-2xl bg-[#f8fbf6] dark:bg-[#22272b] shadow-lg shadow-black/5 dark:shadow-black/20 px-3.5 py-3.5 transition-colors duration-300 sm:px-4 sm:py-4">
       <div className="flex flex-col 2xl:flex-row 2xl:items-center gap-3 2xl:gap-5">
         <div className="min-w-0 2xl:flex-[1_1_auto]">
           <div className="flex flex-wrap items-center gap-2">
@@ -18,21 +18,21 @@ export default function CompanyJobCard({ job, onManage, onViewDetails, onClose, 
               {formatJobStatus(status)}
             </span>
           </div>
-          <div className="mt-2 flex flex-wrap gap-3 text-sm text-[#344e41] dark:text-[#b8d4e8]">
+          <div className="mt-2 flex flex-wrap gap-3 text-sm text-[#344e41] dark:text-[#d0d7dd]">
             {job?.location ? (
               <span className="inline-flex items-center gap-1">
-                <MapPin className="w-4 h-4 text-[#588157] dark:text-[#3ba9d6]" />
+                <MapPin className="w-4 h-4 text-[#588157] dark:text-[#6f9b74]" />
                 {job.location}
               </span>
             ) : null}
             {job?.type ? (
               <span className="inline-flex items-center gap-1">
-                <Briefcase className="w-4 h-4 text-[#588157] dark:text-[#3ba9d6]" />
+                <Briefcase className="w-4 h-4 text-[#588157] dark:text-[#6f9b74]" />
                 {job.type}
               </span>
             ) : null}
             <span className="inline-flex items-center gap-1">
-              <Users className="w-4 h-4 text-[#588157] dark:text-[#3ba9d6]" />
+              <Users className="w-4 h-4 text-[#588157] dark:text-[#6f9b74]" />
               {applicants} applicants
             </span>
           </div>
@@ -42,16 +42,16 @@ export default function CompanyJobCard({ job, onManage, onViewDetails, onClose, 
           <button
             type="button"
             onClick={() => onViewDetails?.(job)}
-            className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-md sm:rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-xs sm:text-sm text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-md sm:rounded-lg border border-[#a3b18a] dark:border-[#444d57] text-xs sm:text-sm text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors"
           >
-            <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#588157] dark:text-[#3ba9d6]" />
+            <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#588157] dark:text-[#6f9b74]" />
             View details
           </button>
           {onManage ? (
             <button
               type="button"
               onClick={() => onManage(job)}
-              className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-md sm:rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-xs sm:text-sm text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+              className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-md sm:rounded-lg border border-[#a3b18a] dark:border-[#444d57] text-xs sm:text-sm text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors"
             >
               Manage
             </button>
@@ -61,7 +61,7 @@ export default function CompanyJobCard({ job, onManage, onViewDetails, onClose, 
               type="button"
               onClick={() => onClose(job)}
               disabled={actionLoading}
-              className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-md sm:rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-xs sm:text-sm text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] disabled:opacity-60 transition-colors"
+              className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-md sm:rounded-lg border border-[#a3b18a] dark:border-[#444d57] text-xs sm:text-sm text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] disabled:opacity-60 transition-colors"
             >
               {actionLoading ? 'Updating...' : 'Close listing'}
             </button>
@@ -71,7 +71,7 @@ export default function CompanyJobCard({ job, onManage, onViewDetails, onClose, 
               type="button"
               onClick={() => onPayNow(job)}
               disabled={actionLoading}
-              className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-md sm:rounded-lg bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white text-xs sm:text-sm font-semibold disabled:opacity-60 transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-md sm:rounded-lg bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white text-xs sm:text-sm font-semibold disabled:opacity-60 transition-colors"
             >
               <WalletCards className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               {actionLoading ? 'Opening checkout...' : 'Pay now'}
@@ -82,7 +82,7 @@ export default function CompanyJobCard({ job, onManage, onViewDetails, onClose, 
               type="button"
               onClick={() => onReopen(job)}
               disabled={actionLoading}
-              className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-md sm:rounded-lg bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white text-xs sm:text-sm font-semibold disabled:opacity-60 transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-md sm:rounded-lg bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white text-xs sm:text-sm font-semibold disabled:opacity-60 transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               {actionLoading ? 'Reopening...' : 'Reopen'}

@@ -109,7 +109,7 @@ export default function CompanyApplicantsPage() {
         <div>
           <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Applicants</h2>
           {selectedJobId ? (
-            <p className="mt-1 text-sm text-[#4b5563] dark:text-[#b8d4e8]">
+            <p className="mt-1 text-sm text-[#4b5563] dark:text-[#d0d7dd]">
               Showing applicants for <span className="font-semibold text-[#3a5a40] dark:text-white">{selectedJobTitle}</span>
             </p>
           ) : null}
@@ -133,31 +133,31 @@ export default function CompanyApplicantsPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[linear-gradient(135deg,#f8fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#16304a,#102235)] p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
+      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[linear-gradient(135deg,#f8fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#31363d,#202428)] p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
         <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Hiring flow</h3>
-        <p className="mt-2 text-sm text-[#344e41] dark:text-[#dcecff]">Use <span className="font-semibold text-[#3a5a40] dark:text-white">Hire candidate</span> when you make a selection. The job will be marked filled, and if you reopen the role later, it will go through the posting payment flow again before going live.</p>
-        {plan?.isPremium ? <p className="mt-2 text-sm text-[#344e41] dark:text-[#dcecff]">Premium employer AI ranking is enabled. Match scores appear after refreshing the ranking for a job.</p> : null}
+        <p className="mt-2 text-sm text-[#344e41] dark:text-[#eceff2]">Use <span className="font-semibold text-[#3a5a40] dark:text-white">Hire candidate</span> when you make a selection. The job will be marked filled, and if you reopen the role later, it will go through the posting payment flow again before going live.</p>
+        {plan?.isPremium ? <p className="mt-2 text-sm text-[#344e41] dark:text-[#eceff2]">Premium employer AI ranking is enabled. Match scores appear after refreshing the ranking for a job.</p> : null}
       </div>
 
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
+      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
         <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Applicants snapshot graph</h3>
         <SummaryGraph data={analyticsLoading && !selectedJobId ? [] : summaryValues} />
       </div>
 
-      {feedback && <p className="text-sm text-[#3a5a40] dark:text-[#7fd0ee]">{feedback}</p>}
+      {feedback && <p className="text-sm text-[#3a5a40] dark:text-[#f0c766]">{feedback}</p>}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
       {analyticsError && <p className="text-sm text-red-600 dark:text-red-400">{analyticsError}</p>}
       {loading ? (
-        <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">Loading applicants...</p>
+        <p className="text-sm text-[#4b5563] dark:text-[#d0d7dd]">Loading applicants...</p>
       ) : visibleApplicants.length === 0 ? (
-        <div className="rounded-xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] p-6 transition-colors duration-300">
-          <p className="text-[#344e41] dark:text-[#b8d4e8]">
+        <div className="rounded-xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] p-6 transition-colors duration-300">
+          <p className="text-[#344e41] dark:text-[#d0d7dd]">
             {selectedJobId ? `No applicants yet for ${selectedJobTitle}.` : 'No applicants yet.'}
           </p>
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="hidden xl:grid xl:grid-cols-[minmax(0,1.7fr)_minmax(0,0.95fr)_0.9fr_0.95fr_minmax(17.5rem,1.35fr)] gap-6 rounded-2xl bg-[#f5f5f2] dark:bg-[#102235] px-6 py-4 text-sm font-semibold text-[#344e41] dark:text-[#dcecff]">
+          <div className="hidden xl:grid xl:grid-cols-[minmax(0,1.7fr)_minmax(0,0.95fr)_0.9fr_0.95fr_minmax(17.5rem,1.35fr)] gap-6 rounded-2xl bg-[#f5f5f2] dark:bg-[#202428] px-6 py-4 text-sm font-semibold text-[#344e41] dark:text-[#eceff2]">
             <div>Candidate</div>
             <div>Applied To</div>
             <div>Job Status</div>
@@ -182,9 +182,9 @@ export default function CompanyApplicantsPage() {
       {profile && (
         <Modal onClose={() => setProfile(null)}>
           {profileLoading ? (
-            <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">Loading profile...</p>
+            <p className="text-sm text-[#4b5563] dark:text-[#d0d7dd]">Loading profile...</p>
           ) : (
-            <div className="bg-[#f8fbf6] dark:bg-[#0f2139] rounded-xl border border-[#a3b18a] dark:border-[#2a4a6f] p-4 transition-colors duration-300">
+            <div className="bg-[#f8fbf6] dark:bg-[#1a1d20] rounded-xl border border-[#a3b18a] dark:border-[#444d57] p-4 transition-colors duration-300">
               <PublicProfilePage
                 profile={profile}
                 onBack={() => setProfile(null)}
@@ -206,7 +206,7 @@ export default function CompanyApplicantsPage() {
 
 function SummaryGraph({ data }) {
   if (!data.length) {
-    return <p className="mt-4 text-sm text-[#4b5563] dark:text-[#b8d4e8]">Loading graph data...</p>;
+    return <p className="mt-4 text-sm text-[#4b5563] dark:text-[#d0d7dd]">Loading graph data...</p>;
   }
   const total = data.reduce((sum, item) => sum + item.value, 0);
   const safeTotal = total > 0 ? total : 1;
@@ -235,13 +235,13 @@ function SummaryGraph({ data }) {
         {data.map((item) => {
           const percent = Math.round((item.value / safeTotal) * 100);
           return (
-            <div key={item.label} className="flex items-center justify-between rounded-xl border border-[#d6d3c9] px-3 py-2 dark:border-[#2a4a6f]">
+            <div key={item.label} className="flex items-center justify-between rounded-xl border border-[#d6d3c9] px-3 py-2 dark:border-[#444d57]">
               <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-                <span className="text-xs sm:text-sm font-medium text-[#344e41] dark:text-[#dcecff]">{item.label}</span>
+                <span className="text-xs sm:text-sm font-medium text-[#344e41] dark:text-[#eceff2]">{item.label}</span>
               </div>
               <div className="text-xs sm:text-sm font-semibold text-[#3a5a40] dark:text-white">
-                {item.value} <span className="text-[11px] font-medium text-[#6b7280] dark:text-[#9fb4ca]">({percent}%)</span>
+                {item.value} <span className="text-[11px] font-medium text-[#6b7280] dark:text-[#b3bcc5]">({percent}%)</span>
               </div>
             </div>
           );
@@ -254,7 +254,7 @@ function SummaryGraph({ data }) {
 function Modal({ onClose, children }) {
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-5xl max-h-[85vh] overflow-y-auto rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] shadow-2xl shadow-black/20 dark:shadow-black/50 transition-colors duration-300">
+      <div className="w-full max-w-5xl max-h-[85vh] overflow-y-auto rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] shadow-2xl shadow-black/20 dark:shadow-black/50 transition-colors duration-300">
         <div className="p-5">{children}</div>
       </div>
     </div>

@@ -57,8 +57,8 @@ export default function CompleteCompanyProfilePage({ user, onSubmit, onLogout })
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f2] dark:bg-[#0a1628]">
-      <header className="border-b border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#0a1628]">
+    <div className="min-h-screen bg-[#f5f5f2] dark:bg-[#121416]">
+      <header className="border-b border-[#a3b18a] dark:border-[#353c44] bg-white dark:bg-[#121416]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-3">
@@ -70,7 +70,7 @@ export default function CompleteCompanyProfilePage({ user, onSubmit, onLogout })
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+              className="p-2 rounded-lg hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors"
               aria-label="Toggle theme"
             >
               {theme === 'light' ? <Moon className="w-5 h-5 text-[#344e41]" /> : <Sun className="w-5 h-5 text-white" />}
@@ -88,14 +88,14 @@ export default function CompleteCompanyProfilePage({ user, onSubmit, onLogout })
       </header>
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-2xl p-6 sm:p-8">
+        <div className="bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-2xl p-6 sm:p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-full bg-[#588157] dark:bg-[#3ba9d6] text-white flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-[#588157] dark:bg-[#6f9b74] text-white flex items-center justify-center">
               <Building2 className="w-5 h-5" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-[#3a5a40] dark:text-white">Complete your company profile</h1>
-              <p className="text-sm text-[#344e41] dark:text-[#b8d4e8]">This information will appear on your profile.</p>
+              <p className="text-sm text-[#344e41] dark:text-[#d0d7dd]">This information will appear on your profile.</p>
             </div>
           </div>
 
@@ -212,7 +212,7 @@ export default function CompleteCompanyProfilePage({ user, onSubmit, onLogout })
               <button
                 type="submit"
                 disabled={!isFormComplete}
-                className="w-full bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Save Profile
               </button>
