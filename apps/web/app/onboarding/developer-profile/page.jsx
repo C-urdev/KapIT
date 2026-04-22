@@ -1,7 +1,7 @@
 import DeveloperOnboardingClient from '../../../components/DeveloperOnboardingClient';
 
 export const metadata = {
-  title: 'Complete Developer Profile',
+  title: 'Developer Onboarding',
   description: 'Finish setting up your KapIT developer profile.',
   robots: {
     index: false,

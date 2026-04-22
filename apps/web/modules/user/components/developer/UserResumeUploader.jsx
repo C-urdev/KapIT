@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useId, useMemo, useState } from 'react';
 import { FileText, Loader2, X } from 'lucide-react';
 
 const MAX_UPLOAD_MB = 5;
@@ -7,10 +7,10 @@ export default function ResumeUploader({
   value,
   onChange,
   onUpload,
-  helperText = 'PDF only. Resumes are uploaded securely and stored behind authenticated access.',
 }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const fileInputId = useId();
   const hasValue = Boolean(value);
 
   const uploadedLabel = useMemo(() => {
@@ -85,7 +85,6 @@ export default function ResumeUploader({
         ) : null}
       </div>
 
-      <p className="mt-2 text-xs text-[#5f6f52] dark:text-slate-400">{helperText}</p>
       {error ? <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p> : null}
 
       {hasValue ? (
@@ -95,6 +94,7 @@ export default function ResumeUploader({
       ) : null}
 
       <input
+        id={fileInputId}
         type="file"
         accept="application/pdf"
         onChange={(e) => {
@@ -102,8 +102,16 @@ export default function ResumeUploader({
           e.target.value = '';
         }}
         disabled={uploading}
-        className="mt-3 block w-full text-sm text-[#344e41] dark:text-slate-300 file:mr-4 file:rounded-lg file:border-0 file:bg-[#eef6ee] file:px-4 file:py-2 file:font-semibold file:text-[#3a5a40] hover:file:bg-[#e3eee3] dark:file:bg-[#1e3a5f] dark:file:text-[#b8d4e8] dark:hover:file:bg-[#24496d] disabled:cursor-not-allowed disabled:opacity-60"
+        className="sr-only"
       />
+      <label
+        htmlFor={fileInputId}
+        className={`mt-3 inline-flex cursor-pointer items-center rounded-lg border border-[#a3b18a] bg-[#eef6ee] px-4 py-2 text-sm font-semibold text-[#3a5a40] hover:bg-[#e3eee3] dark:border-[#2a4a6f] dark:bg-[#1e3a5f] dark:text-[#b8d4e8] dark:hover:bg-[#24496d] ${
+          uploading ? 'pointer-events-none opacity-60' : ''
+        }`}
+      >
+        Upload Resume
+      </label>
 
       {uploading ? (
         <p className="mt-3 inline-flex items-center gap-2 text-sm text-[#344e41] dark:text-slate-300">

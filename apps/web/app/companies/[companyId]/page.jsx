@@ -10,15 +10,15 @@ export async function generateMetadata({ params }) {
 
     const profile = data?.profile;
     if (!profile) {
-      return { title: 'Company not found' };
+      return { title: 'Company Profile' };
     }
 
     return {
-      title: profile.companyName,
+      title: String(profile.companyName || 'Company Profile'),
       description: profile.shortDescription || profile.bio || `Explore ${profile.companyName} on KapIT.`,
     };
   } catch {
-    return { title: 'Company not found' };
+    return { title: 'Company Profile' };
   }
 }
 

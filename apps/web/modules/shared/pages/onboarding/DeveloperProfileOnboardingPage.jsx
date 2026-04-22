@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useId, useMemo, useState } from 'react';
 import { ArrowLeft, Briefcase, LogOut, Moon, Sun, UserCircle2 } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
@@ -11,16 +11,39 @@ import { navigate } from '@companyFeatures/companyUtils';
 import { cleanPlaceName, loadProvinceCityData } from '@sharedUtils/philippinesLocations';
 
 const JOB_TITLE_OPTIONS = {
+  'Software Engineer': ['Application Developer', 'Software Engineer', 'Software Developer', 'Programmer Analyst'],
   'Frontend Developer': ['React Developer', 'Vue Developer', 'Angular Developer', 'UI Developer'],
   'Backend Developer': ['Node.js Backend Developer', 'Java Backend Developer', 'PHP Backend Developer', 'Python Backend Developer'],
   'Full Stack Developer': ['MERN Stack Developer', 'MEAN Stack Developer', 'JavaScript Full Stack Developer', 'Web Application Developer'],
   'Mobile Developer': ['Android Developer', 'iOS Developer', 'React Native Developer', 'Flutter Developer'],
+  'Game Developer': ['Gameplay Programmer', 'Game Engine Developer', 'Unity Developer', 'Unreal Developer'],
+  'Embedded Systems Engineer': ['Firmware Engineer', 'IoT Developer', 'Embedded Software Engineer', 'Robotics Software Engineer'],
   'QA Engineer': ['Manual QA Tester', 'Automation QA Engineer', 'Software Test Engineer', 'Performance Tester'],
+  'Test Engineer': ['SDET', 'Test Automation Engineer', 'Integration Test Engineer', 'Quality Engineer'],
   'UI/UX Designer': ['Product Designer', 'UX Designer', 'UI Designer', 'Interaction Designer'],
+  'Product Manager': ['Technical Product Manager', 'Product Owner', 'Associate Product Manager', 'Growth Product Manager'],
+  'Project Manager': ['IT Project Manager', 'Agile Project Manager', 'Scrum Master', 'Program Manager'],
+  'Business Analyst': ['IT Business Analyst', 'Systems Analyst', 'Business Systems Analyst', 'Requirements Analyst'],
+  'Systems Analyst': ['Functional Analyst', 'Technical Analyst', 'Application Analyst', 'Process Analyst'],
+  'Solutions Architect': ['Enterprise Architect', 'Application Architect', 'Cloud Solutions Architect', 'Technical Architect'],
   'DevOps Engineer': ['Cloud Engineer', 'Site Reliability Engineer', 'Platform Engineer', 'CI/CD Engineer'],
+  'Cloud Engineer': ['AWS Cloud Engineer', 'Azure Cloud Engineer', 'Google Cloud Engineer', 'Cloud Operations Engineer'],
+  'Site Reliability Engineer': ['Reliability Engineer', 'Production Engineer', 'Infrastructure Reliability Engineer', 'Operations Engineer'],
+  'Database Administrator': ['SQL Database Administrator', 'NoSQL Database Administrator', 'Database Engineer', 'Data Platform Administrator'],
+  'Data Engineer': ['ETL Developer', 'Analytics Engineer', 'Big Data Engineer', 'Data Platform Engineer'],
   'Data Analyst': ['Business Intelligence Analyst', 'Reporting Analyst', 'Product Analyst', 'Data Visualization Analyst'],
+  'Data Scientist': ['Machine Learning Scientist', 'Applied Data Scientist', 'AI Research Engineer', 'Quantitative Analyst'],
+  'Machine Learning Engineer': ['AI Engineer', 'NLP Engineer', 'Computer Vision Engineer', 'MLOps Engineer'],
   'Cybersecurity Specialist': ['Security Analyst', 'SOC Analyst', 'Security Engineer', 'Penetration Tester'],
+  'Security Engineer': ['Application Security Engineer', 'Cloud Security Engineer', 'Network Security Engineer', 'Identity and Access Engineer'],
+  'Network Engineer': ['Network Administrator', 'Network Operations Engineer', 'Infrastructure Engineer', 'Network Security Engineer'],
+  'Systems Administrator': ['Server Administrator', 'Linux Administrator', 'Windows Administrator', 'Infrastructure Administrator'],
   'IT Support Specialist': ['Help Desk Specialist', 'Technical Support Engineer', 'System Support Specialist', 'Desktop Support Engineer'],
+  'Technical Writer': ['API Documentation Writer', 'Software Documentation Specialist', 'Knowledge Base Writer', 'Developer Documentation Writer'],
+  'ERP/CRM Developer': ['SAP Developer', 'Salesforce Developer', 'Dynamics 365 Developer', 'Oracle ERP Developer'],
+  'Blockchain Developer': ['Smart Contract Developer', 'Web3 Developer', 'Blockchain Engineer', 'DApp Developer'],
+  'AR/VR Developer': ['XR Developer', 'AR Engineer', 'VR Engineer', 'Spatial Computing Developer'],
+  'IT Consultant': ['Technology Consultant', 'Digital Transformation Consultant', 'Solution Consultant', 'Implementation Consultant'],
 };
 
 const JOB_TITLES = Object.keys(JOB_TITLE_OPTIONS);
@@ -121,6 +144,7 @@ const formatLocation = (city, provinceCode, provinceLabelByCode) => {
 
 export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogout }) {
   const { theme, toggleTheme } = useTheme();
+  const profileImageInputId = useId();
   const [locationData, setLocationData] = useState({
     provinceOptions: [],
     provinceLabelByCode: {},
@@ -370,7 +394,7 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
           <form onSubmit={handleSubmit} className="mt-8 space-y-8">
             <Section title="Profile Picture (Optional)" icon={UserCircle2}>
               <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-[#a3b18a] bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#0f2139]">
+                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-[#a3b18a] bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#0f2139]">
                   {form.profileImage ? (
                     <img src={form.profileImage} alt="Profile" className="h-full w-full object-cover" />
                   ) : (
@@ -379,11 +403,18 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
                 </div>
                 <div>
                   <input
+                    id={profileImageInputId}
                     type="file"
                     accept="image/*"
                     onChange={(e) => onPickPhoto(e.target.files?.[0] || null)}
-                    className="block w-full text-sm text-[#344e41] dark:text-slate-300 file:mr-4 file:rounded-lg file:border-0 file:bg-[#eef6ee] file:px-4 file:py-2 file:font-semibold file:text-[#3a5a40] hover:file:bg-[#e3eee3] dark:file:bg-[#1e3a5f] dark:file:text-[#b8d4e8] dark:hover:file:bg-[#24496d]"
+                    className="sr-only"
                   />
+                  <label
+                    htmlFor={profileImageInputId}
+                    className="inline-flex cursor-pointer items-center rounded-lg border border-[#a3b18a] bg-[#eef6ee] px-4 py-2 text-sm font-semibold text-[#3a5a40] hover:bg-[#e3eee3] dark:border-[#2a4a6f] dark:bg-[#1e3a5f] dark:text-[#b8d4e8] dark:hover:bg-[#24496d]"
+                  >
+                    Upload
+                  </label>
                   <p className="mt-2 text-xs text-[#5f6f52] dark:text-slate-400">JPG/PNG recommended.</p>
                 </div>
               </div>
@@ -391,13 +422,13 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
 
             <Section title="Basic Information">
               <Grid>
-                <Field label="Full Name">
+                <Field label="Full Name" required>
                   <input value={form.fullName} onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))} className="field" placeholder="e.g. Juan Dela Cruz" required />
                 </Field>
-                <Field label="Username">
+                <Field label="Username" required>
                   <input value={form.username} onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))} className="field" placeholder="e.g. juan_dev" required />
                 </Field>
-                <Field label="Province">
+                <Field label="Province" required>
                   <SearchableSelect
                     value={form.provinceCode}
                     onChange={(provinceCode) => setForm((p) => ({ ...p, provinceCode }))}
@@ -406,7 +437,7 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
                     searchPlaceholder="Search provinces"
                   />
                 </Field>
-                <Field label="City / Municipality">
+                <Field label="City / Municipality" required>
                   <SearchableSelect
                     value={form.city}
                     onChange={(city) => setForm((p) => ({ ...p, city }))}
@@ -419,21 +450,18 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
                 <Field label="Country">
                   <input value="Philippines" readOnly className="field bg-[#f5f5f2] dark:bg-[#0f2139]/60" />
                 </Field>
-                <Field label="Phone Number">
+                <Field label="Phone Number" required>
                   <input value={form.phoneNumber} onChange={(e) => setForm((p) => ({ ...p, phoneNumber: e.target.value }))} className="field" placeholder="e.g. +63 9xx xxx xxxx" required />
                 </Field>
-                <Field label="Email">
+                <Field label="Email" required>
                   <input value={form.email} readOnly className="field bg-[#f5f5f2] dark:bg-[#0f2139]/60" />
-                </Field>
-                <Field label="Saved Location" full>
-                  <input value={form.location} readOnly className="field bg-[#f5f5f2] dark:bg-[#0f2139]/60" />
                 </Field>
               </Grid>
             </Section>
 
             <Section title="Professional Details">
               <Grid>
-                <Field label="Job Title">
+                <Field label="Job Title" required>
                   <SearchableSelect
                     value={form.jobTitle}
                     onChange={(jobTitle) => setForm((p) => ({ ...p, jobTitle }))}
@@ -442,10 +470,10 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
                     searchPlaceholder="Search job titles"
                   />
                 </Field>
-                <Field label="Years of Experience">
+                <Field label="Years of Experience" required>
                   <input type="number" min="0" max="60" value={form.yearsOfExperience} onChange={(e) => setForm((p) => ({ ...p, yearsOfExperience: e.target.value }))} className="field" placeholder="e.g. 3" required />
                 </Field>
-                <Field label="Preferred IT Role" full>
+                <Field label="Preferred IT Role" full required>
                   <SearchableSelect
                     value={form.preferredRole}
                     onChange={(preferredRole) => setForm((p) => ({ ...p, preferredRole }))}
@@ -463,7 +491,7 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
 
             <Section title="Education">
               <Grid>
-                <Field label="Educational Attainment">
+                <Field label="Educational Attainment" required>
                   <SearchableSelect
                     value={form.educationAttainment}
                     onChange={(educationAttainment) =>
@@ -479,7 +507,7 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
                     searchPlaceholder="Search education"
                   />
                 </Field>
-                <Field label="School / University">
+                <Field label="School / University" required>
                   <SearchableSelect
                     value={form.school}
                     onChange={(school) =>
@@ -495,17 +523,17 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
                   />
                 </Field>
                 {requiresVocationalCourse ? (
-                  <Field label="Specify Vocational Course">
+                  <Field label="Specify Vocational Course" required>
                     <input value={form.vocationalCourse} onChange={(e) => setForm((p) => ({ ...p, vocationalCourse: e.target.value }))} className="field" placeholder="e.g. Computer Programming NC IV" required />
                   </Field>
                 ) : null}
                 {requiresCustomEducation ? (
-                  <Field label="Specify Educational Attainment">
+                  <Field label="Specify Educational Attainment" required>
                     <input value={form.customEducationAttainment} onChange={(e) => setForm((p) => ({ ...p, customEducationAttainment: e.target.value }))} className="field" placeholder="Type your educational attainment" required />
                   </Field>
                 ) : null}
                 {requiresCustomSchool ? (
-                  <Field label="Specify School / University">
+                  <Field label="Specify School / University" required>
                     <input value={form.customSchool} onChange={(e) => setForm((p) => ({ ...p, customSchool: e.target.value }))} className="field" placeholder="Type your school or university" required />
                   </Field>
                 ) : null}
@@ -515,12 +543,12 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
               </Grid>
             </Section>
 
-            <Section title="Portfolio (Optional)">
+            <Section title="Socials">
               <div className="grid gap-4 md:grid-cols-2">
                 <PortfolioCard title="GitHub" value={form.github} onChange={(github) => setForm((p) => ({ ...p, github }))} />
                 <PortfolioCard title="Portfolio Website" value={form.portfolioWebsite} onChange={(portfolioWebsite) => setForm((p) => ({ ...p, portfolioWebsite }))} />
                 <PortfolioCard title="LinkedIn" value={form.linkedin} onChange={(linkedin) => setForm((p) => ({ ...p, linkedin }))} />
-                <PortfolioCard title="Other Links" description="Comma-separated URLs (optional)" value={form.otherLinks} onChange={(otherLinks) => setForm((p) => ({ ...p, otherLinks }))} />
+                <PortfolioCard title="Other Links" value={form.otherLinks} onChange={(otherLinks) => setForm((p) => ({ ...p, otherLinks }))} />
               </div>
             </Section>
 
@@ -587,10 +615,13 @@ function Grid({ children }) {
   return <div className="grid grid-cols-1 gap-4 md:grid-cols-2">{children}</div>;
 }
 
-function Field({ label, full = false, children }) {
+function Field({ label, full = false, required = false, children }) {
   return (
     <div className={full ? 'md:col-span-2' : ''}>
-      <label className="mb-1 block text-sm font-semibold text-[#3a5a40] dark:text-slate-200">{label}</label>
+      <label className="mb-1 block text-sm font-semibold text-[#3a5a40] dark:text-slate-200">
+        {label}
+        {required ? <span className="ml-1 text-red-600 dark:text-red-400">*</span> : null}
+      </label>
       {children}
     </div>
   );

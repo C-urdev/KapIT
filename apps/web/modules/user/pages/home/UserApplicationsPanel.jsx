@@ -1,19 +1,20 @@
 import React from 'react';
 import { Building2, FileCheck2, MapPin } from 'lucide-react';
 
-export default function UserApplicationsPanel({ applications }) {
+export default function UserApplicationsPanel({ applications = [], embedded = false }) {
   const [activeTab, setActiveTab] = React.useState('all');
+  const safeApplications = Array.isArray(applications) ? applications : [];
 
   const tabs = [
-    { key: 'all', label: 'All' },
-    { key: 'pending', label: 'Pending' },
-    { key: 'accepted', label: 'Accepted' },
-    { key: 'rejected', label: 'Rejected' },
+    { key: 'all', label: 'All', count: safeApplications.length },
+    { key: 'pending', label: 'Pending', count: safeApplications.filter((a) => (a.status || 'pending').toLowerCase() === 'pending').length },
+    { key: 'accepted', label: 'Accepted', count: safeApplications.filter((a) => ['accepted', 'hired'].includes((a.status || '').toLowerCase())).length },
+    { key: 'rejected', label: 'Rejected', count: safeApplications.filter((a) => ['rejected', 'declined'].includes((a.status || '').toLowerCase())).length },
   ];
 
   const filtered = activeTab === 'all'
-    ? applications
-    : applications.filter((a) => (a.status || 'pending').toLowerCase() === activeTab);
+    ? safeApplications
+    : safeApplications.filter((a) => (a.status || 'pending').toLowerCase() === activeTab);
 
   const statusStyle = (status) => {
     const s = (status || 'pending').toLowerCase();
@@ -24,76 +25,86 @@ export default function UserApplicationsPanel({ applications }) {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[min(100%,720px)] animate-in fade-in slide-in-from-bottom-4 duration-500 bg-[#f8fbf6] dark:bg-[#162842] rounded-[32px] border border-[#d6d3c9] dark:border-[#2a4a6f] shadow-[0_32px_128px_-32px_rgba(0,0,0,0.12)] dark:shadow-black/40 overflow-hidden mb-8">
-      <div className="flex flex-col items-center justify-center pt-8 pb-2">
-        <h2 className="text-[22px] font-extrabold text-[#1c2b1f] dark:text-white tracking-tight">Applications</h2>
-        <div className="mt-1 h-1 w-8 rounded-full bg-[#3a5a40] dark:bg-[#3ba9d6] opacity-30" />
-      </div>
+    <div
+      className={`w-full rounded-2xl border border-[#bfd0af] bg-[#f8fbf6] shadow-sm shadow-black/5 dark:border-[#2a4a6f] dark:bg-[#162842] ${
+        embedded ? '' : 'mx-auto max-w-[min(100%,820px)]'
+      }`}
+    >
+      {!embedded ? (
+        <div className="px-5 pb-3 pt-5">
+          <h2 className="text-[22px] font-bold tracking-tight text-[#1c2b1f] dark:text-white">Applications</h2>
+        </div>
+      ) : null}
 
-      <div className="flex items-center justify-center gap-2 border-b border-[#f0f0f0] dark:border-[#1e3a5f] px-4 py-2">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`relative rounded-full px-5 py-2 text-[14px] font-bold transition-all
-              ${activeTab === tab.key
-                ? 'bg-[#3a5a40] text-white shadow-lg shadow-[#3a5a40]/20 dark:bg-[#3ba9d6] dark:shadow-[#3ba9d6]/20'
-                : 'text-[#6b7c6a] dark:text-[#7d9ab8] hover:bg-black/5 dark:hover:bg-white/5'
-              }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="border-b border-[#d8e3cc] px-4 py-3 dark:border-[#2a4a6f] sm:px-5">
+        <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-nowrap sm:items-center sm:overflow-x-auto sm:pb-1">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`inline-flex w-full items-center justify-center gap-1 rounded-full px-2 py-1.5 text-[11px] font-semibold transition-colors max-[360px]:px-1.5 sm:w-auto sm:shrink-0 sm:px-4 sm:text-[13px]
+                ${activeTab === tab.key
+                  ? 'bg-[#3a5a40] text-white dark:bg-[#3ba9d6]'
+                  : 'bg-[#eef6ee] text-[#3a5a40] hover:bg-[#e3eee3] dark:bg-[#183655] dark:text-[#dcecff] dark:hover:bg-[#1e3a5f]'
+                }`}
+            >
+              {tab.label}
+              <span className={`rounded-full px-1.5 text-[10px] ${activeTab === tab.key ? 'bg-white/20' : 'bg-white/70 dark:bg-white/10'}`}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 px-6">
-          <div className="w-16 h-16 rounded-full bg-[#f0f4ec] dark:bg-[#1e3a5f] flex items-center justify-center mb-4">
-            <FileCheck2 className="h-8 w-8 text-[#a3b18a] dark:text-[#3ba9d6]" />
+        <div className="flex flex-col items-center justify-center px-6 py-16 sm:py-20">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eef6ee] dark:bg-[#183655]">
+            <FileCheck2 className="h-7 w-7 text-[#588157] dark:text-[#3ba9d6]" />
           </div>
-          <p className="text-sm font-medium text-[#6b7c6a] dark:text-[#7d9ab8] text-center max-w-[220px]">
+          <p className="max-w-[260px] text-center text-sm font-medium text-[#6b7c6a] dark:text-[#7d9ab8]">
             {activeTab === 'all' ? 'No applications yet. Start applying to jobs.' : `No ${activeTab} applications.`}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 p-4 sm:gap-4 sm:p-5">
+        <div className="space-y-2 p-4 sm:p-5">
           {filtered.map((application) => (
             <div
               key={application.jobId}
-              className="relative bg-[#f8fbf6] dark:bg-[#1a2f45] rounded-2xl p-4 flex flex-col gap-3 shadow-sm border border-[#e8f0e2] dark:border-[#1e3a5f] hover:shadow-md hover:border-[#a3b18a] dark:hover:border-[#3ba9d6] transition-all duration-200 cursor-pointer group"
+              className="rounded-xl border border-[#d8e3cc] bg-[#f8fbf6] p-4 transition-colors hover:bg-[#f3f8f0] dark:border-[#2a4a6f] dark:bg-[#162842] dark:hover:bg-[#1b3250]"
             >
               <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#588157] to-[#3a5a40] dark:from-[#2d8bb8] dark:to-[#3ba9d6] shadow-sm">
-                  <Building2 className="h-4 w-4 text-white" />
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#eef6ee] text-[#3a5a40] dark:bg-[#183655] dark:text-[#8ccff0]">
+                  <Building2 className="h-4 w-4" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-[13px] font-bold text-[#1c2b1f] dark:text-white leading-tight line-clamp-2">
+                  <h3 className="line-clamp-1 text-[15px] font-semibold leading-tight text-[#1c2b1f] dark:text-white">
                     {application.title}
                   </h3>
-                  <p className="mt-0.5 text-[11px] text-[#6b7c6a] dark:text-[#9fb4ca] line-clamp-1">
+                  <p className="mt-0.5 line-clamp-1 text-sm text-[#6b7c6a] dark:text-[#9fb4ca]">
                     {application.company?.name || 'Company'}
                   </p>
                 </div>
               </div>
 
-              <span className={`self-start px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusStyle(application.status)}`}>
+              <span className={`mt-3 inline-flex self-start rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.06em] ${statusStyle(application.status)}`}>
                 {application.status || 'pending'}
               </span>
 
-              <div className="mt-auto flex flex-wrap gap-1.5">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {application.location && (
-                  <span className="inline-flex items-center gap-0.5 text-[10px] text-[#5f6f52] dark:text-[#8fb2cf]">
-                    <MapPin className="h-3 w-3 shrink-0" /> {application.location}
+                  <span className="inline-flex items-center gap-1 text-xs text-[#5f6f52] dark:text-[#8fb2cf]">
+                    <MapPin className="h-3.5 w-3.5 shrink-0" /> {application.location}
                   </span>
                 )}
                 {application.type && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#f0f4ec] dark:bg-[#1e3a5f] text-[#5f6f52] dark:text-[#8fb2cf]">
+                  <span className="rounded-full bg-[#eef6ee] px-2.5 py-0.5 text-xs font-medium text-[#3a5a40] dark:bg-[#183655] dark:text-[#8ccff0]">
                     {application.type}
                   </span>
                 )}
               </div>
 
-              <p className="text-[10px] text-[#b0bec5] dark:text-[#5a7a96]">
+              <p className="mt-2 text-xs text-[#9aa8ad] dark:text-[#7d9ab8]">
                 {new Date(application.appliedAt).toLocaleDateString()}
               </p>
             </div>

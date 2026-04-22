@@ -3,7 +3,7 @@ import { Link2 } from 'lucide-react';
 
 export default function PortfolioCard({ title, description, value, onChange, placeholder = 'https://' }) {
   return (
-    <div className="rounded-xl border border-[#a3b18a] bg-[#f5f5f2] p-4 dark:border-slate-700 dark:bg-slate-900/40">
+    <div className="p-0">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="inline-flex items-center gap-2 font-semibold text-[#2f3e2f] dark:text-slate-100">

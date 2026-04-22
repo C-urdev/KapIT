@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { X } from 'lucide-react';
+import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
+import { IT_SKILL_OPTIONS, OTHER_IT_SKILL_OPTION } from '@shared/features/itSkillOptions';
 
 const normalizeTag = (value) =>
   String(value || '')
@@ -10,6 +12,7 @@ const normalizeTag = (value) =>
 export default function SkillTags({ value, onChange, placeholder = 'Type a skill and press Enter' }) {
   const tags = useMemo(() => (Array.isArray(value) ? value.filter(Boolean) : []), [value]);
   const [input, setInput] = useState('');
+  const [selectedSkill, setSelectedSkill] = useState('');
 
   const commit = (raw) => {
     const next = normalizeTag(raw);
@@ -24,8 +27,21 @@ export default function SkillTags({ value, onChange, placeholder = 'Type a skill
     onChange?.(next);
   };
 
+  const addSkill = (rawSkill) => {
+    const next = normalizeTag(rawSkill);
+    if (!next) return;
+    const exists = tags.some((tag) => String(tag).toLowerCase() === next.toLowerCase());
+    if (exists) return;
+    onChange?.([...tags, next]);
+  };
+
+  const selectableSkills = useMemo(
+    () => IT_SKILL_OPTIONS.filter((skill) => skill === OTHER_IT_SKILL_OPTION || !tags.includes(skill)),
+    [tags]
+  );
+
   return (
-    <div className="rounded-xl border border-[#a3b18a] bg-[#f5f5f2] p-3 dark:border-slate-700 dark:bg-slate-900/40">
+    <div className="p-0">
       <div className="flex flex-wrap gap-2">
         {tags.map((tag, idx) => (
           <span
@@ -45,26 +61,49 @@ export default function SkillTags({ value, onChange, placeholder = 'Type a skill
         ))}
       </div>
 
-      <input
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ',') {
-            e.preventDefault();
-            commit(input);
-            setInput('');
-          }
-          if (e.key === 'Backspace' && !input && tags.length) {
-            removeAt(tags.length - 1);
-          }
-        }}
-        onBlur={() => {
-          commit(input);
-          setInput('');
-        }}
-        placeholder={placeholder}
-        className="mt-3 w-full rounded-lg border border-[#a3b18a] bg-[#f8fbf6] px-3 py-2 text-[#344e41] placeholder:text-[#5f6f52] outline-none focus:ring-2 focus:ring-[#588157] dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-400/40"
-      />
+      <div className="mt-3">
+        {selectedSkill === OTHER_IT_SKILL_OPTION ? (
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                commit(input);
+                setInput('');
+              }
+              if (e.key === 'Escape') {
+                setInput('');
+                setSelectedSkill('');
+              }
+              if (e.key === 'Backspace' && !input && tags.length) {
+                removeAt(tags.length - 1);
+              }
+            }}
+            onBlur={() => {
+              commit(input);
+              setInput('');
+              setSelectedSkill('');
+            }}
+            placeholder={placeholder}
+            className="field"
+            autoFocus
+          />
+        ) : (
+          <SearchableSelect
+            value={selectedSkill}
+            onChange={(skill) => {
+              setSelectedSkill(skill);
+              if (skill === OTHER_IT_SKILL_OPTION) return;
+              addSkill(skill);
+              setSelectedSkill('');
+            }}
+            options={selectableSkills}
+            placeholder="Select an IT skill"
+            searchPlaceholder="Search IT skills"
+          />
+        )}
+      </div>
     </div>
   );
 }

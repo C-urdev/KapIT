@@ -419,10 +419,9 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
       track.style.transform = `translate3d(${offsetRef.current}px, 0, 0)`;
     };
 
-    const syncLoopPosition = () => {
-      const segmentWidth = segment.getBoundingClientRect().width;
+    const normalizeLoopOffset = () => {
+      const segmentWidth = segmentWidthRef.current;
       if (segmentWidth <= 0) return;
-      segmentWidthRef.current = segmentWidth;
 
       if (offsetRef.current === 0) {
         offsetRef.current = -segmentWidth;
@@ -435,6 +434,10 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
         offsetRef.current += segmentWidth;
       }
 
+    };
+
+    const syncLoopPosition = () => {
+      normalizeLoopOffset();
       applyTransform();
     };
 
@@ -451,12 +454,7 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
         offsetRef.current = (offsetRef.current / previousSegmentWidth) * segmentWidth;
       }
 
-      while (offsetRef.current >= 0) {
-        offsetRef.current -= segmentWidth;
-      }
-      while (offsetRef.current <= segmentWidth * -2) {
-        offsetRef.current += segmentWidth;
-      }
+      normalizeLoopOffset();
       applyTransform();
     };
 
@@ -493,7 +491,8 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
         !orbitPausedRef.current
       ) {
         offsetRef.current += (scrollSpeedRef.current * delta) / 1000;
-        syncLoopPosition();
+        normalizeLoopOffset();
+        applyTransform();
       }
 
       frameRef.current = window.requestAnimationFrame(tick);
@@ -659,7 +658,7 @@ function MobileCategoryCarousel({ categories, onCategoryClick }) {
           className={`relative flex w-max items-stretch py-2 select-none ${
             isInteracting ? 'cursor-grabbing' : 'cursor-grab'
           }`}
-          style={{ touchAction: 'pan-y pinch-zoom' }}
+          style={{ touchAction: 'pan-y pinch-zoom', willChange: 'transform' }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -727,10 +726,9 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
       track.style.transform = `translate3d(${offsetRef.current}px, 0, 0)`;
     };
 
-    const syncLoopPosition = ({ shouldApplyTransform = true } = {}) => {
-      const segmentWidth = segment.getBoundingClientRect().width;
+    const normalizeLoopOffset = () => {
+      const segmentWidth = segmentWidthRef.current;
       if (segmentWidth <= 0) return;
-      segmentWidthRef.current = segmentWidth;
 
       if (offsetRef.current === 0) {
         offsetRef.current = -segmentWidth;
@@ -743,9 +741,11 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
         offsetRef.current += segmentWidth;
       }
 
-      if (shouldApplyTransform) {
-        applyTransform();
-      }
+    };
+
+    const syncLoopPosition = ({ shouldApplyTransform = true } = {}) => {
+      normalizeLoopOffset();
+      if (shouldApplyTransform) applyTransform();
     };
 
     const measure = () => {
@@ -789,7 +789,8 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
         offsetRef.current += (scrollSpeedRef.current * delta) / 1000;
       }
 
-      syncLoopPosition();
+      normalizeLoopOffset();
+      applyTransform();
       frameRef.current = window.requestAnimationFrame(tick);
     };
 
@@ -953,7 +954,7 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
           className={`orbit-track relative flex w-max items-stretch py-5 sm:py-6 select-none ${
             isInteracting ? 'cursor-grabbing' : 'cursor-grab'
           }`}
-          style={{ touchAction: 'pan-y pinch-zoom' }}
+          style={{ touchAction: 'pan-y pinch-zoom', willChange: 'transform' }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}

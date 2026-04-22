@@ -1,0 +1,75 @@
+import React from 'react';
+import { ArrowLeft, Bell, Briefcase, Check, ChevronRight, FileCheck2 } from 'lucide-react';
+import UserSavedJobsPanel from '../home/UserSavedJobsPanel';
+import UserApplicationsPanel from '../home/UserApplicationsPanel';
+
+function Header({ title, onBack }) {
+  return (
+    <div className="mb-4">
+      <button
+        type="button"
+        onClick={onBack}
+        className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-3 py-2 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#eef6ee] dark:border-[#2a4a6f] dark:bg-[#162842] dark:text-white dark:hover:bg-[#1e3a5f]"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back
+      </button>
+      <h2 className="mt-3 text-[28px] font-bold text-[#1c2b1f] dark:text-white">{title}</h2>
+    </div>
+  );
+}
+
+function PageShell({ title, onBack, children }) {
+  return (
+    <div className="mx-auto w-full max-w-[min(100%,760px)] px-4 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] pt-4 sm:px-5 sm:pb-10 sm:pt-6">
+      <Header title={title} onBack={onBack} />
+      {children}
+    </div>
+  );
+}
+
+function OptionRow({ icon: Icon, title, selected, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center justify-between rounded-xl bg-[#f8fbf6] px-4 py-3.5 text-left transition-colors hover:bg-[#eef6ee] dark:bg-[#162842] dark:hover:bg-[#1e3a5f]/60"
+    >
+      <div className="flex items-center gap-3">
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#edf3e8] text-[#3a5a40] dark:bg-[#183655] dark:text-[#8ccff0]">
+          <Icon className="h-4.5 w-4.5" />
+        </span>
+        <span className="text-[16px] font-semibold text-[#1c2b1f] dark:text-white">{title}</span>
+      </div>
+      {selected ? <Check className="h-5 w-5 text-[#3a5a40] dark:text-[#8ccff0]" /> : <ChevronRight className="h-5 w-5 text-[#7c8e76] dark:text-[#7d9ab8]" />}
+    </button>
+  );
+}
+
+export function UserNotificationSettingsPage({ onBack, value, onChange }) {
+  return (
+    <PageShell title="Notifications" onBack={onBack}>
+      <div className="space-y-2">
+        <OptionRow icon={Briefcase} title="Jobs notifications only" selected={value === 'jobs_only'} onClick={() => onChange('jobs_only')} />
+        <OptionRow icon={Bell} title="Jobs and messages" selected={value === 'jobs_and_messages'} onClick={() => onChange('jobs_and_messages')} />
+        <OptionRow icon={Bell} title="All notifications" selected={value === 'all'} onClick={() => onChange('all')} />
+      </div>
+    </PageShell>
+  );
+}
+
+export function UserSavedJobsSettingsPage({ onBack, savedJobs, savedPosts }) {
+  return (
+    <PageShell title="Saved Jobs" onBack={onBack}>
+      <UserSavedJobsPanel savedJobs={savedJobs} savedPosts={savedPosts} embedded />
+    </PageShell>
+  );
+}
+
+export function UserApplicationsSettingsPage({ onBack, applications }) {
+  return (
+    <PageShell title="Applications" onBack={onBack}>
+      <UserApplicationsPanel applications={applications} embedded />
+    </PageShell>
+  );
+}
