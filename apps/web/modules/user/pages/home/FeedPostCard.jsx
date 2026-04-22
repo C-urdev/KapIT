@@ -8,19 +8,19 @@ import { Avatar, getActorKey, getReactionSummary, formatCount, REACTION_OPTIONS 
 function PostActionSheet({ sections, onClose }) {
   return (
     <div className="fixed inset-0 z-[90] flex items-end bg-[#344e41]/28 backdrop-blur-[6px] dark:bg-black/45" onClick={onClose}>
-      <div className="max-h-[85vh] w-full overflow-y-auto rounded-t-[1.8rem] border-t border-[#bfd0af] bg-[#dad7cd] px-4 pb-6 pt-3 text-[#344e41] shadow-[0_-18px_42px_rgba(58,90,64,0.18)] dark:border-[#2a4a6f] dark:bg-[#1c2431] dark:text-white dark:shadow-[0_-18px_42px_rgba(0,0,0,0.35)]" style={{ paddingBottom: 'max(1.5rem, calc(env(safe-area-inset-bottom) + 1rem))' }} onClick={(event) => event.stopPropagation()}>
+      <div className="max-h-[85vh] w-full overflow-y-auto rounded-t-[1.8rem] border-t border-[#bfd0af] bg-[#dad7cd] px-4 pb-6 pt-3 text-[#344e41] shadow-[0_-18px_42px_rgba(58,90,64,0.18)] dark:border-[#444d57] dark:bg-[#1c2431] dark:text-white dark:shadow-[0_-18px_42px_rgba(0,0,0,0.35)]" style={{ paddingBottom: 'max(1.5rem, calc(env(safe-area-inset-bottom) + 1rem))' }} onClick={(event) => event.stopPropagation()}>
         <div className="mx-auto mb-4 h-1.5 w-14 rounded-full bg-[#9caf88] dark:bg-white/28" />
         <div className="pt-1">
           {sections.map((section, sectionIndex) => (
-            <div key={sectionIndex} className={sectionIndex > 0 ? 'border-t border-[#ccd7bf] pt-2 dark:border-[#36506f]' : ''}>
+            <div key={sectionIndex} className={sectionIndex > 0 ? 'border-t border-[#ccd7bf] pt-2 dark:border-[#4b5560]' : ''}>
               {section.map((item, itemIndex) => {
                 const Icon = item.icon;
                 return (
-                  <button key={item.label} type="button" onClick={item.onClick} className={`flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-transparent dark:hover:bg-transparent ${itemIndex > 0 ? 'border-t border-[#d9dfcf] dark:border-[#36506f]' : ''}`}>
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#bfd0af] bg-[#eef6ee] text-[#3a5a40] dark:border-[#3f5977] dark:bg-[#16314d] dark:text-[#8dccff]"><Icon className="h-5 w-5" /></span>
+                  <button key={item.label} type="button" onClick={item.onClick} className={`flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-transparent dark:hover:bg-transparent ${itemIndex > 0 ? 'border-t border-[#d9dfcf] dark:border-[#4b5560]' : ''}`}>
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#bfd0af] bg-[#eef6ee] text-[#3a5a40] dark:border-[#4b5560] dark:bg-[#31363d] dark:text-[#f0c766]"><Icon className="h-5 w-5" /></span>
                     <span className="min-w-0">
                       <span className="block text-[1.05rem] font-semibold text-[#3a5a40] dark:text-white">{item.label}</span>
-                      {item.label === 'Delete post' && item.description ? <span className="mt-1 block text-sm leading-6 text-[#5f6f52] dark:text-[#b8d4e8]">{item.description}</span> : null}
+                      {item.label === 'Delete post' && item.description ? <span className="mt-1 block text-sm leading-6 text-[#5f6f52] dark:text-[#d0d7dd]">{item.description}</span> : null}
                     </span>
                   </button>
                 );
@@ -235,39 +235,39 @@ export default function FeedPostCard({ post, user, displayName, profileImage, us
 
   return (
     <>
-      <article ref={cardRef} className="overflow-hidden rounded-[1.4rem] border border-[#a3b18a] bg-[#f8fbf6] shadow-[0_16px_36px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_16px_36px_rgba(0,0,0,0.2)]">
+      <article ref={cardRef} className="overflow-hidden rounded-[1.4rem] border border-[#a3b18a] bg-[#f8fbf6] shadow-[0_16px_36px_rgba(58,90,64,0.08)] dark:border-[#353c44] dark:bg-[#22272b] dark:shadow-[0_16px_36px_rgba(0,0,0,0.2)]">
         <div className="flex items-start justify-between gap-3 px-4 pb-3 pt-4">
           <div className="flex min-w-0 items-center gap-3">
             <Avatar profileImage={authorProfileImage} fallback={authorInitial} sizeClass="h-11 w-11" />
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="truncate font-semibold text-[#3a5a40] dark:text-white">{authorDisplayName}</p>
-                <button type="button" className="text-sm font-semibold text-[#2d6cdf] dark:text-[#7dc4ff]">Follow</button>
+                <button type="button" className="text-sm font-semibold text-[#2d6cdf] dark:text-[#e2b94d]">Follow</button>
               </div>
               <p className="text-xs text-[#5f6f52] dark:text-[#9db8d3]">{formattedDate} | {post.visibility || 'Public'}</p>
             </div>
           </div>
-          {enableMenu ? <button type="button" onClick={onOpenMenu} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#5f6f52] transition-colors hover:bg-[#f5f5f2] dark:text-[#b8d4e8] dark:hover:bg-[#1e3a5f]" aria-label="More post actions"><MoreHorizontal className="h-5 w-5" /></button> : null}
+          {enableMenu ? <button type="button" onClick={onOpenMenu} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#5f6f52] transition-colors hover:bg-[#f5f5f2] dark:text-[#d0d7dd] dark:hover:bg-[#353c44]" aria-label="More post actions"><MoreHorizontal className="h-5 w-5" /></button> : null}
         </div>
         <div className="px-4 pb-3">
-          {post.content ? <p className="whitespace-pre-wrap text-[0.97rem] leading-7 text-[#344e41] dark:text-[#d5e6f5]">{post.content}</p> : null}
+          {post.content ? <p className="whitespace-pre-wrap text-[0.97rem] leading-7 text-[#344e41] dark:text-[#e2e6e9]">{post.content}</p> : null}
           {sharedPost ? (
-            <div className={`${post.content ? 'mt-3' : ''} rounded-[1.1rem] border border-[#d9dfcf] bg-[#f8fbf6] p-3 dark:border-[#2a4a6f] dark:bg-[#102235]`}>
+            <div className={`${post.content ? 'mt-3' : ''} rounded-[1.1rem] border border-[#d9dfcf] bg-[#f8fbf6] p-3 dark:border-[#444d57] dark:bg-[#202428]`}>
               <p className="text-sm font-semibold text-[#3a5a40] dark:text-white">{getResolvedPostOwnerName(sharedPost)}</p>
-              {sharedPost.content ? <p className="mt-2 whitespace-pre-wrap text-[0.95rem] leading-6 text-[#344e41] dark:text-[#d5e6f5]">{sharedPost.content}</p> : null}
+              {sharedPost.content ? <p className="mt-2 whitespace-pre-wrap text-[0.95rem] leading-6 text-[#344e41] dark:text-[#e2e6e9]">{sharedPost.content}</p> : null}
               {sharedPost.imageUrl ? <img src={sharedPost.imageUrl} alt="Shared post" className="mt-3 h-auto max-h-[24rem] w-full rounded-[0.95rem] object-cover" /> : null}
             </div>
           ) : null}
         </div>
-        {post.imageUrl ? <div className="overflow-hidden border-y border-[#d9dfcf] bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#102235]"><img src={post.imageUrl} alt="Post" className="h-auto max-h-[34rem] w-full object-cover" /></div> : null}
-        <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-[#5f6f52] dark:text-[#b8d4e8]">
+        {post.imageUrl ? <div className="overflow-hidden border-y border-[#d9dfcf] bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#202428]"><img src={post.imageUrl} alt="Post" className="h-auto max-h-[34rem] w-full object-cover" /></div> : null}
+        <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-[#5f6f52] dark:text-[#d0d7dd]">
           <div className="flex min-w-0 items-center gap-2">
-            {reactionSummary.badges.length > 0 ? <div className="flex items-center -space-x-1">{reactionSummary.badges.map((badge) => <span key={badge} className="flex h-6 w-6 items-center justify-center rounded-full border border-white bg-[#f8fbf6] text-[13px] shadow-sm dark:border-[#162842] dark:bg-[#243244]">{badge}</span>)}</div> : null}
+            {reactionSummary.badges.length > 0 ? <div className="flex items-center -space-x-1">{reactionSummary.badges.map((badge) => <span key={badge} className="flex h-6 w-6 items-center justify-center rounded-full border border-white bg-[#f8fbf6] text-[13px] shadow-sm dark:border-[#22272b] dark:bg-[#2f343b]">{badge}</span>)}</div> : null}
             {reactionCount > 0 ? <span>{formatCount(reactionCount)}</span> : null}
           </div>
           <div className="flex items-center gap-4"><button type="button" className="transition-colors hover:text-[#3a5a40] dark:hover:text-white" onClick={() => setCommentsViewOpen(true)}>{formatCount(commentCount)} comments</button><button type="button" className="transition-colors hover:text-[#3a5a40] dark:hover:text-white" onClick={() => setShareSheetOpen(true)}>{formatCount(shareCount)} shares</button></div>
         </div>
-        <div className="relative grid grid-cols-4 border-t border-[#d9dfcf] px-2 py-1 dark:border-[#2a4a6f]">
+        <div className="relative grid grid-cols-4 border-t border-[#d9dfcf] px-2 py-1 dark:border-[#444d57]">
           {reactionPickerOpen ? <ReactionPicker selectedReaction={userReaction} onSelect={handleReactionSelect} /> : null}
           <ActionButton icon={ThumbsUp} label={selectedReaction.label} active={Boolean(userReaction)} accentClass={selectedReaction.accent} emoji={userReaction ? selectedReaction.emoji : ''} onClick={handleLikeClick} onPointerDown={startReactionHold} onPointerUp={clearHoldTimer} onPointerLeave={clearHoldTimer} onContextMenu={(event) => event.preventDefault()} />
           <ActionButton icon={MessageCircle} label="Comment" active={commentsViewOpen} onClick={() => setCommentsViewOpen(true)} />

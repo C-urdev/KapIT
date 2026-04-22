@@ -65,7 +65,7 @@ export default function UserMyProfilePage({
   onDeletePost,
   savedPostIds = [],
 }) {
-  const displayName = user?.username || user?.name || 'User';
+  const displayName = user?.fullName || user?.name || user?.username || 'User';
   const initial = displayName.charAt(0).toUpperCase();
   const profileImage = user?.profileImage || '';
   const projectCount = Array.isArray(user?.projects)
@@ -76,7 +76,7 @@ export default function UserMyProfilePage({
   const [editing, setEditing] = useState(false);
   const [menuPostId, setMenuPostId] = useState(null);
   const [formData, setFormData] = useState({
-    username: user?.username || '',
+    fullName: user?.fullName || user?.name || user?.username || '',
     bio: user?.bio || '',
     socials: user?.socials || '',
     profileImage: user?.profileImage || '',
@@ -101,7 +101,9 @@ export default function UserMyProfilePage({
   const handleSave = async () => {
     try {
       await onUpdateUser?.({
-        username: formData.username,
+        fullName: formData.fullName,
+        name: formData.fullName,
+        username: String(formData.fullName || '').trim(),
         socials: formData.socials,
         bio: formData.bio,
         profileImage: formData.profileImage,
@@ -141,20 +143,20 @@ export default function UserMyProfilePage({
 
   return (
     <div className="mx-auto w-full max-w-[min(100%,1180px)] space-y-5">
-      <div className="bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl overflow-hidden">
-        <div className="h-16 sm:h-20 bg-gradient-to-r from-[#588157] to-[#3a5a40] dark:from-[#2d8bb8] dark:to-[#3ba9d6]" />
+      <div className="bg-[#f8fbf6] dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl overflow-hidden">
+        <div className="h-16 sm:h-20 bg-gradient-to-r from-[#588157] to-[#3a5a40] dark:from-[#82ad86] dark:to-[#6f9b74]" />
         <div className="px-6 sm:px-8 py-6 min-h-[170px]">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-5">
               <div className="relative w-28 h-28 sm:w-32 sm:h-32">
-                <div className="w-full h-full rounded-full border-4 border-white dark:border-[#162842] bg-[#588157] dark:bg-[#3ba9d6] text-white flex items-center justify-center text-4xl font-bold overflow-hidden">
+                <div className="w-full h-full rounded-full border-4 border-white dark:border-[#22272b] bg-[#588157] dark:bg-[#6f9b74] text-white flex items-center justify-center text-4xl font-bold overflow-hidden">
                 {profileImage ? (
                   <img src={profileImage} alt={`${displayName} profile`} className="w-full h-full object-cover" />
                 ) : (
                   initial
                 )}
                 </div>
-                <label className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-[#3a5a40] dark:bg-[#0f2139] border border-white/70 dark:border-[#3ba9d6]/40 text-white flex items-center justify-center cursor-pointer hover:scale-105 transition-transform">
+                <label className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-[#3a5a40] dark:bg-[#1a1d20] border border-white/70 dark:border-[#6f9b74]/40 text-white flex items-center justify-center cursor-pointer hover:scale-105 transition-transform">
                   <Pencil className="w-4 h-4" />
                   <input type="file" accept="image/*" onChange={handleProfileImageSelect} className="hidden" />
                 </label>
@@ -164,13 +166,13 @@ export default function UserMyProfilePage({
                   <h1 className="text-[1.7rem] min-[420px]:text-[2rem] sm:text-[2.2rem] font-bold text-[#1f3a2a] dark:text-white leading-[1.05] -mt-1 sm:-mt-1.5">{displayName}</h1>
                   {user?.isPremium ? <PremiumBadge /> : null}
                 </div>
-                <p className="text-[1rem] sm:text-[1.05rem] leading-[1.15] font-medium text-[#2f4e39] dark:text-[#b8d4e8]">{profileSubtitle}</p>
-                <p className="text-[0.92rem] sm:text-[0.95rem] leading-[1.15] text-[#2f4e39] dark:text-[#b8d4e8]">
+                <p className="text-[1rem] sm:text-[1.05rem] leading-[1.15] font-medium text-[#2f4e39] dark:text-[#d0d7dd]">{profileSubtitle}</p>
+                <p className="text-[0.92rem] sm:text-[0.95rem] leading-[1.15] text-[#2f4e39] dark:text-[#d0d7dd]">
                   {projectCount} project{projectCount === 1 ? '' : 's'}
                 </p>
-                {user?.bio && <p className="text-[0.92rem] sm:text-[0.95rem] leading-[1.2] text-[#344e41] dark:text-[#b8d4e8]">{user.bio}</p>}
+                {user?.bio && <p className="text-[0.92rem] sm:text-[0.95rem] leading-[1.2] text-[#344e41] dark:text-[#d0d7dd]">{user.bio}</p>}
                 {user?.socials && (
-                  <div className="flex items-center gap-2 text-[0.9rem] sm:text-[0.95rem] leading-[1.15] text-[#2f4e39] dark:text-[#b8d4e8]">
+                  <div className="flex items-center gap-2 text-[0.9rem] sm:text-[0.95rem] leading-[1.15] text-[#2f4e39] dark:text-[#d0d7dd]">
                     <Link2 className="w-4 h-4" />
                     <span className="truncate">{user.socials}</span>
                   </div>
@@ -181,7 +183,7 @@ export default function UserMyProfilePage({
             <div className="flex w-full items-stretch sm:items-center gap-2 sm:w-auto">
                 <button
                   onClick={() => setEditing(true)}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#3a5a40] px-4 py-2 text-sm min-[420px]:text-base text-white font-semibold transition-colors hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] sm:w-auto"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#3a5a40] px-4 py-2 text-sm min-[420px]:text-base text-white font-semibold transition-colors hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] sm:w-auto"
                 >
                   <Edit3 className="w-4 h-4" />
                   Edit Profile
@@ -191,17 +193,17 @@ export default function UserMyProfilePage({
         </div>
       </div>
 
-      <div className="bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-5 sm:p-6">
+      <div className="bg-[#f8fbf6] dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-5 sm:p-6">
         <button
           onClick={onOpenComposer}
-          className="w-full text-left px-5 py-4 bg-[#f5f5f2] dark:bg-[#1e3a5f] border border-[#a3b18a] dark:border-[#2a4a6f] rounded-full text-[#344e41] dark:text-[#b8d4e8] hover:bg-[#dad7cd] dark:hover:bg-[#0f2139] transition-colors"
+          className="w-full text-left px-5 py-4 bg-[#f5f5f2] dark:bg-[#353c44] border border-[#a3b18a] dark:border-[#444d57] rounded-full text-[#344e41] dark:text-[#d0d7dd] hover:bg-[#dad7cd] dark:hover:bg-[#1a1d20] transition-colors"
         >
           What's on your mind, {displayName}?
         </button>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-5">
-        <div className="bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-5 space-y-3 min-h-[280px]">
+        <div className="bg-[#f8fbf6] dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-5 space-y-3 min-h-[280px]">
           <h3 className="text-lg font-semibold text-[#3a5a40] dark:text-white">Personal details</h3>
           <InfoRow icon={User} text={displayName} />
           {user?.address && <InfoRow icon={MapPin} text={user.address} />}
@@ -211,7 +213,7 @@ export default function UserMyProfilePage({
         </div>
 
         <div className="space-y-4">
-          <div className="bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-5">
+          <div className="bg-[#f8fbf6] dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-5">
             <h3 className="text-xl font-semibold text-[#3a5a40] dark:text-white">Posts</h3>
           </div>
 
@@ -239,8 +241,8 @@ export default function UserMyProfilePage({
               />
             ))
           ) : (
-            <div className="bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-16 text-center min-h-[280px] flex items-center justify-center">
-              <p className="text-[#344e41] dark:text-[#b8d4e8]">No posts yet.</p>
+            <div className="bg-[#f8fbf6] dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-16 text-center min-h-[280px] flex items-center justify-center">
+              <p className="text-[#344e41] dark:text-[#d0d7dd]">No posts yet.</p>
             </div>
           )}
         </div>
@@ -248,18 +250,18 @@ export default function UserMyProfilePage({
 
       {editing && (
         <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-xl bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-5">
+          <div className="w-full max-w-xl bg-[#f8fbf6] dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-5">
             <h3 className="text-xl font-bold text-[#3a5a40] dark:text-white mb-4">Edit Profile</h3>
             <div className="grid grid-cols-1 gap-3">
-              <input value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} placeholder="Username" className="input-base" />
+              <input value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} placeholder="Full name" className="input-base" />
               <input value={formData.socials} onChange={(e) => setFormData({ ...formData, socials: e.target.value })} placeholder="Socials" className="input-base" />
               <textarea value={formData.bio} onChange={(e) => setFormData({ ...formData, bio: e.target.value })} placeholder="Bio" className="input-base min-h-24" />
             </div>
             <div className="mt-4 flex flex-col-reverse min-[420px]:flex-row justify-end gap-2">
-              <button onClick={() => setEditing(false)} className="px-4 py-2 rounded-lg border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white">
+              <button onClick={() => setEditing(false)} className="px-4 py-2 rounded-lg border border-[#a3b18a] dark:border-[#444d57] text-[#344e41] dark:text-white">
                 Cancel
               </button>
-              <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-[#3a5a40] dark:bg-[#3ba9d6] text-white font-semibold">
+              <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-[#3a5a40] dark:bg-[#6f9b74] text-white font-semibold">
                 Save Changes
               </button>
             </div>
@@ -272,8 +274,8 @@ export default function UserMyProfilePage({
 
 function InfoRow({ icon: Icon, text }) {
   return (
-    <div className="flex items-center gap-2 text-sm text-[#344e41] dark:text-[#b8d4e8]">
-      <Icon className="w-4 h-4 text-[#588157] dark:text-[#3ba9d6]" />
+    <div className="flex items-center gap-2 text-sm text-[#344e41] dark:text-[#d0d7dd]">
+      <Icon className="w-4 h-4 text-[#588157] dark:text-[#6f9b74]" />
       <span className="min-w-0 break-words">{text}</span>
     </div>
   );

@@ -187,30 +187,30 @@ export default function CompanyManageJobsPage() {
           <button
             type="button"
             onClick={() => navigate(COMPANY_PATHS.postJob)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white text-sm font-semibold transition-colors"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white text-sm font-semibold transition-colors"
           >
             Post job
           </button>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[linear-gradient(135deg,#f6fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#16304a,#102235)] p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
+      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[linear-gradient(135deg,#f6fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#31363d,#202428)] p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
         <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Manage persisted postings</h3>
-        <p className="mt-2 text-sm text-[#344e41] dark:text-[#dcecff]">Every job listed here comes from the database. Unpaid jobs stay in draft until you use Pay now, while only paid jobs are published to developers.</p>
+        <p className="mt-2 text-sm text-[#344e41] dark:text-[#eceff2]">Every job listed here comes from the database. Unpaid jobs stay in draft until you use Pay now, while only paid jobs are published to developers.</p>
       </div>
 
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
+      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
         <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Jobs snapshot graph</h3>
         <SummaryGraph data={graphData} />
       </div>
 
-      {feedback && <p className="text-sm text-[#3a5a40] dark:text-[#7fd0ee]">{feedback}</p>}
+      {feedback && <p className="text-sm text-[#3a5a40] dark:text-[#f0c766]">{feedback}</p>}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
       {loading ? (
-        <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">Loading jobs...</p>
+        <p className="text-sm text-[#4b5563] dark:text-[#d0d7dd]">Loading jobs...</p>
       ) : displayJobs.length === 0 ? (
-        <div className="rounded-xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] p-6 transition-colors duration-300">
-          <p className="text-[#344e41] dark:text-[#b8d4e8]">No job listings yet.</p>
+        <div className="rounded-xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] p-6 transition-colors duration-300">
+          <p className="text-[#344e41] dark:text-[#d0d7dd]">No job listings yet.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -247,7 +247,7 @@ export default function CompanyManageJobsPage() {
 
 function SummaryGraph({ data }) {
   if (!data.length) {
-    return <p className="mt-4 text-sm text-[#4b5563] dark:text-[#b8d4e8]">Loading graph data...</p>;
+    return <p className="mt-4 text-sm text-[#4b5563] dark:text-[#d0d7dd]">Loading graph data...</p>;
   }
   const total = data.reduce((sum, item) => sum + item.value, 0);
   const safeTotal = total > 0 ? total : 1;
@@ -273,13 +273,13 @@ function SummaryGraph({ data }) {
         {data.map((item) => {
           const percent = Math.round((item.value / safeTotal) * 100);
           return (
-            <div key={item.label} className="flex items-center justify-between rounded-xl border border-[#d6d3c9] px-3 py-2 dark:border-[#2a4a6f]">
+            <div key={item.label} className="flex items-center justify-between rounded-xl border border-[#d6d3c9] px-3 py-2 dark:border-[#444d57]">
               <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-                <span className="text-xs sm:text-sm font-medium text-[#344e41] dark:text-[#dcecff]">{item.label}</span>
+                <span className="text-xs sm:text-sm font-medium text-[#344e41] dark:text-[#eceff2]">{item.label}</span>
               </div>
               <div className="text-xs sm:text-sm font-semibold text-[#3a5a40] dark:text-white">
-                {item.value} <span className="text-[11px] font-medium text-[#6b7280] dark:text-[#9fb4ca]">({percent}%)</span>
+                {item.value} <span className="text-[11px] font-medium text-[#6b7280] dark:text-[#b3bcc5]">({percent}%)</span>
               </div>
             </div>
           );
@@ -295,16 +295,16 @@ function JobDetailsModal({ job, onClose }) {
   return (
     <div className="fixed inset-0 z-[110] bg-black/55 backdrop-blur-sm flex items-center justify-center p-4">
       <button type="button" className="absolute inset-0" onClick={onClose} aria-label="Close job details" />
-      <div className="relative w-full max-w-4xl max-h-[85vh] overflow-y-auto rounded-3xl border border-[#a3b18a] dark:border-[#1e3a5f] bg-[#f8fbf6] dark:bg-[#162842] p-6 shadow-2xl shadow-black/20 transition-colors duration-300">
+      <div className="relative w-full max-w-4xl max-h-[85vh] overflow-y-auto rounded-3xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] p-6 shadow-2xl shadow-black/20 transition-colors duration-300">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">{job?.title || 'Untitled job'}</h3>
-            <p className="mt-1 text-sm text-[#344e41] dark:text-[#b8d4e8]">Full posting details saved for this listing.</p>
+            <p className="mt-1 text-sm text-[#344e41] dark:text-[#d0d7dd]">Full posting details saved for this listing.</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#a3b18a] dark:border-[#444d57] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors"
             aria-label="Close job details"
           >
             <X className="h-4.5 w-4.5" />
@@ -327,26 +327,26 @@ function JobDetailsModal({ job, onClose }) {
           <DetailBlock label="Status" value={job?.status || 'open'} />
         </div>
 
-        <div className="mt-6 rounded-2xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-[#f8fbf6] dark:bg-[#102235] p-5">
+        <div className="mt-6 rounded-2xl border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-5">
           <div className="text-sm font-semibold text-[#3a5a40] dark:text-white">Description</div>
-          <p className="mt-2 text-sm leading-7 text-[#344e41] dark:text-[#dcecff] whitespace-pre-wrap">{job?.description || 'No description saved.'}</p>
+          <p className="mt-2 text-sm leading-7 text-[#344e41] dark:text-[#eceff2] whitespace-pre-wrap">{job?.description || 'No description saved.'}</p>
         </div>
 
-        <div className="mt-6 rounded-2xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-[#f8fbf6] dark:bg-[#102235] p-5">
+        <div className="mt-6 rounded-2xl border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-5">
           <div className="text-sm font-semibold text-[#3a5a40] dark:text-white">Skills</div>
           {skills.length > 0 ? (
             <div className="mt-3 flex flex-wrap gap-2">
               {skills.map((skill) => (
                 <span
                   key={skill}
-                  className="px-2.5 py-1 rounded-full border border-[#a3b18a] dark:border-[#2a4a6f] bg-[#f8fbf6] dark:bg-[#0f2139] text-xs text-[#344e41] dark:text-white"
+                  className="px-2.5 py-1 rounded-full border border-[#a3b18a] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#1a1d20] text-xs text-[#344e41] dark:text-white"
                 >
                   {skill}
                 </span>
               ))}
             </div>
           ) : (
-            <p className="mt-2 text-sm text-[#344e41] dark:text-[#dcecff]">No skills saved.</p>
+            <p className="mt-2 text-sm text-[#344e41] dark:text-[#eceff2]">No skills saved.</p>
           )}
         </div>
       </div>
@@ -356,8 +356,8 @@ function JobDetailsModal({ job, onClose }) {
 
 function DetailBlock({ label, value }) {
   return (
-    <div className="rounded-2xl border border-[#d6d3c9] dark:border-[#2a4a6f] bg-[#f8fbf6] dark:bg-[#102235] px-4 py-3">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#588157] dark:text-[#7fd0ee]">{label}</div>
+    <div className="rounded-2xl border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] px-4 py-3">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#588157] dark:text-[#f0c766]">{label}</div>
       <div className="mt-1 text-sm font-medium text-[#3a5a40] dark:text-white">{value}</div>
     </div>
   );

@@ -147,7 +147,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   const isSettingsActive = activeNav === 'settings';
   const isSearchActive = activeNav === 'search';
   const isEdgeToEdgeView = isMessagesActive || isSettingsActive;
-  const pageBackgroundClass = isMessagesActive ? 'bg-[#dad7cd] dark:bg-[#121212]' : 'bg-[#dad7cd] dark:bg-[#0a1628]';
+  const pageBackgroundClass = isMessagesActive ? 'bg-[#dad7cd] dark:bg-[#121212]' : 'bg-[#dad7cd] dark:bg-[#121416]';
   const hideMobileChromeForMessages = isTabletViewport && isMessagesActive && mobileThreadOpen;
   const effectiveMobileChromeHidden = mobileChromeHidden || hideMobileChromeForMessages;
   const mobileSafeAreaBottomPadding = isMobileShellViewport
@@ -644,7 +644,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
                 setCanReturnToSettings(false);
                 updateActiveNav('settings-account');
               }}
-              className="inline-flex items-center gap-2 rounded-lg border border-[#a3b18a] bg-[#f8fbf6] px-3.5 py-2 text-sm font-semibold text-[#3a5a40] shadow-sm transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#162842] dark:text-white dark:hover:bg-[#102235]"
+              className="inline-flex items-center gap-2 rounded-lg border border-[#a3b18a] bg-[#f8fbf6] px-3.5 py-2 text-sm font-semibold text-[#3a5a40] shadow-sm transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#22272b] dark:text-white dark:hover:bg-[#202428]"
             >
               <ArrowLeft className="h-4 w-4" />
               Back
@@ -905,9 +905,9 @@ function TipsPanel() {
 
   return (
     <div className="mx-auto w-full max-w-[min(100%,1200px)] space-y-5">
-      <div className="rounded-[24px] border border-[#a3b18a] bg-[#f8fbf6] p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
+      <div className="rounded-[24px] border border-[#a3b18a] bg-[#f8fbf6] p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#353c44] dark:bg-[#22272b] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
         <div className="flex flex-col min-[420px]:flex-row items-start gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#14304d] dark:text-[#7dc4ff]">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#2a2f35] dark:text-[#e2b94d]">
             <Lightbulb className="h-6 w-6" />
           </div>
           <div>
@@ -918,14 +918,14 @@ function TipsPanel() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {tips.map((tip) => (
-          <div key={tip.title} className="rounded-[24px] border border-[#bfd0af] bg-[#f8fbf6] p-5 shadow-[0_12px_32px_rgba(58,90,64,0.06)] dark:border-[#2a4a6f] dark:bg-[#162842] dark:shadow-[0_12px_32px_rgba(0,0,0,0.18)]">
+          <div key={tip.title} className="rounded-[24px] border border-[#bfd0af] bg-[#f8fbf6] p-5 shadow-[0_12px_32px_rgba(58,90,64,0.06)] dark:border-[#444d57] dark:bg-[#22272b] dark:shadow-[0_12px_32px_rgba(0,0,0,0.18)]">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#588157] dark:bg-[#14304d] dark:text-[#7dc4ff]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#588157] dark:bg-[#2a2f35] dark:text-[#e2b94d]">
                 <Sparkles className="h-5 w-5" />
               </div>
               <h3 className="text-lg font-semibold text-[#3a5a40] dark:text-white">{tip.title}</h3>
             </div>
-            <p className="mt-3 text-sm leading-7 text-[#344e41] dark:text-[#d5e6f5]">{tip.description}</p>
+            <p className="mt-3 text-sm leading-7 text-[#344e41] dark:text-[#e2e6e9]">{tip.description}</p>
           </div>
         ))}
       </div>
@@ -957,9 +957,9 @@ function VerifiedProfilesPanel() {
 
   return (
     <div className="mx-auto w-full max-w-[min(100%,1200px)] space-y-5">
-      <div className="rounded-[24px] border border-[#a3b18a] bg-[#f8fbf6] p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
+      <div className="rounded-[24px] border border-[#a3b18a] bg-[#f8fbf6] p-6 shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#353c44] dark:bg-[#22272b] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)] sm:p-8">
         <div className="flex flex-col min-[420px]:flex-row items-start gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#14304d] dark:text-[#7dc4ff]">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#2a2f35] dark:text-[#e2b94d]">
             <BadgeCheck className="h-6 w-6" />
           </div>
           <div>
@@ -972,16 +972,16 @@ function VerifiedProfilesPanel() {
         {verifiedGroups.map((group) => {
           const Icon = group.icon;
           return (
-            <div key={group.title} className="rounded-[24px] border border-[#bfd0af] bg-[#f8fbf6] p-5 shadow-[0_12px_32px_rgba(58,90,64,0.06)] dark:border-[#2a4a6f] dark:bg-[#162842] dark:shadow-[0_12px_32px_rgba(0,0,0,0.18)]">
+            <div key={group.title} className="rounded-[24px] border border-[#bfd0af] bg-[#f8fbf6] p-5 shadow-[0_12px_32px_rgba(58,90,64,0.06)] dark:border-[#444d57] dark:bg-[#22272b] dark:shadow-[0_12px_32px_rgba(0,0,0,0.18)]">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#588157] dark:bg-[#14304d] dark:text-[#7dc4ff]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#588157] dark:bg-[#2a2f35] dark:text-[#e2b94d]">
                   <Icon className="h-5 w-5" />
                 </div>
                 <h3 className="text-lg font-semibold text-[#3a5a40] dark:text-white">{group.title}</h3>
               </div>
               <div className="mt-4 space-y-3">
                 {group.items.map((item) => (
-                  <div key={item} className="rounded-2xl bg-[#f8fbf6] px-4 py-3 text-sm leading-7 text-[#344e41] dark:bg-[#102235] dark:text-[#d5e6f5]">
+                  <div key={item} className="rounded-2xl bg-[#f8fbf6] px-4 py-3 text-sm leading-7 text-[#344e41] dark:bg-[#202428] dark:text-[#e2e6e9]">
                     {item}
                   </div>
                 ))}

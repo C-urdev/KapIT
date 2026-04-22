@@ -72,7 +72,7 @@ export default function SearchableSelect({
     <div ref={rootRef} className="relative">
       {searchInTrigger ? (
         <div className={`${className} flex w-full items-center gap-3 disabled:cursor-not-allowed disabled:opacity-60`}>
-          <Search className="h-4 w-4 shrink-0 text-[#6b7280] dark:text-[#7d9ab8]" />
+          <Search className="h-4 w-4 shrink-0 text-[#6b7280] dark:text-[#adb5be]" />
           <input
             ref={triggerSearchRef}
             type="text"
@@ -85,13 +85,13 @@ export default function SearchableSelect({
             }}
             placeholder={selectedOption?.label || placeholder}
             disabled={disabled}
-            className="min-w-0 flex-1 bg-transparent text-left text-[#344e41] outline-none placeholder:text-[#6b7280] dark:text-white dark:placeholder:text-[#7d9ab8]"
+            className="min-w-0 flex-1 bg-transparent text-left text-[#344e41] outline-none placeholder:text-[#6b7280] dark:text-white dark:placeholder:text-[#adb5be]"
           />
           <button
             type="button"
             disabled={disabled}
             onClick={() => setOpen((prev) => !prev)}
-            className="shrink-0 text-[#6b7280] dark:text-[#7d9ab8]"
+            className="shrink-0 text-[#6b7280] dark:text-[#adb5be]"
             aria-label={open ? 'Close options' : 'Open options'}
           >
             <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -104,10 +104,10 @@ export default function SearchableSelect({
           onClick={() => setOpen((prev) => !prev)}
           className={`${className} flex w-full items-center justify-between gap-3 text-left disabled:cursor-not-allowed disabled:opacity-60`}
         >
-          <span className={selectedOption ? '' : 'text-[#6b7280] dark:text-[#7d9ab8]'}>
+          <span className={selectedOption ? '' : 'text-[#6b7280] dark:text-[#adb5be]'}>
             {selectedOption?.label || placeholder}
           </span>
-          <span className="inline-flex items-center gap-2 text-[#6b7280] dark:text-[#7d9ab8]">
+          <span className="inline-flex items-center gap-2 text-[#6b7280] dark:text-[#adb5be]">
             <Search className="h-4 w-4" />
             <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
           </span>
@@ -115,17 +115,17 @@ export default function SearchableSelect({
       )}
 
       {open && !disabled && (
-        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl border border-[#a3b18a] bg-white shadow-xl shadow-black/10 dark:border-[#2a4a6f] dark:bg-[#162842] dark:shadow-black/30">
+        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl border border-[#a3b18a] bg-white shadow-xl shadow-black/10 dark:border-[#444d57] dark:bg-[#22272b] dark:shadow-black/30">
           {!searchInTrigger && (
-            <div className="border-b border-[#d6d3c9] p-3 dark:border-[#2a4a6f]">
+            <div className="border-b border-[#d6d3c9] p-3 dark:border-[#444d57]">
               <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6b7280] dark:text-[#7d9ab8]" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6b7280] dark:text-[#adb5be]" />
                 <input
                   ref={searchRef}
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder={searchPlaceholder}
-                  className="w-full rounded-lg border border-[#d1d5db] bg-[#f8faf7] py-2 pl-9 pr-3 text-sm text-[#344e41] outline-none transition-colors focus:border-[#588157] dark:border-[#2a4a6f] dark:bg-[#0f2139] dark:text-white dark:focus:border-[#3ba9d6]"
+                  className="w-full rounded-lg border border-[#d1d5db] bg-[#f8faf7] py-2 pl-9 pr-3 text-sm text-[#344e41] outline-none transition-colors focus:border-[#588157] dark:border-[#444d57] dark:bg-[#1a1d20] dark:text-white dark:focus:border-[#6f9b74]"
                 />
               </div>
             </div>
@@ -146,8 +146,8 @@ export default function SearchableSelect({
                     }}
                     className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors ${
                       active
-                        ? 'bg-[#eef6ee] text-[#3a5a40] dark:bg-[#1e3a5f] dark:text-white'
-                        : 'text-[#344e41] hover:bg-[#f5f5f2] dark:text-[#dcecff] dark:hover:bg-[#102235]'
+                        ? 'bg-[#eef6ee] text-[#3a5a40] dark:bg-[#353c44] dark:text-white'
+                        : 'text-[#344e41] hover:bg-[#f5f5f2] dark:text-[#eceff2] dark:hover:bg-[#202428]'
                     }`}
                   >
                     <span>{option.label}</span>
@@ -156,7 +156,7 @@ export default function SearchableSelect({
                 );
               })
             ) : (
-              <p className="px-3 py-3 text-sm text-[#6b7280] dark:text-[#7d9ab8]">{emptyMessage}</p>
+              <p className="px-3 py-3 text-sm text-[#6b7280] dark:text-[#adb5be]">{emptyMessage}</p>
             )}
           </div>
         </div>

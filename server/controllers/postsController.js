@@ -1,5 +1,5 @@
 const pool = require('../config/database');
-const { ensureBaseUserSchemaReady } = require('../config/runtimeSchema');
+const { ensureBaseUserSchemaReady, ensureOnboardingSchemaReady } = require('../config/runtimeSchema');
 const { logger } = require('../config/logger');
 
 let postsTableReady = false;
@@ -17,6 +17,7 @@ const ensurePostsTable = async (client) => {
       const db = client || (await pool.connect());
 
       try {
+        await ensureOnboardingSchemaReady();
         await db.query(`
           CREATE TABLE IF NOT EXISTS user_posts (
             id BIGSERIAL PRIMARY KEY,
@@ -132,9 +133,9 @@ const getUserKey = (userLike) => {
 const getDisplayName = (userLike) =>
   userLike?.company_name ||
   userLike?.companyName ||
-  userLike?.username ||
   userLike?.full_name ||
   userLike?.name ||
+  userLike?.username ||
   userLike?.email ||
   'User';
 
@@ -164,6 +165,7 @@ const toPostDto = (row) => {
   const owner = {
     email: row.owner_email,
     username: row.owner_username,
+    full_name: row.owner_full_name,
     name: row.owner_name,
     company_name: row.owner_company_name,
   };
@@ -194,11 +196,13 @@ const readPostWithOwner = async (client, postId) => {
     `SELECT p.*,
             u.email AS owner_email,
             u.username AS owner_username,
+            dp.full_name AS owner_full_name,
             u.name AS owner_name,
             u.company_name AS owner_company_name,
             u.profile_image AS owner_profile_image
      FROM user_posts p
      JOIN users u ON u.id = p.owner_user_id
+     LEFT JOIN developer_profiles dp ON dp.user_id = u.id
      WHERE p.id = $1
      LIMIT 1`,
     [postId]
@@ -225,11 +229,13 @@ const listFeedPosts = async (req, res) => {
       `SELECT p.*,
               u.email AS owner_email,
               u.username AS owner_username,
+              dp.full_name AS owner_full_name,
               u.name AS owner_name,
               u.company_name AS owner_company_name,
               u.profile_image AS owner_profile_image
        FROM user_posts p
        JOIN users u ON u.id = p.owner_user_id
+       LEFT JOIN developer_profiles dp ON dp.user_id = u.id
        WHERE p.owner_user_id = $1
           OR ${sqlPostIsPublic}
        ORDER BY p.created_at DESC, p.id DESC`,
@@ -263,11 +269,13 @@ const listMyPosts = async (req, res) => {
       `SELECT p.*,
               u.email AS owner_email,
               u.username AS owner_username,
+              dp.full_name AS owner_full_name,
               u.name AS owner_name,
               u.company_name AS owner_company_name,
               u.profile_image AS owner_profile_image
        FROM user_posts p
        JOIN users u ON u.id = p.owner_user_id
+       LEFT JOIN developer_profiles dp ON dp.user_id = u.id
        WHERE p.owner_user_id = $1
        ORDER BY p.created_at DESC, p.id DESC`,
       [req.user.id]
@@ -306,11 +314,13 @@ const listProfilePosts = async (req, res) => {
       `SELECT p.*,
               u.email AS owner_email,
               u.username AS owner_username,
+              dp.full_name AS owner_full_name,
               u.name AS owner_name,
               u.company_name AS owner_company_name,
               u.profile_image AS owner_profile_image
        FROM user_posts p
        JOIN users u ON u.id = p.owner_user_id
+       LEFT JOIN developer_profiles dp ON dp.user_id = u.id
        WHERE p.owner_user_id = $1
          AND ($2::boolean = TRUE OR ${sqlPostIsPublic})
        ORDER BY p.created_at DESC, p.id DESC`,
@@ -493,8 +503,9 @@ const addCommentToPost = async (req, res) => {
     await ensurePostsTable(client);
 
     const actorResult = await client.query(
-      `SELECT id, email, username, name, company_name, profile_image
-       FROM users
+      `SELECT u.id, u.email, u.username, dp.full_name, u.name, u.company_name, u.profile_image
+       FROM users u
+       LEFT JOIN developer_profiles dp ON dp.user_id = u.id
        WHERE id = $1
        LIMIT 1`,
       [req.user.id]
@@ -675,8 +686,9 @@ const toggleSharePost = async (req, res) => {
     }
 
     const actorResult = await client.query(
-      `SELECT id, email, username, name, company_name, profile_image
-       FROM users
+      `SELECT u.id, u.email, u.username, dp.full_name, u.name, u.company_name, u.profile_image
+       FROM users u
+       LEFT JOIN developer_profiles dp ON dp.user_id = u.id
        WHERE id = $1
        LIMIT 1`,
       [req.user.id]
@@ -725,6 +737,7 @@ const toggleSharePost = async (req, res) => {
         ownerKey: getUserKey({
           email: sourcePost.owner_email,
           username: sourcePost.owner_username,
+          full_name: sourcePost.owner_full_name,
           name: sourcePost.owner_name,
           company_name: sourcePost.owner_company_name,
         }),
@@ -732,6 +745,7 @@ const toggleSharePost = async (req, res) => {
           ownerName: getDisplayName({
             email: sourcePost.owner_email,
             username: sourcePost.owner_username,
+            full_name: sourcePost.owner_full_name,
             name: sourcePost.owner_name,
             company_name: sourcePost.owner_company_name,
           }),
@@ -786,6 +800,7 @@ const listSavedPosts = async (req, res) => {
       `SELECT p.*,
               u.email AS owner_email,
               u.username AS owner_username,
+              dp.full_name AS owner_full_name,
               u.name AS owner_name,
               u.company_name AS owner_company_name,
               u.profile_image AS owner_profile_image,
@@ -793,6 +808,7 @@ const listSavedPosts = async (req, res) => {
        FROM user_saved_posts s
        JOIN user_posts p ON p.id = s.post_id
        JOIN users u ON u.id = p.owner_user_id
+       LEFT JOIN developer_profiles dp ON dp.user_id = u.id
        WHERE s.user_id = $1
          AND (p.owner_user_id = $1 OR ${sqlPostIsPublic})
        ORDER BY s.created_at DESC, p.id DESC`,

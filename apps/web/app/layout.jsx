@@ -1,6 +1,6 @@
 import AppProviders from '../components/AppProviders';
 import ReleaseSync from '../components/ReleaseSync';
-import Script from 'next/script';
+import { cookies } from 'next/headers';
 import './globals.css';
 
 export const metadata = {
@@ -17,7 +17,10 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const cookieStore = await cookies();
+  const savedTheme = cookieStore.get('theme')?.value;
+  const initialTheme = savedTheme === 'dark' ? 'dark' : 'light';
   const buildVersion =
     process.env.NEXT_PUBLIC_BUILD_VERSION
     || process.env.COMMIT_REF
@@ -25,37 +28,10 @@ export default function RootLayout({ children }) {
     || 'local-dev';
 
   return (
-    <html lang='en'>
-      <head>
-        <Script
-          id="suppress-event-rejections"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function () {
-                function isEventLike(value) {
-                  return Object.prototype.toString.call(value) === '[object Event]';
-                }
-
-                window.addEventListener('unhandledrejection', function (event) {
-                  if (!isEventLike(event && event.reason)) return;
-                  event.preventDefault();
-                  event.stopImmediatePropagation();
-                });
-
-                window.addEventListener('error', function (event) {
-                  if (!isEventLike(event && event.error)) return;
-                  event.preventDefault();
-                  event.stopImmediatePropagation();
-                }, true);
-              })();
-            `,
-          }}
-        />
-      </head>
-      <body className='bg-[#f7f6f1] text-slate-900'>
+    <html lang='en' className={initialTheme === 'dark' ? 'dark' : undefined}>
+      <body className='bg-[#f7f6f1] text-slate-900 dark:bg-[#121416] dark:text-white'>
         <ReleaseSync currentVersion={buildVersion} />
-        <AppProviders>{children}</AppProviders>
+        <AppProviders initialTheme={initialTheme}>{children}</AppProviders>
       </body>
     </html>
   );

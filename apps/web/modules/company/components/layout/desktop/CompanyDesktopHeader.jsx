@@ -7,7 +7,7 @@ export default function CompanyDesktopHeader({ title, user, sidebarCollapsed, un
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className={`hidden xl:grid h-20 items-center transition-[grid-template-columns] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? 'grid-cols-[4.5rem_minmax(0,1fr)]' : 'grid-cols-[18rem_minmax(0,1fr)]'}`}>
+    <div className={`hidden xl:grid h-20 items-center transition-[grid-template-columns] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? 'grid-cols-[4.5rem_minmax(0,1fr)]' : 'grid-cols-[18rem_minmax(0,1fr)]'}`}>
       <div className={`h-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-6'}`}>
         {sidebarCollapsed ? (
           <div className="w-10 h-10 shrink-0 flex items-center justify-center overflow-hidden relative">
@@ -58,19 +58,19 @@ export default function CompanyDesktopHeader({ title, user, sidebarCollapsed, un
           <button
             type="button"
             onClick={() => navigate(COMPANY_PATHS.notifications)}
-            className="relative p-2 rounded-lg hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+            className="relative p-2 rounded-lg hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors"
             aria-label="Open notifications"
           >
             <Bell className="w-5 h-5 text-[#344e41] dark:text-white" />
             {unreadNotificationCount > 0 ? (
-              <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-[#588157] dark:bg-[#3ba9d6]" />
+              <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-[#588157] dark:bg-[#6f9b74]" />
             ) : null}
           </button>
 
           <button
             type="button"
             onClick={toggleTheme}
-            className="p-2 rounded-lg hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+            className="p-2 rounded-lg hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors"
             aria-label="Toggle theme"
           >
             {theme === 'light' ? <Moon className="w-5 h-5 text-[#344e41]" /> : <Sun className="w-5 h-5 text-white" />}

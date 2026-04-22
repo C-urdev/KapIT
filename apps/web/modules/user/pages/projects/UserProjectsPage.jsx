@@ -219,7 +219,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
           <button
             type="button"
             onClick={openCreateModal}
-            className="inline-flex items-center justify-center gap-1.5 min-[420px]:gap-2 rounded-[14px] min-[420px]:rounded-2xl bg-[#3a5a40] px-3.5 py-2 min-[420px]:px-5 min-[420px]:py-3 text-[13px] min-[420px]:text-sm font-semibold text-white shadow-[0_12px_24px_rgba(58,90,64,0.18)] transition-colors hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de]"
+            className="inline-flex items-center justify-center gap-1.5 min-[420px]:gap-2 rounded-[14px] min-[420px]:rounded-2xl bg-[#3a5a40] px-3.5 py-2 min-[420px]:px-5 min-[420px]:py-3 text-[13px] min-[420px]:text-sm font-semibold text-white shadow-[0_12px_24px_rgba(58,90,64,0.18)] transition-colors hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86]"
           >
             <Plus className="h-4 w-4" />
             <span className="hidden min-[360px]:inline">New Project</span>
@@ -228,7 +228,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
         ) : null}
       </div>
 
-      <section className="overflow-hidden rounded-[28px] border border-[#7f9775] bg-[#f8fbf6] px-4 py-5 shadow-[0_18px_50px_rgba(58,90,64,0.1)] dark:border-[#2a4a6f] dark:bg-[#162842] sm:px-6 lg:px-8">
+      <section className="overflow-hidden rounded-[28px] border border-[#7f9775] bg-[#f8fbf6] px-4 py-5 shadow-[0_18px_50px_rgba(58,90,64,0.1)] dark:border-[#444d57] dark:bg-[#22272b] sm:px-6 lg:px-8">
           {projects.length > 0 ? (
             <>
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -288,7 +288,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
 
               <div className="mt-10">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#588157] dark:bg-[#14304d] dark:text-[#7dc4ff]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#588157] dark:bg-[#2a2f35] dark:text-[#e2b94d]">
                     <FolderKanban className="h-5 w-5" />
                   </div>
                   <div>
@@ -298,7 +298,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
 
                 <div className="mt-5 overflow-x-auto">
                   <div className="min-w-[720px] sm:min-w-[860px]">
-                    <div className="grid grid-cols-[minmax(0,2.3fr)_minmax(0,1fr)_minmax(0,1.05fr)_120px_88px_88px] gap-4 border-b border-[#d9e0d2] px-4 pb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#758976] dark:border-[#2a4a6f] dark:text-[#89aeca]">
+                    <div className="grid grid-cols-[minmax(0,2.3fr)_minmax(0,1fr)_minmax(0,1.05fr)_120px_88px_88px] gap-4 border-b border-[#d9e0d2] px-4 pb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#758976] dark:border-[#444d57] dark:text-[#89aeca]">
                       <div>Name</div>
                       <div>Stack</div>
                       <div>Last Modified</div>
@@ -315,16 +315,16 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
                         return (
                           <div
                             key={project.id}
-                            className={`grid grid-cols-[minmax(0,2.3fr)_minmax(0,1fr)_minmax(0,1.05fr)_120px_88px_88px] gap-4 px-4 py-4 transition-colors hover:bg-[#f7faf4] dark:hover:bg-[#102235] ${rowTint}`}
+                            className={`grid grid-cols-[minmax(0,2.3fr)_minmax(0,1fr)_minmax(0,1.05fr)_120px_88px_88px] gap-4 px-4 py-4 transition-colors hover:bg-[#f7faf4] dark:hover:bg-[#202428] ${rowTint}`}
                           >
                             <div className="min-w-0">
                               <div className="flex items-start gap-3">
-                                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#eef6ee] text-[#588157] dark:bg-[#14304d] dark:text-[#7dc4ff]">
+                                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#eef6ee] text-[#588157] dark:bg-[#2a2f35] dark:text-[#e2b94d]">
                                   {project.githubUrl ? <FileCode2 className="h-4 w-4" /> : <FolderKanban className="h-4 w-4" />}
                                 </div>
                                 <div className="min-w-0">
                                   <p className="truncate text-sm font-bold text-[#2f4e35] dark:text-white">{project.title}</p>
-                                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-[#607461] dark:text-[#b8d4e8]">
+                                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-[#607461] dark:text-[#d0d7dd]">
                                     {project.description}
                                   </p>
                                 </div>
@@ -337,25 +337,25 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
                                   {stackItems.slice(0, 2).map((item) => (
                                     <span
                                       key={`${project.id}-${item}`}
-                                      className="inline-flex items-center rounded-full bg-[#f1f6ed] px-2.5 py-1 text-[11px] font-semibold text-[#466247] dark:bg-[#102235] dark:text-[#d5e6f5]"
+                                      className="inline-flex items-center rounded-full bg-[#f1f6ed] px-2.5 py-1 text-[11px] font-semibold text-[#466247] dark:bg-[#202428] dark:text-[#e2e6e9]"
                                     >
                                       {item}
                                     </span>
                                   ))}
                                 </div>
                               ) : (
-                                <span className="text-sm text-[#708370] dark:text-[#9fb4ca]">No stack</span>
+                                <span className="text-sm text-[#708370] dark:text-[#b3bcc5]">No stack</span>
                               )}
                             </div>
 
-                            <div className="text-sm text-[#556a58] dark:text-[#d5e6f5]">
+                            <div className="text-sm text-[#556a58] dark:text-[#e2e6e9]">
                               <div className="inline-flex items-center gap-2">
-                                <CalendarDays className="h-4 w-4 text-[#6f866b] dark:text-[#7dc4ff]" />
+                                <CalendarDays className="h-4 w-4 text-[#6f866b] dark:text-[#e2b94d]" />
                                 {formatDateLabel(project.createdAt)}
                               </div>
                             </div>
 
-                            <div className="text-sm text-[#556a58] dark:text-[#d5e6f5]">{getFileSizeLabel(project)}</div>
+                            <div className="text-sm text-[#556a58] dark:text-[#e2e6e9]">{getFileSizeLabel(project)}</div>
 
                             <div className="flex items-center gap-2 text-[#6a8167] dark:text-[#8fcdf2]">
                               {project.liveUrl ? <Globe className="h-4 w-4" /> : null}
@@ -369,7 +369,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
                                   href={project.liveUrl}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#c7d7b3] text-[#3a5a40] transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#102235]"
+                                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#c7d7b3] text-[#3a5a40] transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:text-white dark:hover:bg-[#202428]"
                                   aria-label={`Open live demo for ${project.title}`}
                                 >
                                   <ExternalLink className="h-4 w-4" />
@@ -380,7 +380,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
                                   <button
                                     type="button"
                                     onClick={() => openEditModal(project)}
-                                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#c7d7b3] text-[#3a5a40] transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#102235]"
+                                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#c7d7b3] text-[#3a5a40] transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:text-white dark:hover:bg-[#202428]"
                                     aria-label={`Edit ${project.title}`}
                                   >
                                     <PencilLine className="h-4 w-4" />
@@ -411,7 +411,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
           ) : (
             <div className="flex min-h-[420px] items-center justify-center px-4 py-10 text-center sm:px-8">
               <div className="w-full max-w-2xl">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-[#eef6ee] text-[#588157] dark:bg-[#14304d] dark:text-[#7dc4ff]">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-[#eef6ee] text-[#588157] dark:bg-[#2a2f35] dark:text-[#e2b94d]">
                 <Sparkles className="h-7 w-7" />
               </div>
               <h3 className="mt-5 text-2xl font-bold text-[#3a5a40] dark:text-white">
@@ -421,7 +421,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
                 <button
                   type="button"
                   onClick={openCreateModal}
-                  className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#3a5a40] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de]"
+                  className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#3a5a40] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86]"
                 >
                   <Plus className="h-4 w-4" />
                   Add Your First Project
@@ -434,7 +434,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
 
       {isModalOpen ? (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] p-6 shadow-xl dark:border-[#1e3a5f] dark:bg-[#162842]">
+          <div className="w-full max-w-2xl rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] p-6 shadow-xl dark:border-[#353c44] dark:bg-[#22272b]">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold text-[#3a5a40] dark:text-white">
@@ -445,7 +445,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
                 type="button"
                 onClick={resetModal}
                 aria-label="Close project modal"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[#c7d7b3] text-[#3a5a40] transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#102235]"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[#c7d7b3] text-[#3a5a40] transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:text-white dark:hover:bg-[#202428]"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -453,53 +453,53 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[#344e41] dark:text-[#d5e6f5]">Project title</label>
+                <label className="mb-2 block text-sm font-semibold text-[#344e41] dark:text-[#e2e6e9]">Project title</label>
                 <input
                   value={formData.title}
                   onChange={(event) => setFormData((current) => ({ ...current, title: event.target.value }))}
                   placeholder="Capstone job portal"
-                  className="w-full rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-4 py-3 text-[#1f3a2a] outline-none transition-colors placeholder:text-[#7b8d70] focus:border-[#588157] dark:border-[#2a4a6f] dark:bg-[#102235] dark:text-white dark:placeholder:text-[#8ba9c0]"
+                  className="w-full rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-4 py-3 text-[#1f3a2a] outline-none transition-colors placeholder:text-[#7b8d70] focus:border-[#588157] dark:border-[#444d57] dark:bg-[#202428] dark:text-white dark:placeholder:text-[#9da7b1]"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[#344e41] dark:text-[#d5e6f5]">Description</label>
+                <label className="mb-2 block text-sm font-semibold text-[#344e41] dark:text-[#e2e6e9]">Description</label>
                 <textarea
                   value={formData.description}
                   onChange={(event) => setFormData((current) => ({ ...current, description: event.target.value }))}
                   placeholder="Describe what the project does, what you built, and why it matters."
-                  className="min-h-[140px] w-full rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-4 py-3 text-[#1f3a2a] outline-none transition-colors placeholder:text-[#7b8d70] focus:border-[#588157] dark:border-[#2a4a6f] dark:bg-[#102235] dark:text-white dark:placeholder:text-[#8ba9c0]"
+                  className="min-h-[140px] w-full rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-4 py-3 text-[#1f3a2a] outline-none transition-colors placeholder:text-[#7b8d70] focus:border-[#588157] dark:border-[#444d57] dark:bg-[#202428] dark:text-white dark:placeholder:text-[#9da7b1]"
                 />
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-[#344e41] dark:text-[#d5e6f5]">Tech stack</label>
+                  <label className="mb-2 block text-sm font-semibold text-[#344e41] dark:text-[#e2e6e9]">Tech stack</label>
                   <input
                     value={formData.techStack}
                     onChange={(event) => setFormData((current) => ({ ...current, techStack: event.target.value }))}
                     placeholder="React, Node.js, PostgreSQL"
-                    className="w-full rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-4 py-3 text-[#1f3a2a] outline-none transition-colors placeholder:text-[#7b8d70] focus:border-[#588157] dark:border-[#2a4a6f] dark:bg-[#102235] dark:text-white dark:placeholder:text-[#8ba9c0]"
+                    className="w-full rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-4 py-3 text-[#1f3a2a] outline-none transition-colors placeholder:text-[#7b8d70] focus:border-[#588157] dark:border-[#444d57] dark:bg-[#202428] dark:text-white dark:placeholder:text-[#9da7b1]"
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-[#344e41] dark:text-[#d5e6f5]">Live demo URL</label>
+                  <label className="mb-2 block text-sm font-semibold text-[#344e41] dark:text-[#e2e6e9]">Live demo URL</label>
                   <input
                     value={formData.liveUrl}
                     onChange={(event) => setFormData((current) => ({ ...current, liveUrl: event.target.value }))}
                     placeholder="https://your-project-demo.com"
-                    className="w-full rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-4 py-3 text-[#1f3a2a] outline-none transition-colors placeholder:text-[#7b8d70] focus:border-[#588157] dark:border-[#2a4a6f] dark:bg-[#102235] dark:text-white dark:placeholder:text-[#8ba9c0]"
+                    className="w-full rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-4 py-3 text-[#1f3a2a] outline-none transition-colors placeholder:text-[#7b8d70] focus:border-[#588157] dark:border-[#444d57] dark:bg-[#202428] dark:text-white dark:placeholder:text-[#9da7b1]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[#344e41] dark:text-[#d5e6f5]">GitHub URL</label>
+                <label className="mb-2 block text-sm font-semibold text-[#344e41] dark:text-[#e2e6e9]">GitHub URL</label>
                 <input
                   value={formData.githubUrl}
                   onChange={(event) => setFormData((current) => ({ ...current, githubUrl: event.target.value }))}
                   placeholder="https://github.com/yourname/project"
-                  className="w-full rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-4 py-3 text-[#1f3a2a] outline-none transition-colors placeholder:text-[#7b8d70] focus:border-[#588157] dark:border-[#2a4a6f] dark:bg-[#102235] dark:text-white dark:placeholder:text-[#8ba9c0]"
+                  className="w-full rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-4 py-3 text-[#1f3a2a] outline-none transition-colors placeholder:text-[#7b8d70] focus:border-[#588157] dark:border-[#444d57] dark:bg-[#202428] dark:text-white dark:placeholder:text-[#9da7b1]"
                 />
               </div>
 
@@ -509,14 +509,14 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
                 <button
                   type="button"
                   onClick={resetModal}
-                  className="rounded-xl border border-[#a3b18a] px-4 py-2.5 font-semibold text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#102235]"
+                  className="rounded-xl border border-[#a3b18a] px-4 py-2.5 font-semibold text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:text-white dark:hover:bg-[#202428]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="rounded-xl bg-[#3a5a40] px-5 py-2.5 font-semibold text-white transition-colors hover:bg-[#344e41] disabled:cursor-not-allowed disabled:opacity-70 dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de]"
+                  className="rounded-xl bg-[#3a5a40] px-5 py-2.5 font-semibold text-white transition-colors hover:bg-[#344e41] disabled:cursor-not-allowed disabled:opacity-70 dark:bg-[#6f9b74] dark:hover:bg-[#82ad86]"
                 >
                   {isSaving ? 'Saving...' : editingProjectId ? 'Save Project' : 'Add Project'}
                 </button>
@@ -531,7 +531,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
 
 function ProjectStat({ label, value }) {
   return (
-    <div className="rounded-2xl border border-[#dce5d4] bg-[#f8fbf6] px-4 py-3 text-left dark:border-[#2a4a6f] dark:bg-[#102235]">
+    <div className="rounded-2xl border border-[#dce5d4] bg-[#f8fbf6] px-4 py-3 text-left dark:border-[#444d57] dark:bg-[#202428]">
       <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#6a8069] dark:text-[#8db4cf]">{label}</div>
       <div className="mt-1 text-xl font-black text-[#31572c] dark:text-white">{value}</div>
     </div>

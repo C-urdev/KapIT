@@ -95,7 +95,7 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
   }, [pathname]);
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#dad7cd] dark:bg-[#0a1628] text-[#344e41] dark:text-white transition-colors duration-300">
+    <div className="min-h-screen overflow-x-hidden bg-[#dad7cd] dark:bg-[#121416] text-[#344e41] dark:text-white transition-colors duration-300">
       <CompanyHeader
         title={title}
         user={user}
@@ -126,7 +126,7 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
               ? 'h-[100dvh] pt-0 pb-0 xl:h-[100dvh] xl:pt-[5.125rem] xl:pb-0'
               : 'h-[100dvh] pt-16 pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pt-16 sm:pb-[calc(4rem+env(safe-area-inset-bottom))] xl:h-[100dvh] xl:pt-[5.125rem] xl:pb-0')
             : 'min-h-screen pt-[5.5rem] sm:pt-[6rem] xl:pt-20'
-        } transition-[padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? 'xl:pl-20' : 'xl:pl-72'}`}
+        } transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? 'xl:pl-20' : 'xl:pl-72'}`}
       >
         <main
           className={`mx-auto w-full max-w-[min(100%,1800px)] ${
@@ -168,7 +168,7 @@ function CompanyMobileBottomNav({ pathname, hidden = false }) {
   }
 
   return (
-    <div className={`xl:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#a3b18a] dark:border-[#2a4a6f] bg-[#f8fbf6]/95 dark:bg-[#162842]/95 backdrop-blur-md transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+    <div className={`xl:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#a3b18a] dark:border-[#444d57] bg-[#f8fbf6]/95 dark:bg-[#22272b]/95 backdrop-blur-md transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
       hidden ? 'translate-y-full' : 'translate-y-0'
     }`}>
       <div className="grid h-[3.6rem] grid-cols-3 gap-1 px-2 pt-0.5" style={{ paddingBottom: 'max(0.2rem, env(safe-area-inset-bottom))' }}>
@@ -182,7 +182,7 @@ function CompanyMobileBottomNav({ pathname, hidden = false }) {
               onClick={() => navigate(item.path)}
               className={`relative flex flex-col items-center justify-center gap-0.5 rounded-2xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 active
-                  ? 'bg-[#eef6ee] text-[#588157] shadow-sm shadow-[#588157]/10 dark:bg-[#1e3a5f] dark:text-[#3ba9d6] -translate-y-0.5'
+                  ? 'bg-[#eef6ee] text-[#588157] shadow-sm shadow-[#588157]/10 dark:bg-[#353c44] dark:text-[#6f9b74] -translate-y-0.5'
                   : 'text-[#344e41] dark:text-white'
               }`}
             >

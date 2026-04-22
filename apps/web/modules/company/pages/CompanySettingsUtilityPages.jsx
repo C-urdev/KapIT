@@ -82,7 +82,7 @@ function Header({ title, onBack }) {
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-3 py-2 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#eef6ee] dark:border-[#2a4a6f] dark:bg-[#162842] dark:text-white dark:hover:bg-[#1e3a5f]"
+        className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-3 py-2 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#eef6ee] dark:border-[#444d57] dark:bg-[#22272b] dark:text-white dark:hover:bg-[#353c44]"
       >
         <ArrowLeft className="h-4 w-4" />
         Back
@@ -106,15 +106,15 @@ function OptionRow({ icon: Icon, title, selected, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-between rounded-xl bg-[#f8fbf6] px-4 py-3.5 text-left transition-colors hover:bg-[#eef6ee] dark:bg-[#162842] dark:hover:bg-[#1e3a5f]/60"
+      className="flex w-full items-center justify-between rounded-xl bg-[#f8fbf6] px-4 py-3.5 text-left transition-colors hover:bg-[#eef6ee] dark:bg-[#22272b] dark:hover:bg-[#353c44]/60"
     >
       <div className="flex items-center gap-3">
-        <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#edf3e8] text-[#3a5a40] dark:bg-[#183655] dark:text-[#8ccff0]">
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#edf3e8] text-[#3a5a40] dark:bg-[#2b3138] dark:text-[#e9c86b]">
           <Icon className="h-4.5 w-4.5" />
         </span>
         <span className="text-[16px] font-semibold text-[#1c2b1f] dark:text-white">{title}</span>
       </div>
-      {selected ? <Check className="h-5 w-5 text-[#3a5a40] dark:text-[#8ccff0]" /> : <ChevronRight className="h-5 w-5 text-[#7c8e76] dark:text-[#7d9ab8]" />}
+      {selected ? <Check className="h-5 w-5 text-[#3a5a40] dark:text-[#e9c86b]" /> : <ChevronRight className="h-5 w-5 text-[#7c8e76] dark:text-[#adb5be]" />}
     </button>
   );
 }
@@ -310,17 +310,17 @@ export function CompanyInfoSettingsPage({ user, onBack, onUpdated }) {
   return (
     <PageShell title="Company information" onBack={onBack}>
       {error ? <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p> : null}
-      {success ? <p className="mt-1 text-sm text-[#3a5a40] dark:text-[#7fd0ee]">{success}</p> : null}
-      {loading ? <p className="mt-1 text-sm text-[#5f6f52] dark:text-[#9fb4ca]">Loading company settings...</p> : null}
+      {success ? <p className="mt-1 text-sm text-[#3a5a40] dark:text-[#f0c766]">{success}</p> : null}
+      {loading ? <p className="mt-1 text-sm text-[#5f6f52] dark:text-[#b3bcc5]">Loading company settings...</p> : null}
 
-      <div className="mt-2 rounded-2xl border border-[#bfd0af] bg-[#f8fbf6] px-4 py-4 shadow-sm shadow-black/5 dark:border-[#2a4a6f] dark:bg-[#162842] sm:px-6 sm:py-5">
+      <div className="mt-2 rounded-2xl border border-[#bfd0af] bg-[#f8fbf6] px-4 py-4 shadow-sm shadow-black/5 dark:border-[#444d57] dark:bg-[#22272b] sm:px-6 sm:py-5">
         <div className="mb-5 flex flex-wrap items-center gap-3 sm:gap-4">
-          <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-[#f1f5eb] text-xl font-bold text-[#3a5a40] dark:bg-[#1e3a5f] dark:text-white sm:h-16 sm:w-16 sm:text-2xl">
+          <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-[#f1f5eb] text-xl font-bold text-[#3a5a40] dark:bg-[#353c44] dark:text-white sm:h-16 sm:w-16 sm:text-2xl">
             {form.logoUrl ? <img src={form.logoUrl} alt="Company logo" className="h-full w-full object-cover" /> : companyInitial}
           </div>
           <div>
             <p className="text-base font-bold text-[#1c2b1f] dark:text-white">Company branding</p>
-            <label className="mt-2 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[#a3b18a] px-3 py-2 text-sm font-semibold text-[#344e41] hover:bg-[#eef6ee] dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#1e3a5f]">
+            <label className="mt-2 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[#a3b18a] px-3 py-2 text-sm font-semibold text-[#344e41] hover:bg-[#eef6ee] dark:border-[#444d57] dark:text-white dark:hover:bg-[#353c44]">
               Upload logo
               <input type="file" accept="image/*" className="hidden" onChange={handleLogoSelect} />
             </label>
@@ -387,11 +387,11 @@ export function CompanyInfoSettingsPage({ user, onBack, onUpdated }) {
           </Field>
 
           <Field label="Country">
-            <input value="Philippines" readOnly className="field bg-[#edf3e8] dark:bg-[#122740]" />
+            <input value="Philippines" readOnly className="field bg-[#edf3e8] dark:bg-[#2f343b]" />
           </Field>
 
           <Field label="Saved Location" full>
-            <input value={form.location} readOnly className="field bg-[#edf3e8] dark:bg-[#122740]" />
+            <input value={form.location} readOnly className="field bg-[#edf3e8] dark:bg-[#2f343b]" />
           </Field>
 
           <Field label="Company Description" full>
@@ -399,7 +399,7 @@ export function CompanyInfoSettingsPage({ user, onBack, onUpdated }) {
           </Field>
 
           <Field label="Contact Email" required>
-            <input value={form.contactEmail} readOnly className="field bg-[#edf3e8] dark:bg-[#122740]" />
+            <input value={form.contactEmail} readOnly className="field bg-[#edf3e8] dark:bg-[#2f343b]" />
           </Field>
           <Field label="Phone Number">
             <input value={form.phoneNumber} onChange={(event) => setForm((current) => ({ ...current, phoneNumber: event.target.value }))} className="field" />
@@ -411,7 +411,7 @@ export function CompanyInfoSettingsPage({ user, onBack, onUpdated }) {
             type="button"
             onClick={saveCompanySettings}
             disabled={saving || loading}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#3a5a40] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#344e41] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#3a5a40] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#344e41] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] sm:w-auto"
           >
             <Save className="h-4 w-4" />
             {saving ? 'Saving...' : 'Save company settings'}

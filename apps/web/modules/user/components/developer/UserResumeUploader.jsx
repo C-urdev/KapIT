@@ -67,7 +67,7 @@ export default function ResumeUploader({
     <div className="rounded-xl border border-[#a3b18a] bg-[#f5f5f2] p-4 dark:border-slate-700 dark:bg-slate-900/40">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-[#344e41] dark:text-slate-200">
-          <FileText className="h-5 w-5 text-[#588157] dark:text-blue-400" />
+          <FileText className="h-5 w-5 text-[#588157] dark:text-[#f0c766]" />
           <span className="font-semibold">Resume (PDF)</span>
         </div>
         {hasValue ? (
@@ -106,7 +106,7 @@ export default function ResumeUploader({
       />
       <label
         htmlFor={fileInputId}
-        className={`mt-3 inline-flex cursor-pointer items-center rounded-lg border border-[#a3b18a] bg-[#eef6ee] px-4 py-2 text-sm font-semibold text-[#3a5a40] hover:bg-[#e3eee3] dark:border-[#2a4a6f] dark:bg-[#1e3a5f] dark:text-[#b8d4e8] dark:hover:bg-[#24496d] ${
+        className={`mt-3 inline-flex cursor-pointer items-center rounded-lg border border-[#a3b18a] bg-[#eef6ee] px-4 py-2 text-sm font-semibold text-[#3a5a40] hover:bg-[#e3eee3] dark:border-[#444d57] dark:bg-[#353c44] dark:text-[#d0d7dd] dark:hover:bg-[#4a535d] ${
           uploading ? 'pointer-events-none opacity-60' : ''
         }`}
       >

@@ -291,15 +291,15 @@ export default function AuthPage({
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="border-b border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#0a1628]">
+      <header className="border-b border-[#a3b18a] dark:border-[#353c44] bg-white dark:bg-[#121416]">
         <div className="mx-auto flex w-full max-w-[min(100%,1800px)] items-center justify-between px-3 py-4 sm:px-5 lg:px-6 xl:px-7 2xl:px-9">
-          <button onClick={onBack} className="flex items-center gap-2 text-[#344e41] dark:text-[#b8d4e8] hover:text-[#3a5a40] dark:hover:text-white">
+          <button onClick={onBack} className="flex items-center gap-2 text-[#344e41] dark:text-[#d0d7dd] hover:text-[#3a5a40] dark:hover:text-white">
             <KapITLogo className="h-9 w-9 rounded-lg object-contain bg-white" />
             <span className="text-2xl font-bold text-[#3a5a40] dark:text-white">kapIT</span>
           </button>
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-lg hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+            className="p-2 rounded-lg hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors"
           >
             {theme === 'light' ? <Moon className="w-5 h-5 text-[#344e41]" /> : <Sun className="w-5 h-5 text-white" />}
           </button>
@@ -307,15 +307,15 @@ export default function AuthPage({
       </header>
 
       {/* Auth Form */}
-      <main className="flex-1 flex items-center justify-center px-3 sm:px-6 py-8 sm:py-12 bg-gradient-to-br from-[#dad7cd] to-[#f5f5f2] dark:from-[#0a1628] dark:to-[#162842]">
+      <main className="flex-1 flex items-center justify-center px-3 sm:px-6 py-8 sm:py-12 bg-gradient-to-br from-[#dad7cd] to-[#f5f5f2] dark:from-[#121416] dark:to-[#22272b]">
         <div className="w-full max-w-md">
-          <div className="bg-white dark:bg-[#162842] rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] p-5 sm:p-8 shadow-lg dark:shadow-[#3ba9d6]/10">
+          <div className="bg-white dark:bg-[#22272b] rounded-2xl border border-[#a3b18a] dark:border-[#353c44] p-5 sm:p-8 shadow-lg dark:shadow-[#6f9b74]/10">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-[#3a5a40] dark:text-white mb-2">
                 {authMode === 'login' ? 'Welcome Back' : 'Create Account'}
               </h2>
               {authMode === 'signup' && signupAccountTypeLabel ? (
-                <p className="text-sm font-medium text-[#5f6f52] dark:text-[#b8d4e8]">
+                <p className="text-sm font-medium text-[#5f6f52] dark:text-[#d0d7dd]">
                   {signupAccountTypeLabel}
                 </p>
               ) : null}
@@ -337,30 +337,30 @@ export default function AuthPage({
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#3a5a40] dark:text-[#b8d4e8] mb-1">Email</label>
+                <label className="block text-sm font-medium text-[#3a5a40] dark:text-[#d0d7dd] mb-1">Email</label>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className="w-full px-4 py-2 border border-[#a3b18a] dark:border-[#2a4a6f] rounded-lg bg-white dark:bg-[#0f2139] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#3ba9d6] focus:border-transparent outline-none transition-colors"
+                  className="w-full px-4 py-2 border border-[#a3b18a] dark:border-[#444d57] rounded-lg bg-white dark:bg-[#1a1d20] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74] focus:border-transparent outline-none transition-colors"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#3a5a40] dark:text-[#b8d4e8] mb-1">Password</label>
+                <label className="block text-sm font-medium text-[#3a5a40] dark:text-[#d0d7dd] mb-1">Password</label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    className="w-full px-4 py-2 pr-12 border border-[#a3b18a] dark:border-[#2a4a6f] rounded-lg bg-white dark:bg-[#0f2139] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#3ba9d6] focus:border-transparent outline-none transition-colors"
+                    className="w-full px-4 py-2 pr-12 border border-[#a3b18a] dark:border-[#444d57] rounded-lg bg-white dark:bg-[#1a1d20] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74] focus:border-transparent outline-none transition-colors"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute inset-y-0 right-0 px-3 flex items-center text-[#3a5a40] dark:text-[#7d9ab8] hover:text-[#344e41] dark:hover:text-white"
+                    className="absolute inset-y-0 right-0 px-3 flex items-center text-[#3a5a40] dark:text-[#adb5be] hover:text-[#344e41] dark:hover:text-white"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -370,19 +370,19 @@ export default function AuthPage({
 
               {authMode === 'signup' && (
                 <div>
-                  <label className="block text-sm font-medium text-[#3a5a40] dark:text-[#b8d4e8] mb-1">Confirm Password</label>
+                  <label className="block text-sm font-medium text-[#3a5a40] dark:text-[#d0d7dd] mb-1">Confirm Password</label>
                   <div className="relative">
                     <input
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={formData.confirmPassword}
                       onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                      className="w-full px-4 py-2 pr-12 border border-[#a3b18a] dark:border-[#2a4a6f] rounded-lg bg-white dark:bg-[#0f2139] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#3ba9d6] focus:border-transparent outline-none transition-colors"
+                      className="w-full px-4 py-2 pr-12 border border-[#a3b18a] dark:border-[#444d57] rounded-lg bg-white dark:bg-[#1a1d20] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74] focus:border-transparent outline-none transition-colors"
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword((prev) => !prev)}
-                      className="absolute inset-y-0 right-0 px-3 flex items-center text-[#3a5a40] dark:text-[#7d9ab8] hover:text-[#344e41] dark:hover:text-white"
+                      className="absolute inset-y-0 right-0 px-3 flex items-center text-[#3a5a40] dark:text-[#adb5be] hover:text-[#344e41] dark:hover:text-white"
                       aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
                     >
                       {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -396,7 +396,7 @@ export default function AuthPage({
                   <button
                     type="button"
                     onClick={() => onForgotPassword?.()}
-                    className="text-sm text-[#588157] dark:text-[#3ba9d6] hover:underline"
+                    className="text-sm text-[#588157] dark:text-[#6f9b74] hover:underline"
                   >
                     Forgot password?
                   </button>
@@ -406,7 +406,7 @@ export default function AuthPage({
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Please wait...' : (authMode === 'login' ? 'Sign In' : 'Create Account')}
               </button>
@@ -423,7 +423,7 @@ export default function AuthPage({
                 type="button"
                 disabled={loading}
                 onClick={handleGoogleClick}
-                className="flex items-center justify-center w-full px-4 py-2.5 bg-[#f0f5f1] dark:bg-[#1a3354] hover:bg-[#e2e8e4] dark:hover:bg-[#1e3a5f] border border-[#a3b18a] dark:border-[#2a4a6f] rounded-lg transition-colors disabled:opacity-50 text-[#344e41] dark:text-gray-200 font-medium"
+                className="flex items-center justify-center w-full px-4 py-2.5 bg-[#f0f5f1] dark:bg-[#353c44] hover:bg-[#e2e8e4] dark:hover:bg-[#353c44] border border-[#a3b18a] dark:border-[#444d57] rounded-lg transition-colors disabled:opacity-50 text-[#344e41] dark:text-gray-200 font-medium"
               >
                 <svg className="w-5 h-5 mr-2 -ml-1" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -437,7 +437,7 @@ export default function AuthPage({
                 type="button"
                 disabled={loading}
                 onClick={handleGithubClick}
-                className="flex items-center justify-center w-full px-4 py-2.5 bg-[#f0f5f1] dark:bg-[#1a3354] hover:bg-[#e2e8e4] dark:hover:bg-[#1e3a5f] border border-[#a3b18a] dark:border-[#2a4a6f] rounded-lg transition-colors disabled:opacity-50 text-[#344e41] dark:text-gray-200 font-medium"
+                className="flex items-center justify-center w-full px-4 py-2.5 bg-[#f0f5f1] dark:bg-[#353c44] hover:bg-[#e2e8e4] dark:hover:bg-[#353c44] border border-[#a3b18a] dark:border-[#444d57] rounded-lg transition-colors disabled:opacity-50 text-[#344e41] dark:text-gray-200 font-medium"
               >
                 <GitFork className="w-5 h-5 mr-2 -ml-1" />
                 GitHub
@@ -462,10 +462,10 @@ export default function AuthPage({
                   setError('');
                   setInfoMessage('');
                 }}
-                className="text-sm text-[#344e41] dark:text-[#b8d4e8]"
+                className="text-sm text-[#344e41] dark:text-[#d0d7dd]"
               >
                 {authMode === 'login' ? "Don't have an account? " : 'Already have an account? '}
-                <span className="text-[#588157] dark:text-[#3ba9d6] hover:underline font-semibold">
+                <span className="text-[#588157] dark:text-[#6f9b74] hover:underline font-semibold">
                   {authMode === 'login' ? 'Sign up' : 'Sign in'}
                 </span>
               </button>

@@ -98,7 +98,6 @@ const WORK_PREFERENCE_OPTIONS = ['remote', 'hybrid', 'on-site'];
 const EMPTY_FORM = {
   profileImage: '',
   fullName: '',
-  username: '',
   provinceCode: '',
   city: '',
   location: '',
@@ -195,7 +194,6 @@ const deriveFormFromProfile = ({ user, profile }) => {
     ...EMPTY_FORM,
     profileImage: source.profile_photo_url || user?.profileImage || '',
     fullName: source.full_name || user?.fullName || user?.name || '',
-    username: source.username || user?.username || '',
     location: String(source.location || user?.location || user?.address || ''),
     phoneNumber: source.phone_number || user?.phoneNumber || user?.phone || '',
     email: source.email || user?.email || '',
@@ -244,7 +242,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
   const headingSubtitle =
     mode === 'career'
       ? 'Update your role, skills, education, socials, and work preference.'
-      : 'Update your name, username, location, and contact details.';
+      : 'Update your name, location, and contact details.';
 
   useEffect(() => {
     if (!isOpen) return;
@@ -372,7 +370,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
     const payload = {
       profileImage: formData.profileImage,
       fullName: formData.fullName,
-      username: formData.username,
+      username: String(formData.fullName || '').trim(),
       location: formData.location,
       phoneNumber: formData.phoneNumber,
       email: formData.email,
@@ -434,13 +432,13 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
 
   return (
     <div className={asPage ? 'mx-auto w-full max-w-[min(100%,900px)] px-4 pb-16 pt-4 sm:px-5 sm:pb-8 sm:pt-6' : 'fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm min-[420px]:p-6'}>
-      <div className={asPage ? 'flex w-full flex-col' : 'flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-[#f8fbf6] shadow-2xl dark:bg-[#0a1628]'}>
+      <div className={asPage ? 'flex w-full flex-col' : 'flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-[#f8fbf6] shadow-2xl dark:bg-[#121416]'}>
         {asPage ? (
           <div className="mb-3">
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-3 py-2 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#eef6ee] dark:border-[#2a4a6f] dark:bg-[#162842] dark:text-white dark:hover:bg-[#1e3a5f]"
+              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-3 py-2 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#eef6ee] dark:border-[#444d57] dark:bg-[#22272b] dark:text-white dark:hover:bg-[#353c44]"
             >
               <ArrowLeft className="h-4 w-4" />
               Back
@@ -448,10 +446,10 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
             <h1 className="mt-3 text-[28px] font-bold text-[#1c2b1f] dark:text-white">{headingTitle}</h1>
           </div>
         ) : (
-          <div className="flex shrink-0 items-center justify-between border-b border-[#d8e0cf] p-4 sm:p-5 dark:border-[#1e3a5f]">
+          <div className="flex shrink-0 items-center justify-between border-b border-[#d8e0cf] p-4 sm:p-5 dark:border-[#353c44]">
             <div>
               <h3 className="text-[19px] font-bold text-[#1c2b1f] dark:text-white">{headingTitle}</h3>
-              <p className="mt-0.5 text-sm text-[#5f6f52] dark:text-[#b8d4e8]">{headingSubtitle}</p>
+              <p className="mt-0.5 text-sm text-[#5f6f52] dark:text-[#d0d7dd]">{headingSubtitle}</p>
             </div>
             <button type="button" onClick={onClose} className="rounded-full p-2 transition-colors hover:bg-black/5 dark:hover:bg-white/10">
               <X className="h-5 w-5 text-[#344e41] dark:text-white/80" />
@@ -460,7 +458,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
         )}
 
         <main className={`custom-scrollbar space-y-6 scroll-smooth ${asPage ? '' : 'flex-1 overflow-y-auto'} ${asPage ? '' : 'p-4 sm:p-5'}`}>
-          {profileLoading ? <p className="text-sm text-[#5f6f52] dark:text-[#b8d4e8]">Loading profile...</p> : null}
+          {profileLoading ? <p className="text-sm text-[#5f6f52] dark:text-[#d0d7dd]">Loading profile...</p> : null}
           {error ? <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">{error}</p> : null}
 
           {showAccountSections ? (
@@ -468,9 +466,6 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Field label="Full Name">
                 <input value={formData.fullName} onChange={(e) => setFormData((p) => ({ ...p, fullName: e.target.value }))} className="field" />
-              </Field>
-              <Field label="Username">
-                <input value={formData.username} onChange={(e) => setFormData((p) => ({ ...p, username: e.target.value }))} className="field" />
               </Field>
               <Field label="Province">
                 <SearchableSelect
@@ -497,7 +492,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                 <input value={formData.phoneNumber} onChange={(e) => setFormData((p) => ({ ...p, phoneNumber: e.target.value }))} className="field" />
               </Field>
               <Field label="Email">
-                <input value={formData.email} readOnly className="field bg-[#edf3e8] dark:bg-[#122740]" />
+                <input value={formData.email} readOnly className="field bg-[#edf3e8] dark:bg-[#2f343b]" />
               </Field>
             </div>
           </SettingsCard>
@@ -620,8 +615,8 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                     onClick={() => setFormData((p) => ({ ...p, workPreference: value }))}
                     className={`rounded-xl border px-4 py-2.5 text-sm font-semibold ${
                       selected
-                        ? 'border-[#588157] bg-[#eef6ee] text-[#3a5a40] dark:border-[#3ba9d6] dark:bg-[#1e3a5f] dark:text-white'
-                        : 'border-[#dce5d4] bg-[#f8fbf6] text-[#344e41] dark:border-[#244060] dark:bg-[#0a1628] dark:text-[#dcecff]'
+                        ? 'border-[#588157] bg-[#eef6ee] text-[#3a5a40] dark:border-[#6f9b74] dark:bg-[#353c44] dark:text-white'
+                        : 'border-[#dce5d4] bg-[#f8fbf6] text-[#344e41] dark:border-[#3d454e] dark:bg-[#121416] dark:text-[#eceff2]'
                     }`}
                   >
                     {value === 'on-site' ? 'On-site' : value.charAt(0).toUpperCase() + value.slice(1)}
@@ -634,9 +629,9 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
 
         </main>
 
-        <div className={`${asPage ? 'mt-3 flex justify-end' : 'flex shrink-0 items-center justify-end gap-3 border-t border-[#d8e0cf] bg-[#f2f7ef] p-4 dark:border-[#1e3a5f] dark:bg-[#162842]'}`}>
+        <div className={`${asPage ? 'mt-3 flex justify-end' : 'flex shrink-0 items-center justify-end gap-3 border-t border-[#d8e0cf] bg-[#f2f7ef] p-4 dark:border-[#353c44] dark:bg-[#22272b]'}`}>
           {!asPage ? (
-            <button type="button" onClick={onClose} className="rounded-xl px-5 py-2 font-semibold text-[#5f6f52] transition-colors hover:bg-black/5 dark:text-[#b8d4e8] dark:hover:bg-white/10">
+            <button type="button" onClick={onClose} className="rounded-xl px-5 py-2 font-semibold text-[#5f6f52] transition-colors hover:bg-black/5 dark:text-[#d0d7dd] dark:hover:bg-white/10">
               Cancel
             </button>
           ) : null}
@@ -644,7 +639,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#3a5a40] px-5 py-2 font-semibold text-white shadow-sm transition-transform active:scale-95 disabled:opacity-60 dark:bg-[#3ba9d6]"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#3a5a40] px-5 py-2 font-semibold text-white shadow-sm transition-transform active:scale-95 disabled:opacity-60 dark:bg-[#6f9b74]"
           >
             <Save className="h-4 w-4" />
             {saving ? 'Saving...' : 'Save Changes'}
@@ -659,7 +654,7 @@ function SettingsCard({ title, icon: Icon, children, plain = false }) {
   if (plain) {
     return (
       <section>
-        <div className="mb-3 px-1 text-sm font-bold uppercase tracking-[0.08em] text-[#5f6f52] dark:text-[#9fb4ca]">
+        <div className="mb-3 px-1 text-sm font-bold uppercase tracking-[0.08em] text-[#5f6f52] dark:text-[#b3bcc5]">
           {title}
         </div>
         {children}
@@ -670,7 +665,7 @@ function SettingsCard({ title, icon: Icon, children, plain = false }) {
   return (
     <section className="pb-5">
       <div className="mb-4 flex items-center gap-2 border-b border-[#d8e0cf] pb-3 dark:border-[#274769]">
-        <Icon className="h-5 w-5 text-[#3a5a40] dark:text-[#3ba9d6]" />
+        <Icon className="h-5 w-5 text-[#3a5a40] dark:text-[#6f9b74]" />
         <h5 className="text-[15px] font-bold text-[#1c2b1f] dark:text-white">{title}</h5>
       </div>
       {children}
@@ -681,7 +676,7 @@ function SettingsCard({ title, icon: Icon, children, plain = false }) {
 function Field({ label, full = false, children }) {
   return (
     <div className={`${full ? 'md:col-span-2' : ''} space-y-1`}>
-      <label className="px-1 text-xs font-semibold text-[#5f6f52] dark:text-[#9fb4ca]">{label}</label>
+      <label className="px-1 text-xs font-semibold text-[#5f6f52] dark:text-[#b3bcc5]">{label}</label>
       {children}
     </div>
   );

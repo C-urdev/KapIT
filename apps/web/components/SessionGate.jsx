@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   acceptTermsAndConditions,
@@ -42,7 +42,7 @@ export default function SessionGate({
     }
   }, [allowIncompleteProfile, router]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let cancelled = false;
 
     const bootstrap = async () => {
@@ -115,8 +115,8 @@ export default function SessionGate({
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white px-6">
-        <p className="text-base font-semibold text-[#344e41]">Loading</p>
+      <div className="flex min-h-screen items-center justify-center bg-[#f7f6f1] dark:bg-[#121416] px-6 transition-colors duration-200">
+        <p className="text-base font-semibold text-[#344e41] dark:text-[#eceff2]">Loading</p>
       </div>
     );
   }

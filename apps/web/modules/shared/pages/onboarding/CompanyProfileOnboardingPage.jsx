@@ -194,8 +194,8 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f2] text-[#344e41] dark:bg-[#0a1628] dark:text-slate-200">
-      <header className="sticky top-0 z-30 border-b border-[#a3b18a] bg-white dark:border-[#1e3a5f] dark:bg-[#0a1628]">
+    <div className="min-h-screen bg-[#f5f5f2] text-[#344e41] dark:bg-[#121416] dark:text-slate-200">
+      <header className="sticky top-0 z-30 border-b border-[#a3b18a] bg-white dark:border-[#353c44] dark:bg-[#121416]">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
           <button
             type="button"
@@ -213,7 +213,7 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
             <button
               type="button"
               onClick={toggleTheme}
-              className="rounded-lg p-2 transition-colors hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f]"
+              className="rounded-lg p-2 transition-colors hover:bg-[#f5f5f2] dark:hover:bg-[#353c44]"
               aria-label="Toggle theme"
             >
               {theme === 'light' ? <Moon className="h-5 w-5 text-[#344e41]" /> : <Sun className="h-5 w-5 text-white" />}
@@ -231,10 +231,10 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-10">
-        <div className="rounded-2xl border border-[#a3b18a] bg-white p-6 shadow-lg shadow-black/5 dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-black/30 sm:p-8">
+        <div className="rounded-2xl border border-[#a3b18a] bg-white p-6 shadow-lg shadow-black/5 dark:border-[#353c44] dark:bg-[#22272b] dark:shadow-black/30 sm:p-8">
           <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#a3b18a] bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#0f2139]">
-              <Building2 className="h-6 w-6 text-[#588157] dark:text-[#3ba9d6]" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#a3b18a] bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#1a1d20]">
+              <Building2 className="h-6 w-6 text-[#588157] dark:text-[#6f9b74]" />
             </div>
             <div className="min-w-0">
               <h1 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white sm:text-3xl">Complete your company profile</h1>
@@ -317,10 +317,10 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
                   />
                 </Field>
                 <Field label="Country">
-                  <input value="Philippines" readOnly className="field bg-[#f5f5f2] dark:bg-[#0f2139]/60" />
+                  <input value="Philippines" readOnly className="field bg-[#f5f5f2] dark:bg-[#1a1d20]/60" />
                 </Field>
                 <Field label="Saved Location" full>
-                  <input value={form.location} readOnly className="field bg-[#f5f5f2] dark:bg-[#0f2139]/60" />
+                  <input value={form.location} readOnly className="field bg-[#f5f5f2] dark:bg-[#1a1d20]/60" />
                 </Field>
                 <Field label="Company Description (Optional)" full>
                   <textarea
@@ -336,7 +336,7 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
             <Section title="Contact Information">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Field label="Contact Email">
-                  <input value={form.contactEmail} readOnly className="field bg-[#f5f5f2] dark:bg-[#0f2139]/60" />
+                  <input value={form.contactEmail} readOnly className="field bg-[#f5f5f2] dark:bg-[#1a1d20]/60" />
                 </Field>
                 <Field label="Phone Number (Optional)">
                   <input
@@ -353,7 +353,7 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
               <button
                 type="submit"
                 disabled={!isComplete || saving}
-                className="rounded-xl bg-[#3a5a40] px-5 py-3 font-semibold text-white hover:bg-[#344e41] disabled:cursor-not-allowed disabled:opacity-60 dark:border dark:border-[#3ba9d6]/30 dark:bg-[#1e3a5f] dark:text-[#dcecff] dark:hover:bg-[#24496d]"
+                className="rounded-xl bg-[#3a5a40] px-5 py-3 font-semibold text-white hover:bg-[#344e41] disabled:cursor-not-allowed disabled:opacity-60 dark:border dark:border-[#6f9b74]/30 dark:bg-[#353c44] dark:text-[#eceff2] dark:hover:bg-[#4a535d]"
               >
                 {saving ? 'Saving...' : 'Save company profile'}
               </button>

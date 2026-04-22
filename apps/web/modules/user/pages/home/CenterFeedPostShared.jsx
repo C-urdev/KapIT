@@ -22,7 +22,7 @@ export function Avatar({ profileImage, fallback, sizeClass = 'h-10 w-10', ringCl
 export function getActorKey(user) {
   const email = user?.email?.trim().toLowerCase();
   if (email) return email;
-  const fallback = user?.username || user?.name;
+  const fallback = user?.fullName || user?.name || user?.username;
   return fallback ? String(fallback).trim().toLowerCase() : 'anonymous';
 }
 

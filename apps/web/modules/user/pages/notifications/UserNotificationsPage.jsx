@@ -56,7 +56,7 @@ const getNotificationPresentation = (type) => {
     case 'message':
       return {
         icon: MessageCircle,
-        badgeClass: 'bg-[#588157] text-white dark:bg-[#3ba9d6]',
+        badgeClass: 'bg-[#588157] text-white dark:bg-[#6f9b74]',
       };
     case 'profile_view':
       return {
@@ -66,7 +66,7 @@ const getNotificationPresentation = (type) => {
     default:
       return {
         icon: Bell,
-        badgeClass: 'bg-[#3a5a40] text-white dark:bg-[#3ba9d6]',
+        badgeClass: 'bg-[#3a5a40] text-white dark:bg-[#6f9b74]',
       };
   }
 };
@@ -196,7 +196,7 @@ export default function UserNotificationsPage({ onReadAll }) {
       ) : error ? (
         <StateBlock tone="error">{error}</StateBlock>
       ) : items.length > 0 ? (
-        <div className="overflow-hidden rounded-[28px] border border-[#c9d2bc] bg-[#f6f5ef] shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#1e3a5f] dark:bg-[#162842] dark:shadow-[0_18px_48px_rgba(0,0,0,0.24)]">
+        <div className="overflow-hidden rounded-[28px] border border-[#c9d2bc] bg-[#f6f5ef] shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#353c44] dark:bg-[#22272b] dark:shadow-[0_18px_48px_rgba(0,0,0,0.24)]">
           {recentItems.length > 0 ? (
             <NotificationSection
               title="New"
@@ -236,8 +236,8 @@ function StateBlock({ children, tone = 'default' }) {
     <div
       className={`rounded-[28px] border px-6 py-12 text-center sm:px-8 ${
         tone === 'error'
-          ? 'border-red-200 bg-[#fff8f7] text-red-600 dark:border-red-900/50 dark:bg-[#162842] dark:text-red-400'
-          : 'border-[#c9d2bc] bg-[#f8fbf6] text-[#344e41] dark:border-[#1e3a5f] dark:bg-[#162842] dark:text-[#b8d4e8]'
+          ? 'border-red-200 bg-[#fff8f7] text-red-600 dark:border-red-900/50 dark:bg-[#22272b] dark:text-red-400'
+          : 'border-[#c9d2bc] bg-[#f8fbf6] text-[#344e41] dark:border-[#353c44] dark:bg-[#22272b] dark:text-[#d0d7dd]'
       }`}
     >
       <p>{children}</p>
@@ -247,7 +247,7 @@ function StateBlock({ children, tone = 'default' }) {
 
 function NotificationSection({ title, items, expandedId, onToggle, onOpenMenu, withTopDivider = false }) {
   return (
-    <section className={withTopDivider ? 'border-t border-[#d8decf] dark:border-[#254567]' : ''}>
+    <section className={withTopDivider ? 'border-t border-[#d8decf] dark:border-[#4b5560]' : ''}>
       <div className="px-5 pb-3 pt-5 sm:px-7">
         <h2 className="text-xl text-[#183622] dark:text-white">{title}</h2>
       </div>
@@ -290,13 +290,13 @@ function NotificationRow({ item, expanded, onToggle, onOpenMenu, showDivider }) 
         !isRead ? 'bg-[#eef3ea] dark:bg-[#1b314c]' : 'bg-transparent'
       }`}
     >
-      <div className={`py-4 ${showDivider ? 'border-b border-[#dde4d4] dark:border-[#223d5c]' : ''}`}>
+      <div className={`py-4 ${showDivider ? 'border-b border-[#dde4d4] dark:border-[#444d57]' : ''}`}>
         <div className="flex items-start gap-3">
           <div className="relative flex-shrink-0">
             <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-[#dfe8d8] text-lg font-semibold text-[#2f4f39] dark:bg-[#24425d] dark:text-white">
               {initials}
             </div>
-            <div className={`absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#f6f5ef] dark:border-[#162842] ${badgeClass}`}>
+            <div className={`absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#f6f5ef] dark:border-[#22272b] ${badgeClass}`}>
               <Icon className="h-4 w-4" />
             </div>
           </div>
@@ -305,26 +305,26 @@ function NotificationRow({ item, expanded, onToggle, onOpenMenu, showDivider }) 
             <button type="button" onClick={onToggle} className="block w-full text-left">
               <p className="pr-3 text-[1.04rem] leading-7 text-[#203a28] dark:text-white">
                 <span className="font-semibold">{title}</span>{' '}
-                <span className="font-normal text-[#344e41] dark:text-[#d5e6f5]">{summaryMessage}</span>
+                <span className="font-normal text-[#344e41] dark:text-[#e2e6e9]">{summaryMessage}</span>
               </p>
-              <p className="mt-1 text-sm font-medium text-[#6b7c63] dark:text-[#8fb5d1]">{timeLabel}</p>
+              <p className="mt-1 text-sm font-medium text-[#6b7c63] dark:text-[#b3bcc5]">{timeLabel}</p>
             </button>
 
             {expanded ? (
-              <div className="mt-3 rounded-2xl border border-[#d8decf] bg-[#f8fbf2]/90 p-3 dark:border-[#2a4a6f] dark:bg-[#102235]">
-                <p className="text-sm text-[#344e41] dark:text-[#d5e6f5]">
+              <div className="mt-3 rounded-2xl border border-[#d8decf] bg-[#f8fbf2]/90 p-3 dark:border-[#444d57] dark:bg-[#202428]">
+                <p className="text-sm text-[#344e41] dark:text-[#e2e6e9]">
                   <span className="font-semibold text-[#203a28] dark:text-white">Who:</span> {actorLabel}
                 </p>
-                <p className="mt-1 text-sm text-[#344e41] dark:text-[#d5e6f5]">
+                <p className="mt-1 text-sm text-[#344e41] dark:text-[#e2e6e9]">
                   <span className="font-semibold text-[#203a28] dark:text-white">When:</span> {exactTimeLabel || 'Unknown time'}
                 </p>
                 {messageCount > 0 ? (
-                  <p className="mt-1 text-sm text-[#344e41] dark:text-[#d5e6f5]">
+                  <p className="mt-1 text-sm text-[#344e41] dark:text-[#e2e6e9]">
                     <span className="font-semibold text-[#203a28] dark:text-white">Messages:</span> {messageCount}
                   </p>
                 ) : null}
                 {viewCount > 0 ? (
-                  <p className="mt-1 text-sm text-[#344e41] dark:text-[#d5e6f5]">
+                  <p className="mt-1 text-sm text-[#344e41] dark:text-[#e2e6e9]">
                     <span className="font-semibold text-[#203a28] dark:text-white">Profile views:</span> {viewCount}
                   </p>
                 ) : null}
@@ -339,12 +339,12 @@ function NotificationRow({ item, expanded, onToggle, onOpenMenu, showDivider }) 
                 event.stopPropagation();
                 onOpenMenu();
               }}
-              className="rounded-full p-1.5 text-[#50644f] transition-colors hover:bg-[#e7ede1] dark:text-[#8fb5d1] dark:hover:bg-[#223d5c]"
+              className="rounded-full p-1.5 text-[#50644f] transition-colors hover:bg-[#e7ede1] dark:text-[#b3bcc5] dark:hover:bg-[#444d57]"
               aria-label="Open notification actions"
             >
               <MoreHorizontal className="h-5 w-5" />
             </button>
-            {!isRead ? <div className="h-3 w-3 rounded-full bg-[#588157] dark:bg-[#3ba9d6]" /> : null}
+            {!isRead ? <div className="h-3 w-3 rounded-full bg-[#588157] dark:bg-[#6f9b74]" /> : null}
           </div>
         </div>
       </div>
@@ -381,7 +381,7 @@ function NotificationActionSheet({ item, onClose, onDelete, onReport }) {
         onClick={onClose}
       />
       <div className="absolute inset-x-0 bottom-0 flex items-end justify-center px-0 pb-0 xl:inset-0 xl:px-6 xl:pb-6">
-        <div className="w-screen max-w-none rounded-t-[32px] border-t border-[#bfd0af] bg-[#dad7cd] px-4 pb-6 pt-3 text-[#344e41] shadow-[0_-18px_42px_rgba(58,90,64,0.18)] xl:w-full xl:max-w-md xl:rounded-[32px] xl:border xl:shadow-[0_24px_80px_rgba(58,90,64,0.2)] dark:border-[#2a4a6f] dark:bg-[#1c2431] dark:text-white">
+        <div className="w-screen max-w-none rounded-t-[32px] border-t border-[#bfd0af] bg-[#dad7cd] px-4 pb-6 pt-3 text-[#344e41] shadow-[0_-18px_42px_rgba(58,90,64,0.18)] xl:w-full xl:max-w-md xl:rounded-[32px] xl:border xl:shadow-[0_24px_80px_rgba(58,90,64,0.2)] dark:border-[#444d57] dark:bg-[#1c2431] dark:text-white">
           <div className="flex justify-center">
             <div className="h-1.5 w-12 rounded-full bg-[#b9c3b2] dark:bg-white/34 xl:hidden" />
           </div>
@@ -389,23 +389,23 @@ function NotificationActionSheet({ item, onClose, onDelete, onReport }) {
           <div className="px-6 pb-6 pt-5 text-center xl:px-8 xl:pb-5 xl:pt-4">
             <div className="mx-auto relative flex h-20 w-20 items-center justify-center overflow-visible rounded-full bg-[#dfe8d8] text-[1.75rem] font-semibold text-[#2f4f39] dark:bg-[#24425d] dark:text-white">
               {item.initials}
-              <div className={`absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#f6f5ef] dark:border-[#162842] ${item.badgeClass}`}>
+              <div className={`absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#f6f5ef] dark:border-[#22272b] ${item.badgeClass}`}>
                 <item.icon className="h-3.5 w-3.5" />
               </div>
             </div>
             <p className="mt-5 text-[1.02rem] leading-8 text-[#203a28] xl:text-[1.6rem] xl:leading-10 dark:text-white">
               <span className="font-medium xl:font-semibold">{item.title}</span>{' '}
-              <span className="font-normal text-[#344e41] dark:text-[#d5e6f5]">{item.summaryMessage}</span>
+              <span className="font-normal text-[#344e41] dark:text-[#e2e6e9]">{item.summaryMessage}</span>
             </p>
           </div>
 
-          <div className="border-t border-[#ccd7bf] px-5 pb-[calc(1.25rem+max(env(safe-area-inset-bottom),5rem))] pt-5 dark:border-[#254567]">
+          <div className="border-t border-[#ccd7bf] px-5 pb-[calc(1.25rem+max(env(safe-area-inset-bottom),5rem))] pt-5 dark:border-[#4b5560]">
             <button
               type="button"
               onClick={onDelete}
               className="flex w-full items-center gap-4 py-4 text-left transition-colors hover:bg-transparent dark:hover:bg-transparent"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#bfd0af] bg-[#eef6ee] text-[#3a5a40] dark:border-[#3f5977] dark:bg-[#16314d] dark:text-[#8dccff]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#bfd0af] bg-[#eef6ee] text-[#3a5a40] dark:border-[#4b5560] dark:bg-[#31363d] dark:text-[#f0c766]">
                 <Trash2 className="h-5 w-5" />
               </div>
               <span className="text-[1.05rem] font-semibold text-[#3a5a40] dark:text-white">Delete this notification</span>
@@ -413,9 +413,9 @@ function NotificationActionSheet({ item, onClose, onDelete, onReport }) {
             <button
               type="button"
               onClick={onReport}
-              className="flex w-full items-center gap-4 border-t border-[#d9dfcf] py-4 text-left transition-colors hover:bg-transparent dark:border-[#36506f] dark:hover:bg-transparent"
+              className="flex w-full items-center gap-4 border-t border-[#d9dfcf] py-4 text-left transition-colors hover:bg-transparent dark:border-[#4b5560] dark:hover:bg-transparent"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#bfd0af] bg-[#eef6ee] text-[#3a5a40] dark:border-[#3f5977] dark:bg-[#16314d] dark:text-[#8dccff]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#bfd0af] bg-[#eef6ee] text-[#3a5a40] dark:border-[#4b5560] dark:bg-[#31363d] dark:text-[#f0c766]">
                 <AlertCircle className="h-5 w-5" />
               </div>
               <span className="text-[1.05rem] font-semibold text-[#3a5a40] dark:text-white">Report issue to Notifications Team</span>
@@ -426,7 +426,7 @@ function NotificationActionSheet({ item, onClose, onDelete, onReport }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[#bfd0af] bg-[#f8fbf6]/92 px-4 py-3 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#f1f5eb] dark:border-[#314a68] dark:bg-[#243244]/92 dark:text-[#d5e6f5] dark:hover:bg-[#2b3c52]"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[#bfd0af] bg-[#f8fbf6]/92 px-4 py-3 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#f1f5eb] dark:border-[#4b5560] dark:bg-[#2f343b]/92 dark:text-[#e2e6e9] dark:hover:bg-[#2b3c52]"
             >
               <X className="h-4 w-4" />
               Close

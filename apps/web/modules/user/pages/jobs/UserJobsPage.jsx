@@ -245,16 +245,16 @@ export default function UserJobsPage({ userType, user }) {
         <div className={`flex flex-col ${hasActiveFilters ? 'gap-4' : 'gap-3'}`}>
           <div className="flex flex-row items-center gap-2 sm:gap-3 w-full">
             <div className="min-w-0 flex-1">
-              <div className="flex w-full items-center rounded-xl border border-[#a3b18a] bg-[#fcfdf8] px-1.5 min-[420px]:px-2 py-1.5 min-[420px]:py-2 transition-colors focus-within:ring-2 focus-within:ring-[#588157] dark:border-[#2a4a6f] dark:bg-[#0f2139] dark:focus-within:ring-[#3ba9d6]">
+              <div className="flex w-full items-center rounded-xl border border-[#a3b18a] bg-[#fcfdf8] px-1.5 min-[420px]:px-2 py-1.5 min-[420px]:py-2 transition-colors focus-within:ring-2 focus-within:ring-[#588157] dark:border-[#444d57] dark:bg-[#1a1d20] dark:focus-within:ring-[#6f9b74]">
                 <input
                   value={filters.q}
                   onChange={(event) => handleFilterChange('q', event.target.value)}
                   placeholder="Search jobs..."
-                  className="min-w-0 flex-1 border-0 bg-transparent px-3 min-[420px]:px-4 py-2 text-[#344e41] outline-none placeholder:text-[#6b7c6a] dark:text-white dark:placeholder:text-[#7d9ab8]"
+                  className="min-w-0 flex-1 border-0 bg-transparent px-3 min-[420px]:px-4 py-2 text-[#344e41] outline-none placeholder:text-[#6b7c6a] dark:text-white dark:placeholder:text-[#adb5be]"
                 />
                 <button
                   type="submit"
-                  className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#3a5a40] px-3 min-[420px]:px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#344e41] hover:shadow-md hover:shadow-[#344e41]/15 dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] dark:hover:shadow-[#3ba9d6]/20"
+                  className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#3a5a40] px-3 min-[420px]:px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#344e41] hover:shadow-md hover:shadow-[#344e41]/15 dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] dark:hover:shadow-[#6f9b74]/20"
                 >
                   <Search className="h-4 w-4" />
                   <span className="hidden min-[380px]:inline">Search</span>
@@ -267,11 +267,11 @@ export default function UserJobsPage({ userType, user }) {
                 ref={filterButtonRef}
                 type="button"
                 onClick={() => setShowAdvancedFilters((current) => !current)}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#a8b892] bg-[#fcfdf8] px-3 min-[420px]:px-4 py-3 min-[420px]:py-3.5 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:bg-[#0f2139] dark:text-white dark:hover:bg-[#1e3a5f]"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#a8b892] bg-[#fcfdf8] px-3 min-[420px]:px-4 py-3 min-[420px]:py-3.5 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#1a1d20] dark:text-white dark:hover:bg-[#353c44]"
                 aria-expanded={showAdvancedFilters}
                 aria-controls="job-search-filters-modal"
               >
-                <SlidersHorizontal className="h-4 w-4 text-[#588157] dark:text-[#7fd0ee]" />
+                <SlidersHorizontal className="h-4 w-4 text-[#588157] dark:text-[#f0c766]" />
                 <span className="hidden sm:inline">Filters</span>
               </button>
             </div>
@@ -287,7 +287,7 @@ export default function UserJobsPage({ userType, user }) {
               <button
                 type="button"
                 onClick={handleReset}
-                className="inline-flex items-center gap-1 rounded-full border border-[#c8d5b9] px-3 py-1.5 text-xs font-semibold text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:text-[#dcecff] dark:hover:bg-[#1e3a5f]"
+                className="inline-flex items-center gap-1 rounded-full border border-[#c8d5b9] px-3 py-1.5 text-xs font-semibold text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:text-[#eceff2] dark:hover:bg-[#353c44]"
               >
                 <X className="h-3.5 w-3.5" />
                 Clear all
@@ -297,21 +297,21 @@ export default function UserJobsPage({ userType, user }) {
         </div>
       </form>
 
-      {feedback && <p className="text-sm text-[#3a5a40] dark:text-[#7fd0ee]">{feedback}</p>}
-      {plan?.isPremium ? <p className="text-xs text-[#3a5a40] dark:text-[#7fd0ee]">Premium scoring is active. Match percentages appear on supported jobs.</p> : null}
+      {feedback && <p className="text-sm text-[#3a5a40] dark:text-[#f0c766]">{feedback}</p>}
+      {plan?.isPremium ? <p className="text-xs text-[#3a5a40] dark:text-[#f0c766]">Premium scoring is active. Match percentages appear on supported jobs.</p> : null}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {loading ? (
-        <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">Loading jobs...</p>
+        <p className="text-sm text-[#4b5563] dark:text-[#d0d7dd]">Loading jobs...</p>
       ) : jobs.length === 0 ? (
-        <div className="bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-6">
-          <p className="text-[#344e41] dark:text-[#b8d4e8]">
+        <div className="bg-[#f8fbf6] dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-6">
+          <p className="text-[#344e41] dark:text-[#d0d7dd]">
             {hasActiveFilters ? 'No jobs matched your current filters yet. Try broadening the search.' : 'No jobs available right now.'}
           </p>
         </div>
       ) : (
         <div className="space-y-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-[#5f6f52] dark:text-[#8fb2cf]">
+          <p className="text-xs uppercase tracking-[0.14em] text-[#5f6f52] dark:text-[#a8b1ba]">
             {jobs.length} job{jobs.length === 1 ? '' : 's'} found
           </p>
           {jobs.map((job) => (
@@ -356,7 +356,7 @@ function ActiveChip({ label, value }) {
   if (!value) return null;
 
   return (
-    <span className="inline-flex items-center rounded-full border border-[#c8d5b9] bg-[#f8fbf6] px-3 py-1.5 text-xs font-medium text-[#344e41] dark:border-[#2a4a6f] dark:bg-[#102235] dark:text-[#dcecff]">
+    <span className="inline-flex items-center rounded-full border border-[#c8d5b9] bg-[#f8fbf6] px-3 py-1.5 text-xs font-medium text-[#344e41] dark:border-[#444d57] dark:bg-[#202428] dark:text-[#eceff2]">
       {label}: {value}
     </span>
   );
@@ -369,7 +369,7 @@ function FilterPopup({ popupRef, position, filters, onChange, onClose, onReset, 
       <div
         id="job-search-filters-modal"
         ref={popupRef}
-        className="absolute z-10 w-[min(92vw,420px)] rounded-[24px] border border-[#d6d3c9] bg-[#f8fbf6] p-5 shadow-2xl shadow-black/15 transition-colors duration-300 dark:border-[#2a4a6f] dark:bg-[#102235] dark:shadow-black/40"
+        className="absolute z-10 w-[min(92vw,420px)] rounded-[24px] border border-[#d6d3c9] bg-[#f8fbf6] p-5 shadow-2xl shadow-black/15 transition-colors duration-300 dark:border-[#444d57] dark:bg-[#202428] dark:shadow-black/40"
         style={{ top: `${position.top}px`, left: `${position.left}px` }}
         role="dialog"
         aria-modal="true"
@@ -382,7 +382,7 @@ function FilterPopup({ popupRef, position, filters, onChange, onClose, onReset, 
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#c8d5b9] text-[#344e41] transition-colors hover:bg-[#f1f5eb] dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#1e3a5f]"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#c8d5b9] text-[#344e41] transition-colors hover:bg-[#f1f5eb] dark:border-[#444d57] dark:text-white dark:hover:bg-[#353c44]"
             aria-label="Close filters popup"
           >
             <X className="h-4 w-4" />
@@ -398,7 +398,7 @@ function FilterPopup({ popupRef, position, filters, onChange, onClose, onReset, 
           />
 
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[#5f6f52] dark:text-[#8fb2cf]">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[#5f6f52] dark:text-[#a8b1ba]">
               Job type
             </label>
             <SelectField value={filters.type} onChange={(event) => onChange('type', event.target.value)}>
@@ -419,7 +419,7 @@ function FilterPopup({ popupRef, position, filters, onChange, onClose, onReset, 
           />
 
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[#5f6f52] dark:text-[#8fb2cf]">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[#5f6f52] dark:text-[#a8b1ba]">
               Status
             </label>
             <SelectField value={filters.status} onChange={(event) => onChange('status', event.target.value)}>
@@ -436,14 +436,14 @@ function FilterPopup({ popupRef, position, filters, onChange, onClose, onReset, 
           <button
             type="button"
             onClick={onReset}
-            className="rounded-lg border border-[#a8b892] px-4 py-2.5 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#1e3a5f]"
+            className="rounded-lg border border-[#a8b892] px-4 py-2.5 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:text-white dark:hover:bg-[#353c44]"
           >
             Clear
           </button>
           <button
             type="button"
             onClick={onApply}
-            className="rounded-lg bg-[#3a5a40] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de]"
+            className="rounded-lg bg-[#3a5a40] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86]"
           >
             Apply filters
           </button>
@@ -456,7 +456,7 @@ function FilterPopup({ popupRef, position, filters, onChange, onClose, onReset, 
 function Field({ label, value, onChange, placeholder }) {
   return (
     <div>
-      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[#5f6f52] dark:text-[#8fb2cf]">
+      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[#5f6f52] dark:text-[#a8b1ba]">
         {label}
       </label>
       <input value={value} onChange={onChange} placeholder={placeholder} className="field" />
@@ -470,7 +470,7 @@ function SelectField({ value, onChange, children }) {
       <select value={value} onChange={onChange} className="field appearance-none pr-11">
         {children}
       </select>
-      <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5f6f52] dark:text-[#8fb2cf]" />
+      <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5f6f52] dark:text-[#a8b1ba]" />
     </div>
   );
 }
@@ -484,10 +484,10 @@ function JobCard({ job, isSaved, isPremiumUser, onApply, onToggleSave, applying 
   const skills = Array.isArray(job?.skills) ? job.skills : [];
 
   return (
-    <div className="bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl p-4 sm:p-6 hover:border-[#588157] dark:hover:border-[#3ba9d6] transition-colors">
+    <div className="bg-[#f8fbf6] dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-4 sm:p-6 hover:border-[#588157] dark:hover:border-[#6f9b74] transition-colors">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-[#588157] to-[#3a5a40] dark:from-[#2d8bb8] dark:to-[#3ba9d6] rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 bg-gradient-to-br from-[#588157] to-[#3a5a40] dark:from-[#82ad86] dark:to-[#6f9b74] rounded-lg flex items-center justify-center flex-shrink-0">
             <Building className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -497,8 +497,8 @@ function JobCard({ job, isSaved, isPremiumUser, onApply, onToggleSave, applying 
                 {formatJobStatus(status)}
               </span>
             </div>
-            <p className="text-sm text-[#344e41] dark:text-[#b8d4e8] mb-2">{companyName}</p>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-[#344e41] dark:text-[#b8d4e8]">
+            <p className="text-sm text-[#344e41] dark:text-[#d0d7dd] mb-2">{companyName}</p>
+            <div className="flex flex-wrap items-center gap-3 text-sm text-[#344e41] dark:text-[#d0d7dd]">
               {job?.location && (
                 <span className="flex items-center gap-1">
                   <MapPin className="w-4 h-4" />
@@ -510,20 +510,20 @@ function JobCard({ job, isSaved, isPremiumUser, onApply, onToggleSave, applying 
                   {job.type}
                 </span>
               )}
-              {job?.salary && <span className="font-semibold text-[#588157] dark:text-[#3ba9d6]">{job.salary}</span>}
+              {job?.salary && <span className="font-semibold text-[#588157] dark:text-[#6f9b74]">{job.salary}</span>}
               {isPremiumUser && Number.isFinite(Number(job?.matchPercentage)) ? (
-                <span className="px-2 py-1 rounded bg-[#eef6ee] text-[#31572c] dark:bg-[#14304d] dark:text-[#dcecff] text-xs font-semibold">
+                <span className="px-2 py-1 rounded bg-[#eef6ee] text-[#31572c] dark:bg-[#2a2f35] dark:text-[#eceff2] text-xs font-semibold">
                   Match {Number(job.matchPercentage)}%
                 </span>
               ) : null}
             </div>
           </div>
         </div>
-        <span className="text-xs text-[#3a5a40] dark:text-[#7d9ab8]">{job?.createdAt ? new Date(job.createdAt).toLocaleDateString() : ''}</span>
+        <span className="text-xs text-[#3a5a40] dark:text-[#adb5be]">{job?.createdAt ? new Date(job.createdAt).toLocaleDateString() : ''}</span>
       </div>
 
       {job?.description && (
-        <p className="mb-4 text-sm text-[#344e41] dark:text-[#b8d4e8] line-clamp-3">{job.description}</p>
+        <p className="mb-4 text-sm text-[#344e41] dark:text-[#d0d7dd] line-clamp-3">{job.description}</p>
       )}
 
       {!job?.acceptsApplications ? (
@@ -533,7 +533,7 @@ function JobCard({ job, isSaved, isPremiumUser, onApply, onToggleSave, applying 
       {skills.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
           {skills.map((skill) => (
-            <span key={skill} className="px-3 py-1 bg-[#f5f5f2] dark:bg-[#1e3a5f] text-[#344e41] dark:text-white text-xs font-medium rounded-full">
+            <span key={skill} className="px-3 py-1 bg-[#f5f5f2] dark:bg-[#353c44] text-[#344e41] dark:text-white text-xs font-medium rounded-full">
               {skill}
             </span>
           ))}
@@ -545,7 +545,7 @@ function JobCard({ job, isSaved, isPremiumUser, onApply, onToggleSave, applying 
           type="button"
           onClick={() => onApply?.(job)}
           disabled={isClosed || isFilled || hasApplied || applying}
-          className="flex-1 bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white font-semibold py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isClosed ? 'Closed' : isFilled ? 'Filled' : hasApplied ? 'Applied' : applying ? 'Applying...' : 'Apply Now'}
         </button>
@@ -554,8 +554,8 @@ function JobCard({ job, isSaved, isPremiumUser, onApply, onToggleSave, applying 
           onClick={() => onToggleSave?.(job)}
           className={`px-4 py-2 border rounded-lg transition-colors min-[420px]:w-auto w-full min-[420px]:px-4 ${
             isSaved
-              ? 'border-[#588157] bg-[#eef6ee] text-[#3a5a40] dark:border-[#3ba9d6] dark:bg-[#14304d] dark:text-[#dcecff]'
-              : 'border-[#a3b18a] dark:border-[#2a4a6f] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f]'
+              ? 'border-[#588157] bg-[#eef6ee] text-[#3a5a40] dark:border-[#6f9b74] dark:bg-[#2a2f35] dark:text-[#eceff2]'
+              : 'border-[#a3b18a] dark:border-[#444d57] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#353c44]'
           }`}
           aria-label={isSaved ? 'Remove from saved jobs' : 'Save job'}
         >

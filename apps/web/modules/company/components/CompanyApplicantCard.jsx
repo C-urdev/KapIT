@@ -23,22 +23,22 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
 
   return (
     <>
-      <div className="rounded-2xl border border-[#d6d3c9] bg-[#f8fbf6] p-5 shadow-sm shadow-black/5 transition-colors dark:border-[#2a4a6f] dark:bg-[#162842] xl:hidden">
+      <div className="rounded-2xl border border-[#d6d3c9] bg-[#f8fbf6] p-5 shadow-sm shadow-black/5 transition-colors dark:border-[#444d57] dark:bg-[#22272b] xl:hidden">
         <div className="flex items-start gap-3">
           <Avatar user={user} name={name} />
           <div className="min-w-0 flex-1">
             <p className="truncate text-[1.05rem] font-bold text-[#31572c] dark:text-white">{name}</p>
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[#425466] dark:text-[#b8d4e8]">
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[#425466] dark:text-[#d0d7dd]">
               <span className="inline-flex items-center gap-1">
-                <Briefcase className="h-4 w-4 text-[#588157] dark:text-[#7fd0ee]" />
+                <Briefcase className="h-4 w-4 text-[#588157] dark:text-[#f0c766]" />
                 {role}
               </span>
               <span className="inline-flex items-center gap-1">
-                <MapPin className="h-4 w-4 text-[#588157] dark:text-[#7fd0ee]" />
+                <MapPin className="h-4 w-4 text-[#588157] dark:text-[#f0c766]" />
                 {location}
               </span>
               {Number.isFinite(Number(aiMatch)) ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#eef6ee] px-2 py-0.5 text-xs font-semibold text-[#31572c] dark:bg-[#14304d] dark:text-[#dcecff]">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#eef6ee] px-2 py-0.5 text-xs font-semibold text-[#31572c] dark:bg-[#2a2f35] dark:text-[#eceff2]">
                   Match {Number(aiMatch)}%
                 </span>
               ) : null}
@@ -78,23 +78,23 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
         ) : null}
       </div>
 
-      <div className="hidden rounded-2xl border border-[#d6d3c9] bg-[#f8fbf6] p-6 shadow-sm shadow-black/5 transition-colors dark:border-[#2a4a6f] dark:bg-[#162842] xl:grid xl:grid-cols-[minmax(0,1.7fr)_0.95fr_0.9fr_0.95fr_minmax(17.5rem,1.35fr)] xl:items-center xl:gap-6">
+      <div className="hidden rounded-2xl border border-[#d6d3c9] bg-[#f8fbf6] p-6 shadow-sm shadow-black/5 transition-colors dark:border-[#444d57] dark:bg-[#22272b] xl:grid xl:grid-cols-[minmax(0,1.7fr)_0.95fr_0.9fr_0.95fr_minmax(17.5rem,1.35fr)] xl:items-center xl:gap-6">
         <div className="min-w-0">
           <div className="flex items-start gap-3">
             <Avatar user={user} name={name} />
             <div className="min-w-0">
               <p className="truncate text-[1.05rem] font-bold text-[#31572c] dark:text-white">{name}</p>
-              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[#425466] dark:text-[#b8d4e8]">
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[#425466] dark:text-[#d0d7dd]">
                 <span className="inline-flex items-center gap-1">
-                  <Briefcase className="h-4 w-4 text-[#588157] dark:text-[#7fd0ee]" />
+                  <Briefcase className="h-4 w-4 text-[#588157] dark:text-[#f0c766]" />
                   {role}
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  <MapPin className="h-4 w-4 text-[#588157] dark:text-[#7fd0ee]" />
+                  <MapPin className="h-4 w-4 text-[#588157] dark:text-[#f0c766]" />
                   {location}
                 </span>
                 {Number.isFinite(Number(aiMatch)) ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#eef6ee] px-2 py-0.5 text-xs font-semibold text-[#31572c] dark:bg-[#14304d] dark:text-[#dcecff]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#eef6ee] px-2 py-0.5 text-xs font-semibold text-[#31572c] dark:bg-[#2a2f35] dark:text-[#eceff2]">
                     Match {Number(aiMatch)}% • ATS {Number(aiAtsScore || 0)}
                   </span>
                 ) : null}
@@ -138,7 +138,7 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
 
 function Avatar({ user, name }) {
   return (
-    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#93a977] bg-[#f7faf3] font-bold text-[#31572c] transition-colors duration-300 dark:border-[#2a4a6f] dark:bg-[#1e3a5f] dark:text-white">
+    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#93a977] bg-[#f7faf3] font-bold text-[#31572c] transition-colors duration-300 dark:border-[#444d57] dark:bg-[#353c44] dark:text-white">
       {user.profileImage ? <img src={user.profileImage} alt={`${name} profile`} className="h-full w-full object-cover" /> : name.charAt(0).toUpperCase()}
     </div>
   );
@@ -147,9 +147,9 @@ function Avatar({ user, name }) {
 function InfoBlock({ label, value, sublabel }) {
   return (
     <div>
-      {label ? <p className="text-xs font-semibold uppercase tracking-wide text-[#6b7280] dark:text-[#9fb4ca]">{label}</p> : null}
+      {label ? <p className="text-xs font-semibold uppercase tracking-wide text-[#6b7280] dark:text-[#b3bcc5]">{label}</p> : null}
       <p className={`font-semibold text-[#31572c] dark:text-white ${label ? 'mt-1 text-base' : 'text-base'}`}>{value}</p>
-      {sublabel ? <p className="mt-1 text-sm text-[#4b5563] dark:text-[#b8d4e8]">{sublabel}</p> : null}
+      {sublabel ? <p className="mt-1 text-sm text-[#4b5563] dark:text-[#d0d7dd]">{sublabel}</p> : null}
     </div>
   );
 }
@@ -157,7 +157,7 @@ function InfoBlock({ label, value, sublabel }) {
 function StatusBlock({ applicantStatus, desktop = false }) {
   return (
     <div className={desktop ? 'flex justify-start' : ''}>
-      {!desktop ? <p className="text-xs font-semibold uppercase tracking-wide text-[#6b7280] dark:text-[#9fb4ca]">Applicant status</p> : null}
+      {!desktop ? <p className="text-xs font-semibold uppercase tracking-wide text-[#6b7280] dark:text-[#b3bcc5]">Applicant status</p> : null}
       <span className={`inline-flex rounded-full border px-3 py-1.5 text-xs font-semibold ${statusBadgeClass(applicantStatus)} ${desktop ? '' : 'mt-1'}`}>
         {applicantStatus}
       </span>
@@ -193,25 +193,25 @@ function ActionRow({
           href={resumeUrl}
           target="_blank"
           rel="noreferrer"
-          className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#a3b18a] px-2.5 py-2 text-xs font-medium text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#1e3a5f] xl:px-3 xl:text-sm ${compactActionClass}`}
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#a3b18a] px-2.5 py-2 text-xs font-medium text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:text-white dark:hover:bg-[#353c44] xl:px-3 xl:text-sm ${compactActionClass}`}
         >
-          <FileText className="h-4 w-4 shrink-0 text-[#588157] dark:text-[#7fd0ee]" />
+          <FileText className="h-4 w-4 shrink-0 text-[#588157] dark:text-[#f0c766]" />
           Resume
         </a>
       ) : null}
       <button
         type="button"
         onClick={() => onViewProfile?.(user)}
-        className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#a3b18a] px-2.5 py-2 text-xs font-medium text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#1e3a5f] xl:px-3 xl:text-sm ${compactActionClass}`}
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#a3b18a] px-2.5 py-2 text-xs font-medium text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:text-white dark:hover:bg-[#353c44] xl:px-3 xl:text-sm ${compactActionClass}`}
       >
-        <User className="h-4 w-4 shrink-0 text-[#588157] dark:text-[#7fd0ee]" />
+        <User className="h-4 w-4 shrink-0 text-[#588157] dark:text-[#f0c766]" />
         Profile
       </button>
       <button
         type="button"
         onClick={() => onMessage?.(user)}
         disabled={actionLoading}
-        className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#3a5a40] px-2.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#344e41] disabled:opacity-60 dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] xl:px-3 xl:text-sm ${compactActionClass}`}
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#3a5a40] px-2.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#344e41] disabled:opacity-60 dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] xl:px-3 xl:text-sm ${compactActionClass}`}
       >
         {actionLoading ? 'Wait...' : 'Message'}
       </button>
@@ -219,9 +219,9 @@ function ActionRow({
         type="button"
         onClick={() => onReview?.(applicant)}
         disabled={!canReview}
-        className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#a3b18a] px-2.5 py-2 text-xs font-medium text-[#344e41] transition-colors hover:bg-[#f5f5f2] disabled:opacity-60 dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#1e3a5f] xl:px-3 xl:text-sm ${compactActionClass}`}
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#a3b18a] px-2.5 py-2 text-xs font-medium text-[#344e41] transition-colors hover:bg-[#f5f5f2] disabled:opacity-60 dark:border-[#444d57] dark:text-white dark:hover:bg-[#353c44] xl:px-3 xl:text-sm ${compactActionClass}`}
       >
-        <Eye className="h-4 w-4 shrink-0 text-[#588157] dark:text-[#7fd0ee]" />
+        <Eye className="h-4 w-4 shrink-0 text-[#588157] dark:text-[#f0c766]" />
         {isReviewed ? 'Reviewed' : actionLoading ? 'Saving...' : 'Review'}
       </button>
       <button
@@ -237,7 +237,7 @@ function ActionRow({
         type="button"
         onClick={() => onHire?.(applicant)}
         disabled={!canHire}
-        className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#2f6b4f] px-2.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#285b44] disabled:opacity-60 dark:bg-[#278bb6] dark:hover:bg-[#3ba9d6] xl:px-3 xl:text-sm ${compactActionClass}`}
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#2f6b4f] px-2.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#285b44] disabled:opacity-60 dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] xl:px-3 xl:text-sm ${compactActionClass}`}
       >
         <CheckCircle2 className="h-4 w-4 shrink-0" />
         {isAccepted ? 'Hired' : actionLoading ? 'Hiring...' : 'Hire'}

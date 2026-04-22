@@ -12,6 +12,8 @@ const FASTAPI_BASE = (NEXT_PUBLIC_FASTAPI_URL || '').replace(/\/$/, '');
 const CSRF_COOKIE_NAME = NEXT_PUBLIC_CSRF_COOKIE_NAME || 'kapit_csrf_token';
 
 let refreshRequest = null;
+let lastRefreshFailureAt = 0;
+const REFRESH_RETRY_COOLDOWN_MS = 3000;
 
 const getContentType = (response) => response.headers.get('content-type') || '';
 
@@ -115,6 +117,10 @@ const buildHeaders = (method, headers = {}) => {
 };
 
 const refreshSession = async () => {
+  if (Date.now() - lastRefreshFailureAt < REFRESH_RETRY_COOLDOWN_MS) {
+    return null;
+  }
+
   if (!refreshRequest) {
     refreshRequest = fetch(`${AUTH_BASE}/refresh`, {
       method: 'POST',
@@ -126,7 +132,12 @@ const refreshSession = async () => {
         if (!response.ok) {
           throw new Error(data?.message || 'Unable to refresh session');
         }
+        lastRefreshFailureAt = 0;
         return data;
+      })
+      .catch((error) => {
+        lastRefreshFailureAt = Date.now();
+        return Promise.reject(error);
       })
       .finally(() => {
         refreshRequest = null;
@@ -171,11 +182,18 @@ export const apiRequest = async (path, options = {}) => {
 
   const data = await safeParseResponse(response);
   if (response.status === 401 && retryOnUnauthorized) {
-    await refreshSession();
-    return apiRequest(path, {
-      ...options,
-      retryOnUnauthorized: false,
-    });
+    try {
+      const refreshed = await refreshSession();
+      if (refreshed) {
+        return apiRequest(path, {
+          ...options,
+          retryOnUnauthorized: false,
+        });
+      }
+    } catch {
+      // Refresh can legitimately fail when a session is expired or missing.
+      // Fall through so callers receive the original unauthorized response.
+    }
   }
 
   if (!response.ok) {

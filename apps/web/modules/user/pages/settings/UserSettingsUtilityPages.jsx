@@ -9,7 +9,7 @@ function Header({ title, onBack }) {
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-3 py-2 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#eef6ee] dark:border-[#2a4a6f] dark:bg-[#162842] dark:text-white dark:hover:bg-[#1e3a5f]"
+        className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-3 py-2 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#eef6ee] dark:border-[#444d57] dark:bg-[#22272b] dark:text-white dark:hover:bg-[#353c44]"
       >
         <ArrowLeft className="h-4 w-4" />
         Back
@@ -33,15 +33,15 @@ function OptionRow({ icon: Icon, title, selected, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-between rounded-xl bg-[#f8fbf6] px-4 py-3.5 text-left transition-colors hover:bg-[#eef6ee] dark:bg-[#162842] dark:hover:bg-[#1e3a5f]/60"
+      className="flex w-full items-center justify-between rounded-xl bg-[#f8fbf6] px-4 py-3.5 text-left transition-colors hover:bg-[#eef6ee] dark:bg-[#22272b] dark:hover:bg-[#353c44]/60"
     >
       <div className="flex items-center gap-3">
-        <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#edf3e8] text-[#3a5a40] dark:bg-[#183655] dark:text-[#8ccff0]">
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#edf3e8] text-[#3a5a40] dark:bg-[#2b3138] dark:text-[#e9c86b]">
           <Icon className="h-4.5 w-4.5" />
         </span>
         <span className="text-[16px] font-semibold text-[#1c2b1f] dark:text-white">{title}</span>
       </div>
-      {selected ? <Check className="h-5 w-5 text-[#3a5a40] dark:text-[#8ccff0]" /> : <ChevronRight className="h-5 w-5 text-[#7c8e76] dark:text-[#7d9ab8]" />}
+      {selected ? <Check className="h-5 w-5 text-[#3a5a40] dark:text-[#e9c86b]" /> : <ChevronRight className="h-5 w-5 text-[#7c8e76] dark:text-[#adb5be]" />}
     </button>
   );
 }

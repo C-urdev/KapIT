@@ -5,7 +5,7 @@ import { Avatar } from './CenterFeedPostShared';
 
 export default function CenterFeed(props) {
   const { user, userType, onOpenComposer, posts = [], onToggleSavePost, onReactToPost, onAddComment, onReactToComment, onToggleSharePost, onDeletePost, onBrowsePeople, onExploreProjects, savedPostIds = [] } = props;
-  const displayName = user?.username || user?.name || 'User';
+  const displayName = user?.fullName || user?.name || user?.username || 'User';
   const userInitial = displayName.charAt(0).toUpperCase();
   const profileImage = user?.profileImage || '';
   const [menuPostId, setMenuPostId] = useState(null);
@@ -30,12 +30,12 @@ export default function CenterFeed(props) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-[#a3b18a] bg-[#f8fbf6] p-4 dark:border-[#1e3a5f] dark:bg-[#162842]">
+      <div className="rounded-xl border border-[#a3b18a] bg-[#f8fbf6] p-4 dark:border-[#353c44] dark:bg-[#22272b]">
         <div className="flex gap-3">
           <Avatar profileImage={profileImage} fallback={userInitial} sizeClass="h-10 w-10" />
-          <button onClick={onOpenComposer} className="flex-1 rounded-full border border-[#a3b18a] bg-[#f5f5f2] px-4 py-3 text-left text-[#344e41] transition-colors hover:bg-[#dad7cd] dark:border-[#2a4a6f] dark:bg-[#1e3a5f] dark:text-[#b8d4e8] dark:hover:bg-[#0f2139]">Share an update or project...</button>
+          <button onClick={onOpenComposer} className="flex-1 rounded-full border border-[#a3b18a] bg-[#f5f5f2] px-4 py-3 text-left text-[#344e41] transition-colors hover:bg-[#dad7cd] dark:border-[#444d57] dark:bg-[#353c44] dark:text-[#d0d7dd] dark:hover:bg-[#1a1d20]">Share an update or project...</button>
         </div>
-        <div className="mt-3 flex items-center justify-between border-t border-[#a3b18a] pt-3 dark:border-[#2a4a6f]">
+        <div className="mt-3 flex items-center justify-between border-t border-[#a3b18a] pt-3 dark:border-[#444d57]">
           <ComposerButton icon={Plus} text={userType === 'employee' ? 'Add Project' : 'Post Job'} onClick={onOpenComposer} />
           <ComposerButton icon={Plus} text="Share Update" onClick={onOpenComposer} />
         </div>
@@ -63,14 +63,14 @@ export default function CenterFeed(props) {
           savedPostIds={savedPostIds}
         />
       ) : (
-        <div className="rounded-xl border border-[#a3b18a] bg-[#f8fbf6] p-12 text-center dark:border-[#1e3a5f] dark:bg-[#162842]">
+        <div className="rounded-xl border border-[#a3b18a] bg-[#f8fbf6] p-12 text-center dark:border-[#353c44] dark:bg-[#22272b]">
           <div className="mx-auto max-w-sm">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[#f5f5f2] dark:bg-[#1e3a5f]"><Search className="h-10 w-10 text-[#a3b18a] dark:text-[#3ba9d6]" /></div>
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[#f5f5f2] dark:bg-[#353c44]"><Search className="h-10 w-10 text-[#a3b18a] dark:text-[#6f9b74]" /></div>
             <h3 className="mb-2 text-xl font-semibold text-[#3a5a40] dark:text-white">Try searching to get started</h3>
-            <p className="mb-6 text-[#344e41] dark:text-[#b8d4e8]">Discover IT professionals, companies, and projects in the Philippines</p>
+            <p className="mb-6 text-[#344e41] dark:text-[#d0d7dd]">Discover IT professionals, companies, and projects in the Philippines</p>
             <div className="flex flex-col justify-center gap-3 sm:flex-row">
-              <button type="button" onClick={onBrowsePeople} className="rounded-lg bg-[#3a5a40] px-4 py-2 font-semibold text-white transition-colors hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de]">Browse {userType === 'employee' ? 'Companies' : 'Developers'}</button>
-              <button type="button" onClick={onExploreProjects} className="rounded-lg border border-[#a3b18a] px-4 py-2 font-semibold text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#2a4a6f] dark:text-white dark:hover:bg-[#1e3a5f]">Explore Projects</button>
+              <button type="button" onClick={onBrowsePeople} className="rounded-lg bg-[#3a5a40] px-4 py-2 font-semibold text-white transition-colors hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86]">Browse {userType === 'employee' ? 'Companies' : 'Developers'}</button>
+              <button type="button" onClick={onExploreProjects} className="rounded-lg border border-[#a3b18a] px-4 py-2 font-semibold text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:text-white dark:hover:bg-[#353c44]">Explore Projects</button>
             </div>
           </div>
         </div>
@@ -80,5 +80,5 @@ export default function CenterFeed(props) {
 }
 
 function ComposerButton({ icon: Icon, text, onClick }) {
-  return <button onClick={onClick} className="flex items-center gap-2 rounded-lg px-4 py-2 text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:text-[#b8d4e8] dark:hover:bg-[#1e3a5f]"><Icon className="h-4 w-4" /><span className="text-sm font-medium">{text}</span></button>;
+  return <button onClick={onClick} className="flex items-center gap-2 rounded-lg px-4 py-2 text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:text-[#d0d7dd] dark:hover:bg-[#353c44]"><Icon className="h-4 w-4" /><span className="text-sm font-medium">{text}</span></button>;
 }

@@ -5,7 +5,7 @@ import { MapPin, Zap } from 'lucide-react';
 import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
 
 export default function UserLeftSidebar({ user, userType, onOpenPremium, onOpenMyProfile, onOpenProjects, onOpenSavedJobs, onOpenApplications }) {
-  const displayName = user?.username || user?.name || 'User';
+  const displayName = user?.fullName || user?.name || user?.username || 'User';
   const userInitial = displayName.charAt(0).toUpperCase();
   const profileImage = user?.profileImage || '';
   const isPremium = !!user?.isPremium;
@@ -14,11 +14,11 @@ export default function UserLeftSidebar({ user, userType, onOpenPremium, onOpenM
 
   return (
     <div className="space-y-4">
-      <div className="bg-[#f8fbf6] dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-xl overflow-hidden">
-        <div className="h-16 bg-gradient-to-r from-[#588157] to-[#3a5a40] dark:from-[#2d8bb8] dark:to-[#3ba9d6]" />
+      <div className="bg-[#f8fbf6] dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl overflow-hidden">
+        <div className="h-16 bg-gradient-to-r from-[#588157] to-[#3a5a40] dark:from-[#82ad86] dark:to-[#6f9b74]" />
         <div className="px-4 pb-4">
           <div className="relative -mt-8 mb-3">
-            <div className="w-16 h-16 bg-[#588157] dark:bg-[#3ba9d6] rounded-full border-4 border-white dark:border-[#162842] flex items-center justify-center overflow-hidden">
+            <div className="w-16 h-16 bg-[#588157] dark:bg-[#6f9b74] rounded-full border-4 border-white dark:border-[#22272b] flex items-center justify-center overflow-hidden">
               {profileImage ? (
                 <img src={profileImage} alt={`${displayName} profile`} className="w-full h-full object-cover" />
               ) : (
@@ -33,25 +33,25 @@ export default function UserLeftSidebar({ user, userType, onOpenPremium, onOpenM
           </div>
           {userType === 'employee' ? (
             <>
-              <p className="text-sm text-[#344e41] dark:text-[#b8d4e8] mb-1">{desiredJob}</p>
-              <p className="text-xs text-[#3a5a40] dark:text-[#7d9ab8] flex items-center gap-1">
+              <p className="text-sm text-[#344e41] dark:text-[#d0d7dd] mb-1">{desiredJob}</p>
+              <p className="text-xs text-[#3a5a40] dark:text-[#adb5be] flex items-center gap-1">
                 <MapPin className="w-3 h-3" />
                 {address}
               </p>
               {user?.bio && (
-                <p className="mt-2 text-xs leading-relaxed text-[#344e41] dark:text-[#b8d4e8] line-clamp-2">
+                <p className="mt-2 text-xs leading-relaxed text-[#344e41] dark:text-[#d0d7dd] line-clamp-2">
                   {user.bio}
                 </p>
               )}
             </>
           ) : (
             <>
-              <p className="text-sm text-[#344e41] dark:text-[#b8d4e8] mb-1">Tech Startup</p>
-              <p className="text-xs text-[#3a5a40] dark:text-[#7d9ab8]">IT & Software Development</p>
+              <p className="text-sm text-[#344e41] dark:text-[#d0d7dd] mb-1">Tech Startup</p>
+              <p className="text-xs text-[#3a5a40] dark:text-[#adb5be]">IT & Software Development</p>
             </>
           )}
 
-          <div className="mt-4 pt-4 border-t border-[#a3b18a] dark:border-[#2a4a6f] space-y-2">
+          <div className="mt-4 pt-4 border-t border-[#a3b18a] dark:border-[#444d57] space-y-2">
             {userType === 'employee' ? (
               <>
                 <SidebarLink text="My Profile" onClick={onOpenMyProfile} />
@@ -93,17 +93,12 @@ export default function UserLeftSidebar({ user, userType, onOpenPremium, onOpenM
         </div>
       ) : (
         <div className="rounded-2xl border border-[#f2c84b] bg-[linear-gradient(180deg,#fff9df,#fff1b8)] p-4 shadow-[0_8px_24px_rgba(242,200,75,0.16)] dark:border-[#8a6a15] dark:bg-[linear-gradient(180deg,#4a3908,#2f2405)]">
-          <div className="flex items-start gap-3">
+          <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#fff4cc] text-[#d69100] dark:bg-[#3a2f0d] dark:text-[#f5c84c]">
               <PremiumBadge compact className="border-0 bg-transparent px-0 py-0" iconClassName="h-4 w-4" label="" />
             </div>
             <div className="min-w-0 flex-1">
               <h4 className="font-semibold text-[#7a5200] dark:text-[#ffe08a] text-sm mb-1">You're in the Premium plan</h4>
-              <p className="text-xs text-[#8a6100] dark:text-[#f3d57b]">
-                {userType === 'employee'
-                  ? 'Your premium badge, job match percentages, and ATS-style resume analysis access are active on this account.'
-                  : 'Your paid hiring workflow and applicant management tools are active on this account.'}
-              </p>
             </div>
           </div>
         </div>
@@ -116,7 +111,7 @@ function SidebarLink({ text, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="w-full text-left text-sm text-[#344e41] dark:text-white hover:text-[#588157] dark:hover:text-[#3ba9d6] py-1 transition-colors"
+      className="w-full text-left text-sm text-[#344e41] dark:text-white hover:text-[#588157] dark:hover:text-[#6f9b74] py-1 transition-colors"
     >
       {text}
     </button>

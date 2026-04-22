@@ -80,8 +80,8 @@ function GoogleCallbackContent() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#dad7cd] to-[#f5f5f2] dark:from-[#0a1628] dark:to-[#162842]">
-        <div className="bg-white dark:bg-[#162842] border border-[#a3b18a] dark:border-[#1e3a5f] rounded-2xl p-8 max-w-sm w-full shadow-lg text-center">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#dad7cd] to-[#f5f5f2] dark:from-[#121416] dark:to-[#22272b]">
+        <div className="bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-2xl p-8 max-w-sm w-full shadow-lg text-center">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
             <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
           </div>
@@ -103,9 +103,9 @@ function GoogleCallbackContent() {
 
 function LoadingView() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#0a1628]">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#121416]">
       <div className="flex flex-col items-center gap-4">
-        <Loader2 className="w-10 h-10 text-[#3a5a40] dark:text-[#3ba9d6] animate-spin" />
+        <Loader2 className="w-10 h-10 text-[#3a5a40] dark:text-[#6f9b74] animate-spin" />
         <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Completing Google sign-in...</p>
       </div>
     </div>

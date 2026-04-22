@@ -4,23 +4,33 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const ThemeContext = createContext();
 
-export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState('light');
+export const ThemeProvider = ({ children, initialTheme = 'light' }) => {
+  const normalizedInitialTheme = initialTheme === 'dark' ? 'dark' : 'light';
+  const [theme, setTheme] = useState(normalizedInitialTheme);
+  const [themeHydrated, setThemeHydrated] = useState(false);
 
   useEffect(() => {
-    const savedTheme = window.localStorage.getItem('theme') || 'light';
-    setTheme(savedTheme);
-  }, []);
+    if (typeof window === 'undefined') return;
+    const savedTheme = window.localStorage.getItem('theme');
+    if (savedTheme === 'dark' || savedTheme === 'light') {
+      setTheme(savedTheme);
+    } else {
+      window.localStorage.setItem('theme', normalizedInitialTheme);
+    }
+    setThemeHydrated(true);
+  }, [normalizedInitialTheme]);
 
   useEffect(() => {
+    if (typeof window === 'undefined' || !themeHydrated) return;
     const root = document.documentElement;
     if (theme === 'dark') {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
+    window.localStorage.setItem('theme', theme);
+    document.cookie = `theme=${theme}; path=/; max-age=31536000; samesite=lax`;
+  }, [theme, themeHydrated]);
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));

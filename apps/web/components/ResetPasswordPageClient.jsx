@@ -68,29 +68,29 @@ export default function ResetPasswordPageClient() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-[#a3b18a] dark:border-[#1e3a5f] bg-white dark:bg-[#0a1628]">
+      <header className="border-b border-[#a3b18a] dark:border-[#353c44] bg-white dark:bg-[#121416]">
         <div className="mx-auto flex w-full max-w-[min(100%,1800px)] items-center justify-between px-3 py-4 sm:px-5 lg:px-6 xl:px-7 2xl:px-9">
-          <button onClick={() => router.push('/')} className="flex items-center gap-2 text-[#344e41] dark:text-[#b8d4e8] hover:text-[#3a5a40] dark:hover:text-white">
+          <button onClick={() => router.push('/')} className="flex items-center gap-2 text-[#344e41] dark:text-[#d0d7dd] hover:text-[#3a5a40] dark:hover:text-white">
             <KapITLogo className="h-9 w-9 rounded-lg object-contain bg-white" />
             <span className="text-2xl font-bold text-[#3a5a40] dark:text-white">kapIT</span>
           </button>
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-lg hover:bg-[#f5f5f2] dark:hover:bg-[#1e3a5f] transition-colors"
+            className="p-2 rounded-lg hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors"
           >
             {theme === 'light' ? <Moon className="w-5 h-5 text-[#344e41]" /> : <Sun className="w-5 h-5 text-white" />}
           </button>
         </div>
       </header>
 
-      <main className="flex-1 flex items-center justify-center px-3 sm:px-6 py-8 sm:py-12 bg-gradient-to-br from-[#dad7cd] to-[#f5f5f2] dark:from-[#0a1628] dark:to-[#162842]">
+      <main className="flex-1 flex items-center justify-center px-3 sm:px-6 py-8 sm:py-12 bg-gradient-to-br from-[#dad7cd] to-[#f5f5f2] dark:from-[#121416] dark:to-[#22272b]">
         <div className="w-full max-w-md">
-          <div className="bg-white dark:bg-[#162842] rounded-2xl border border-[#a3b18a] dark:border-[#1e3a5f] p-5 sm:p-8 shadow-lg dark:shadow-[#3ba9d6]/10">
+          <div className="bg-white dark:bg-[#22272b] rounded-2xl border border-[#a3b18a] dark:border-[#353c44] p-5 sm:p-8 shadow-lg dark:shadow-[#6f9b74]/10">
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-[#3a5a40] dark:text-white mb-2">
                 Reset Password
               </h1>
-              <p className="text-sm text-[#4b5563] dark:text-[#b8d4e8]">
+              <p className="text-sm text-[#4b5563] dark:text-[#d0d7dd]">
                 Enter a new password for your account.
               </p>
             </div>
@@ -110,7 +110,7 @@ export default function ResetPasswordPageClient() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#3a5a40] dark:text-[#b8d4e8] mb-1">
+                <label className="block text-sm font-medium text-[#3a5a40] dark:text-[#d0d7dd] mb-1">
                   New Password
                 </label>
                 <div className="relative">
@@ -118,7 +118,7 @@ export default function ResetPasswordPageClient() {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-2 pr-12 border border-[#a3b18a] dark:border-[#2a4a6f] rounded-lg bg-white dark:bg-[#0f2139] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#3ba9d6] focus:border-transparent outline-none transition-colors"
+                    className="w-full px-4 py-2 pr-12 border border-[#a3b18a] dark:border-[#444d57] rounded-lg bg-white dark:bg-[#1a1d20] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74] focus:border-transparent outline-none transition-colors"
                     required
                     autoComplete="new-password"
                     disabled={loading || success}
@@ -126,7 +126,7 @@ export default function ResetPasswordPageClient() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute inset-y-0 right-0 px-3 flex items-center text-[#3a5a40] dark:text-[#7d9ab8] hover:text-[#344e41] dark:hover:text-white"
+                    className="absolute inset-y-0 right-0 px-3 flex items-center text-[#3a5a40] dark:text-[#adb5be] hover:text-[#344e41] dark:hover:text-white"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                     disabled={loading || success}
                   >
@@ -136,7 +136,7 @@ export default function ResetPasswordPageClient() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#3a5a40] dark:text-[#b8d4e8] mb-1">
+                <label className="block text-sm font-medium text-[#3a5a40] dark:text-[#d0d7dd] mb-1">
                   Confirm New Password
                 </label>
                 <div className="relative">
@@ -144,7 +144,7 @@ export default function ResetPasswordPageClient() {
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-4 py-2 pr-12 border border-[#a3b18a] dark:border-[#2a4a6f] rounded-lg bg-white dark:bg-[#0f2139] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#3ba9d6] focus:border-transparent outline-none transition-colors"
+                    className="w-full px-4 py-2 pr-12 border border-[#a3b18a] dark:border-[#444d57] rounded-lg bg-white dark:bg-[#1a1d20] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74] focus:border-transparent outline-none transition-colors"
                     required
                     autoComplete="new-password"
                     disabled={loading || success}
@@ -152,7 +152,7 @@ export default function ResetPasswordPageClient() {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword((prev) => !prev)}
-                    className="absolute inset-y-0 right-0 px-3 flex items-center text-[#3a5a40] dark:text-[#7d9ab8] hover:text-[#344e41] dark:hover:text-white"
+                    className="absolute inset-y-0 right-0 px-3 flex items-center text-[#3a5a40] dark:text-[#adb5be] hover:text-[#344e41] dark:hover:text-white"
                     aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
                     disabled={loading || success}
                   >
@@ -161,14 +161,14 @@ export default function ResetPasswordPageClient() {
                 </div>
               </div>
 
-              <p className="text-xs text-[#6b7280] dark:text-[#9db1c4]">
+              <p className="text-xs text-[#6b7280] dark:text-[#adb5be]">
                 {PASSWORD_HINT}
               </p>
 
               <button
                 type="submit"
                 disabled={loading || success}
-                className="w-full bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#3ba9d6] dark:hover:bg-[#5bc0de] text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Resetting password...' : 'Reset Password'}
               </button>
@@ -178,7 +178,7 @@ export default function ResetPasswordPageClient() {
               <button
                 type="button"
                 onClick={() => router.push('/auth/login')}
-                className="text-sm text-[#588157] dark:text-[#3ba9d6] hover:underline font-semibold"
+                className="text-sm text-[#588157] dark:text-[#6f9b74] hover:underline font-semibold"
               >
                 {success ? 'Continue to Sign In' : 'Back to Sign In'}
               </button>
