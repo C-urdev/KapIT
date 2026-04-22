@@ -172,7 +172,10 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
       <section className="relative overflow-hidden min-h-[calc(100vh-5rem)] flex flex-col">
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: 'url(/hero-bg.svg)' }}
+          style={{
+            backgroundImage:
+              theme === 'dark' ? 'url(/hero%20dark.png)' : 'url(/hero%20light.png)',
+          }}
           aria-hidden="true"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/5 to-white dark:to-[#0f2139]" aria-hidden="true" />
