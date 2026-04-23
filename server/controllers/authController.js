@@ -18,10 +18,18 @@ const {
 } = require('../services/authSessionService');
 const { serializeUser } = require('../utils/authUserSerializer');
 const { clearLoginRateLimit } = require('../middleware/security');
+const { assertLocalAuthBypassAllowed } = require('../config/localBypass');
 const isDev = process.env.NODE_ENV !== 'production';
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
 const PASSWORD_HASHER = process.env.PASSWORD_HASHER || 'bcrypt';
 const BCRYPT_HASH_PREFIX = /^\$2[aby]\$\d{2}\$/;
+const getJwtSecretOrThrow = () => {
+  const secret = String(process.env.JWT_SECRET || '').trim();
+  if (!secret) {
+    throw new Error('Missing JWT_SECRET');
+  }
+  return secret;
+};
 const buildDevErrorMeta = (error) => (
   isDev
     ? {
@@ -161,11 +169,16 @@ const register = async (req, res) => {
 
   // Developer mock bypass
   let isValidated = false;
-  if (!verificationToken && process.env.NODE_ENV !== 'production' && email.includes('mock-')) {
-    isValidated = true;
+  if (!verificationToken && email.includes('mock-')) {
+    try {
+      assertLocalAuthBypassAllowed(req);
+      isValidated = true;
+    } catch (error) {
+      return res.status(403).json({ message: error.message });
+    }
   } else if (verificationToken) {
     try {
-      const decoded = jwt.verify(verificationToken, process.env.JWT_SECRET || 'kapit-otp-reset-fallback');
+      const decoded = jwt.verify(verificationToken, getJwtSecretOrThrow());
       if (decoded.purpose === 'registration-validated' && decoded.email.toLowerCase() === email.toLowerCase()) {
         isValidated = true;
       }

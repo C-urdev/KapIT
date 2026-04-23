@@ -153,3 +153,15 @@ After rotation is done, consider:
 - Scrubbing git history if this repository was publicly shared
 - Moving secrets to deployment environment variables instead of local files
 - Using separate development and production credentials
+
+## Secret Scanning Guardrails
+
+Run local secret scanning before push:
+
+1. Install gitleaks (https://github.com/gitleaks/gitleaks).
+2. Run `npm run security:secrets` from repo root.
+
+GitHub recommendations:
+
+1. Enable Secret Scanning in repository security settings.
+2. Enable Push Protection to block committing newly detected secrets.

@@ -2,19 +2,25 @@ const crypto = require('crypto');
 const { OAuth2Client } = require('google-auth-library');
 const pool = require('../config/database');
 const { logger } = require('../config/logger');
-const { generateSessionTokens, storeSession } = require('../services/authSessionService');
+const { attachSessionCookies } = require('../services/authSessionService');
+const { serializeUser } = require('../utils/authUserSerializer');
 const { generateUsername } = require('../utils/usernameGenerator');
+const { assertLocalAuthBypassAllowed } = require('../config/localBypass');
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const handleSocialLogin = async ({ email, name, provider, providerId, ipAddress, userAgent }) => {
+const handleSocialLogin = async ({ email, name, provider, providerId, req, res }) => {
   const normalizedEmail = String(email || '').toLowerCase().trim();
   let pgClient;
 
   try {
+    if (!normalizedEmail) {
+      return { success: false, statusCode: 400, message: 'Social account email is missing.' };
+    }
+
     pgClient = await pool.connect();
     
     // Check if user exists
@@ -25,8 +31,14 @@ const handleSocialLogin = async ({ email, name, provider, providerId, ipAddress,
       // Link account if they already exist but don't have this provider
       const providerField = provider === 'google' ? 'google_id' : 'github_id';
       if (!user[providerField]) {
-        await pgClient.query(`UPDATE users SET ${providerField} = $1, auth_provider = $2 WHERE id = $3`, 
-          [providerId, provider, user.id]);
+        const linked = await pgClient.query(
+          `UPDATE users
+           SET ${providerField} = $1, auth_provider = $2
+           WHERE id = $3
+           RETURNING *`,
+          [providerId, provider, user.id]
+        );
+        user = linked.rows[0] || user;
       }
     } else {
       // Create new user silently (no password needed)
@@ -48,37 +60,19 @@ const handleSocialLogin = async ({ email, name, provider, providerId, ipAddress,
       logger.info({ userId: user.id, provider }, 'New user created via social login');
     }
 
-    // Always generate login session identical to normal login
-    const tokens = generateSessionTokens({
-      userId: user.id,
-      userType: user.user_type,
-      accountType: user.account_type,
-      profileCompleted: user.profile_completed,
-      email: user.email,
-    });
-
-    await storeSession(user.id, tokens.refreshToken, {
-      userAgent,
-      ipAddress,
-      deviceContext: provider + ' Auth',
-    });
+    const session = await attachSessionCookies(res, user, req);
 
     return {
       success: true,
       statusCode: 200,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        user_type: user.user_type,
-        account_type: user.account_type,
-        profile_completed: user.profile_completed,
-        profileCompleted: user.profile_completed,
-        is_premium: user.is_premium,
-        termsAccepted: Boolean(user.terms_accepted),
-        termsAcceptedAt: user.terms_accepted_at ? new Date(user.terms_accepted_at).toISOString() : null,
+      message: 'Login successful',
+      session: {
+        strategy: 'cookie',
+        accessTokenTtl: process.env.JWT_ACCESS_EXPIRE || '20m',
+        refreshTokenTtlDays: Number(process.env.JWT_REFRESH_EXPIRE_DAYS || 14),
+        csrfToken: session.csrfToken,
       },
-      ...tokens,
+      user: serializeUser(user),
     };
   } finally {
     if (pgClient) pgClient.release();
@@ -94,20 +88,22 @@ const googleLogin = async (req, res) => {
   }
 
   // Developer bypass allowing local testing without real API keys
-  if (!GOOGLE_CLIENT_ID && process.env.NODE_ENV !== 'production') {
-    logger.warn('GOOGLE_CLIENT_ID missing; using Developer Mock for Google Login.');
-    // Simulated credential data sent from frontend bypass
-    if (typeof credential === 'string' && credential.includes('mock-google-')) {
+  if (!GOOGLE_CLIENT_ID && typeof credential === 'string' && credential.includes('mock-google-')) {
+    try {
+      assertLocalAuthBypassAllowed(req);
+      logger.warn('GOOGLE_CLIENT_ID missing; using local auth bypass for Google login.');
       const mockEmail = credential.replace('mock-google-', '') + '@example.com';
       const outcome = await handleSocialLogin({
         email: mockEmail,
         name: 'Mock Google User',
         provider: 'google',
         providerId: 'mock-' + Date.now(),
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent') || '',
+        req,
+        res,
       });
       return res.status(outcome.statusCode).json(outcome);
+    } catch (error) {
+      return res.status(403).json({ success: false, message: error.message });
     }
   }
 
@@ -121,14 +117,17 @@ const googleLogin = async (req, res) => {
     if (!payload.email_verified && payload.email) {
       return res.status(400).json({ success: false, message: 'Google email is not verified.' });
     }
+    if (!payload.email) {
+      return res.status(400).json({ success: false, message: 'Google account email is unavailable.' });
+    }
 
     const outcome = await handleSocialLogin({
       email: payload.email,
       name: payload.name,
       provider: 'google',
       providerId: payload.sub,
-      ipAddress: req.ip,
-      userAgent: req.get('user-agent') || '',
+      req,
+      res,
     });
 
     return res.status(outcome.statusCode).json(outcome);
@@ -151,19 +150,23 @@ const githubLogin = async (req, res) => {
   const clientSecret = process.env.GITHUB_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    // Developer bypass allowing local testing without real API keys
-    if (process.env.NODE_ENV !== 'production' && code.includes('mock-github-')) {
-      logger.warn('GITHUB_CLIENT_ID missing; using Developer Mock for GitHub Login.');
-      const mockEmail = code.replace('mock-github-', '') + '@example.com';
-      const outcome = await handleSocialLogin({
-        email: mockEmail,
-        name: 'Mock GitHub User',
-        provider: 'github',
-        providerId: 'mock-gh-' + Date.now(),
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent') || '',
-      });
-      return res.status(outcome.statusCode).json(outcome);
+    if (code.includes('mock-github-')) {
+      try {
+        assertLocalAuthBypassAllowed(req);
+        logger.warn('GITHUB_CLIENT_ID missing; using local auth bypass for GitHub login.');
+        const mockEmail = code.replace('mock-github-', '') + '@example.com';
+        const outcome = await handleSocialLogin({
+          email: mockEmail,
+          name: 'Mock GitHub User',
+          provider: 'github',
+          providerId: 'mock-gh-' + Date.now(),
+          req,
+          res,
+        });
+        return res.status(outcome.statusCode).json(outcome);
+      } catch (error) {
+        return res.status(403).json({ success: false, message: error.message });
+      }
     }
     return res.status(500).json({ success: false, message: 'GitHub login is not fully configured.' });
   }
@@ -215,8 +218,8 @@ const githubLogin = async (req, res) => {
       name: userData.name || userData.login,
       provider: 'github',
       providerId: String(userData.id),
-      ipAddress: req.ip,
-      userAgent: req.get('user-agent') || '',
+      req,
+      res,
     });
 
     return res.status(outcome.statusCode).json(outcome);

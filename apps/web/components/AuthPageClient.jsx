@@ -36,6 +36,7 @@ export default function AuthPageClient({ initialMode = 'login' }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isLocalhost, setIsLocalhost] = useState(false);
+  const localAuthBypassEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS === 'true';
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -172,7 +173,7 @@ export default function AuthPageClient({ initialMode = 'login' }) {
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirm'}
             </button>
-            {isLocalhost ? (
+            {isLocalhost && localAuthBypassEnabled ? (
               <button
                 type="button"
                 onClick={handleLocalhostBypass}

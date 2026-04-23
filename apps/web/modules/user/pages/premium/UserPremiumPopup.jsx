@@ -62,6 +62,8 @@ const PAYMENT_PROVIDERS = [
   },
 ];
 
+const localPaymentBypassEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_PAYMENT_BYPASS === 'true';
+
 function PlanCard({ plan, onUpgrade, buttonLabel, disabled = false }) {
   const highlighted = Boolean(plan.highlighted);
 
@@ -135,7 +137,8 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
   const selectedProvider = PAYMENT_PROVIDERS.find((provider) => provider.id === paymentMethod) || PAYMENT_PROVIDERS[0];
   const selectedProviderState = providerAvailability?.[selectedProvider.id] || { enabled: true, reason: '' };
   const displayName = user?.fullName || user?.name || user?.username || 'User account';
-  const isLocalhostBypassAvailable = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+  const isLocalhostBypassAvailable =
+    localPaymentBypassEnabled && ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
   const stepState = success ? 3 : loading || verifying ? 2 : 1;
   const completedProvider = PAYMENT_PROVIDERS.find((provider) => provider.id === completedCheckout?.providerId) || null;
 

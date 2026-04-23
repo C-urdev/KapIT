@@ -10,7 +10,13 @@ const REFRESH_COOKIE_NAME = process.env.REFRESH_TOKEN_COOKIE_NAME || 'kapit_refr
 const CSRF_COOKIE_NAME = process.env.CSRF_COOKIE_NAME || 'kapit_csrf_token';
 const isProduction = process.env.NODE_ENV === 'production';
 
-const getRefreshTokenSecret = () => process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+const getRefreshTokenSecret = () => {
+  const refreshSecret = String(process.env.JWT_REFRESH_SECRET || '').trim();
+  if (!refreshSecret) {
+    throw new Error('Missing JWT_REFRESH_SECRET');
+  }
+  return refreshSecret;
+};
 
 const parseDurationToMs = (value, fallbackMs) => {
   const normalized = String(value || '').trim().toLowerCase();

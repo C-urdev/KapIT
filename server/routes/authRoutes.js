@@ -55,6 +55,7 @@ const { verifyToken, requireCsrfForCookieAuth } = require('../middleware/auth');
 const { loginRateLimiter, forgotPasswordRateLimiter, resetPasswordRateLimiter } = require('../middleware/security');
 const { validateRequest } = require('../middleware/validateRequest');
 const { writeSchemas } = require('../validation/writeSchemas');
+const { isLocalAuthBypassEnabled, isLocalPaymentBypassEnabled } = require('../config/localBypass');
 
 // Public routes
 router.post('/register', validateRequest(writeSchemas.authRegister), register);
@@ -63,12 +64,14 @@ router.post('/forgot-password', forgotPasswordRateLimiter, validateRequest(write
 router.post('/reset-password', resetPasswordRateLimiter, validateRequest(writeSchemas.authResetPassword), resetPassword);
 router.post('/forgot-password-otp', forgotPasswordRateLimiter, validateRequest(writeSchemas.authSendOtp), sendOtp);
 router.post('/verify-otp', forgotPasswordRateLimiter, validateRequest(writeSchemas.authVerifyOtp), verifyOtpHandler);
-router.post('/verify-otp/localhost-bypass', validateRequest(writeSchemas.authLocalPasswordResetBypass), localPasswordResetBypass);
 router.post('/reset-password-otp', resetPasswordRateLimiter, validateRequest(writeSchemas.authResetPasswordOtp), resetPasswordOtp);
 
 router.post('/send-registration-otp', validateRequest(writeSchemas.authSendOtp), sendRegistrationOtpCode);
 router.post('/verify-registration-otp', validateRequest(writeSchemas.authVerifyOtp), verifyRegistrationOtpCode);
-router.post('/registration/localhost-bypass', validateRequest(writeSchemas.authLocalRegistrationBypass), localRegistrationBypass);
+if (isLocalAuthBypassEnabled()) {
+  router.post('/verify-otp/localhost-bypass', validateRequest(writeSchemas.authLocalPasswordResetBypass), localPasswordResetBypass);
+  router.post('/registration/localhost-bypass', validateRequest(writeSchemas.authLocalRegistrationBypass), localRegistrationBypass);
+}
 
 router.post('/refresh', validateRequest(writeSchemas.authRefresh), refreshSession);
 router.post('/logout', requireCsrfForCookieAuth, validateRequest(writeSchemas.authLogout), logout);
@@ -92,7 +95,9 @@ router.patch('/profile', requireCsrfForCookieAuth, verifyToken, validateRequest(
 router.patch('/terms-consent', requireCsrfForCookieAuth, verifyToken, validateRequest(writeSchemas.authTermsConsent), acceptTermsConsent);
 router.get('/premium/payments/providers', verifyToken, listUserPremiumPaymentProviders);
 router.post('/premium/payments/checkout-session', requireCsrfForCookieAuth, verifyToken, validateRequest(writeSchemas.userPremiumCheckoutSession), createUserPremiumCheckoutSession);
-router.post('/premium/payments/localhost-bypass', requireCsrfForCookieAuth, verifyToken, validateRequest(writeSchemas.userPremiumLocalBypass), completeLocalBypassUserPremiumCheckout);
+if (isLocalPaymentBypassEnabled()) {
+  router.post('/premium/payments/localhost-bypass', requireCsrfForCookieAuth, verifyToken, validateRequest(writeSchemas.userPremiumLocalBypass), completeLocalBypassUserPremiumCheckout);
+}
 router.post('/premium/payments/paypal/capture', requireCsrfForCookieAuth, verifyToken, validateRequest(writeSchemas.userPremiumPaypalCapture), captureUserPremiumPayPalCheckout);
 router.post('/premium/payments/:paymentId/cancel', requireCsrfForCookieAuth, verifyToken, validateRequest(writeSchemas.userPremiumCancel), cancelUserPremiumCheckoutSession);
 router.get('/posts/feed', verifyToken, listFeedPosts);

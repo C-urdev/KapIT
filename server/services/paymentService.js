@@ -9,6 +9,7 @@ const {
   getPayPalClientId,
   getPayPalClientSecret,
 } = require('../config/paymentEnv');
+const { assertLocalPaymentBypassAllowed } = require('../config/localBypass');
 
 const PAYMENT_PROVIDERS = new Set(['paypal']);
 const PAYMENT_API_TIMEOUT_MS = Math.max(1000, Number(process.env.PAYMENT_API_TIMEOUT_MS || 10000));
@@ -719,53 +720,7 @@ const startJobPostCheckoutIdempotent = async ({
 };
 
 const assertLocalBypassAllowed = (req) => {
-  const toHostname = (raw) => {
-    const value = String(raw || '').trim().toLowerCase();
-    if (!value) {
-      return '';
-    }
-
-    try {
-      const asUrl = value.includes('://') ? new URL(value) : new URL(`http://${value}`);
-      return String(asUrl.hostname || '').trim().toLowerCase();
-    } catch {
-      return '';
-    }
-  };
-
-  const isLoopbackHost = (raw) => {
-    const hostname = toHostname(raw);
-    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
-  };
-
-  const isLoopbackIp = (raw) => {
-    const ip = String(raw || '').trim().toLowerCase();
-    return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
-  };
-
-  const isProduction = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
-  if (isProduction) {
-    throw new Error('Local payment bypass is forbidden in production.');
-  }
-
-  const bypassEnabled = String(process.env.ENABLE_LOCAL_PAYMENT_BYPASS || '').trim().toLowerCase() === 'true';
-  if (!bypassEnabled) {
-    throw new Error('Local payment bypass is disabled.');
-  }
-
-  const hostHeader = req.get('x-forwarded-host') || req.get('host') || req.hostname;
-  const originHeader = req.get('origin');
-  const refererHeader = req.get('referer');
-  const requestIp = req.ip || req.socket?.remoteAddress || '';
-
-  const hostAllowed = isLoopbackHost(hostHeader);
-  const originAllowed = !originHeader || isLoopbackHost(originHeader);
-  const refererAllowed = !refererHeader || isLoopbackHost(refererHeader);
-  const ipAllowed = isLoopbackIp(requestIp);
-
-  if (!hostAllowed || !originAllowed || !refererAllowed || !ipAllowed) {
-    throw new Error('Local payment bypass is only allowed from localhost.');
-  }
+  assertLocalPaymentBypassAllowed(req);
 };
 
 const completeLocalBypassPayment = async ({ client, companyUserId, provider, planId, draft, jobId = null, payerEmail = null }) => {

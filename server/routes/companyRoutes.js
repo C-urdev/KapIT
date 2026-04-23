@@ -26,6 +26,7 @@ const {
 } = require('../controllers/companyPaymentController');
 const { validateRequest } = require('../middleware/validateRequest');
 const { writeSchemas } = require('../validation/writeSchemas');
+const { isLocalPaymentBypassEnabled } = require('../config/localBypass');
 
 const router = express.Router();
 
@@ -43,7 +44,9 @@ router.post('/jobs/draft', requireCsrfForCookieAuth, validateRequest(writeSchema
 router.get('/payments/plans', listJobPostingPlans);
 router.get('/payments/providers', listPaymentProviders);
 router.post('/payments/checkout-session', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyCheckoutSession), createCheckoutSession);
-router.post('/payments/localhost-bypass', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyLocalBypass), completeLocalBypassCheckout);
+if (isLocalPaymentBypassEnabled()) {
+  router.post('/payments/localhost-bypass', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyLocalBypass), completeLocalBypassCheckout);
+}
 router.post('/payments/paypal/capture', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyPaypalCapture), capturePayPalCheckout);
 router.post('/payments/:paymentId/cancel', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyCancel), cancelCheckoutSession);
 router.post('/jobs', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyJobsCreate), createJob);
