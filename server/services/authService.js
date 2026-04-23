@@ -8,6 +8,13 @@ const { sendPasswordResetEmail, sendOtpEmail } = require('./emailService');
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
 const RESET_TOKEN_TTL_MINUTES = Number(process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES || 15);
 const CLEANUP_INTERVAL_MS = Number(process.env.PASSWORD_RESET_CLEANUP_INTERVAL_MS || 5 * 60 * 1000);
+const getOtpJwtSecretOrThrow = () => {
+  const secret = String(process.env.JWT_SECRET || '').trim();
+  if (!secret) {
+    throw new Error('Missing JWT_SECRET');
+  }
+  return secret;
+};
 
 const FORGOT_PASSWORD_GENERIC_MESSAGE =
   'If an account with that email exists, a password reset link has been sent.';
@@ -255,7 +262,6 @@ const startPasswordResetCleanupJob = () => {
 // ─── OTP Flow ────────────────────────────────────────────────────────────────
 
 const OTP_TTL_MINUTES = Number(process.env.OTP_TTL_MINUTES || 10);
-const OTP_RESET_TOKEN_SECRET = process.env.JWT_SECRET || 'kapit-otp-reset-fallback';
 const OTP_GENERIC_MESSAGE = 'If an account with that email exists, a verification code has been sent.';
 
 const ensureOtpTable = async (client) => {
@@ -370,7 +376,7 @@ const verifyOtp = async ({ email, code }) => {
     // Issue short-lived reset token (15 min)
     const resetToken = jwt.sign(
       { email: normalizedEmail, purpose: 'otp-password-reset' },
-      OTP_RESET_TOKEN_SECRET,
+      getOtpJwtSecretOrThrow(),
       { expiresIn: '15m' }
     );
 
@@ -390,7 +396,7 @@ const resetPasswordWithOtp = async ({ resetToken, newPassword, ipAddress }) => {
 
   let payload;
   try {
-    payload = jwt.verify(String(resetToken || '').trim(), OTP_RESET_TOKEN_SECRET);
+    payload = jwt.verify(String(resetToken || '').trim(), getOtpJwtSecretOrThrow());
   } catch {
     return INVALID;
   }
@@ -498,7 +504,7 @@ const verifyRegistrationOtp = async ({ email, code }) => {
     // Issue short-lived validation token to be passed onto standard registration route
     const verificationToken = jwt.sign(
       { email: normalizedEmail, purpose: 'registration-validated' },
-      OTP_RESET_TOKEN_SECRET,
+      getOtpJwtSecretOrThrow(),
       { expiresIn: '15m' }
     );
 
@@ -537,7 +543,7 @@ const issueLocalPasswordResetBypassToken = async ({ email }) => {
 
     const resetToken = jwt.sign(
       { email: normalizedEmail, purpose: 'otp-password-reset' },
-      OTP_RESET_TOKEN_SECRET,
+      getOtpJwtSecretOrThrow(),
       { expiresIn: '15m' }
     );
 
@@ -568,7 +574,7 @@ const issueLocalRegistrationBypassToken = async ({ email }) => {
 
     const verificationToken = jwt.sign(
       { email: normalizedEmail, purpose: 'registration-validated' },
-      OTP_RESET_TOKEN_SECRET,
+      getOtpJwtSecretOrThrow(),
       { expiresIn: '15m' }
     );
 

@@ -75,6 +75,17 @@ const validateUrl = (key, errors) => {
   }
 };
 
+const validateBooleanString = (key, errors) => {
+  const value = readEnv(key);
+  if (!value) {
+    return;
+  }
+
+  if (value !== 'true' && value !== 'false') {
+    errors.push(`${key} must be "true" or "false".`);
+  }
+};
+
 const requireAtLeastOne = (keys, errors) => {
   const hasValue = keys.some((key) => Boolean(readEnv(key)));
   if (!hasValue) {
@@ -97,12 +108,19 @@ const validateEnvironment = () => {
 
   validateSecretQuality('JWT_SECRET', errors);
   validateSecretQuality('JWT_REFRESH_SECRET', errors);
+  validateBooleanString('ENABLE_LOCAL_AUTH_BYPASS', errors);
+  validateBooleanString('ENABLE_LOCAL_PAYMENT_BYPASS', errors);
+  validateBooleanString('NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS', errors);
+  validateBooleanString('NEXT_PUBLIC_ENABLE_LOCAL_PAYMENT_BYPASS', errors);
+  validateBooleanString('ALLOW_KAPIT_NETLIFY_PREVIEW', errors);
 
   if (readEnv('JWT_EXPIRE') && !readEnv('JWT_ACCESS_EXPIRE')) {
     errors.push('JWT_EXPIRE is deprecated. Use JWT_ACCESS_EXPIRE and JWT_REFRESH_EXPIRE_DAYS.');
   }
 
   if (isProduction) {
+    requireValue('CLIENT_URL', errors);
+    validateUrl('CLIENT_URL', errors);
     requireValue('NEXT_PUBLIC_SITE_URL', errors);
     validateUrl('NEXT_PUBLIC_SITE_URL', errors);
 
@@ -110,6 +128,10 @@ const validateEnvironment = () => {
       ['EXPRESS_API_URL_PRODUCTION', 'NEXT_PUBLIC_EXPRESS_API_URL_PRODUCTION'],
       errors
     );
+    validateUrl('EXPRESS_API_URL_PRODUCTION', errors);
+    validateUrl('NEXT_PUBLIC_EXPRESS_API_URL_PRODUCTION', errors);
+    validateUrl('FASTAPI_URL_PRODUCTION', errors);
+    validateUrl('NEXT_PUBLIC_FASTAPI_URL_PRODUCTION', errors);
 
     const hasGoogleConfig = Boolean(readEnv('GOOGLE_CLIENT_ID') || readEnv('NEXT_PUBLIC_GOOGLE_CLIENT_ID'));
     if (hasGoogleConfig) {
@@ -132,8 +154,20 @@ const validateEnvironment = () => {
       errors.push('Configure PayPal in production (PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET).');
     }
 
+    if (readEnv('ENABLE_LOCAL_AUTH_BYPASS').toLowerCase() === 'true') {
+      errors.push('ENABLE_LOCAL_AUTH_BYPASS must be false in production.');
+    }
+
     if (readEnv('ENABLE_LOCAL_PAYMENT_BYPASS').toLowerCase() === 'true') {
       errors.push('ENABLE_LOCAL_PAYMENT_BYPASS must be false in production.');
+    }
+
+    if (readEnv('NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS').toLowerCase() === 'true') {
+      errors.push('NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS must be false in production.');
+    }
+
+    if (readEnv('NEXT_PUBLIC_ENABLE_LOCAL_PAYMENT_BYPASS').toLowerCase() === 'true') {
+      errors.push('NEXT_PUBLIC_ENABLE_LOCAL_PAYMENT_BYPASS must be false in production.');
     }
   }
 

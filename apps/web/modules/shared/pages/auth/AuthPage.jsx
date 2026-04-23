@@ -33,6 +33,12 @@ export default function AuthPage({
   const [authTermsOpen, setAuthTermsOpen] = useState(false);
   const [pendingSignupInput, setPendingSignupInput] = useState(null);
   const [termsDecisionError, setTermsDecisionError] = useState('');
+  const isLocalAuthBypassEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS === 'true';
+
+  const isLoopbackHost = () => {
+    const host = String(window.location.hostname || '').trim().toLowerCase();
+    return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+  };
 
   useEffect(() => {
     const clearStaleOauthLoading = () => {
@@ -212,7 +218,7 @@ export default function AuthPage({
       return;
     }
 
-    if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && process.env.NODE_ENV !== 'production') {
+    if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && process.env.NODE_ENV !== 'production' && isLocalAuthBypassEnabled && isLoopbackHost()) {
       const email = prompt(`[Developer Mode - Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID]\n\nEnter any existing or new email to simulate logging in with Google:`);
       if (!email) return;
       return handleDeveloperMock('Google', email);
@@ -248,7 +254,7 @@ export default function AuthPage({
     }
 
     const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
-    if (!clientId && process.env.NODE_ENV !== 'production') {
+    if (!clientId && process.env.NODE_ENV !== 'production' && isLocalAuthBypassEnabled && isLoopbackHost()) {
       const email = prompt(`[Developer Mode - Missing NEXT_PUBLIC_GITHUB_CLIENT_ID]\n\nEnter any email to simulate logging in with GitHub:`);
       if (!email) return;
       return handleDeveloperMock('GitHub', email);
@@ -262,6 +268,11 @@ export default function AuthPage({
   };
 
   const handleDeveloperMock = async (provider, email) => {
+    if (!isLocalAuthBypassEnabled || !isLoopbackHost()) {
+      setError('Local auth bypass is disabled.');
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {

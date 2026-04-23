@@ -1,0 +1,9 @@
+title = "kapIT gitleaks config"
+
+[allowlist]
+description = "Allow explicit test placeholders and docs examples."
+paths = [
+  '''^\.env\.example$''',
+  '''^server/tests/.*\.test\.cjs$''',
+  '''^SECURITY_ROTATION\.md$'''
+]

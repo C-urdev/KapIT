@@ -7,6 +7,7 @@ import { JOB_POST_PLANS, PAYMENT_PROVIDERS, PLAN_FEATURES } from '@companyFeatur
 const STORAGE_KEY = 'company-post-job-draft';
 const PAYMENT_MESSAGE_TYPE = 'company-post-job-payment-success';
 const PAYMENT_CANCEL_MESSAGE_TYPE = 'company-post-job-payment-cancelled';
+const localPaymentBypassEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_PAYMENT_BYPASS === 'true';
 
 const sanitizeDraft = (draft) => ({
   jobId: draft?.jobId == null ? null : Number(draft.jobId),
@@ -41,7 +42,8 @@ export default function CompanyPostJobPaymentPage() {
   const [completedCheckout, setCompletedCheckout] = React.useState(null);
   const handledReturnRef = React.useRef(false);
   const paymentCompletedRef = React.useRef(false);
-  const isLocalhostBypassAvailable = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+  const isLocalhostBypassAvailable =
+    localPaymentBypassEnabled && ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
 
   React.useEffect(() => {
     try {

@@ -195,6 +195,7 @@ function StepVerify({ email, onNext, onBack }) {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [isLocalhost, setIsLocalhost] = useState(false);
+  const localAuthBypassEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS === 'true';
   const inputRefs = useRef([]);
 
   const code = digits.join('');
@@ -362,7 +363,7 @@ function StepVerify({ email, onNext, onBack }) {
       <PrimaryButton loading={loading}>
         {loading ? 'Verifying…' : 'Verify Code'}
       </PrimaryButton>
-      {isLocalhost ? (
+      {isLocalhost && localAuthBypassEnabled ? (
         <button
           type="button"
           onClick={handleLocalBypass}
