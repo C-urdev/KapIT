@@ -5,7 +5,6 @@ node_modules
 **/.env.local
 .next
 dist
-.vercel
 apps/web/.next
 .venv
 services/ai-fastapi/.venv
@@ -18,5 +17,9 @@ server.dev.err.log
 
 # Local prompt/change logs (do not commit)
 docs/prompt and changes history.md
+docs/prompt-history.md
 docs/prompt-answer-code-change-history.md
 docs/*changes*history*.md
+AGENTS.md
+agents/skills/
+.agents/skills/
