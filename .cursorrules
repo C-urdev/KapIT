@@ -1,4 +1,0 @@
-Use all skills under `.agents/skills/*/SKILL.md` as the project skill source.
-
-When a request includes a matching keyword or intent, load and apply the relevant skill(s).
-If multiple skills match, use all relevant skills in sequence.
