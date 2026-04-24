@@ -3,15 +3,23 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import dotenv from 'dotenv';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDirectory, '..');
 
 // Load local overrides first, then base .env as fallback values.
 // This keeps explicit shell/env-platform variables as highest priority.
-dotenv.config({ path: path.resolve(repoRoot, '.env.local') });
-dotenv.config({ path: path.resolve(repoRoot, '.env') });
+// Do not hard-fail if dotenv is unavailable in package-scoped installs (e.g. Netlify base=apps/web).
+try {
+  const dotenvModule = await import('dotenv');
+  const dotenv = dotenvModule?.default || dotenvModule;
+  dotenv.config({ path: path.resolve(repoRoot, '.env.local') });
+  dotenv.config({ path: path.resolve(repoRoot, '.env') });
+} catch (error) {
+  if (String(error?.code || '') !== 'ERR_MODULE_NOT_FOUND') {
+    console.warn(`dotenv load skipped: ${error?.message || String(error)}`);
+  }
+}
 
 const scriptName = process.argv[2] || 'dev';
 const appDirectory = path.resolve(repoRoot, 'apps/web');

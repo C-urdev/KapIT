@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Bookmark, Building, ChevronDown, MapPin, Search, SlidersHorizontal, X } from 'lucide-react';
-import { applyToJob, getJobsFeed, getSavedJobs, removeSavedJob, saveJob } from '@sharedServices/authService';
+import { Building2, ChevronDown, MapPin, Search, SlidersHorizontal, X } from 'lucide-react';
+import { getJobsFeed, getSavedJobs } from '@sharedServices/authService';
 import { formatJobStatus, statusBadgeClass } from '@companyFeatures/companyUtils';
-import { saveApplicationForUser, syncApplicationsForUser } from '@userFeatures/activity/userActivityStorage';
+import { syncApplicationsForUser } from '@userFeatures/activity/userActivityStorage';
 
 const EMPTY_FILTERS = {
   q: '',
@@ -30,20 +30,61 @@ const STATUS_OPTIONS = [
   { value: 'closed', label: 'Closed' },
 ];
 
-export default function UserJobsPage({ userType, user }) {
+const normalizeTitle = (value) => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+const resolveJobId = (value) => {
+  const numeric = Number(value);
+  return Number.isInteger(numeric) && numeric > 0 ? numeric : null;
+};
+const SWIPE_THRESHOLD_PX = 56;
+const MAX_DRAG_OFFSET_PX = 120;
+const isInteractiveTarget = (target) => (
+  Boolean(target?.closest?.('button, a, input, select, textarea, [role="button"]'))
+);
+
+const applyStateToJob = (job, savedJobIds, jobCardStateById) => {
+  const jobId = resolveJobId(job?.id);
+  if (!jobId) {
+    return job;
+  }
+  const overrides = jobCardStateById?.[jobId] || {};
+  return {
+    ...job,
+    hasApplied: typeof overrides.hasApplied === 'boolean' ? overrides.hasApplied : Boolean(job?.hasApplied),
+    isSaved: typeof overrides.isSaved === 'boolean' ? overrides.isSaved : savedJobIds.includes(jobId),
+  };
+};
+
+export default function UserJobsPage({
+  userType,
+  user,
+  jobCardStateById = {},
+  onOpenCompanyProfile,
+  onOpenJobDetail,
+}) {
   const [jobs, setJobs] = useState([]);
   const [savedJobIds, setSavedJobIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [applyingJobId, setApplyingJobId] = useState(null);
   const [feedback, setFeedback] = useState('');
-  const [plan, setPlan] = useState({ isPremium: false });
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filterPopupPosition, setFilterPopupPosition] = useState({ top: 0, left: 0 });
+  const [activeIndex, setActiveIndex] = useState(0);
   const filterPopupRef = useRef(null);
   const filterButtonRef = useRef(null);
+  const swipeStartXRef = useRef(null);
+  const touchDraggingRef = useRef(false);
+  const pointerStartXRef = useRef(null);
+  const mouseDraggingRef = useRef(false);
+  const lastAutoOpenRef = useRef('');
+  const animationTimeoutRef = useRef(null);
+  const finishTimeoutRef = useRef(null);
+  const [isDraggingCard, setIsDraggingCard] = useState(false);
+  const [dragDeltaX, setDragDeltaX] = useState(0);
+  const [animOffsetX, setAnimOffsetX] = useState(0);
+  const [animOpacity, setAnimOpacity] = useState(1);
+  const [animDurationMs, setAnimDurationMs] = useState(220);
 
   useEffect(() => {
     let canceled = false;
@@ -54,22 +95,26 @@ export default function UserJobsPage({ userType, user }) {
       }
       if (!canceled) {
         setError('');
-        if (!silent) {
-          setFeedback('');
-        }
       }
+
       try {
         const [jobsData, savedJobs] = await Promise.all([
           getJobsFeed(appliedFilters),
           getSavedJobs().catch(() => []),
         ]);
-        if (!canceled) {
-          const nextJobs = Array.isArray(jobsData?.jobs) ? jobsData.jobs : [];
-          syncApplicationsForUser(user, nextJobs);
-          setJobs(nextJobs);
-          setSavedJobIds(savedJobs.map((job) => Number(job?.id)).filter((id) => Number.isInteger(id)));
-          setPlan(jobsData?.plan || { isPremium: false });
+        if (canceled) {
+          return;
         }
+
+        const nextSavedIds = savedJobs
+          .map((entry) => resolveJobId(entry?.id))
+          .filter((id) => Number.isInteger(id));
+        const nextJobs = (Array.isArray(jobsData?.jobs) ? jobsData.jobs : [])
+          .map((job) => applyStateToJob(job, nextSavedIds, jobCardStateById));
+        syncApplicationsForUser(user, nextJobs);
+        setSavedJobIds(nextSavedIds);
+        setJobs(nextJobs);
+        setActiveIndex((current) => Math.max(0, Math.min(current, Math.max(0, nextJobs.length - 1))));
       } catch (err) {
         if (!canceled) {
           setError(err?.message || 'Failed to load jobs.');
@@ -82,22 +127,16 @@ export default function UserJobsPage({ userType, user }) {
       }
     };
 
-    const handleWindowFocus = () => {
-      safeLoadJobs({ silent: true });
-    };
-
+    safeLoadJobs();
+    const handleWindowFocus = () => safeLoadJobs({ silent: true });
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         safeLoadJobs({ silent: true });
       }
     };
-
-    safeLoadJobs();
     window.addEventListener('focus', handleWindowFocus);
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    const intervalId = window.setInterval(() => {
-      safeLoadJobs({ silent: true });
-    }, 30000);
+    const intervalId = window.setInterval(() => safeLoadJobs({ silent: true }), 30000);
 
     return () => {
       canceled = true;
@@ -105,7 +144,22 @@ export default function UserJobsPage({ userType, user }) {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.clearInterval(intervalId);
     };
-  }, [appliedFilters, user]);
+  }, [appliedFilters, jobCardStateById, user]);
+
+  useEffect(() => {
+    setJobs((current) => current.map((job) => applyStateToJob(job, savedJobIds, jobCardStateById)));
+  }, [jobCardStateById, savedJobIds]);
+
+  useEffect(() => {
+    return () => {
+      if (animationTimeoutRef.current) {
+        window.clearTimeout(animationTimeoutRef.current);
+      }
+      if (finishTimeoutRef.current) {
+        window.clearTimeout(finishTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!showAdvancedFilters) return undefined;
@@ -136,7 +190,6 @@ export default function UserJobsPage({ userType, user }) {
     document.addEventListener('keydown', handleKeyDown);
     window.addEventListener('resize', updatePopupPosition);
     window.addEventListener('scroll', updatePopupPosition, true);
-
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('resize', updatePopupPosition);
@@ -144,10 +197,37 @@ export default function UserJobsPage({ userType, user }) {
     };
   }, [showAdvancedFilters]);
 
+  useEffect(() => {
+    setActiveIndex((current) => Math.max(0, Math.min(current, Math.max(0, jobs.length - 1))));
+  }, [jobs.length]);
+
+  useEffect(() => {
+    const query = normalizeTitle(appliedFilters.q);
+    if (!query || loading || jobs.length === 0) {
+      return;
+    }
+
+    const exactMatches = jobs.filter((job) => normalizeTitle(job?.title) === query);
+    if (exactMatches.length !== 1) {
+      return;
+    }
+
+    const job = exactMatches[0];
+    const marker = `${query}:${job.id}`;
+    if (lastAutoOpenRef.current === marker) {
+      return;
+    }
+
+    lastAutoOpenRef.current = marker;
+    onOpenJobDetail?.(job);
+  }, [appliedFilters.q, jobs, loading, onOpenJobDetail]);
+
   const hasActiveFilters = useMemo(
     () => Object.values(appliedFilters).some((value) => String(value || '').trim()),
     [appliedFilters]
   );
+
+  const currentJob = jobs[activeIndex] || null;
 
   const handleFilterChange = (key, value) => {
     setFilters((current) => ({ ...current, [key]: value }));
@@ -155,79 +235,206 @@ export default function UserJobsPage({ userType, user }) {
 
   const handleSearch = (event) => {
     event.preventDefault();
-    setAppliedFilters({
+    const nextFilters = {
       q: String(filters.q || '').trim(),
       location: String(filters.location || '').trim(),
       type: String(filters.type || '').trim(),
       skill: String(filters.skill || '').trim(),
       status: String(filters.status || '').trim().toLowerCase(),
-    });
+    };
+    setAppliedFilters(nextFilters);
     setShowAdvancedFilters(false);
+    if (!nextFilters.q) {
+      lastAutoOpenRef.current = '';
+    }
   };
 
   const handleReset = () => {
     setFilters(EMPTY_FILTERS);
     setAppliedFilters(EMPTY_FILTERS);
     setShowAdvancedFilters(false);
-  };
-
-  const handleApply = async (job) => {
-    if (!job?.id || job?.hasApplied) {
-      return;
-    }
-
-    setApplyingJobId(job.id);
-    setError('');
     setFeedback('');
-
-    try {
-      await applyToJob(job.id);
-      saveApplicationForUser(user, {
-        jobId: job.id,
-        title: job?.title || 'Untitled job',
-        location: job?.location || '',
-        type: job?.type || '',
-        salary: job?.salary || '',
-        status: 'pending',
-        company: job?.company || {},
-        appliedAt: new Date().toISOString(),
-      });
-      setJobs((currentJobs) =>
-        currentJobs.map((currentJob) =>
-          currentJob.id === job.id
-            ? { ...currentJob, hasApplied: true }
-            : currentJob
-        )
-      );
-      setFeedback(`Your application for "${job.title}" was sent to ${job?.company?.name || 'the company'}.`);
-    } catch (err) {
-      setError(err?.message || 'Failed to apply to job.');
-    } finally {
-      setApplyingJobId(null);
-    }
+    lastAutoOpenRef.current = '';
   };
 
-  const handleToggleSave = async (job) => {
-    const jobId = Number(job?.id);
-    if (!Number.isInteger(jobId) || jobId <= 0) {
+  const goPrev = () => {
+    if (jobs.length <= 1) return;
+    setActiveIndex((current) => (current - 1 + jobs.length) % jobs.length);
+  };
+
+  const goNext = () => {
+    if (jobs.length <= 1) return;
+    setActiveIndex((current) => (current + 1) % jobs.length);
+  };
+
+  const resetCardPosition = () => {
+    setAnimDurationMs(180);
+    setAnimOffsetX(0);
+    setAnimOpacity(1);
+    setDragDeltaX(0);
+  };
+
+  const animateSwipeTo = (direction) => {
+    if (jobs.length <= 1) {
+      resetCardPosition();
       return;
     }
 
-    const isSaved = savedJobIds.includes(jobId);
-    try {
-      if (isSaved) {
-        await removeSavedJob(jobId);
-        setSavedJobIds((current) => current.filter((id) => id !== jobId));
-        setFeedback(`"${job.title}" was removed from Saved Jobs.`);
-        return;
+    const outgoingOffset = direction > 0 ? -MAX_DRAG_OFFSET_PX : MAX_DRAG_OFFSET_PX;
+    const incomingOffset = direction > 0 ? MAX_DRAG_OFFSET_PX : -MAX_DRAG_OFFSET_PX;
+
+    setAnimDurationMs(180);
+    setAnimOffsetX(outgoingOffset);
+    setAnimOpacity(0.12);
+    setDragDeltaX(0);
+
+    if (animationTimeoutRef.current) {
+      window.clearTimeout(animationTimeoutRef.current);
+    }
+    animationTimeoutRef.current = window.setTimeout(() => {
+      if (direction > 0) {
+        goNext();
+      } else {
+        goPrev();
       }
 
-      await saveJob(jobId);
-      setSavedJobIds((current) => (current.includes(jobId) ? current : [jobId, ...current]));
-      setFeedback(`"${job.title}" was saved to your Saved Jobs.`);
-    } catch (err) {
-      setError(err?.message || 'Failed to update saved jobs.');
+      setAnimDurationMs(0);
+      setAnimOffsetX(incomingOffset);
+      setAnimOpacity(0.18);
+
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          setAnimDurationMs(240);
+          setAnimOffsetX(0);
+          setAnimOpacity(1);
+        });
+      });
+
+      if (finishTimeoutRef.current) {
+        window.clearTimeout(finishTimeoutRef.current);
+      }
+      finishTimeoutRef.current = window.setTimeout(() => {
+        setAnimDurationMs(220);
+        setAnimOffsetX(0);
+        setAnimOpacity(1);
+      }, 250);
+    }, 180);
+  };
+
+  const handleSwipeStart = (event) => {
+    if (isInteractiveTarget(event.target)) {
+      swipeStartXRef.current = null;
+      touchDraggingRef.current = false;
+      return;
     }
+    swipeStartXRef.current = event.touches?.[0]?.clientX ?? null;
+    touchDraggingRef.current = swipeStartXRef.current != null;
+    if (touchDraggingRef.current) {
+      setIsDraggingCard(true);
+    }
+  };
+
+  const handleSwipeMove = (event) => {
+    if (!touchDraggingRef.current) {
+      return;
+    }
+    const startX = swipeStartXRef.current;
+    const currentX = event.touches?.[0]?.clientX ?? startX;
+    if (startX == null || currentX == null) {
+      return;
+    }
+    const deltaX = currentX - startX;
+    const boundedDelta = Math.max(-MAX_DRAG_OFFSET_PX, Math.min(MAX_DRAG_OFFSET_PX, deltaX));
+    setDragDeltaX(boundedDelta);
+  };
+
+  const handleSwipeEnd = (event) => {
+    if (!touchDraggingRef.current) {
+      return;
+    }
+    touchDraggingRef.current = false;
+    setIsDraggingCard(false);
+    const startX = swipeStartXRef.current;
+    swipeStartXRef.current = null;
+    if (startX == null) {
+      return;
+    }
+    const endX = event.changedTouches?.[0]?.clientX ?? startX;
+    const deltaX = endX - startX;
+    if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX) {
+      resetCardPosition();
+      return;
+    }
+    if (deltaX < 0) {
+      animateSwipeTo(1);
+      return;
+    }
+    animateSwipeTo(-1);
+  };
+
+  const handlePointerDown = (event) => {
+    if (event.pointerType !== 'mouse' || event.button !== 0 || isInteractiveTarget(event.target)) {
+      return;
+    }
+    try {
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+    } catch {
+      // Ignore unsupported pointer capture.
+    }
+    pointerStartXRef.current = event.clientX;
+    mouseDraggingRef.current = true;
+    setIsDraggingCard(true);
+  };
+
+  const handlePointerMove = (event) => {
+    if (!mouseDraggingRef.current || pointerStartXRef.current == null) {
+      return;
+    }
+    const deltaX = event.clientX - pointerStartXRef.current;
+    const boundedDelta = Math.max(-MAX_DRAG_OFFSET_PX, Math.min(MAX_DRAG_OFFSET_PX, deltaX));
+    setDragDeltaX(boundedDelta);
+  };
+
+  const handlePointerUp = (event) => {
+    if (!mouseDraggingRef.current) {
+      return;
+    }
+    mouseDraggingRef.current = false;
+    try {
+      event.currentTarget.releasePointerCapture?.(event.pointerId);
+    } catch {
+      // Ignore unsupported pointer capture.
+    }
+    const startX = pointerStartXRef.current;
+    pointerStartXRef.current = null;
+    setIsDraggingCard(false);
+    if (startX == null) {
+      return;
+    }
+    const deltaX = event.clientX - startX;
+    if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX) {
+      resetCardPosition();
+      return;
+    }
+    if (deltaX < 0) {
+      animateSwipeTo(1);
+      return;
+    }
+    animateSwipeTo(-1);
+  };
+
+  const handleOpenCompany = () => {
+    if (!currentJob) {
+      return;
+    }
+    onOpenCompanyProfile?.(currentJob);
+  };
+
+  const handleOpenDetail = () => {
+    if (!currentJob) {
+      return;
+    }
+    onOpenJobDetail?.(currentJob);
   };
 
   return (
@@ -238,10 +445,7 @@ export default function UserJobsPage({ userType, user }) {
         </h1>
       </div>
 
-      <form
-        onSubmit={handleSearch}
-        className="p-0"
-      >
+      <form onSubmit={handleSearch} className="p-0">
         <div className={`flex flex-col ${hasActiveFilters ? 'gap-4' : 'gap-3'}`}>
           <div className="flex flex-row items-center gap-2 sm:gap-3 w-full">
             <div className="min-w-0 flex-1">
@@ -297,9 +501,8 @@ export default function UserJobsPage({ userType, user }) {
         </div>
       </form>
 
-      {feedback && <p className="text-sm text-[#3a5a40] dark:text-[#f0c766]">{feedback}</p>}
-      {plan?.isPremium ? <p className="text-xs text-[#3a5a40] dark:text-[#f0c766]">Premium scoring is active. Match percentages appear on supported jobs.</p> : null}
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {feedback ? <p className="text-sm text-[#3a5a40] dark:text-[#f0c766]">{feedback}</p> : null}
+      {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
 
       {loading ? (
         <p className="text-sm text-[#4b5563] dark:text-[#d0d7dd]">Loading jobs...</p>
@@ -310,22 +513,58 @@ export default function UserJobsPage({ userType, user }) {
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-[#5f6f52] dark:text-[#a8b1ba]">
-            {jobs.length} job{jobs.length === 1 ? '' : 's'} found
-          </p>
-          {jobs.map((job) => (
-            <JobCard
-              key={job.id}
-              job={job}
-              isSaved={savedJobIds.includes(Number(job?.id))}
-              isPremiumUser={Boolean(plan?.isPremium)}
-              onApply={handleApply}
-              onToggleSave={handleToggleSave}
-              applying={applyingJobId === job.id}
-            />
-          ))}
-        </div>
+        <section className="space-y-4">
+          <div className="flex items-center justify-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[#5f6f52] dark:text-[#a8b1ba]">
+              {activeIndex + 1} of {jobs.length}
+            </p>
+          </div>
+
+          <div
+            tabIndex={0}
+            onKeyDown={(event) => {
+              if (event.key === 'ArrowLeft') {
+                event.preventDefault();
+                animateSwipeTo(-1);
+              }
+              if (event.key === 'ArrowRight') {
+                event.preventDefault();
+                animateSwipeTo(1);
+              }
+            }}
+            onTouchStart={handleSwipeStart}
+            onTouchMove={handleSwipeMove}
+            onTouchEnd={handleSwipeEnd}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={() => {
+              pointerStartXRef.current = null;
+              mouseDraggingRef.current = false;
+              touchDraggingRef.current = false;
+              setIsDraggingCard(false);
+              resetCardPosition();
+            }}
+            className={`mx-auto w-full max-w-[700px] outline-none focus-visible:ring-2 focus-visible:ring-[#588157] rounded-2xl select-none ${isDraggingCard ? 'cursor-grabbing' : 'cursor-grab'}`}
+            aria-label="Swipe left or right to browse jobs"
+          >
+            <div
+              style={{
+                transform: `translateX(${animOffsetX + dragDeltaX}px)`,
+                opacity: animOpacity,
+                transitionProperty: 'transform, opacity',
+                transitionDuration: `${animDurationMs}ms`,
+                transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
+              }}
+            >
+              <SquareJobCard
+                job={currentJob}
+                onViewCompany={handleOpenCompany}
+                onMoreInfo={handleOpenDetail}
+              />
+            </div>
+          </div>
+        </section>
       )}
 
       {showAdvancedFilters ? (
@@ -352,9 +591,79 @@ export default function UserJobsPage({ userType, user }) {
   );
 }
 
+function SquareJobCard({ job, onViewCompany, onMoreInfo }) {
+  if (!job) {
+    return null;
+  }
+
+  const status = String(job?.status || 'open').toLowerCase();
+
+  return (
+    <article className="aspect-square w-full rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] p-5 shadow-sm transition-colors dark:border-[#353c44] dark:bg-[#22272b] sm:p-7">
+      <div className="flex h-full flex-col">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="min-w-0 flex items-center gap-3">
+            <div className="inline-flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#588157] to-[#3a5a40] text-white dark:from-[#82ad86] dark:to-[#6f9b74]">
+              {job?.company?.logo ? (
+                <img
+                  src={job.company.logo}
+                  alt={`${job?.company?.name || 'Company'} logo`}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <Building2 className="h-6 w-6" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <h3 className="line-clamp-2 text-xl font-semibold text-[#3a5a40] dark:text-white">{job?.title || 'Untitled job'}</h3>
+              <p className="mt-1 line-clamp-1 text-sm text-[#344e41] dark:text-[#d0d7dd]">{job?.company?.name || 'Company'}</p>
+            </div>
+          </div>
+          <span className={`shrink-0 px-2.5 py-1 rounded-full border text-xs font-semibold ${statusBadgeClass(status)}`}>
+            {formatJobStatus(status)}
+          </span>
+        </div>
+
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-[#344e41] dark:text-[#d0d7dd]">
+          {job?.location ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#eef6ee] px-2.5 py-1 dark:bg-[#2a2f35]">
+              <MapPin className="h-3.5 w-3.5" />
+              {job.location}
+            </span>
+          ) : null}
+          {job?.type ? <span className="rounded-full bg-[#eef6ee] px-2.5 py-1 dark:bg-[#2a2f35]">{job.type}</span> : null}
+          {job?.salary ? <span className="rounded-full bg-[#eef6ee] px-2.5 py-1 font-semibold dark:bg-[#2a2f35]">{job.salary}</span> : null}
+        </div>
+
+        <div className="flex-1">
+          <p className="line-clamp-6 text-sm leading-6 text-[#344e41] dark:text-[#d0d7dd]">
+            {job?.description || 'No description provided yet.'}
+          </p>
+        </div>
+
+        <div className="mt-auto grid grid-cols-2 gap-3 pt-4">
+          <button
+            type="button"
+            onClick={onViewCompany}
+            className="rounded-lg border border-[#a3b18a] px-4 py-2.5 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#f1f5eb] dark:border-[#444d57] dark:text-white dark:hover:bg-[#353c44]"
+          >
+            View Company
+          </button>
+          <button
+            type="button"
+            onClick={onMoreInfo}
+            className="rounded-lg bg-[#3a5a40] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86]"
+          >
+            More Info
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 function ActiveChip({ label, value }) {
   if (!value) return null;
-
   return (
     <span className="inline-flex items-center rounded-full border border-[#c8d5b9] bg-[#f8fbf6] px-3 py-1.5 text-xs font-medium text-[#344e41] dark:border-[#444d57] dark:bg-[#202428] dark:text-[#eceff2]">
       {label}: {value}
@@ -471,97 +780,6 @@ function SelectField({ value, onChange, children }) {
         {children}
       </select>
       <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5f6f52] dark:text-[#a8b1ba]" />
-    </div>
-  );
-}
-
-function JobCard({ job, isSaved, isPremiumUser, onApply, onToggleSave, applying }) {
-  const status = String(job?.status || 'open').toLowerCase();
-  const isClosed = status === 'closed';
-  const isFilled = status === 'filled';
-  const hasApplied = Boolean(job?.hasApplied);
-  const companyName = job?.company?.name || 'Company';
-  const skills = Array.isArray(job?.skills) ? job.skills : [];
-
-  return (
-    <div className="bg-[#f8fbf6] dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-4 sm:p-6 hover:border-[#588157] dark:hover:border-[#6f9b74] transition-colors">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-[#588157] to-[#3a5a40] dark:from-[#82ad86] dark:to-[#6f9b74] rounded-lg flex items-center justify-center flex-shrink-0">
-            <Building className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h3 className="text-xl font-semibold text-[#3a5a40] dark:text-white">{job?.title || 'Untitled job'}</h3>
-              <span className={`px-2.5 py-1 rounded-full border text-xs font-semibold ${statusBadgeClass(status)}`}>
-                {formatJobStatus(status)}
-              </span>
-            </div>
-            <p className="text-sm text-[#344e41] dark:text-[#d0d7dd] mb-2">{companyName}</p>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-[#344e41] dark:text-[#d0d7dd]">
-              {job?.location && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4" />
-                  {job.location}
-                </span>
-              )}
-              {job?.type && (
-                <span className="px-2 py-1 bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300 rounded">
-                  {job.type}
-                </span>
-              )}
-              {job?.salary && <span className="font-semibold text-[#588157] dark:text-[#6f9b74]">{job.salary}</span>}
-              {isPremiumUser && Number.isFinite(Number(job?.matchPercentage)) ? (
-                <span className="px-2 py-1 rounded bg-[#eef6ee] text-[#31572c] dark:bg-[#2a2f35] dark:text-[#eceff2] text-xs font-semibold">
-                  Match {Number(job.matchPercentage)}%
-                </span>
-              ) : null}
-            </div>
-          </div>
-        </div>
-        <span className="text-xs text-[#3a5a40] dark:text-[#adb5be]">{job?.createdAt ? new Date(job.createdAt).toLocaleDateString() : ''}</span>
-      </div>
-
-      {job?.description && (
-        <p className="mb-4 text-sm text-[#344e41] dark:text-[#d0d7dd] line-clamp-3">{job.description}</p>
-      )}
-
-      {!job?.acceptsApplications ? (
-        <p className="mb-3 text-xs text-[#9a3412] dark:text-[#fdba74]">{job?.availabilityLabel || 'This listing is no longer accepting applications.'}</p>
-      ) : null}
-
-      {skills.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-4">
-          {skills.map((skill) => (
-            <span key={skill} className="px-3 py-1 bg-[#f5f5f2] dark:bg-[#353c44] text-[#344e41] dark:text-white text-xs font-medium rounded-full">
-              {skill}
-            </span>
-          ))}
-        </div>
-      )}
-
-      <div className="flex flex-col min-[420px]:flex-row gap-3">
-        <button
-          type="button"
-          onClick={() => onApply?.(job)}
-          disabled={isClosed || isFilled || hasApplied || applying}
-          className="flex-1 bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white font-semibold py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isClosed ? 'Closed' : isFilled ? 'Filled' : hasApplied ? 'Applied' : applying ? 'Applying...' : 'Apply Now'}
-        </button>
-        <button
-          type="button"
-          onClick={() => onToggleSave?.(job)}
-          className={`px-4 py-2 border rounded-lg transition-colors min-[420px]:w-auto w-full min-[420px]:px-4 ${
-            isSaved
-              ? 'border-[#588157] bg-[#eef6ee] text-[#3a5a40] dark:border-[#6f9b74] dark:bg-[#2a2f35] dark:text-[#eceff2]'
-              : 'border-[#a3b18a] dark:border-[#444d57] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#353c44]'
-          }`}
-          aria-label={isSaved ? 'Remove from saved jobs' : 'Save job'}
-        >
-          <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-        </button>
-      </div>
     </div>
   );
 }
