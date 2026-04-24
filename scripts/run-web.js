@@ -2,15 +2,19 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
+
+const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(scriptDirectory, '..');
 
 // Load local overrides first, then base .env as fallback values.
 // This keeps explicit shell/env-platform variables as highest priority.
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(repoRoot, '.env.local') });
+dotenv.config({ path: path.resolve(repoRoot, '.env') });
 
 const scriptName = process.argv[2] || 'dev';
-const appDirectory = path.resolve(process.cwd(), 'apps/web');
+const appDirectory = path.resolve(repoRoot, 'apps/web');
 const nextHost = process.env.NEXTJS_HOST;
 const nextPort = process.env.NEXTJS_PORT || '3000';
 const hideNetworkLine = process.env.HIDE_NEXT_NETWORK_LINE === 'true';

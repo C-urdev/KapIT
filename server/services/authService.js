@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/database');
 const { logger } = require('../config/logger');
-const { sendPasswordResetEmail, sendOtpEmail } = require('./emailService');
+const { canSendEmail, sendPasswordResetEmail, sendOtpEmail } = require('./emailService');
 
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
 const RESET_TOKEN_TTL_MINUTES = Number(process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES || 15);
@@ -22,6 +22,8 @@ const RESET_PASSWORD_SUCCESS_MESSAGE = 'Password has been reset successfully. Yo
 const RESET_PASSWORD_INVALID_MESSAGE = 'Invalid or expired password reset token.';
 
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
+const EMAIL_NOT_CONFIGURED_MESSAGE =
+  'Email service is not configured. Set EMAIL_PROVIDER, EMAIL_FROM, and the matching provider API key in .env.local.';
 
 const hashToken = (token) => crypto.createHash('sha256').update(String(token || '')).digest('hex');
 const digestForLogs = (value) => crypto.createHash('sha256').update(String(value || '')).digest('hex');
@@ -300,6 +302,11 @@ const issueOtp = async ({ email, ipAddress }) => {
     return { message: OTP_GENERIC_MESSAGE };
   }
 
+  if (!canSendEmail()) {
+    logger.warn({ ipAddress: String(ipAddress || '') }, 'OTP email request rejected because email provider is not configured.');
+    return { success: false, statusCode: 503, message: EMAIL_NOT_CONFIGURED_MESSAGE };
+  }
+
   let client;
   try {
     client = await pool.connect();
@@ -338,7 +345,7 @@ const issueOtp = async ({ email, ipAddress }) => {
     if (client) client.release();
   }
 
-  return { message: OTP_GENERIC_MESSAGE };
+  return { success: true, statusCode: 200, message: OTP_GENERIC_MESSAGE };
 };
 
 const verifyOtp = async ({ email, code }) => {
@@ -434,6 +441,14 @@ const issueRegistrationOtp = async ({ email, ipAddress }) => {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) {
     return { success: false, statusCode: 400, message: 'Invalid email address provided.' };
+  }
+
+  if (!canSendEmail()) {
+    logger.warn(
+      { emailDigest: digestForLogs(normalizedEmail), ipAddress: String(ipAddress || '') },
+      'Registration OTP request rejected because email provider is not configured.'
+    );
+    return { success: false, statusCode: 503, message: EMAIL_NOT_CONFIGURED_MESSAGE };
   }
 
   let client;

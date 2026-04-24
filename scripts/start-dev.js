@@ -3,10 +3,14 @@ import http from 'node:http';
 import net from 'node:net';
 import path from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local'), override: true });
+const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(scriptDirectory, '..');
+
+dotenv.config({ path: path.resolve(repoRoot, '.env') });
+dotenv.config({ path: path.resolve(repoRoot, '.env.local'), override: true });
 
 const SERVER_PORT = Number(process.env.PORT || 5000);
 const SERVER_HOST = process.env.HOST || '127.0.0.1';
@@ -16,8 +20,8 @@ const FRONTEND_SCRIPT = process.env.FRONTEND_SCRIPT || 'dev';
 const REUSE_EXISTING_BACKEND = process.env.REUSE_EXISTING_BACKEND === 'true';
 const BACKEND_WATCH_ENABLED = process.env.BACKEND_WATCH === 'true';
 const nodeCommand = process.execPath;
-const serverEntry = path.resolve(process.cwd(), 'server/server.js');
-const webEntry = path.resolve(process.cwd(), 'scripts/run-web.js');
+const serverEntry = path.resolve(repoRoot, 'server/server.js');
+const webEntry = path.resolve(repoRoot, 'scripts/run-web.js');
 const isWindows = process.platform === 'win32';
 const quietStartup = process.env.QUIET_STARTUP !== 'false';
 const hideNextNetworkLine = process.env.HIDE_NEXT_NETWORK_LINE !== 'false';

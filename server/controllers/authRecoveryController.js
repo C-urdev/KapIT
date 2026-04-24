@@ -60,8 +60,11 @@ const resetPassword = async (req, res) => {
 // @access  Public
 const sendOtp = async (req, res) => {
   const email = String(req.body?.email || '').trim();
-  const { message } = await issueOtp({ email, ipAddress: req.ip });
-  return res.status(200).json({ success: true, message });
+  const outcome = await issueOtp({ email, ipAddress: req.ip });
+  return res.status(outcome.statusCode || 200).json({
+    success: outcome.success !== false,
+    message: outcome.message,
+  });
 };
 
 // @desc    Verify OTP code, returns a short-lived resetToken on success
