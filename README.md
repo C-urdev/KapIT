@@ -1,47 +1,53 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](License.md)
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js)
+![Node.js](https://img.shields.io/badge/Node.js-Server-339933?logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express-API-000000?logo=express)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?logo=postgresql&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-06B6D4?logo=tailwindcss&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-AI_Service-009688?logo=fastapi&logoColor=white)
+
 # KapIT
 
 KapIT is a full-stack hiring platform with separate developer and company workflows.
 It includes authentication, onboarding, public/private job flows, applicant management, messaging, notifications, premium payment flows, and optional AI-powered matching and resume analysis.
 
-## Preview / Demo
+## 🎬 Preview / Demo
 
-- Demo URL: `https://your-demo-link-here.com`
 - Screenshots:
   - `docs/screenshots/landing-page.png`
   - `docs/screenshots/user-dashboard.png`
   - `docs/screenshots/company-dashboard.png`
-  - `docs/screenshots/job-match.png`
 
-## Tech Stack (Auto-Detected)
+## 🧰 Tech Stack (Auto-Detected)
 
-### Frontend
+### 🌐 Frontend
 
 - Next.js (App Router + Pages usage in `apps/web`)
 - React
 - Tailwind CSS
 - PostCSS
 
-### Backend
+### 🛠️ Backend
 
 - Node.js
 - Express
 - FastAPI (optional AI service in `services/ai-fastapi`)
 
-### Database
+### 🗄️ Database
 
 - PostgreSQL (`pg`, SQL migrations under `database/migrations`)
 - Redis (optional, via `redis` package and `REDIS_URL`)
 
-### Tools / Libraries
+### 🔧 Tools / Libraries
 
 - Authentication/Security: `jsonwebtoken`, `bcrypt`, `helmet`, `cors`, `cookie-parser`, `express-validator`, `zod`
 - Logging/Config: `pino`, `dotenv`
 - OAuth: `google-auth-library`, `@react-oauth/google`
-- Payments/Email: PayPal env-configured flows, `resend`/`sendgrid`/`mailgun` env provider pattern
+- Payments/Email: PayPal env-configured flows, `resend` env provider pattern
 - Testing: Node test runner + `supertest`, Python test files for FastAPI
 - Secret scanning: `gitleaks`
 
-## Features
+## ✨ Features
 
 - Account authentication
   - Register/login/logout/refresh
@@ -76,94 +82,15 @@ It includes authentication, onboarding, public/private job flows, applicant mana
   - Candidate ranking
   - Resume analysis
 
-## Environment Variables
+## 🔐 Environment Setup
 
-The full template is in `.env.example`.
-Key groups used by this codebase:
+Use `.env.example` as the single source of truth for environment variables.
 
-### Core server/runtime
+1. Copy `.env.example` to `.env` (and to `apps/web/.env.local` if needed for frontend-only overrides).
+2. Fill required secrets and URLs.
+3. Keep production secrets in your hosting provider settings, not in Git.
 
-- `PORT`
-- `HOST`
-- `NODE_ENV`
-- `QUIET_STARTUP`
-- `SHUTDOWN_TIMEOUT_MS`
-- `LOG_LEVEL`
-
-### Frontend runtime
-
-- `NEXTJS_HOST`
-- `NEXTJS_PORT`
-- `NEXT_PUBLIC_SITE_URL`
-- `NEXT_PUBLIC_EXPRESS_API_URL`
-- `NEXT_PUBLIC_FASTAPI_URL`
-- `NEXT_PUBLIC_CSRF_COOKIE_NAME`
-
-### Database
-
-- `DATABASE_URL`
-- `DB_HOST`
-- `DB_PORT`
-- `DB_NAME`
-- `DB_USER`
-- `DB_PASSWORD`
-- `DB_SSL`
-- `DB_POOL_MAX`
-- `DB_IDLE_TIMEOUT_MS`
-- `DB_CONNECTION_TIMEOUT_MS`
-- `DB_SSL_REJECT_UNAUTHORIZED`
-
-### Auth/security
-
-- `JWT_SECRET`
-- `JWT_REFRESH_SECRET`
-- `JWT_ACCESS_EXPIRE`
-- `JWT_REFRESH_EXPIRE_DAYS`
-- `ACCESS_TOKEN_COOKIE_NAME`
-- `REFRESH_TOKEN_COOKIE_NAME`
-- `CSRF_COOKIE_NAME`
-- `CORS_ALLOWED_ORIGINS`
-- `ALLOW_KAPIT_NETLIFY_PREVIEW`
-
-### Recovery/OTP/email
-
-- `PASSWORD_RESET_TOKEN_TTL_MINUTES`
-- `PASSWORD_RESET_URL_BASE`
-- `PASSWORD_RESET_CLEANUP_INTERVAL_MS`
-- `OTP_TTL_MINUTES`
-- `EMAIL_PROVIDER`
-- `EMAIL_FROM`
-- `RESEND_API_KEY`
-- `SENDGRID_API_KEY`
-- `MAILGUN_API_KEY`
-- `MAILGUN_DOMAIN`
-
-### Payments
-
-- `PAYPAL_CLIENT_ID`
-- `PAYPAL_CLIENT_SECRET`
-- `PAYPAL_ENV`
-- `PAYMENT_API_TIMEOUT_MS`
-- `PAYMENT_API_RETRY_MAX`
-- `PAYMENT_API_RETRY_BASE_MS`
-- `PAYMENT_IDEMPOTENCY_TTL_SECONDS`
-
-### AI/optional service routing
-
-- `FASTAPI_URL`
-- `FASTAPI_URL_PRODUCTION`
-- `NEXT_PUBLIC_FASTAPI_URL`
-- `NEXT_PUBLIC_FASTAPI_URL_PRODUCTION`
-- `FASTAPI_TIMEOUT_MS`
-
-### Optional Redis
-
-- `REDIS_URL`
-- `LOG_REDIS_STATUS`
-- `REDIS_CONNECT_TIMEOUT_MS`
-- `REDIS_FAILOPEN_COOLDOWN_MS`
-
-## How It Works
+## ⚙️ How It Works
 
 1. The Next.js frontend (`apps/web`) serves pages and client flows.
 2. Frontend API calls target `/api/*`, which are routed to the Express backend.
@@ -174,22 +101,22 @@ Key groups used by this codebase:
    - Frontend: Netlify (`apps/web/netlify.toml`)
    - Backend: Render (`render.yaml`)
 
-## Folder Structure
+## 🗂️ Folder Structure
 
 See [STRUCTURE.md](STRUCTURE.md) for the full project structure and placement rules.
 
-## Contributing
+## 🤝 Contributing
 
 1. Create a feature branch.
 2. Make focused changes with clear commit messages.
 3. Run tests and relevant checks locally.
 4. Open a pull request with a concise summary and validation notes.
 
-## License
+## 📄 License
 
-MIT License
+This project is licensed under the MIT License - see the [License.md](License.md) file for details.
 
-## Author
+## 👤 Author
 
 - Name: `Cardino Christian`
 - GitHub: `https://github.com/C-urdev/KapIT`
