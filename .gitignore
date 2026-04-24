@@ -20,8 +20,7 @@ docs/prompt and changes history.md
 docs/prompt-history.md
 docs/prompt-answer-code-change-history.md
 docs/*changes*history*.md
-AGENTS.md
-agents/skills/
-.agents/skills/
-CLAUDE.md
 skills-lock.json
+CLAUDE.md
+.cursorrules
+SECURITY_ROTATION.md
