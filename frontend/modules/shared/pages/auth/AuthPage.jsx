@@ -302,6 +302,7 @@ export default function AuthPage({
     setLoading(true);
     let state;
     try {
+<<<<<<< HEAD:frontend/modules/shared/pages/auth/AuthPage.jsx
       const oauthState = await createOAuthState({
         provider: 'google',
         mode: authMode,
@@ -315,6 +316,19 @@ export default function AuthPage({
       setLoading(false);
       setError(String(requestError?.message || 'Unable to start Google sign-in right now.'));
       return;
+=======
+      window.sessionStorage.setItem('oauth_google_state', state);
+      window.sessionStorage.setItem(
+        'oauth_google_intent',
+        JSON.stringify({
+          state,
+          mode: authMode,
+          accountType: accountType || null,
+        })
+      );
+    } catch {
+      // Continue without persisted state if storage is unavailable.
+>>>>>>> bd8e61b2 (fix(auth): route Google company accounts to company onboarding):apps/web/modules/shared/pages/auth/AuthPage.jsx
     }
     const redirectUri = `${getSocialAuthBaseUrl()}/auth/callback/google`;
     const params = new URLSearchParams({
@@ -399,7 +413,12 @@ export default function AuthPage({
 
       let data;
       if (provider === 'Google') {
+<<<<<<< HEAD:frontend/modules/shared/pages/auth/AuthPage.jsx
         data = await loginWithGoogle('mock-google-' + email.split('@')[0], { state });
+=======
+        const accountTypeHint = authMode === 'signup' ? (accountType || null) : null;
+        data = await loginWithGoogle('mock-google-' + email.split('@')[0], { accountTypeHint });
+>>>>>>> bd8e61b2 (fix(auth): route Google company accounts to company onboarding):apps/web/modules/shared/pages/auth/AuthPage.jsx
       } else {
         data = await loginWithGithub('mock-github-' + email.split('@')[0], { state });
       }

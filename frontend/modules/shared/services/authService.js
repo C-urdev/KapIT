@@ -241,15 +241,23 @@ export const loginUser = async (credentials) => {
 };
 
 export const loginWithGoogle = async (credential, options = {}) => {
+<<<<<<< HEAD:frontend/modules/shared/services/authService.js
   const state = String(options?.state || '').trim();
   if (!state) {
     throw new Error('Unable to verify social sign-in request. Please try again.');
   }
+=======
+  const accountTypeHint = normalizeAccountType(options?.accountTypeHint);
+>>>>>>> bd8e61b2 (fix(auth): route Google company accounts to company onboarding):apps/web/modules/shared/services/authService.js
   const data = await authRequest('/google', {
     method: 'POST',
     body: JSON.stringify({
       credential,
+<<<<<<< HEAD:frontend/modules/shared/services/authService.js
       state,
+=======
+      ...(accountTypeHint ? { accountTypeHint } : {}),
+>>>>>>> bd8e61b2 (fix(auth): route Google company accounts to company onboarding):apps/web/modules/shared/services/authService.js
     }),
     retryOnUnauthorized: false,
   });
