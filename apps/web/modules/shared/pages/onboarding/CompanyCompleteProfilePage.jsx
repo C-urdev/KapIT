@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { Building2, LogOut, Moon, Sun } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
+import { normalizeSocialsText } from '@sharedUtils/socials';
 
 const COMPANY_SIZE_OPTIONS = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'];
 
@@ -18,7 +19,7 @@ export default function CompleteCompanyProfilePage({ user, onSubmit, onLogout })
     hiringFor: user?.hiringFor || '',
     phone: user?.phone || '',
     email: user?.email || '',
-    socials: user?.socials || '',
+    socials: normalizeSocialsText(user?.socials),
     bio: user?.bio || '',
   });
 
@@ -51,7 +52,7 @@ export default function CompleteCompanyProfilePage({ user, onSubmit, onLogout })
       website: formData.website,
       hiringFor: formData.hiringFor,
       phone: formData.phone,
-      socials: formData.socials,
+      socials: normalizeSocialsText(formData.socials),
       bio: formData.bio,
     });
   };

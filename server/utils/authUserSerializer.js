@@ -1,3 +1,5 @@
+const { normalizeSocialsText } = require('./socials');
+
 const serializeUser = (user) => ({
   id: user.id,
   username: user.username,
@@ -11,7 +13,7 @@ const serializeUser = (user) => ({
   profileCompleted: Boolean(user.profile_completed),
 
   bio: user.bio || '',
-  socials: user.socials || '',
+  socials: normalizeSocialsText(user.socials),
   profileImage: user.profile_image || '',
   phone: user.phone || '',
   address: user.address || '',

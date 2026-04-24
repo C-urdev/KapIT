@@ -3,6 +3,7 @@ import { Edit3, GraduationCap, Link2, MapPin, Mail, Pencil, Phone, User } from '
 import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
 import { Avatar } from '@userPages/home/CenterFeedPostShared';
 import FeedPostCard from '@userPages/home/FeedPostCard';
+import { normalizeSocialsText } from '@sharedUtils/socials';
 
 const readFileAsDataUrl = (file) =>
   new Promise((resolve, reject) => {
@@ -75,10 +76,11 @@ export default function UserMyProfilePage({
       : 0;
   const [editing, setEditing] = useState(false);
   const [menuPostId, setMenuPostId] = useState(null);
+  const normalizedUserSocials = useMemo(() => normalizeSocialsText(user?.socials), [user?.socials]);
   const [formData, setFormData] = useState({
     fullName: user?.fullName || user?.name || user?.username || '',
     bio: user?.bio || '',
-    socials: user?.socials || '',
+    socials: normalizeSocialsText(user?.socials),
     profileImage: user?.profileImage || '',
   });
 
@@ -100,11 +102,12 @@ export default function UserMyProfilePage({
 
   const handleSave = async () => {
     try {
+      const normalizedSocials = normalizeSocialsText(formData.socials);
       await onUpdateUser?.({
         fullName: formData.fullName,
         name: formData.fullName,
         username: String(formData.fullName || '').trim(),
-        socials: formData.socials,
+        socials: normalizedSocials,
         bio: formData.bio,
         profileImage: formData.profileImage,
       });
@@ -171,10 +174,10 @@ export default function UserMyProfilePage({
                   {projectCount} project{projectCount === 1 ? '' : 's'}
                 </p>
                 {user?.bio && <p className="text-[0.92rem] sm:text-[0.95rem] leading-[1.2] text-[#344e41] dark:text-[#d0d7dd]">{user.bio}</p>}
-                {user?.socials && (
+                {normalizedUserSocials && (
                   <div className="flex items-center gap-2 text-[0.9rem] sm:text-[0.95rem] leading-[1.15] text-[#2f4e39] dark:text-[#d0d7dd]">
                     <Link2 className="w-4 h-4" />
-                    <span className="truncate">{user.socials}</span>
+                    <span className="truncate">{normalizedUserSocials}</span>
                   </div>
                 )}
               </div>

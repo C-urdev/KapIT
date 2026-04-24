@@ -9,6 +9,7 @@ const {
   getStoredResumePath,
   storeResumeUpload,
 } = require('../services/resumeStorageService');
+const { normalizeSocialsText } = require('../utils/socials');
 
 const normalizeSkills = (skills) => {
   if (!skills) return [];
@@ -32,7 +33,7 @@ const serializeUser = (user) => ({
   profileCompleted: Boolean(user.profile_completed),
 
   bio: user.bio || '',
-  socials: user.socials || '',
+  socials: normalizeSocialsText(user.socials),
   profileImage: user.profile_image || '',
   phone: user.phone || '',
   address: user.address || '',
@@ -199,6 +200,7 @@ const upsertMyDeveloperProfile = async (req, res) => {
       linkedin,
       other: otherLinks,
     };
+    const hasSocialLinks = Object.values(socialsPayload).some((value) => String(value || '').trim().length > 0);
 
     const nextProfileImage = body.profileImage ? String(body.profileImage) : '';
     const resumeUrl = body.resume ? String(body.resume) : '';
@@ -227,7 +229,7 @@ const upsertMyDeveloperProfile = async (req, res) => {
         preferredRole || jobTitle,
         educationAttainment,
         aboutMe,
-        JSON.stringify(socialsPayload),
+        hasSocialLinks ? JSON.stringify(socialsPayload) : '',
         req.user.id,
       ]
     );
