@@ -44,6 +44,8 @@ const draftSchema = z
     salary: z.coerce.string().trim().max(120).optional().default(''),
     location: z.coerce.string().trim().max(200).optional().default(''),
     type: z.coerce.string().trim().max(80).optional().default(''),
+    experienceLevel: z.enum(['intern', 'junior', 'mid', 'senior']).or(z.literal('')).optional().default(''),
+    workPreference: z.enum(['fully-remote', 'asynchronous-remote', 'on-site']).or(z.literal('')).optional().default(''),
     applicationDeadline: z.coerce.string().trim().max(40).optional().default(''),
     skills: z.array(z.coerce.string().trim().min(1).max(60)).max(50).optional().default([]),
   })

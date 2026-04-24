@@ -30,6 +30,8 @@ const ensureCompanySchema = async () => {
         salary VARCHAR(120),
         location VARCHAR(200),
         type VARCHAR(60),
+        experience_level VARCHAR(20),
+        work_preference VARCHAR(40),
         skills TEXT[] DEFAULT ARRAY[]::TEXT[],
         status VARCHAR(40) NOT NULL DEFAULT 'open',
         closed_reason VARCHAR(80),
@@ -131,6 +133,8 @@ const ensureCompanySchema = async () => {
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS status VARCHAR(40) NOT NULL DEFAULT 'open';");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS closed_reason VARCHAR(80);");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS pay_per_use_fee INTEGER NOT NULL DEFAULT 1599;");
+    await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS experience_level VARCHAR(20);");
+    await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS work_preference VARCHAR(40);");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS pay_per_use_status VARCHAR(40) NOT NULL DEFAULT 'not_due';");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS reopened_from_job_id BIGINT REFERENCES jobs(id) ON DELETE SET NULL;");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS filled_application_id BIGINT;");

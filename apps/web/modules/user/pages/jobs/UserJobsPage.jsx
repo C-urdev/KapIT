@@ -7,9 +7,12 @@ import { syncApplicationsForUser } from '@userFeatures/activity/userActivityStor
 const EMPTY_FILTERS = {
   q: '',
   location: '',
-  type: '',
+  jobType: '',
+  workPreference: '',
   skill: '',
-  status: '',
+  salaryCurrency: '',
+  salaryRange: '',
+  experienceLevel: '',
 };
 
 const JOB_TYPE_OPTIONS = [
@@ -18,17 +21,51 @@ const JOB_TYPE_OPTIONS = [
   'Contract',
   'Freelance',
   'Internship',
-  'Remote',
-  'Hybrid',
-  'On-site',
 ];
 
-const STATUS_OPTIONS = [
-  { value: '', label: 'All statuses' },
-  { value: 'open', label: 'Open' },
-  { value: 'filled', label: 'Filled' },
-  { value: 'closed', label: 'Closed' },
+const WORK_PREFERENCE_OPTIONS = [
+  { value: 'fully-remote', label: 'Fully remote' },
+  { value: 'asynchronous-remote', label: 'Asynchronous remote' },
+  { value: 'on-site', label: 'On-site' },
 ];
+
+const EXPERIENCE_LEVEL_OPTIONS = [
+  { value: 'intern', label: 'Intern' },
+  { value: 'junior', label: 'Junior' },
+  { value: 'mid', label: 'Mid-level' },
+  { value: 'senior', label: 'Senior' },
+];
+
+const SALARY_CURRENCY_OPTIONS = ['PHP', 'USD', 'EUR'];
+const SALARY_RANGE_OPTIONS = {
+  PHP: [
+    'PHP 25,000-40,000 / month',
+    'PHP 40,000-60,000 / month',
+    'PHP 60,000-90,000 / month',
+    'PHP 90,000-130,000 / month',
+    'PHP 130,000-180,000 / month',
+    'PHP 180,000-250,000 / month',
+    'PHP 250,000-350,000 / month',
+  ],
+  USD: [
+    'USD 800-1,200 / month',
+    'USD 1,200-1,800 / month',
+    'USD 1,800-2,500 / month',
+    'USD 2,500-3,500 / month',
+    'USD 3,500-5,000 / month',
+    'USD 5,000-7,000 / month',
+    'USD 7,000-10,000 / month',
+  ],
+  EUR: [
+    'EUR 700-1,100 / month',
+    'EUR 1,100-1,700 / month',
+    'EUR 1,700-2,400 / month',
+    'EUR 2,400-3,300 / month',
+    'EUR 3,300-4,700 / month',
+    'EUR 4,700-6,500 / month',
+    'EUR 6,500-9,000 / month',
+  ],
+};
 
 const normalizeTitle = (value) => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
 const resolveJobId = (value) => {
@@ -62,6 +99,7 @@ export default function UserJobsPage({
   onOpenJobDetail,
 }) {
   const [jobs, setJobs] = useState([]);
+  const [jobsPlan, setJobsPlan] = useState({ isPremium: false });
   const [savedJobIds, setSavedJobIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -85,6 +123,11 @@ export default function UserJobsPage({
   const [animOffsetX, setAnimOffsetX] = useState(0);
   const [animOpacity, setAnimOpacity] = useState(1);
   const [animDurationMs, setAnimDurationMs] = useState(220);
+  const savedJobIdsRef = useRef(savedJobIds);
+
+  useEffect(() => {
+    savedJobIdsRef.current = savedJobIds;
+  }, [savedJobIds]);
 
   useEffect(() => {
     let canceled = false;
@@ -98,23 +141,35 @@ export default function UserJobsPage({
       }
 
       try {
-        const [jobsData, savedJobs] = await Promise.all([
-          getJobsFeed(appliedFilters),
-          getSavedJobs().catch(() => []),
-        ]);
+        const jobsData = await getJobsFeed(appliedFilters);
         if (canceled) {
           return;
         }
 
-        const nextSavedIds = savedJobs
-          .map((entry) => resolveJobId(entry?.id))
-          .filter((id) => Number.isInteger(id));
+        const knownSavedIds = savedJobIdsRef.current || [];
         const nextJobs = (Array.isArray(jobsData?.jobs) ? jobsData.jobs : [])
-          .map((job) => applyStateToJob(job, nextSavedIds, jobCardStateById));
+          .map((job) => applyStateToJob(job, knownSavedIds, jobCardStateById));
+        setJobsPlan({
+          isPremium: Boolean(jobsData?.plan?.isPremium),
+        });
         syncApplicationsForUser(user, nextJobs);
-        setSavedJobIds(nextSavedIds);
         setJobs(nextJobs);
         setActiveIndex((current) => Math.max(0, Math.min(current, Math.max(0, nextJobs.length - 1))));
+
+        void getSavedJobs()
+          .then((savedJobs) => {
+            if (canceled) {
+              return;
+            }
+            const nextSavedIds = savedJobs
+              .map((entry) => resolveJobId(entry?.id))
+              .filter((id) => Number.isInteger(id));
+            setSavedJobIds(nextSavedIds);
+            const jobsWithSavedState = (Array.isArray(jobsData?.jobs) ? jobsData.jobs : [])
+              .map((job) => applyStateToJob(job, nextSavedIds, jobCardStateById));
+            setJobs(jobsWithSavedState);
+          })
+          .catch(() => {});
       } catch (err) {
         if (!canceled) {
           setError(err?.message || 'Failed to load jobs.');
@@ -228,9 +283,15 @@ export default function UserJobsPage({
   );
 
   const currentJob = jobs[activeIndex] || null;
+  const isPremiumUser = Boolean(user?.isPremium || jobsPlan?.isPremium);
 
   const handleFilterChange = (key, value) => {
-    setFilters((current) => ({ ...current, [key]: value }));
+    setFilters((current) => {
+      if (key === 'salaryCurrency') {
+        return { ...current, salaryCurrency: value, salaryRange: '' };
+      }
+      return { ...current, [key]: value };
+    });
   };
 
   const handleSearch = (event) => {
@@ -238,9 +299,12 @@ export default function UserJobsPage({
     const nextFilters = {
       q: String(filters.q || '').trim(),
       location: String(filters.location || '').trim(),
-      type: String(filters.type || '').trim(),
+      jobType: String(filters.jobType || '').trim(),
+      workPreference: String(filters.workPreference || '').trim(),
       skill: String(filters.skill || '').trim(),
-      status: String(filters.status || '').trim().toLowerCase(),
+      salaryCurrency: String(filters.salaryCurrency || '').trim(),
+      salaryRange: String(filters.salaryRange || '').trim(),
+      experienceLevel: String(filters.experienceLevel || '').trim(),
     };
     setAppliedFilters(nextFilters);
     setShowAdvancedFilters(false);
@@ -485,9 +549,12 @@ export default function UserJobsPage({
             <div className="flex flex-wrap items-center gap-2">
               <ActiveChip label="Keyword" value={appliedFilters.q} />
               <ActiveChip label="Location" value={appliedFilters.location} />
-              <ActiveChip label="Type" value={appliedFilters.type} />
-              <ActiveChip label="Skill" value={appliedFilters.skill} />
-              <ActiveChip label="Status" value={appliedFilters.status} />
+              <ActiveChip label="Job Type" value={appliedFilters.jobType} />
+              <ActiveChip label="Work Preference" value={appliedFilters.workPreference} />
+              <ActiveChip label="Skills" value={appliedFilters.skill} />
+              <ActiveChip label="Salary Currency" value={appliedFilters.salaryCurrency} />
+              <ActiveChip label="Salary Range" value={appliedFilters.salaryRange} />
+              <ActiveChip label="Experience" value={appliedFilters.experienceLevel} />
               <button
                 type="button"
                 onClick={handleReset}
@@ -559,6 +626,7 @@ export default function UserJobsPage({
             >
               <SquareJobCard
                 job={currentJob}
+                isPremiumUser={isPremiumUser}
                 onViewCompany={handleOpenCompany}
                 onMoreInfo={handleOpenDetail}
               />
@@ -579,9 +647,12 @@ export default function UserJobsPage({
             setAppliedFilters({
               q: String(filters.q || '').trim(),
               location: String(filters.location || '').trim(),
-              type: String(filters.type || '').trim(),
+              jobType: String(filters.jobType || '').trim(),
+              workPreference: String(filters.workPreference || '').trim(),
               skill: String(filters.skill || '').trim(),
-              status: String(filters.status || '').trim().toLowerCase(),
+              salaryCurrency: String(filters.salaryCurrency || '').trim(),
+              salaryRange: String(filters.salaryRange || '').trim(),
+              experienceLevel: String(filters.experienceLevel || '').trim(),
             });
             setShowAdvancedFilters(false);
           }}
@@ -591,17 +662,20 @@ export default function UserJobsPage({
   );
 }
 
-function SquareJobCard({ job, onViewCompany, onMoreInfo }) {
+function SquareJobCard({ job, isPremiumUser, onViewCompany, onMoreInfo }) {
   if (!job) {
     return null;
   }
 
   const status = String(job?.status || 'open').toLowerCase();
+  const rawMatchPercentage = Number(job?.matchPercentage);
+  const hasMatchPercentage = Number.isFinite(rawMatchPercentage);
+  const matchPercentage = Math.max(0, Math.min(100, Math.round(rawMatchPercentage)));
 
   return (
     <article className="aspect-square w-full rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] p-5 shadow-sm transition-colors dark:border-[#353c44] dark:bg-[#22272b] sm:p-7">
       <div className="flex h-full flex-col">
-        <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="mb-4 flex items-start gap-3">
           <div className="min-w-0 flex items-center gap-3">
             <div className="inline-flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#588157] to-[#3a5a40] text-white dark:from-[#82ad86] dark:to-[#6f9b74]">
               {job?.company?.logo ? (
@@ -615,13 +689,22 @@ function SquareJobCard({ job, onViewCompany, onMoreInfo }) {
               )}
             </div>
             <div className="min-w-0">
-              <h3 className="line-clamp-2 text-xl font-semibold text-[#3a5a40] dark:text-white">{job?.title || 'Untitled job'}</h3>
-              <p className="mt-1 line-clamp-1 text-sm text-[#344e41] dark:text-[#d0d7dd]">{job?.company?.name || 'Company'}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="line-clamp-2 text-xl font-semibold text-[#3a5a40] dark:text-white">{job?.title || 'Untitled job'}</h3>
+                <span className={`shrink-0 px-2.5 py-1 rounded-full border text-xs font-semibold ${statusBadgeClass(status)}`}>
+                  {formatJobStatus(status)}
+                </span>
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <p className="line-clamp-1 text-sm text-[#344e41] dark:text-[#d0d7dd]">{job?.company?.name || 'Company'}</p>
+                {isPremiumUser && hasMatchPercentage ? (
+                  <span className="shrink-0 rounded-full border border-[#bfd0af] bg-[#eef6ee] px-2.5 py-1 text-xs font-semibold text-[#3a5a40] dark:border-[#4b5a4e] dark:bg-[#2a2f35] dark:text-[#e9f3ea]">
+                    {matchPercentage}% fit
+                  </span>
+                ) : null}
+              </div>
             </div>
           </div>
-          <span className={`shrink-0 px-2.5 py-1 rounded-full border text-xs font-semibold ${statusBadgeClass(status)}`}>
-            {formatJobStatus(status)}
-          </span>
         </div>
 
         <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-[#344e41] dark:text-[#d0d7dd]">
@@ -672,6 +755,8 @@ function ActiveChip({ label, value }) {
 }
 
 function FilterPopup({ popupRef, position, filters, onChange, onClose, onReset, onApply }) {
+  const salaryRangeOptions = SALARY_RANGE_OPTIONS[filters.salaryCurrency] || [];
+
   return (
     <div className="fixed inset-0 z-40 bg-black/10 backdrop-blur-[2px]">
       <button type="button" className="absolute inset-0 cursor-default" onClick={onClose} aria-label="Close filters popup" />
@@ -703,14 +788,14 @@ function FilterPopup({ popupRef, position, filters, onChange, onClose, onReset, 
             label="Location"
             value={filters.location}
             onChange={(event) => onChange('location', event.target.value)}
-            placeholder="City, province, remote..."
+            placeholder="City, province..."
           />
 
           <div>
             <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[#5f6f52] dark:text-[#a8b1ba]">
               Job type
             </label>
-            <SelectField value={filters.type} onChange={(event) => onChange('type', event.target.value)}>
+            <SelectField value={filters.jobType} onChange={(event) => onChange('jobType', event.target.value)}>
               <option value="">All job types</option>
               {JOB_TYPE_OPTIONS.map((option) => (
                 <option key={option} value={option}>
@@ -721,7 +806,7 @@ function FilterPopup({ popupRef, position, filters, onChange, onClose, onReset, 
           </div>
 
           <Field
-            label="Skill"
+            label="Skills"
             value={filters.skill}
             onChange={(event) => onChange('skill', event.target.value)}
             placeholder="React, Node.js, QA..."
@@ -729,11 +814,54 @@ function FilterPopup({ popupRef, position, filters, onChange, onClose, onReset, 
 
           <div>
             <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[#5f6f52] dark:text-[#a8b1ba]">
-              Status
+              Work preference
             </label>
-            <SelectField value={filters.status} onChange={(event) => onChange('status', event.target.value)}>
-              {STATUS_OPTIONS.map((option) => (
-                <option key={option.value || 'all'} value={option.value}>
+            <SelectField value={filters.workPreference} onChange={(event) => onChange('workPreference', event.target.value)}>
+              <option value="">All work preferences</option>
+              {WORK_PREFERENCE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </SelectField>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[#5f6f52] dark:text-[#a8b1ba]">
+              Salary currency
+            </label>
+            <SelectField value={filters.salaryCurrency} onChange={(event) => onChange('salaryCurrency', event.target.value)}>
+              <option value="">Any currency</option>
+              {SALARY_CURRENCY_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </SelectField>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[#5f6f52] dark:text-[#a8b1ba]">
+              Salary range
+            </label>
+            <SelectField value={filters.salaryRange} onChange={(event) => onChange('salaryRange', event.target.value)}>
+              <option value="">{filters.salaryCurrency ? 'All selected currency ranges' : 'Select a currency first (optional)'}</option>
+              {salaryRangeOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </SelectField>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[#5f6f52] dark:text-[#a8b1ba]">
+              Experience level
+            </label>
+            <SelectField value={filters.experienceLevel} onChange={(event) => onChange('experienceLevel', event.target.value)}>
+              <option value="">All experience levels</option>
+              {EXPERIENCE_LEVEL_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}

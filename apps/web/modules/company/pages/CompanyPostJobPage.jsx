@@ -9,7 +9,13 @@ import { loadAddressOptions } from '@sharedUtils/philippinesLocations';
 import { companyAPI } from '@companyFeatures/companyAPI';
 
 const CUSTOM_JOB_VALUE = 'Other';
-const JOB_TYPE_OPTIONS = ['Full-time', 'Part-time', 'Contract', 'Internship'];
+const JOB_TYPE_OPTIONS = ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship'];
+const EXPERIENCE_LEVEL_OPTIONS = ['Intern', 'Junior', 'Mid', 'Senior'];
+const WORK_PREFERENCE_OPTIONS = [
+  { value: 'fully-remote', label: 'Fully remote' },
+  { value: 'asynchronous-remote', label: 'Asynchronous remote' },
+  { value: 'on-site', label: 'On-site' },
+];
 const SALARY_CURRENCY_OPTIONS = ['PHP', 'USD', 'EUR'];
 const SALARY_RANGE_OPTIONS = {
   PHP: [
@@ -50,7 +56,20 @@ export default function CompanyPostJobPage() {
   const [selectedSkill, setSelectedSkill] = useState('');
   const [customSkill, setCustomSkill] = useState('');
   const [searchableLocations, setSearchableLocations] = useState([]);
-  const [form, setForm] = useState({ selectedTitle: '', customTitle: '', description: '', salaryCurrency: 'PHP', salary: '', customSalary: '', location: '', type: 'Full-time', applicationDeadline: '', skills: [] });
+  const [form, setForm] = useState({
+    selectedTitle: '',
+    customTitle: '',
+    description: '',
+    salaryCurrency: 'PHP',
+    salary: '',
+    customSalary: '',
+    location: '',
+    type: 'Full-time',
+    experienceLevel: '',
+    workPreference: '',
+    applicationDeadline: '',
+    skills: [],
+  });
   const salaryRangeOptions = useMemo(() => SALARY_RANGE_OPTIONS[form.salaryCurrency] || SALARY_RANGE_OPTIONS.PHP, [form.salaryCurrency]);
   const usingCustomSalary = form.salary === CUSTOM_SALARY_OPTION;
 
@@ -114,6 +133,8 @@ export default function CompanyPostJobPage() {
         : String(form.salary || '').trim(),
       location: String(form.location || '').trim(),
       type: String(form.type || '').trim(),
+      experienceLevel: String(form.experienceLevel || '').trim().toLowerCase(),
+      workPreference: String(form.workPreference || '').trim().toLowerCase(),
       applicationDeadline: String(form.applicationDeadline || '').trim(),
       skills: formatSkills(form.skills),
     };
@@ -218,6 +239,21 @@ export default function CompanyPostJobPage() {
           <Field label="Type (optional)">
             <select value={form.type} onChange={(e) => setForm((prev) => ({ ...prev, type: e.target.value }))} className="field">
               {JOB_TYPE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+            </select>
+          </Field>
+          <Field label="Experience level (optional)">
+            <select value={form.experienceLevel} onChange={(e) => setForm((prev) => ({ ...prev, experienceLevel: e.target.value }))} className="field">
+              <option value="">Select experience level</option>
+              {EXPERIENCE_LEVEL_OPTIONS.map((option) => <option key={option} value={option.toLowerCase()}>{option}</option>)}
+            </select>
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Work preference (optional)">
+            <select value={form.workPreference} onChange={(e) => setForm((prev) => ({ ...prev, workPreference: e.target.value }))} className="field">
+              <option value="">Select work preference</option>
+              {WORK_PREFERENCE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
           </Field>
           <Field label="Application deadline (optional)">

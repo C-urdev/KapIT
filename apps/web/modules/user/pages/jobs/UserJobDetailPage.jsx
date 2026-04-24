@@ -141,7 +141,17 @@ export default function UserJobDetailPage({
               )}
             </div>
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold text-[#3a5a40] dark:text-white">{currentJob?.title || 'Untitled job'}</h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-bold text-[#3a5a40] dark:text-white">{currentJob?.title || 'Untitled job'}</h1>
+                <span className={`px-3 py-1 rounded-full border text-xs font-semibold ${statusBadgeClass(status)}`}>
+                  {formatJobStatus(status)}
+                </span>
+                {currentJob?.createdAt ? (
+                  <span className="rounded-full bg-[#eef6ee] px-3 py-1 text-xs text-[#5f6f52] dark:bg-[#2a2f35] dark:text-[#a8b1ba]">
+                    Posted {new Date(currentJob.createdAt).toLocaleDateString()}
+                  </span>
+                ) : null}
+              </div>
               <p className="text-sm text-[#344e41] dark:text-[#d0d7dd]">{currentJob?.company?.name || 'Company'}</p>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-[#344e41] dark:text-[#d0d7dd]">
                 {currentJob?.location ? (
@@ -156,18 +166,10 @@ export default function UserJobDetailPage({
                 {currentJob?.salary ? (
                   <span className="rounded-full bg-[#eef6ee] px-3 py-1 font-semibold dark:bg-[#2a2f35]">{currentJob.salary}</span>
                 ) : null}
-                {currentJob?.createdAt ? (
-                  <span className="rounded-full bg-[#eef6ee] px-3 py-1 text-xs text-[#5f6f52] dark:bg-[#2a2f35] dark:text-[#a8b1ba]">
-                    Posted {new Date(currentJob.createdAt).toLocaleDateString()}
-                  </span>
-                ) : null}
               </div>
             </div>
           </div>
           <div className="mt-1 flex items-center gap-2">
-            <span className={`px-3 py-1 rounded-full border text-xs font-semibold ${statusBadgeClass(status)}`}>
-              {formatJobStatus(status)}
-            </span>
             <button
               type="button"
               onClick={handleToggleSave}

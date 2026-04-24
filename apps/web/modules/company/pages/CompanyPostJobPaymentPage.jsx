@@ -1,5 +1,5 @@
 import React from 'react';
-import { BadgeCheck, CheckCircle2, ChevronDown, CreditCard, ExternalLink, ShieldCheck, X } from 'lucide-react';
+import { CheckCircle2, ChevronDown, CreditCard, ExternalLink, ShieldCheck, X } from 'lucide-react';
 import { companyAPI } from '@companyFeatures/companyAPI';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
 import { JOB_POST_PLANS, PAYMENT_PROVIDERS, PLAN_FEATURES } from '@companyFeatures/companyPaymentCatalog';
@@ -382,23 +382,21 @@ export default function CompanyPostJobPaymentPage() {
 
                 <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-3.5">
                   <p className="text-sm font-semibold text-[#102a1b] dark:text-white">All plans include</p>
-                  <div className="mt-2.5 flex flex-wrap gap-2">
+                  <ul className="mt-2.5 space-y-1.5 text-sm text-[#344e41] dark:text-[#eceff2]">
                     {PLAN_FEATURES.map((feature) => (
-                      <span
-                        key={feature}
-                        className="rounded-full border border-[#bfd0af] bg-[#f8fbf6] px-2.5 py-1 text-[11px] font-medium text-[#344e41] dark:border-[#4b5560] dark:bg-[#1f2328] dark:text-[#eceff2]"
-                      >
-                        {feature}
-                      </span>
+                      <li key={feature} className="flex items-start gap-2">
+                        <span className="mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full bg-[#588157] dark:bg-[#82ad86]" />
+                        <span>{feature}</span>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 </div>
+
               </div>
 
               <div className="space-y-2.5">
                 <div>
                   <h2 className="text-xl font-semibold text-[#102a1b] dark:text-white">Payment Methods</h2>
-                  <p className="mt-1 text-sm text-[#5f6f52] dark:text-[#c0c8d0]">Choose the payment method you trust and complete the secure checkout.</p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {PAYMENT_PROVIDERS.map((provider) => {
@@ -422,27 +420,26 @@ export default function CompanyPostJobPaymentPage() {
                               : 'border-[#d6d3c9] bg-[#fbfcfa] hover:bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#202428] dark:hover:bg-[#2f343b]'
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-start gap-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
                             <div className="rounded-xl border border-[#d6d3c9] dark:border-[#4b5560] bg-[#f8fbf6] dark:bg-[#1a1d20] p-2">
                               <Icon className="h-5 w-5 text-[#3a5a40] dark:text-[#e2b94d]" />
                             </div>
                             <div>
-                              <p className="font-semibold text-[#102a1b] dark:text-white">PayPal</p>
-                              <p className="mt-1 text-xs leading-5 text-[#5f6f52] dark:text-[#c0c8d0]">{provider.description}</p>
+                              <p className="font-semibold text-[#102a1b] dark:text-white">{provider.label}</p>
                               {!providerState.enabled ? (
-                                <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-600 dark:text-amber-300">Setup needed</p>
+                                <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-600 dark:text-amber-300">Setup needed</p>
                               ) : null}
                             </div>
                           </div>
-                          <span className={`mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border ${
+                          <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full border ${
                             !providerState.enabled
                               ? 'border-[#d5dee8] dark:border-[#4b5560]'
                               : selected
-                                ? 'border-[#588157] bg-[#588157] text-white dark:border-[#82ad86] dark:bg-[#82ad86] dark:text-[#121416]'
+                                ? 'border-[#588157] bg-[#588157] dark:border-[#82ad86] dark:bg-[#82ad86]'
                                 : 'border-[#c8d6e4] dark:border-[#4b5560]'
                           }`}>
-                            {providerState.enabled && selected ? <BadgeCheck className="h-3.5 w-3.5" /> : null}
+                            {selected ? <CheckCircle2 className="h-3.5 w-3.5 text-white dark:text-[#121416]" /> : null}
                           </span>
                         </div>
                       </button>
@@ -504,54 +501,103 @@ export default function CompanyPostJobPaymentPage() {
             </div>
 
             {completedCheckout ? (
-              <div className="w-full max-w-2xl space-y-3 rounded-[24px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6]/92 dark:bg-[#1b1f23] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]">
+              <div className="w-full max-w-4xl space-y-4 rounded-[24px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6]/92 dark:bg-[#1b1f23] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#588157] dark:text-[#e2b94d]">Merchant summary</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#588157] dark:text-[#e2b94d]">Post payment information</p>
                   <h2 className="mt-1 text-xl font-semibold text-[#102a1b] dark:text-white">
                     {completedProvider?.merchantName || 'KapIT Payment Receipt'}
                   </h2>
                   <p className="mt-2 text-sm text-[#5f6f52] dark:text-[#c0c8d0]">
-                    Your payment is verified and this job is now published under the paid plan below.
+                    Payment is complete. Step 3 is now done and your job is published.
                   </p>
                 </div>
 
-                <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4 space-y-3 text-sm">
-                  <div>
-                    <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Paid plan</p>
-                    <p className="font-semibold text-[#102a1b] dark:text-white">{paidPlanLabel}</p>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4 space-y-3 text-sm">
+                    <h3 className="text-base font-semibold text-[#102a1b] dark:text-white">What You Paid For</h3>
+                    <div>
+                      <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Paid plan</p>
+                      <p className="font-semibold text-[#102a1b] dark:text-white">{paidPlanLabel}</p>
+                    </div>
+                    <div>
+                      <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Plan amount</p>
+                      <p className="font-semibold text-[#102a1b] dark:text-white">PHP {paidAmount.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Active duration</p>
+                      <p className="font-semibold text-[#102a1b] dark:text-white">{paidPlanDuration}</p>
+                    </div>
+                    <div>
+                      <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Published job</p>
+                      <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout?.job?.title || draft?.title || '--'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Plan amount</p>
-                    <p className="font-semibold text-[#102a1b] dark:text-white">PHP {paidAmount.toLocaleString()}</p>
+
+                  <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4 space-y-3 text-sm">
+                    <h3 className="text-base font-semibold text-[#102a1b] dark:text-white">Billing Information</h3>
+                    <div>
+                      <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Payment provider</p>
+                      <p className="font-semibold text-[#102a1b] dark:text-white">{completedProvider?.label || completedCheckout?.payment?.provider || '--'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Payment status</p>
+                      <p className="font-semibold text-emerald-700 dark:text-emerald-300">Verified and paid</p>
+                    </div>
+                    <div>
+                      <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Payment record</p>
+                      <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout?.payment?.id || currentPaymentId || '--'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Provider reference</p>
+                      <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout?.payment?.provider_payment_id || completedCheckout?.payment?.provider_checkout_id || '--'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Paid on</p>
+                      <p className="font-semibold text-[#102a1b] dark:text-white">{paidAt || 'Just now'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Active duration</p>
-                    <p className="font-semibold text-[#102a1b] dark:text-white">{paidPlanDuration}</p>
+                </div>
+
+                <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4">
+                  <p className="text-sm font-semibold text-[#102a1b] dark:text-white">All plans</p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {plans.map((plan) => {
+                      const purchased = completedPlan?.id === plan.id || completedCheckout?.payment?.plan_id === plan.id;
+                      return (
+                        <div
+                          key={`receipt-plan-${plan.id}`}
+                          className={`rounded-[16px] border p-3 ${
+                            purchased
+                              ? 'border-[#588157] bg-[#eef6ee] dark:border-[#82ad86] dark:bg-[#2a2f35]'
+                              : 'border-[#d6d3c9] bg-[#fbfcfa] dark:border-[#444d57] dark:bg-[#202428]'
+                          }`}
+                        >
+                          <p className="text-sm font-semibold text-[#102a1b] dark:text-white">{plan.label}</p>
+                          <p className="mt-1 text-lg font-semibold text-[#102a1b] dark:text-white">PHP {Number(plan.price || 0).toLocaleString()}</p>
+                          <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#588157] dark:text-[#e2b94d]">
+                            Active for {plan.durationLabel}
+                          </p>
+                          {purchased ? (
+                            <p className="mt-2 inline-flex rounded-full bg-[#3a5a40] px-2 py-0.5 text-[11px] font-semibold text-white dark:bg-[#82ad86] dark:text-[#121416]">
+                              Purchased
+                            </p>
+                          ) : null}
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div>
-                    <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Payment provider</p>
-                    <p className="font-semibold text-[#102a1b] dark:text-white">{completedProvider?.label || completedCheckout?.payment?.provider || '--'}</p>
-                  </div>
-                  <div>
-                    <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Payment status</p>
-                    <p className="font-semibold text-emerald-700 dark:text-emerald-300">Verified and paid</p>
-                  </div>
-                  <div>
-                    <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Payment record</p>
-                    <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout?.payment?.id || currentPaymentId || '--'}</p>
-                  </div>
-                  <div>
-                    <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Provider reference</p>
-                    <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout?.payment?.provider_payment_id || completedCheckout?.payment?.provider_checkout_id || '--'}</p>
-                  </div>
-                  <div>
-                    <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Paid on</p>
-                    <p className="font-semibold text-[#102a1b] dark:text-white">{paidAt || 'Just now'}</p>
-                  </div>
-                  <div>
-                    <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Published job</p>
-                    <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout?.job?.title || draft?.title || '--'}</p>
-                  </div>
+                </div>
+
+                <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4">
+                  <p className="text-sm font-semibold text-[#102a1b] dark:text-white">All plans include</p>
+                  <ul className="mt-2.5 space-y-1.5 text-sm text-[#344e41] dark:text-[#eceff2]">
+                    {PLAN_FEATURES.map((feature) => (
+                      <li key={`receipt-feature-${feature}`} className="flex items-start gap-2">
+                        <span className="mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full bg-[#588157] dark:bg-[#82ad86]" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             ) : null}

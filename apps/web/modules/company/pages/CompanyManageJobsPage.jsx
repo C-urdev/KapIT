@@ -179,18 +179,9 @@ export default function CompanyManageJobsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div>
         <div>
           <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Manage jobs</h2>
-        </div>
-        <div className="flex w-full sm:w-auto flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => navigate(COMPANY_PATHS.postJob)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white text-sm font-semibold transition-colors"
-          >
-            Post job
-          </button>
         </div>
       </div>
 

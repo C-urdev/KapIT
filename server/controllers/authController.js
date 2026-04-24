@@ -87,17 +87,26 @@ const serializeSavedJobRow = (row) => ({
 const normalizeJobFeedFilters = (query = {}) => {
   const keyword = String(query.q || '').trim();
   const location = String(query.location || '').trim();
-  const type = String(query.type || '').trim();
+  const rawJobType = String(query.jobType || query.type || '').trim();
+  const rawWorkPreference = String(query.workPreference || '').trim().toLowerCase();
   const skill = String(query.skill || '').trim();
-  const rawStatus = String(query.status || '').trim().toLowerCase();
-  const allowedStatuses = new Set(['open', 'filled', 'closed']);
+  const rawSalaryCurrency = String(query.salaryCurrency || '').trim().toUpperCase();
+  const salaryRange = String(query.salaryRange || '').trim();
+  const rawExperienceLevel = String(query.experienceLevel || '').trim().toLowerCase();
+  const allowedJobTypes = new Set(['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship']);
+  const allowedWorkPreferences = new Set(['fully-remote', 'asynchronous-remote', 'on-site']);
+  const allowedExperienceLevels = new Set(['intern', 'junior', 'mid', 'senior']);
+  const allowedSalaryCurrencies = new Set(['PHP', 'USD', 'EUR']);
 
   return {
     keyword,
     location,
-    type,
+    jobType: allowedJobTypes.has(rawJobType) ? rawJobType : '',
+    workPreference: allowedWorkPreferences.has(rawWorkPreference) ? rawWorkPreference : '',
     skill,
-    status: allowedStatuses.has(rawStatus) ? rawStatus : '',
+    salaryCurrency: allowedSalaryCurrencies.has(rawSalaryCurrency) ? rawSalaryCurrency : '',
+    salaryRange,
+    experienceLevel: allowedExperienceLevels.has(rawExperienceLevel) ? rawExperienceLevel : '',
   };
 };
 
@@ -131,6 +140,52 @@ const upsertJobMatchScore = async (client, { userId, jobId, match }) => {
       }),
     ]
   );
+};
+
+const loadCachedJobMatchScores = async (client, { userId, jobIds }) => {
+  const normalizedJobIds = Array.isArray(jobIds)
+    ? jobIds.map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0)
+    : [];
+
+  if (!normalizedJobIds.length) {
+    return new Map();
+  }
+
+  const result = await client.query(
+    `SELECT job_id,
+            match_percentage,
+            ats_score,
+            metadata
+     FROM job_match_scores
+     WHERE user_id = $1
+       AND job_id = ANY($2::bigint[])`,
+    [userId, normalizedJobIds]
+  );
+
+  const map = new Map();
+  for (const row of result.rows) {
+    const metadata = row?.metadata && typeof row.metadata === 'object' ? row.metadata : {};
+    map.set(Number(row.job_id), {
+      matchPercentage: Number(row.match_percentage || 0),
+      atsScore: Number(row.ats_score || 0),
+      matchDetails: {
+        matchedSkills: Array.isArray(metadata.matchedSkills) ? metadata.matchedSkills : [],
+        missingSkills: Array.isArray(metadata.missingSkills) ? metadata.missingSkills : [],
+        strengths: Array.isArray(metadata.strengths) ? metadata.strengths : [],
+        concerns: Array.isArray(metadata.concerns) ? metadata.concerns : [],
+      },
+    });
+  }
+
+  return map;
+};
+
+const matchJobsForCandidateWithBudget = async ({ candidate, jobs }) => {
+  const timeoutMs = Math.max(500, Number(process.env.JOB_FEED_AI_TIMEOUT_MS || 1800));
+  return Promise.race([
+    matchJobsForCandidate({ candidate, jobs }),
+    new Promise((resolve) => setTimeout(() => resolve(null), timeoutMs)),
+  ]);
 };
 
 const computeProfileCompleted = (userType, merged, accountType) => {
@@ -937,19 +992,48 @@ const getJobsFeed = async (req, res) => {
     const values = [req.user.id];
     const conditions = [`COALESCE(j.posting_payment_status, 'paid') = 'paid'`];
 
-    if (filters.status) {
-      values.push(filters.status);
-      conditions.push(`j.status = $${values.length}`);
-    }
-
     if (filters.location) {
       values.push(`%${filters.location}%`);
       conditions.push(`COALESCE(j.location, '') ILIKE $${values.length}`);
     }
 
-    if (filters.type) {
-      values.push(filters.type);
+    if (filters.jobType) {
+      values.push(filters.jobType);
       conditions.push(`COALESCE(j.type, '') ILIKE $${values.length}`);
+    }
+
+    if (filters.workPreference === 'fully-remote') {
+      conditions.push(
+        `(COALESCE(j.work_preference, '') = 'fully-remote'
+          OR COALESCE(j.location, '') ILIKE '%remote%'
+          OR COALESCE(j.type, '') ILIKE '%remote%'
+          OR COALESCE(j.description, '') ILIKE '%fully remote%')`
+      );
+    }
+
+    if (filters.workPreference === 'asynchronous-remote') {
+      conditions.push(
+        `(COALESCE(j.work_preference, '') = 'asynchronous-remote'
+          OR COALESCE(j.location, '') ILIKE '%asynchronous%'
+          OR COALESCE(j.type, '') ILIKE '%asynchronous%'
+          OR COALESCE(j.description, '') ILIKE '%asynchronous%'
+          OR COALESCE(j.description, '') ILIKE '%async remote%')`
+      );
+    }
+
+    if (filters.workPreference === 'on-site') {
+      conditions.push(
+        `(COALESCE(j.work_preference, '') = 'on-site'
+          OR COALESCE(j.location, '') ILIKE '%on-site%'
+          OR COALESCE(j.location, '') ILIKE '%on site%'
+          OR COALESCE(j.location, '') ILIKE '%onsite%'
+          OR COALESCE(j.type, '') ILIKE '%on-site%'
+          OR COALESCE(j.type, '') ILIKE '%on site%'
+          OR COALESCE(j.type, '') ILIKE '%onsite%'
+          OR COALESCE(j.description, '') ILIKE '%on-site%'
+          OR COALESCE(j.description, '') ILIKE '%on site%'
+          OR COALESCE(j.description, '') ILIKE '%onsite%')`
+      );
     }
 
     if (filters.skill) {
@@ -982,6 +1066,54 @@ const getJobsFeed = async (req, res) => {
       );
     }
 
+    if (filters.salaryRange) {
+      values.push(`%${filters.salaryRange}%`);
+      conditions.push(`COALESCE(j.salary, '') ILIKE $${values.length}`);
+    } else if (filters.salaryCurrency) {
+      values.push(`${filters.salaryCurrency}%`);
+      conditions.push(`COALESCE(j.salary, '') ILIKE $${values.length}`);
+    }
+
+    if (filters.experienceLevel === 'intern') {
+      conditions.push(
+        `(COALESCE(j.experience_level, '') = 'intern'
+          OR COALESCE(j.title, '') ILIKE '%intern%'
+          OR COALESCE(j.description, '') ILIKE '%intern%'
+          OR COALESCE(j.description, '') ILIKE '%entry level%'
+          OR COALESCE(j.description, '') ILIKE '%entry-level%')`
+      );
+    }
+
+    if (filters.experienceLevel === 'junior') {
+      conditions.push(
+        `(COALESCE(j.experience_level, '') = 'junior'
+          OR COALESCE(j.title, '') ILIKE '%junior%'
+          OR COALESCE(j.description, '') ILIKE '%junior%'
+          OR COALESCE(j.description, '') ILIKE '%entry level%'
+          OR COALESCE(j.description, '') ILIKE '%entry-level%')`
+      );
+    }
+
+    if (filters.experienceLevel === 'mid') {
+      conditions.push(
+        `(COALESCE(j.experience_level, '') = 'mid'
+          OR COALESCE(j.title, '') ILIKE '%mid%'
+          OR COALESCE(j.description, '') ILIKE '%mid%'
+          OR COALESCE(j.description, '') ILIKE '%mid-level%'
+          OR COALESCE(j.description, '') ILIKE '%intermediate%')`
+      );
+    }
+
+    if (filters.experienceLevel === 'senior') {
+      conditions.push(
+        `(COALESCE(j.experience_level, '') = 'senior'
+          OR COALESCE(j.title, '') ILIKE '%senior%'
+          OR COALESCE(j.description, '') ILIKE '%senior%'
+          OR COALESCE(j.title, '') ILIKE '%lead%'
+          OR COALESCE(j.description, '') ILIKE '%lead%')`
+      );
+    }
+
     const result = await client.query(
       `SELECT j.id,
               j.title,
@@ -989,6 +1121,8 @@ const getJobsFeed = async (req, res) => {
               j.salary,
               j.location,
               j.type,
+              j.experience_level,
+              j.work_preference,
               j.skills,
               j.status,
               j.active_until,
@@ -1026,6 +1160,8 @@ const getJobsFeed = async (req, res) => {
         salary: row.salary || '',
         location: row.location || '',
         type: row.type || '',
+        experienceLevel: row.experience_level || '',
+        workPreference: row.work_preference || '',
         skills: Array.isArray(row.skills) ? row.skills : [],
         status: row.status || 'open',
         active_until: row.active_until,
@@ -1040,6 +1176,28 @@ const getJobsFeed = async (req, res) => {
         },
       }))
       .filter((job) => job.status !== 'draft');
+
+    let cachedMatchMap = new Map();
+    if (plan.isPremium && jobs.length) {
+      cachedMatchMap = await loadCachedJobMatchScores(client, {
+        userId: req.user.id,
+        jobIds: jobs.map((job) => job.id),
+      }).catch(() => new Map());
+
+      jobs = jobs.map((job) => {
+        const cached = cachedMatchMap.get(Number(job.id));
+        if (!cached) {
+          return job;
+        }
+
+        return {
+          ...job,
+          matchPercentage: cached.matchPercentage,
+          atsScore: cached.atsScore,
+          matchDetails: cached.matchDetails,
+        };
+      });
+    }
 
     if (plan.isPremium && isAiConfigured()) {
       const profileResult = await client.query(
@@ -1059,8 +1217,9 @@ const getJobsFeed = async (req, res) => {
       );
 
       const profile = profileResult.rows[0];
-      if (profile && jobs.length) {
-        const aiResult = await matchJobsForCandidate({
+      const jobsNeedingScores = jobs.filter((job) => !cachedMatchMap.has(Number(job.id)));
+      if (profile && jobsNeedingScores.length) {
+        const aiResult = await matchJobsForCandidateWithBudget({
           candidate: {
             id: req.user.id,
             fullName: profile.full_name,
@@ -1071,7 +1230,7 @@ const getJobsFeed = async (req, res) => {
             location: profile.location,
             yearsOfExperience: profile.experience_years,
           },
-          jobs,
+          jobs: jobsNeedingScores,
         }).catch(() => null);
 
         const matchMap = new Map((aiResult?.matches || []).map((item) => [Number(item.job_id), item]));
