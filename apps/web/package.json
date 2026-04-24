@@ -2,9 +2,9 @@
   "name": "kapit-web",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build && node scripts/ensure-routes-manifest-deterministic.mjs",
-    "start": "next start",
+    "dev": "node ../../scripts/run-web.js dev",
+    "build": "node ../../scripts/run-web.js build",
+    "start": "node ../../scripts/run-web.js start",
     "lint": "next lint"
   },
   "dependencies": {

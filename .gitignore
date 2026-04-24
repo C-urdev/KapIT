@@ -23,3 +23,5 @@ docs/*changes*history*.md
 AGENTS.md
 agents/skills/
 .agents/skills/
+CLAUDE.md
+skills-lock.json
