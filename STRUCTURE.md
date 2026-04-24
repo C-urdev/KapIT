@@ -1,118 +1,55 @@
 # Project Structure
 
-This project is organized into three main code areas so it is easier to find what belongs to the user side, company side, or both.
+This file is the single source of truth for repository layout and frontend placement rules.
 
-## Main Folders
+## Repository Layout
 
-### `apps/web/src/shared`
-Use this for code that is used by both user and company flows.
+```text
+kapIT/
+|- apps/
+|  `- web/                  # Next.js frontend
+|- server/                  # Express API server
+|  |- config/
+|  |- controllers/
+|  |- middleware/
+|  |- routes/
+|  |- services/
+|  |- tests/
+|  `- validation/
+|- services/
+|  `- ai-fastapi/           # Optional FastAPI AI microservice
+|- database/
+|  |- migrations/           # SQL migrations
+|  `- init.sql
+|- scripts/                 # Dev/build orchestration scripts
+|- render.yaml              # Render backend config
+`- .env.example             # Environment template
+```
 
-Examples:
-- shared UI components
-- shared auth components
-- shared context
-- shared services
-- shared utilities
-- shared onboarding pages
-- shared public profile pages
+## Frontend Domain Layout
 
-### `apps/web/src/user`
-Use this for user-only code.
+Use these domains for frontend code ownership:
 
-Examples:
-- user dashboard pages
-- user navigation
-- user profile features
-- user post features
-- user-only components
+- `apps/web/src/shared` for shared code used by both user and company flows.
+- `apps/web/src/user` for user-only code.
+- `apps/web/src/company` for company-only code.
 
-### `apps/web/src/company`
-Use this for company-only code.
+## Placement Rules
 
-Examples:
-- company dashboard pages
-- company sidebar and header
-- company hiring features
-- company posting flow
-- company-only components
+- Put reusable UI and shared logic in `shared/components`, `shared/services`, or `shared/utils`.
+- Put user-specific features in `user/features`, `user/pages`, and `user/components`.
+- Put company-specific features in `company/features`, `company/pages`, and `company/components`.
+- For navigation and shell components, keep desktop and mobile variants separated when layouts differ.
 
 ## Naming Rules
 
-To make files easier to identify:
+- Use `User` prefix for user-only components when it improves clarity.
+- Use `Company` prefix for company-only components when it improves clarity.
+- Keep shared components neutral (for example, `SearchableSelect`).
 
-- Prefix user-only files with `User` when appropriate
-- Prefix company-only files with `Company` when appropriate
-- Keep shared files neutral when they are truly shared
+## Responsive Requirement
 
-Examples:
-- `UserHomePage.jsx`
-- `UserNavbar.jsx`
-- `CompanyDashboardPage.jsx`
-- `CompanyLayout.jsx`
-- `SearchableSelect.jsx` for shared code
-- Use lowercase folder names for route/page groups, such as `pages/home` and `pages/premium`
+For new user/company features:
 
-## Folder Guidelines
-
-### Shared
-- `apps/web/src/shared/components`
-- `apps/web/src/shared/pages`
-- `apps/web/src/shared/context`
-- `apps/web/src/shared/services`
-- `apps/web/src/shared/utils`
-
-### User
-- `apps/web/src/user/components`
-- `apps/web/src/user/components/navigation/desktop`
-- `apps/web/src/user/components/navigation/mobile`
-- `apps/web/src/user/features`
-- `apps/web/src/user/pages`
-- `apps/web/src/user/layouts`
-
-### Company
-- `apps/web/src/company/components`
-- `apps/web/src/company/components/layout/desktop`
-- `apps/web/src/company/components/layout/mobile`
-- `apps/web/src/company/features`
-- `apps/web/src/company/pages`
-- `apps/web/src/company/layouts`
-
-## View Requirements
-
-For every new feature added to the user side or company side:
-
-- Always create both a mobile view and a desktop/PC view
-- Do not leave a new feature with only one responsive layout
-- Mobile and desktop designs can share logic, but the UI structure and layout should be intentionally designed for each screen size
-- If a feature is used by both user and company flows, both sides must still have complete mobile and desktop implementations
-
-Recommended organization:
-
-- Put shared business logic in `features`, `services`, or shared hooks/helpers
-- Put mobile-specific UI in `mobile` folders when the UI differs clearly on small screens
-- Put desktop-specific UI in `desktop` folders when the UI differs clearly on larger screens
-- Keep one feature complete only when both screen experiences are built
-
-## Where To Put New Code
-
-Use this rule:
-
-- If both user and company use it, put it in `apps/web/src/shared`
-- If only the user side uses it, put it in `apps/web/src/user`
-- If only the company side uses it, put it in `apps/web/src/company`
-
-## Quick Examples
-
-- A reusable modal for both sides: `apps/web/src/shared/components`
-- User account settings: `apps/web/src/user/features`
-- User account settings modal: `apps/web/src/user/features/profile`
-- User mobile navigation: `apps/web/src/user/components/navigation/mobile`
-- User desktop navigation: `apps/web/src/user/components/navigation/desktop`
-- Company job posting page: `apps/web/src/company/pages`
-- Company mobile layout pieces: `apps/web/src/company/components/layout/mobile`
-- Company desktop layout pieces: `apps/web/src/company/components/layout/desktop`
-- Shared auth logic: `apps/web/src/shared/services`
-
-## Goal
-
-This structure helps keep the project easier to navigate, easier to maintain, and easier to expand without mixing user and company code together.
+- Provide both desktop and mobile UI coverage.
+- Shared logic can be reused, but UI structure should still be tuned per screen size.
