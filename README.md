@@ -76,53 +76,6 @@ It includes authentication, onboarding, public/private job flows, applicant mana
   - Candidate ranking
   - Resume analysis
 
-## Installation / Setup
-
-### 1. Clone
-
-```bash
-git clone https://github.com/your-username/kapit.git
-cd kapit
-```
-
-### 2. Install dependencies
-
-```bash
-npm install
-```
-
-For optional FastAPI service:
-
-```bash
-cd services/ai-fastapi
-pip install -r requirements.txt
-cd ../..
-```
-
-### 3. Configure environment
-
-```bash
-cp .env.example .env.local
-```
-
-Fill required values in `.env.local`.
-
-### 4. Run locally
-
-```bash
-npm run dev
-```
-
-Other useful scripts:
-
-```bash
-npm run server
-npm run next:dev
-npm run build
-npm run test
-npm run fastapi:dev
-```
-
 ## Environment Variables
 
 The full template is in `.env.example`.
@@ -221,20 +174,6 @@ Key groups used by this codebase:
    - Frontend: Netlify (`apps/web/netlify.toml`)
    - Backend: Render (`render.yaml`)
 
-## Testing
-
-Run backend tests:
-
-```bash
-npm test
-```
-
-Run FastAPI tests (if Python test tooling is installed in your environment):
-
-```bash
-python -m pytest services/ai-fastapi/tests
-```
-
 ## Folder Structure
 
 See [STRUCTURE.md](STRUCTURE.md) for the full project structure and placement rules.
@@ -252,5 +191,5 @@ MIT License
 
 ## Author
 
-- Name: `Your Name`
-- GitHub: `https://github.com/your-username`
+- Name: `Cardino Christian`
+- GitHub: `https://github.com/C-urdev/KapIT`
