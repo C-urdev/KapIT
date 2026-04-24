@@ -233,6 +233,14 @@ export default function AuthPage({
     const state = crypto.randomUUID();
     try {
       window.sessionStorage.setItem('oauth_google_state', state);
+      window.sessionStorage.setItem(
+        'oauth_google_intent',
+        JSON.stringify({
+          state,
+          mode: authMode,
+          accountType: accountType || null,
+        })
+      );
     } catch {
       // Continue without persisted state if storage is unavailable.
     }
@@ -278,7 +286,8 @@ export default function AuthPage({
     try {
       let data;
       if (provider === 'Google') {
-        data = await loginWithGoogle('mock-google-' + email.split('@')[0]);
+        const accountTypeHint = authMode === 'signup' ? (accountType || null) : null;
+        data = await loginWithGoogle('mock-google-' + email.split('@')[0], { accountTypeHint });
       } else {
         data = await loginWithGithub('mock-github-' + email.split('@')[0]);
       }
