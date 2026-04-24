@@ -22,5 +22,6 @@ docs/prompt-answer-code-change-history.md
 docs/*changes*history*.md
 skills-lock.json
 CLAUDE.md
+.agents/skills/
 .cursorrules
 SECURITY_ROTATION.md
