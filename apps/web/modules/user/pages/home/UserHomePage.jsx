@@ -157,6 +157,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   const [searchPageQuery, setSearchPageQuery] = useState('');
   const [searchPageScope, setSearchPageScope] = useState('all');
   const [selectedJob, setSelectedJob] = useState(null);
+  const [publicProfileBackTarget, setPublicProfileBackTarget] = useState({ nav: 'home', options: {} });
   const [jobCardStateById, setJobCardStateById] = useState({});
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isTabletViewport, setIsTabletViewport] = useState(false);
@@ -577,6 +578,30 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
     updateActiveNav('search');
   };
 
+  const resolvePublicProfileBackTarget = () => {
+    if (activeNav === 'job-detail') {
+      const jobId = resolveJobId(selectedJob?.id);
+      if (jobId) {
+        return { nav: 'job-detail', options: { jobId } };
+      }
+      return { nav: 'jobs', options: {} };
+    }
+
+    if (USER_NAV_TABS.has(activeNav) && activeNav !== 'public-profile') {
+      return { nav: activeNav, options: {} };
+    }
+
+    return { nav: 'home', options: {} };
+  };
+
+  const handleBackFromPublicProfile = () => {
+    const nextNav = USER_NAV_TABS.has(publicProfileBackTarget?.nav)
+      ? publicProfileBackTarget.nav
+      : 'home';
+    const nextOptions = publicProfileBackTarget?.options || {};
+    updateActiveNav(nextNav, nextOptions);
+  };
+
   const handleOpenPublicProfile = async (result) => {
     const profileId = resolveProfileIdFromResult(result);
     if (!profileId) {
@@ -588,6 +613,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
       ...(result || {}),
       id: profileId,
     });
+    setPublicProfileBackTarget(resolvePublicProfileBackTarget());
     updateActiveNav('public-profile', { profileId });
 
     try {
@@ -616,6 +642,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
       companyName: job?.company?.name || '',
       profileImage: job?.company?.logo || '',
     });
+    setPublicProfileBackTarget(resolvePublicProfileBackTarget());
     updateActiveNav('public-profile', { profileId: companyProfileId });
 
     try {
@@ -898,7 +925,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
             profile={publicProfile}
             viewer={user}
             savedPostIds={savedPosts.map((entry) => Number(entry?.id)).filter((id) => Number.isInteger(id) && id > 0)}
-            onBack={() => updateActiveNav('home')}
+            onBack={handleBackFromPublicProfile}
             onMessage={handleMessageProfile}
             onToggleSavePost={handleToggleSavePost}
             onReactToPost={handleReactToPost}

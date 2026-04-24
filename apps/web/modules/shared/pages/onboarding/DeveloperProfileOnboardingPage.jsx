@@ -99,6 +99,12 @@ const SCHOOL_OPTIONS = [
   'Xavier University - Ateneo de Cagayan',
   OTHER_SCHOOL_OPTION,
 ];
+const WORK_PREFERENCE_OPTIONS = [
+  { value: 'remote', label: 'Remote' },
+  { value: 'asynchronous-remote', label: 'Asynchronous Remote' },
+  { value: 'hybrid', label: 'Hybrid' },
+  { value: 'on-site', label: 'On-site' },
+];
 const readAsDataUrl = (file) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -548,14 +554,14 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
             </Section>
 
             <Section title="Work Preferences">
-              <div className="grid gap-3 sm:grid-cols-3">
-                {['remote', 'hybrid', 'on-site'].map((value) => {
-                  const selected = form.workPreference === value;
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {WORK_PREFERENCE_OPTIONS.map((option) => {
+                  const selected = form.workPreference === option.value;
                   return (
                     <button
-                      key={value}
+                      key={option.value}
                       type="button"
-                      onClick={() => setForm((p) => ({ ...p, workPreference: value }))}
+                      onClick={() => setForm((p) => ({ ...p, workPreference: option.value }))}
                       aria-pressed={selected}
                       className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors active:scale-[0.99] ${
                         selected
@@ -563,7 +569,7 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
                           : 'border-[#a3b18a] bg-[#f5f5f2] text-[#344e41] hover:bg-[#eef6ee] dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-200 dark:hover:bg-slate-900/60'
                       }`}
                     >
-                      {value === 'on-site' ? 'On-site' : value.charAt(0).toUpperCase() + value.slice(1)}
+                      {option.label}
                     </button>
                   );
                 })}

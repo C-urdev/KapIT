@@ -141,6 +141,10 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
     localPaymentBypassEnabled && ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
   const stepState = success ? 3 : loading || verifying ? 2 : 1;
   const completedProvider = PAYMENT_PROVIDERS.find((provider) => provider.id === completedCheckout?.providerId) || null;
+  const paidAt = completedCheckout?.paidAt ? new Date(completedCheckout.paidAt).toLocaleString() : '';
+  const completedAmount = Number(completedCheckout?.amount || 0);
+  const completedPlanName = completedCheckout?.planName || PREMIUM_PLAN.name;
+  const completedBillingCycle = completedCheckout?.billingCycle || 'monthly';
 
   React.useEffect(() => {
     let cancelled = false;
@@ -217,12 +221,15 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
           }
           setCompletedCheckout({
             providerId: 'paypal',
-            amount: PREMIUM_PLAN.amount,
-            planName: PREMIUM_PLAN.name,
-            billingCycle: 'monthly',
+            amount: Number(data?.payment?.amount || PREMIUM_PLAN.amount),
+            planName: data?.payment?.plan_label || PREMIUM_PLAN.name,
+            billingCycle: data?.payment?.plan_duration || 'monthly',
             paymentMethod: 'PayPal',
             reference: data?.payment?.provider_payment_id || data?.payment?.provider_checkout_id || paymentId,
             accountHint: PAYMENT_PROVIDERS.find((provider) => provider.id === 'paypal')?.accountHint || '',
+            paymentId: data?.payment?.id || paymentId,
+            providerReference: data?.payment?.provider_payment_id || data?.payment?.provider_checkout_id || paymentId,
+            paidAt: data?.payment?.paid_at || '',
           });
           setSuccess('PayPal payment verified. Your premium access is now active.');
           cleanupUrl();
@@ -287,12 +294,15 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
       setCurrentPaymentId(data?.payment?.id || '');
       setCompletedCheckout({
         providerId: paymentMethod,
-        amount: PREMIUM_PLAN.amount,
+        amount: Number(data?.payment?.amount || PREMIUM_PLAN.amount),
         planName: PREMIUM_PLAN.name,
         billingCycle: 'monthly',
         paymentMethod: selectedProvider.label,
         reference: data?.payment?.provider_payment_id || data?.payment?.provider_checkout_id || `sample-${Date.now()}`,
         accountHint: selectedProvider.accountHint,
+        paymentId: data?.payment?.id || '',
+        providerReference: data?.payment?.provider_payment_id || data?.payment?.provider_checkout_id || `sample-${Date.now()}`,
+        paidAt: data?.payment?.paid_at || '',
       });
       setSuccess('Local sample payment completed and your premium access is now active.');
     } catch (upgradeError) {
@@ -490,50 +500,107 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
         </div>
 
         {completedCheckout ? (
-          <div className="w-full max-w-2xl space-y-3 rounded-[24px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6]/92 dark:bg-[#1b1f23] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]">
+          <div className="w-full max-w-4xl space-y-4 rounded-[24px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6]/92 dark:bg-[#1b1f23] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#588157] dark:text-[#e2b94d]">Merchant summary</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#588157] dark:text-[#e2b94d]">Post payment information</p>
               <h2 className="mt-1 text-xl font-semibold text-[#102a1b] dark:text-white">
                 {completedProvider?.merchantName || 'KapIT Payment Receipt'}
               </h2>
               <p className="mt-2 text-sm text-[#5f6f52] dark:text-[#c0c8d0]">
-                Your payment is verified and premium access is now active under the paid plan below.
+                Payment is complete. Step 3 is now done and premium access is active.
               </p>
             </div>
 
-            <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4 space-y-3 text-sm">
-              <div>
-                <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Paid plan</p>
-                <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout.planName}</p>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4 space-y-3 text-sm">
+                <h3 className="text-base font-semibold text-[#102a1b] dark:text-white">What You Paid For</h3>
+                <div>
+                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Paid plan</p>
+                  <p className="font-semibold text-[#102a1b] dark:text-white">{completedPlanName}</p>
+                </div>
+                <div>
+                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Plan amount</p>
+                  <p className="font-semibold text-[#102a1b] dark:text-white">PHP {completedAmount.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Billing cycle</p>
+                  <p className="font-semibold text-[#102a1b] dark:text-white">{completedBillingCycle}</p>
+                </div>
+                <div>
+                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Activated for</p>
+                  <p className="font-semibold text-[#102a1b] dark:text-white">{displayName}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Plan amount</p>
-                <p className="font-semibold text-[#102a1b] dark:text-white">PHP {Number(completedCheckout.amount || 0).toLocaleString()}</p>
+
+              <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4 space-y-3 text-sm">
+                <h3 className="text-base font-semibold text-[#102a1b] dark:text-white">Billing Information</h3>
+                <div>
+                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Payment provider</p>
+                  <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout.paymentMethod}</p>
+                </div>
+                <div>
+                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Payment status</p>
+                  <p className="font-semibold text-emerald-700 dark:text-emerald-300">Verified and paid</p>
+                </div>
+                <div>
+                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Payment record</p>
+                  <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout.paymentId || completedCheckout.reference || '--'}</p>
+                </div>
+                <div>
+                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Provider reference</p>
+                  <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout.providerReference || completedCheckout.reference || '--'}</p>
+                </div>
+                <div>
+                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Receiving account</p>
+                  <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout.accountHint}</p>
+                </div>
+                <div>
+                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Paid on</p>
+                  <p className="font-semibold text-[#102a1b] dark:text-white">{paidAt || 'Just now'}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Billing cycle</p>
-                <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout.billingCycle}</p>
+            </div>
+
+            <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4">
+              <p className="text-sm font-semibold text-[#102a1b] dark:text-white">All plans</p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {plans.map((plan) => {
+                  const purchased = String(plan.id) === String(PREMIUM_PLAN.id);
+                  return (
+                    <div
+                      key={`premium-done-plan-${plan.id}`}
+                      className={`rounded-[16px] border p-3 ${
+                        purchased
+                          ? 'border-[#588157] bg-[#eef6ee] dark:border-[#82ad86] dark:bg-[#2a2f35]'
+                          : 'border-[#d6d3c9] bg-[#fbfcfa] dark:border-[#444d57] dark:bg-[#202428]'
+                      }`}
+                    >
+                      <p className="text-sm font-semibold text-[#102a1b] dark:text-white">{plan.name}</p>
+                      <p className="mt-1 text-lg font-semibold text-[#102a1b] dark:text-white">PHP {Number(plan.amount || 0).toLocaleString()}</p>
+                      <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#588157] dark:text-[#e2b94d]">
+                        {purchased ? 'Billed monthly' : 'Starter'}
+                      </p>
+                      {purchased ? (
+                        <p className="mt-2 inline-flex rounded-full bg-[#3a5a40] px-2 py-0.5 text-[11px] font-semibold text-white dark:bg-[#82ad86] dark:text-[#121416]">
+                          Purchased
+                        </p>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
-              <div>
-                <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Payment provider</p>
-                <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout.paymentMethod}</p>
-              </div>
-              <div>
-                <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Payment status</p>
-                <p className="font-semibold text-emerald-700 dark:text-emerald-300">Verified and paid</p>
-              </div>
-              <div>
-                <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Payment record</p>
-                <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout.reference}</p>
-              </div>
-              <div>
-                <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Receiving account</p>
-                <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout.accountHint}</p>
-              </div>
-              <div>
-                <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Activated for</p>
-                <p className="font-semibold text-[#102a1b] dark:text-white">{displayName}</p>
-              </div>
+            </div>
+
+            <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4">
+              <p className="text-sm font-semibold text-[#102a1b] dark:text-white">Premium includes</p>
+              <ul className="mt-2.5 space-y-1.5 text-sm text-[#344e41] dark:text-[#eceff2]">
+                {PREMIUM_PLAN.features.map(({ text }) => (
+                  <li key={`premium-done-feature-${text}`} className="flex items-start gap-2">
+                    <span className="mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full bg-[#588157] dark:bg-[#82ad86]" />
+                    <span>{text}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
 
             <div className="flex border-t border-[#e3ebf3] pt-3 dark:border-[#444d57]">

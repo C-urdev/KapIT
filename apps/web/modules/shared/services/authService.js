@@ -497,9 +497,12 @@ export const getJobsFeed = async (filters = {}) => {
     if (filters && typeof filters === 'object') {
       if (filters.q) params.set('q', String(filters.q).trim());
       if (filters.location) params.set('location', String(filters.location).trim());
-      if (filters.type) params.set('type', String(filters.type).trim());
+      if (filters.jobType) params.set('jobType', String(filters.jobType).trim());
+      if (filters.workPreference) params.set('workPreference', String(filters.workPreference).trim());
       if (filters.skill) params.set('skill', String(filters.skill).trim());
-      if (filters.status) params.set('status', String(filters.status).trim());
+      if (filters.salaryCurrency) params.set('salaryCurrency', String(filters.salaryCurrency).trim());
+      if (filters.salaryRange) params.set('salaryRange', String(filters.salaryRange).trim());
+      if (filters.experienceLevel) params.set('experienceLevel', String(filters.experienceLevel).trim());
     }
 
     const query = params.toString();

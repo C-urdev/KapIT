@@ -94,7 +94,13 @@ const SCHOOL_OPTIONS = [
   'Xavier University - Ateneo de Cagayan',
   OTHER_SCHOOL_OPTION,
 ];
-const WORK_PREFERENCE_OPTIONS = ['remote', 'hybrid', 'on-site'];
+const WORK_PREFERENCE_OPTIONS = ['remote', 'asynchronous-remote', 'hybrid', 'on-site'];
+const WORK_PREFERENCE_LABELS = {
+  remote: 'Remote',
+  'asynchronous-remote': 'Asynchronous Remote',
+  hybrid: 'Hybrid',
+  'on-site': 'On-site',
+};
 const EMPTY_FORM = {
   profileImage: '',
   fullName: '',
@@ -605,7 +611,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
 
           {showCareerSections ? (
           <SettingsCard title="Work Preference" icon={UserCircle} plain={asPage}>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
               {WORK_PREFERENCE_OPTIONS.map((value) => {
                 const selected = formData.workPreference === value;
                 return (
@@ -619,7 +625,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                         : 'border-[#dce5d4] bg-[#f8fbf6] text-[#344e41] dark:border-[#3d454e] dark:bg-[#121416] dark:text-[#eceff2]'
                     }`}
                   >
-                    {value === 'on-site' ? 'On-site' : value.charAt(0).toUpperCase() + value.slice(1)}
+                    {WORK_PREFERENCE_LABELS[value] || value}
                   </button>
                 );
               })}
