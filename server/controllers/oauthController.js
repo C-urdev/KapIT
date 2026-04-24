@@ -10,10 +10,18 @@ const { assertLocalAuthBypassAllowed } = require('../config/localBypass');
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
+const normalizeAccountType = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'company') return 'company';
+  if (normalized === 'developer' || normalized === 'employee' || normalized === 'user') return 'developer';
+  return null;
+};
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const handleSocialLogin = async ({ email, name, provider, providerId, req, res }) => {
+const handleSocialLogin = async ({ email, name, provider, providerId, accountTypeHint, req, res }) => {
   const normalizedEmail = String(email || '').toLowerCase().trim();
+  const normalizedAccountTypeHint = normalizeAccountType(accountTypeHint);
   let pgClient;
 
   try {
@@ -42,10 +50,12 @@ const handleSocialLogin = async ({ email, name, provider, providerId, req, res }
       }
     } else {
       // Create new user silently (no password needed)
-      // We set default account type to developer, they will be sent to complete profile
+      // Account type can be hinted from the signup flow; otherwise default to developer.
       const id = crypto.randomUUID();
       const username = await generateUsername(name || normalizedEmail.split('@')[0], pgClient);
-      
+      const resolvedAccountType = normalizedAccountTypeHint || 'developer';
+      const resolvedUserType = resolvedAccountType === 'company' ? 'company' : 'employee';
+
       const providerField = provider === 'google' ? 'google_id' : 'github_id';
       
       const insertQuery = `
@@ -54,7 +64,7 @@ const handleSocialLogin = async ({ email, name, provider, providerId, req, res }
         RETURNING *
       `;
       const result = await pgClient.query(insertQuery, [
-        id, username, normalizedEmail, 'employee', 'developer', provider, providerId, name || ''
+        id, username, normalizedEmail, resolvedUserType, resolvedAccountType, provider, providerId, name || ''
       ]);
       user = result.rows[0];
       logger.info({ userId: user.id, provider }, 'New user created via social login');
@@ -82,7 +92,8 @@ const handleSocialLogin = async ({ email, name, provider, providerId, req, res }
 // ─── Google OAuth ─────────────────────────────────────────────────────────────
 
 const googleLogin = async (req, res) => {
-  const { credential } = req.body;
+  const { credential, accountTypeHint } = req.body || {};
+  const normalizedAccountTypeHint = normalizeAccountType(accountTypeHint);
   if (!credential) {
     return res.status(400).json({ success: false, message: 'Google token missing' });
   }
@@ -98,6 +109,7 @@ const googleLogin = async (req, res) => {
         name: 'Mock Google User',
         provider: 'google',
         providerId: 'mock-' + Date.now(),
+        accountTypeHint: normalizedAccountTypeHint,
         req,
         res,
       });
@@ -126,6 +138,7 @@ const googleLogin = async (req, res) => {
       name: payload.name,
       provider: 'google',
       providerId: payload.sub,
+      accountTypeHint: normalizedAccountTypeHint,
       req,
       res,
     });
@@ -234,3 +247,4 @@ module.exports = {
   googleLogin,
   githubLogin,
 };
+

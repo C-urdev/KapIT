@@ -232,10 +232,14 @@ export const loginUser = async (credentials) => {
   return data;
 };
 
-export const loginWithGoogle = async (credential) => {
+export const loginWithGoogle = async (credential, options = {}) => {
+  const accountTypeHint = normalizeAccountType(options?.accountTypeHint);
   const data = await authRequest('/google', {
     method: 'POST',
-    body: JSON.stringify({ credential }),
+    body: JSON.stringify({
+      credential,
+      ...(accountTypeHint ? { accountTypeHint } : {}),
+    }),
     retryOnUnauthorized: false,
   });
 

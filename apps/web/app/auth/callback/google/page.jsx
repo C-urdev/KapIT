@@ -59,10 +59,26 @@ function GoogleCallbackContent() {
 
     const processLogin = async () => {
       try {
-        const data = await loginWithGoogle(idToken);
+        const accountTypeHint = (() => {
+          try {
+            const raw = window.sessionStorage.getItem('oauth_google_intent');
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed || parsed.state !== state || parsed.mode !== 'signup') {
+              return null;
+            }
+            const normalized = String(parsed.accountType || '').trim().toLowerCase();
+            return normalized === 'company' || normalized === 'developer' ? normalized : null;
+          } catch {
+            return null;
+          }
+        })();
+
+        const data = await loginWithGoogle(idToken, { accountTypeHint });
         if (data?.success && data?.user) {
           try {
             window.sessionStorage.removeItem('oauth_google_state');
+            window.sessionStorage.removeItem('oauth_google_intent');
           } catch {
             // Ignore if storage is unavailable.
           }
