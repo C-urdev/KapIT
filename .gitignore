@@ -1,8 +1,8 @@
 node_modules
+# Env files
 .env
 .env.*
 !.env.example
-**/.env.local
 .next
 dist
 apps/web/.next
