@@ -177,7 +177,7 @@ export default function CompanyProfilePage({ user, onUpdated }) {
                 label="Services Needed"
                 value={Array.isArray(onboardingDetails.servicesNeeded) ? onboardingDetails.servicesNeeded.join(', ') : ''}
               />
-              <ReadOnlyField label="Saved Location" value={onboardingDetails.location} />
+              <ReadOnlyField label="Location" value={onboardingDetails.location} />
             </div>
 
             {onboardingDetails.latestProject ? (

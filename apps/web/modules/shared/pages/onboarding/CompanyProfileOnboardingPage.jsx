@@ -5,6 +5,7 @@ import KapITLogo from '@sharedComponents/branding/KapITLogo';
 import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
 import CompanyLogoUpload from '@companyComponents/CompanyLogoUpload';
 import { navigate } from '@companyFeatures/companyUtils';
+import { getCountryOptions } from '@sharedUtils/countryOptions';
 import { cleanPlaceName, loadProvinceCityData } from '@sharedUtils/philippinesLocations';
 
 const INDUSTRY_OPTIONS = [
@@ -36,38 +37,43 @@ const COMPANY_TYPE_OPTIONS = [...INDUSTRY_OPTIONS, OTHER_COMPANY_TYPE_OPTION];
 
 const COMPANY_SIZE_OPTIONS = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'];
 const parseLocation = (rawLocation, provinceOptions, provinceCodeByLabel, getCitiesForProvince) => {
-  const normalized = String(rawLocation || '')
-    .replace(/,\s*Philippines\s*$/i, '')
-    .trim();
+  const locationText = String(rawLocation || '').trim();
+  const locationParts = locationText
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const hasCountrySegment = locationParts.length >= 3;
+  const country = hasCountrySegment ? locationParts[locationParts.length - 1] : 'Philippines';
+  const normalized = hasCountrySegment ? locationParts.slice(0, -1).join(', ') : locationText.replace(/,\s*Philippines\s*$/i, '').trim();
 
   if (!normalized) {
-    return { provinceCode: '', city: '' };
+    return { provinceCode: '', city: '', country };
   }
 
   const parts = normalized.split(',').map((part) => part.trim()).filter(Boolean);
   if (parts.length >= 2) {
     const city = cleanPlaceName(parts[0]);
     const provinceCode = provinceCodeByLabel[cleanPlaceName(parts[1]).toLowerCase()] || '';
-    return { provinceCode, city };
+    return { provinceCode, city, country };
   }
 
   const cityOnly = cleanPlaceName(normalized);
   for (const option of provinceOptions) {
     const cities = getCitiesForProvince(option.code);
     if (cities.some((item) => item.name.toLowerCase() === cityOnly.toLowerCase())) {
-      return { provinceCode: option.code, city: cityOnly };
+      return { provinceCode: option.code, city: cityOnly, country };
     }
   }
 
-  return { provinceCode: '', city: '' };
+  return { provinceCode: '', city: '', country };
 };
 
-const formatLocation = (city, provinceCode, provinceLabelByCode) => {
+const formatLocation = (city, provinceCode, provinceLabelByCode, country) => {
   const provinceLabel = provinceLabelByCode[provinceCode] || '';
   if (!city || !provinceLabel) {
     return '';
   }
-  return `${city}, ${provinceLabel}, Philippines`;
+  return `${city}, ${provinceLabel}, ${country || 'Philippines'}`;
 };
 
 export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout }) {
@@ -91,10 +97,12 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
     website: user?.website || '',
     provinceCode: '',
     city: '',
+    country: 'Philippines',
     location: String(user?.address || ''),
     contactEmail: user?.email || '',
     phoneNumber: user?.phone || '',
   });
+  const countryOptions = useMemo(() => getCountryOptions(), []);
 
   const cityOptions = useMemo(() => locationData.getCitiesForProvince(form.provinceCode), [form.provinceCode, locationData]);
 
@@ -136,7 +144,8 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
         ...prev,
         provinceCode: nextLocation.provinceCode,
         city: nextLocation.city,
-        location: formatLocation(nextLocation.city, nextLocation.provinceCode, locationData.provinceLabelByCode),
+        country: nextLocation.country || prev.country || 'Philippines',
+        location: formatLocation(nextLocation.city, nextLocation.provinceCode, locationData.provinceLabelByCode, nextLocation.country || prev.country),
       };
     });
   }, [locationData, user]);
@@ -149,7 +158,7 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
       return {
         ...prev,
         city: nextCity,
-        location: formatLocation(nextCity, prev.provinceCode, locationData.provinceLabelByCode),
+        location: formatLocation(nextCity, prev.provinceCode, locationData.provinceLabelByCode, prev.country),
       };
     });
   }, [form.provinceCode, locationData]);
@@ -157,9 +166,9 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
   useEffect(() => {
     setForm((prev) => ({
       ...prev,
-      location: formatLocation(prev.city, prev.provinceCode, locationData.provinceLabelByCode),
+      location: formatLocation(prev.city, prev.provinceCode, locationData.provinceLabelByCode, prev.country),
     }));
-  }, [form.city, locationData]);
+  }, [form.city, form.country, locationData]);
 
   const isComplete = useMemo(() => {
     const finalIndustry = form.industry === OTHER_COMPANY_TYPE_OPTION ? form.customIndustry : form.industry;
@@ -317,10 +326,13 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
                   />
                 </Field>
                 <Field label="Country">
-                  <input value="Philippines" readOnly className="field bg-[#f5f5f2] dark:bg-[#1a1d20]/60" />
-                </Field>
-                <Field label="Saved Location" full>
-                  <input value={form.location} readOnly className="field bg-[#f5f5f2] dark:bg-[#1a1d20]/60" />
+                  <SearchableSelect
+                    value={form.country}
+                    onChange={(country) => setForm((p) => ({ ...p, country }))}
+                    options={countryOptions}
+                    placeholder="Select a country"
+                    searchPlaceholder="Search countries"
+                  />
                 </Field>
                 <Field label="Company Description (Optional)" full>
                   <textarea

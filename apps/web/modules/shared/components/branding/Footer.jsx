@@ -16,7 +16,7 @@ const SECTIONS = [
   },
   {
     title: 'Resources',
-    items: ['Help Center', 'Safety', 'Community'],
+    items: ['Help Center', 'Safety', 'Community', 'FAQ'],
   },
   {
     title: 'Contact',
@@ -49,6 +49,27 @@ const FOOTER_INFO = {
     'KapIT promotes a safe and reliable platform through ghost job prevention, which helps detect inactive or outdated job listings. It also ensures that only user-provided information is shared with employers and maintains responsible data handling practices.',
   Community:
     'KapIT supports a growing community of Filipino IT professionals and employers. The platform encourages collaboration by allowing users to share experiences, showcase projects, and engage with opportunities. As the platform grows, KapIT aims to support discussions, networking, and potential events that promote learning, career growth, and connection within the IT industry.',
+  FAQ: {
+    intro: 'Frequently asked questions about using KapIT:',
+    items: [
+      {
+        question: 'Do I need premium to apply for jobs?',
+        answer: 'No. Free users can still apply for jobs.',
+      },
+      {
+        question: 'Can I edit my profile after applying?',
+        answer: 'Yes. You can update your profile any time.',
+      },
+      {
+        question: 'Is my personal data safe?',
+        answer: 'KapIT only shares information you choose to include in your profile and applications.',
+      },
+      {
+        question: 'How do companies find candidates?',
+        answer: 'Employers use search, filters, and matching tools to shortlist profiles.',
+      },
+    ],
+  },
   Email:
     'For general inquiries and concerns: info@kapit.dev. For partnerships and business-related concerns: business@kapit.dev.',
   Facebook:
@@ -59,7 +80,8 @@ const FOOTER_INFO = {
 
 export default function Footer() {
   const [selectedItem, setSelectedItem] = useState(null);
-  const selectedDescription = useMemo(() => FOOTER_INFO[selectedItem] ?? '', [selectedItem]);
+  const selectedInfo = useMemo(() => FOOTER_INFO[selectedItem] ?? '', [selectedItem]);
+  const isStructuredInfo = Boolean(selectedInfo && typeof selectedInfo === 'object' && Array.isArray(selectedInfo.items));
 
   return (
     <footer className="relative bg-white dark:bg-[#121416]">
@@ -120,9 +142,26 @@ export default function Footer() {
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <h4 className="text-lg font-bold text-[#102a1b] dark:text-white">{selectedItem}</h4>
-                  <p className="mt-2 text-sm leading-relaxed text-[#344e41] dark:text-[#d0d7dd] sm:text-base">
-                    {selectedDescription}
-                  </p>
+                  {isStructuredInfo ? (
+                    <div className="mt-2 space-y-3 text-sm text-[#344e41] dark:text-[#d0d7dd] sm:text-base">
+                      {selectedInfo.intro ? <p className="leading-relaxed">{selectedInfo.intro}</p> : null}
+                      <ul className="space-y-2.5">
+                        {selectedInfo.items.map((entry) => (
+                          <li
+                            key={entry.question}
+                            className="rounded-lg bg-white/5 px-3 py-2 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] dark:bg-white/5"
+                          >
+                            <p className="font-semibold text-[#1f3a2a] dark:text-white">{entry.question}</p>
+                            <p className="mt-1 leading-relaxed">{entry.answer}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm leading-relaxed text-[#344e41] dark:text-[#d0d7dd] sm:text-base">
+                      {selectedInfo}
+                    </p>
+                  )}
                 </div>
                 <button
                   type="button"
