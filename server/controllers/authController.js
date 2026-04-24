@@ -9,6 +9,7 @@ const { getPremiumStateForUser, requirePremiumApplicantFeature } = require('../s
 const { isAiConfigured, matchJobsForCandidate } = require('../services/aiService');
 const { appendSearchScopeFilterClause } = require('../services/accountSearchService');
 const { logger } = require('../config/logger');
+const { normalizeSocialsText } = require('../utils/socials');
 const {
   attachSessionCookies,
   clearSessionCookies,
@@ -633,7 +634,7 @@ const getPublicProfile = async (req, res) => {
         isPremium: user.is_premium,
         profileCompleted: Boolean(user.profile_completed),
         bio: user.bio || '',
-        socials: user.socials || '',
+        socials: normalizeSocialsText(user.socials),
         profileImage: companyLogo,
         address: companyLocation,
         education: user.education || '',
@@ -789,6 +790,9 @@ const updateMyProfile = async (req, res) => {
     }
 
     const merged = { ...current, ...sanitized };
+    if (Object.prototype.hasOwnProperty.call(sanitized, 'socials')) {
+      sanitized.socials = normalizeSocialsText(sanitized.socials);
+    }
     const profileCompleted = computeProfileCompleted(current.user_type, merged, current.account_type);
     sanitized.profile_completed = profileCompleted;
 

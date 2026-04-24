@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { User, LogOut, Moon, Sun } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
+import { normalizeSocialsText } from '@sharedUtils/socials';
 
 const VOCATIONAL_OPTION = 'High School Graduate with Vocational Course';
 const OTHER_JOB_OPTION = 'Other IT jobs';
@@ -58,7 +59,7 @@ export default function CompleteProfilePage({ user, onSubmit, onLogout }) {
     sex: user?.sex || '',
     phone: user?.phone || '',
     email: user?.email || '',
-    socials: user?.socials || '',
+    socials: normalizeSocialsText(user?.socials),
   });
 
   const age = useMemo(() => getAgeFromBirthday(formData.birthday), [formData.birthday]);
@@ -113,7 +114,7 @@ export default function CompleteProfilePage({ user, onSubmit, onLogout }) {
       birthday: formData.birthday,
       sex: formData.sex,
       phone: formData.phone,
-      socials: formData.socials,
+      socials: normalizeSocialsText(formData.socials),
       age,
     });
   };

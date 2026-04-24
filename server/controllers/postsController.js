@@ -211,6 +211,27 @@ const readPostWithOwner = async (client, postId) => {
   return result.rows[0] || null;
 };
 
+const readActorForReaction = async (client, userId) => {
+  const result = await client.query(
+    `SELECT u.id,
+            u.email,
+            u.username,
+            u.user_type,
+            u.account_type,
+            u.company_name,
+            u.name,
+            u.profile_image,
+            dp.full_name
+     FROM users u
+     LEFT JOIN developer_profiles dp ON dp.user_id = u.id
+     WHERE u.id = $1
+     LIMIT 1`,
+    [userId]
+  );
+
+  return result.rows[0] || null;
+};
+
 const canViewerAccessPost = (postRow, viewerUserId) =>
   Boolean(
     postRow &&
@@ -438,7 +459,12 @@ const reactToPost = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Post not found.' });
     }
 
-    const actorKey = getUserKey(req.user);
+    const actor = await readActorForReaction(client, req.user.id);
+    if (!actor) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    const actorKey = getUserKey(actor);
     const reactions = parseJsonArray(postRow.reactions);
     const existingIndex = reactions.findIndex((entry) => entry?.userKey === actorKey);
 
@@ -448,7 +474,12 @@ const reactToPost = async (req, res) => {
       }
     } else {
       const nextReaction = {
+        userId: actor.id,
         userKey: actorKey,
+        userName: getDisplayName(actor),
+        profileImage: actor.profile_image || '',
+        accountType: actor.account_type || (actor.user_type === 'company' ? 'company' : 'developer'),
+        userType: actor.user_type || '',
         type: reactionType,
         updatedAt: new Date().toISOString(),
       };
@@ -591,7 +622,14 @@ const reactToCommentOnPost = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Post not found.' });
     }
 
-    const actorKey = getUserKey(req.user);
+    const actor = await readActorForReaction(client, req.user.id);
+    if (!actor) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    const actorKey = getUserKey(actor);
+    const actorName = getDisplayName(actor);
+    const actorAccountType = actor.account_type || (actor.user_type === 'company' ? 'company' : 'developer');
     const comments = parseJsonArray(postRow.comments).map(normalizeComment);
 
     const toggleReactions = (target) => {
@@ -604,7 +642,12 @@ const reactToCommentOnPost = async (req, res) => {
         }
       } else {
         const nextReaction = {
+          userId: actor.id,
           userKey: actorKey,
+          userName: actorName,
+          profileImage: actor.profile_image || '',
+          accountType: actorAccountType,
+          userType: actor.user_type || '',
           type: reactionType,
           updatedAt: new Date().toISOString(),
         };

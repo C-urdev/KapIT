@@ -33,6 +33,78 @@ function PostActionSheet({ sections, onClose }) {
   );
 }
 
+function ReactionDetailsModal({ reactions, onClose }) {
+  const reactionMap = new Map(REACTION_OPTIONS.map((entry) => [entry.key, entry]));
+  const sortedReactions = [...reactions].sort((a, b) => {
+    const aTime = new Date(a?.updatedAt || 0).getTime();
+    const bTime = new Date(b?.updatedAt || 0).getTime();
+    return bTime - aTime;
+  });
+
+  const getDisplayName = (reaction) => {
+    const explicit = String(reaction?.userName || reaction?.author || reaction?.name || '').trim();
+    if (explicit) {
+      return explicit;
+    }
+
+    const key = String(reaction?.userKey || '').trim();
+    if (!key) {
+      return 'User';
+    }
+
+    return key.includes('@') ? key.split('@')[0] : key;
+  };
+
+  const getAccountLabel = (reaction) => {
+    const accountType = String(reaction?.accountType || reaction?.typeOfAccount || '').trim().toLowerCase();
+    const userType = String(reaction?.userType || '').trim().toLowerCase();
+    if (accountType === 'company' || userType === 'company') {
+      return 'Company';
+    }
+    return 'User';
+  };
+
+  return (
+    <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-md overflow-hidden rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] shadow-[0_20px_45px_rgba(0,0,0,0.25)] dark:border-[#444d57] dark:bg-[#22272b]" onClick={(event) => event.stopPropagation()}>
+        <div className="flex items-center justify-between border-b border-[#d9dfcf] px-4 py-3 dark:border-[#444d57]">
+          <h3 className="text-base font-semibold text-[#3a5a40] dark:text-white">Reactions</h3>
+          <button type="button" onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#5f6f52] hover:bg-[#f5f5f2] dark:text-[#d0d7dd] dark:hover:bg-[#353c44]" aria-label="Close reactions list">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="max-h-[55vh] overflow-y-auto px-2 py-2">
+          {sortedReactions.length === 0 ? (
+            <p className="px-3 py-4 text-sm text-[#5f6f52] dark:text-[#d0d7dd]">No reactions yet.</p>
+          ) : (
+            sortedReactions.map((reaction, index) => {
+              const reactionKey = String(reaction?.type || '').trim().toLowerCase();
+              const matchedReaction = reactionMap.get(reactionKey) || reactionMap.get('like');
+              const displayName = getDisplayName(reaction);
+              const fallback = displayName.charAt(0).toUpperCase() || 'U';
+              const profileImage = String(reaction?.profileImage || reaction?.authorProfileImage || '').trim();
+              const accountLabel = getAccountLabel(reaction);
+
+              return (
+                <div key={`${reaction?.userKey || 'user'}-${reactionKey}-${index}`} className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 hover:bg-[#f5f5f2] dark:hover:bg-[#2f343b]">
+                  <div className="min-w-0 flex items-center gap-3">
+                    <Avatar profileImage={profileImage} fallback={fallback} sizeClass="h-9 w-9" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-[#3a5a40] dark:text-white">{displayName}</p>
+                      <p className="truncate text-xs text-[#5f6f52] dark:text-[#d0d7dd]">{accountLabel}</p>
+                    </div>
+                  </div>
+                  <span className={`shrink-0 text-xl ${matchedReaction?.accent || ''}`} title={matchedReaction?.label || 'Reaction'}>{matchedReaction?.emoji || '\u{1F44D}'}</span>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const getResolvedPostOwnerName = (post, fallbackDisplayName = '') => {
   const ownerName = String(post?.ownerName || '').trim();
   if (ownerName && ownerName.toLowerCase() !== 'user') {
@@ -60,6 +132,7 @@ export default function FeedPostCard({ post, user, displayName, profileImage, us
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
   const [commentsViewOpen, setCommentsViewOpen] = useState(false);
   const [shareSheetOpen, setShareSheetOpen] = useState(false);
+  const [reactionDetailsOpen, setReactionDetailsOpen] = useState(false);
   const [commentDraft, setCommentDraft] = useState('');
   const [commentImage, setCommentImage] = useState('');
   const [shareMessage, setShareMessage] = useState('');
@@ -261,10 +334,10 @@ export default function FeedPostCard({ post, user, displayName, profileImage, us
         </div>
         {post.imageUrl ? <div className="overflow-hidden border-y border-[#d9dfcf] bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#202428]"><img src={post.imageUrl} alt="Post" className="h-auto max-h-[34rem] w-full object-cover" /></div> : null}
         <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-[#5f6f52] dark:text-[#d0d7dd]">
-          <div className="flex min-w-0 items-center gap-2">
+          <button type="button" onClick={() => setReactionDetailsOpen(true)} className="flex min-w-0 items-center gap-2 rounded-md px-1 py-0.5 text-left transition-colors hover:text-[#3a5a40] dark:hover:text-white" disabled={reactionCount === 0} aria-label="Show reactions">
             {reactionSummary.badges.length > 0 ? <div className="flex items-center -space-x-1">{reactionSummary.badges.map((badge) => <span key={badge} className="flex h-6 w-6 items-center justify-center rounded-full border border-white bg-[#f8fbf6] text-[13px] shadow-sm dark:border-[#22272b] dark:bg-[#2f343b]">{badge}</span>)}</div> : null}
             {reactionCount > 0 ? <span>{formatCount(reactionCount)}</span> : null}
-          </div>
+          </button>
           <div className="flex items-center gap-4"><button type="button" className="transition-colors hover:text-[#3a5a40] dark:hover:text-white" onClick={() => setCommentsViewOpen(true)}>{formatCount(commentCount)} comments</button><button type="button" className="transition-colors hover:text-[#3a5a40] dark:hover:text-white" onClick={() => setShareSheetOpen(true)}>{formatCount(shareCount)} shares</button></div>
         </div>
         <div className="relative grid grid-cols-4 border-t border-[#d9dfcf] px-2 py-1 dark:border-[#444d57]">
@@ -277,6 +350,7 @@ export default function FeedPostCard({ post, user, displayName, profileImage, us
       </article>
       {commentsViewOpen ? <CenterFeedCommentsView viewerKey={actorKey} profileImage={profileImage} userInitial={userInitial} comments={comments} commentCount={commentCount} commentDraft={commentDraft} commentImage={commentImage} setCommentDraft={setCommentDraft} setCommentImage={setCommentImage} onClose={() => setCommentsViewOpen(false)} onSubmit={handleCommentSubmit} onReply={onAddComment ? (commentId, replyInput) => onAddComment(post.id, { ...replyInput, parentCommentId: commentId }) : undefined} onReactToComment={onReactToComment ? (commentId, reactionType, parentCommentId = null) => onReactToComment(post.id, commentId, reactionType, parentCommentId) : undefined} /> : null}
       {shareSheetOpen ? <CenterFeedShareSheet displayName={displayName} profileImage={profileImage} shareMessage={shareMessage} setShareMessage={setShareMessage} shareVisibility={shareVisibility} setShareVisibility={setShareVisibility} hasShared={hasShared} onClose={() => setShareSheetOpen(false)} onShare={handleShareAction} /> : null}
+      {reactionDetailsOpen ? <ReactionDetailsModal reactions={reactions} onClose={() => setReactionDetailsOpen(false)} /> : null}
       {enableMenu && isMenuOpen ? <PostActionSheet sections={menuSections} onClose={onCloseMenu} /> : null}
     </>
   );

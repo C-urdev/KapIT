@@ -13,6 +13,7 @@ const { assertCompanyCanCreateDraftJob, getPremiumStateForCompanyUser, requirePr
 const { withJobAvailability, closeExpiredJobs, normalizeDeadlineInput } = require('../services/jobAvailabilityService');
 const { isAiConfigured, rankCandidatesForJob } = require('../services/aiService');
 const { sendApplicationStatusEmail } = require('../services/emailService');
+const { normalizeSocialsText } = require('../utils/socials');
 
 const serializeUser = (user) => ({
   id: user.id,
@@ -24,7 +25,7 @@ const serializeUser = (user) => ({
   profileCompleted: Boolean(user.profile_completed),
 
   bio: user.bio || '',
-  socials: user.socials || '',
+  socials: normalizeSocialsText(user.socials),
   profileImage: user.profile_image || '',
   phone: user.phone || '',
   address: user.address || '',
@@ -776,7 +777,7 @@ const getDevelopers = async (req, res) => {
       desiredJob: row.desired_job || '',
       education: row.education || '',
       address: row.profile_location || row.address || '',
-      socials: row.socials || '',
+      socials: normalizeSocialsText(row.socials),
       profileImage: row.profile_image || '',
       isPremium: row.is_premium,
       experienceYears: row.experience_years == null ? null : row.experience_years,
