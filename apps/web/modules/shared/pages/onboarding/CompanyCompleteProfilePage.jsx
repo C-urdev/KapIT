@@ -3,6 +3,8 @@ import React, { useMemo, useState } from 'react';
 import { Building2, LogOut, Moon, Sun } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
+import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
+import { getCountryOptions } from '@sharedUtils/countryOptions';
 import { normalizeSocialsText } from '@sharedUtils/socials';
 
 const COMPANY_SIZE_OPTIONS = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'];
@@ -10,9 +12,11 @@ const COMPANY_SIZE_OPTIONS = ['1-10', '11-50', '51-200', '201-500', '501-1000', 
 export default function CompleteCompanyProfilePage({ user, onSubmit, onLogout }) {
   const { theme, toggleTheme } = useTheme();
   const [error, setError] = useState('');
+  const countryOptions = useMemo(() => getCountryOptions(), []);
   const [formData, setFormData] = useState({
     companyName: user?.companyName || user?.username || '',
     address: user?.address || '',
+    country: 'Philippines',
     industry: user?.industry || '',
     companySize: user?.companySize || '',
     website: user?.website || '',
@@ -44,9 +48,16 @@ export default function CompleteCompanyProfilePage({ user, onSubmit, onLogout })
       return;
     }
 
+    const addressText = String(formData.address || '').trim();
+    const countryText = String(formData.country || '').trim() || 'Philippines';
+    const escapedCountry = countryText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const addressWithCountry = new RegExp(`,\\s*${escapedCountry}\\s*$`, 'i').test(addressText)
+      ? addressText
+      : `${addressText}, ${countryText}`;
+
     onSubmit({
       companyName: formData.companyName,
-      address: formData.address,
+      address: addressWithCountry,
       industry: formData.industry,
       companySize: formData.companySize,
       website: formData.website,
@@ -157,6 +168,17 @@ export default function CompleteCompanyProfilePage({ user, onSubmit, onLogout })
                 className="w-full input-base"
                 placeholder="City, Province"
                 required
+              />
+            </Field>
+
+            <Field label="Country">
+              <SearchableSelect
+                value={formData.country}
+                onChange={(country) => setFormData({ ...formData, country })}
+                options={countryOptions}
+                placeholder="Select a country"
+                searchPlaceholder="Search countries"
+                className="w-full input-base"
               />
             </Field>
 

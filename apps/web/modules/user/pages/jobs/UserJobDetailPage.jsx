@@ -36,6 +36,7 @@ export default function UserJobDetailPage({
     () => (Array.isArray(currentJob?.skills) ? currentJob.skills : []),
     [currentJob]
   );
+  const isPremiumUser = Boolean(user?.isPremium);
 
   const handleApply = async () => {
     if (!currentJob?.id || applyDisabled) {
@@ -226,6 +227,18 @@ export default function UserJobDetailPage({
             </button>
           ) : null}
         </div>
+        <button
+          type="button"
+          disabled={!isPremiumUser}
+          title={isPremiumUser ? 'Take Pre-Assessment' : 'Upgrade to Premium to unlock pre-assessment'}
+          className={`mt-3 w-full rounded-md px-6 py-3.5 text-sm font-semibold transition-colors ${
+            isPremiumUser
+              ? 'border border-[#3a5a40] text-[#3a5a40] hover:bg-[#eef6ee] dark:border-[#82ad86] dark:text-[#cfe7d2] dark:hover:bg-[#2a2f35]'
+              : 'cursor-not-allowed border border-[#d4a373] bg-[#f5ebe0] text-[#7f5539] dark:border-[#8a6547] dark:bg-[#2c2520] dark:text-[#f0c766]'
+          }`}
+        >
+          {isPremiumUser ? 'Take Pre-Assessment' : 'Upgrade to Premium to unlock pre-assessment'}
+        </button>
       </article>
     </div>
   );
