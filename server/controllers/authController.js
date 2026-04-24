@@ -990,6 +990,8 @@ const getJobsFeed = async (req, res) => {
               j.active_until,
               j.application_deadline,
               j.created_at,
+              c.id AS company_id,
+              c.user_id AS company_user_id,
               EXISTS (
                 SELECT 1
                 FROM applications a
@@ -1027,6 +1029,8 @@ const getJobsFeed = async (req, res) => {
         createdAt: row.created_at,
         hasApplied: Boolean(row.has_applied),
         company: {
+          companyId: row.company_id || null,
+          userId: row.company_user_id || null,
           name: row.company_name || 'Company',
           logo: row.company_logo || '',
         },

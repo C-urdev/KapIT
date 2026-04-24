@@ -4,6 +4,7 @@ import UserLeftSidebar from '@userComponents/UserLeftSidebar';
 import UserRightSidebar from '@userComponents/UserRightSidebar';
 import CenterFeed from './UserCenterFeed';
 import UserJobsPage from '@userPages/jobs/UserJobsPage';
+import UserJobDetailPage from '@userPages/jobs/UserJobDetailPage';
 import UserProjectsPage from '@userPages/projects/UserProjectsPage';
 import UserSearchResultsPage from '@userPages/search/UserSearchResultsPage';
 import UserMessagesPage from '@userPages/messages/UserMessagesPage';
@@ -49,17 +50,22 @@ import {
   savePost,
   toggleSharePost,
 } from '@sharedServices/postService';
-import { getMyApplications, getPublicProfile, getSavedJobs } from '@sharedServices/authService';
+import { getJobsFeed, getMyApplications, getPublicProfile, getSavedJobs } from '@sharedServices/authService';
 import { getUnreadNotificationCount } from '@sharedServices/notificationsService';
 import { ArrowLeft, BadgeCheck, Building2, Lightbulb, Sparkles, UserCircle } from 'lucide-react';
 import { getApplicationsForUser } from '@userFeatures/activity/userActivityStorage';
 
 const USER_NAV_QUERY_KEY = 'tab';
 const USER_PROFILE_QUERY_KEY = 'profileId';
-const USER_NAV_TABS = new Set(['home', 'jobs', 'projects', 'search', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'help', 'tips', 'verified', 'settings', 'public-profile', 'settings-account', 'settings-career', 'settings-notifications', 'settings-saved-jobs', 'settings-applications', 'privacy-settings', 'privacy-change-password', 'privacy-comments', 'privacy-mentions', 'privacy-following', 'privacy-likes']);
+const USER_JOB_QUERY_KEY = 'jobId';
+const USER_NAV_TABS = new Set(['home', 'jobs', 'job-detail', 'projects', 'search', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'help', 'tips', 'verified', 'settings', 'public-profile', 'settings-account', 'settings-career', 'settings-notifications', 'settings-saved-jobs', 'settings-applications', 'privacy-settings', 'privacy-change-password', 'privacy-comments', 'privacy-mentions', 'privacy-following', 'privacy-likes']);
 const resolveProfileId = (value) => {
   const normalized = String(value || '').trim();
   return normalized || '';
+};
+const resolveJobId = (value) => {
+  const numeric = Number(value);
+  return Number.isInteger(numeric) && numeric > 0 ? numeric : null;
 };
 const resolveProfileIdFromResult = (result) => (
   resolveProfileId(result?.id) || resolveProfileId(result?.userId) || resolveProfileId(result?.user_id)
@@ -70,6 +76,13 @@ const getPublicProfileIdFromUrl = () => {
   }
 
   return resolveProfileId(new URLSearchParams(window.location.search).get(USER_PROFILE_QUERY_KEY));
+};
+const getJobIdFromUrl = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return resolveJobId(new URLSearchParams(window.location.search).get(USER_JOB_QUERY_KEY));
 };
 
 const getUserNavFromUrl = () => {
@@ -87,6 +100,7 @@ const syncUserNavToUrl = (nextNav, options = {}) => {
   }
 
   const profileId = resolveProfileId(options.profileId);
+  const jobId = resolveJobId(options.jobId);
   const url = new URL(window.location.href);
   if (USER_NAV_TABS.has(nextNav) && nextNav !== 'home') {
     url.searchParams.set(USER_NAV_QUERY_KEY, nextNav);
@@ -97,6 +111,11 @@ const syncUserNavToUrl = (nextNav, options = {}) => {
     url.searchParams.set(USER_PROFILE_QUERY_KEY, profileId);
   } else {
     url.searchParams.delete(USER_PROFILE_QUERY_KEY);
+  }
+  if (nextNav === 'job-detail' && jobId) {
+    url.searchParams.set(USER_JOB_QUERY_KEY, String(jobId));
+  } else {
+    url.searchParams.delete(USER_JOB_QUERY_KEY);
   }
 
   const nextUrl = `${url.pathname}${url.search}${url.hash}`;
@@ -137,6 +156,8 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   const [applications, setApplications] = useState([]);
   const [searchPageQuery, setSearchPageQuery] = useState('');
   const [searchPageScope, setSearchPageScope] = useState('all');
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [jobCardStateById, setJobCardStateById] = useState({});
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isTabletViewport, setIsTabletViewport] = useState(false);
   const [isMobileShellViewport, setIsMobileShellViewport] = useState(false);
@@ -195,8 +216,11 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   }, []);
 
   useEffect(() => {
-    syncUserNavToUrl(activeNav);
-  }, [activeNav]);
+    syncUserNavToUrl(activeNav, {
+      profileId: activeNav === 'public-profile' ? resolveProfileId(publicProfile?.id) : '',
+      jobId: activeNav === 'job-detail' ? resolveJobId(selectedJob?.id) : null,
+    });
+  }, [activeNav, publicProfile, selectedJob]);
 
   useEffect(() => {
     let cancelled = false;
@@ -238,6 +262,52 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
       cancelled = true;
     };
   }, [activeNav, publicProfile]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const syncJobDetailFromUrl = async () => {
+      if (activeNav !== 'job-detail') {
+        return;
+      }
+
+      const jobId = getJobIdFromUrl();
+      if (!jobId) {
+        return;
+      }
+      if (Number(selectedJob?.id) === Number(jobId)) {
+        return;
+      }
+
+      try {
+        const data = await getJobsFeed();
+        if (cancelled) {
+          return;
+        }
+        const sourceJobs = Array.isArray(data?.jobs) ? data.jobs : [];
+        const matched = sourceJobs.find((entry) => Number(entry?.id) === Number(jobId));
+        if (!matched) {
+          setSelectedJob(null);
+          return;
+        }
+        const override = jobCardStateById[jobId] || {};
+        setSelectedJob({
+          ...matched,
+          isSaved: savedJobs.some((entry) => Number(entry?.id) === Number(jobId)),
+          ...override,
+        });
+      } catch {
+        if (!cancelled) {
+          setSelectedJob(null);
+        }
+      }
+    };
+
+    void syncJobDetailFromUrl();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeNav, selectedJob, jobCardStateById, savedJobs]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -532,6 +602,75 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
     }
   };
 
+  const handleOpenCompanyProfileFromJob = async (job) => {
+    const companyProfileId = resolveProfileId(
+      job?.company?.userId || job?.company?.id || job?.company?.companyId
+    );
+    if (!companyProfileId) {
+      return;
+    }
+
+    setPublicProfile({
+      id: companyProfileId,
+      type: 'company',
+      companyName: job?.company?.name || '',
+      profileImage: job?.company?.logo || '',
+    });
+    updateActiveNav('public-profile', { profileId: companyProfileId });
+
+    try {
+      const profile = await getPublicProfile(companyProfileId);
+      setPublicProfile({
+        id: companyProfileId,
+        ...profile,
+      });
+    } catch {
+      // Keep fallback profile info.
+    }
+  };
+
+  const handleOpenJobDetail = (job) => {
+    const jobId = resolveJobId(job?.id);
+    if (!jobId) {
+      return;
+    }
+    const override = jobCardStateById[jobId] || {};
+    setSelectedJob({
+      ...job,
+      id: jobId,
+      isSaved: typeof job?.isSaved === 'boolean'
+        ? job.isSaved
+        : savedJobs.some((entry) => Number(entry?.id) === jobId),
+      ...override,
+    });
+    updateActiveNav('job-detail', { jobId });
+  };
+
+  const handleJobMutation = (jobId, updates = {}) => {
+    const resolvedId = resolveJobId(jobId);
+    if (!resolvedId) {
+      return;
+    }
+
+    setJobCardStateById((current) => ({
+      ...current,
+      [resolvedId]: {
+        ...(current[resolvedId] || {}),
+        ...updates,
+      },
+    }));
+
+    setSelectedJob((current) => {
+      if (!current || Number(current.id) !== resolvedId) {
+        return current;
+      }
+      return {
+        ...current,
+        ...updates,
+      };
+    });
+  };
+
   const followingEntries = React.useMemo(() => {
     const normalizeEntry = (entry, defaultType = 'User') => {
       if (!entry) return null;
@@ -703,7 +842,24 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
           />
         )}
 
-        {activeNav === 'jobs' && <UserJobsPage userType={userType} user={user} />}
+        {activeNav === 'jobs' && (
+          <UserJobsPage
+            userType={userType}
+            user={user}
+            jobCardStateById={jobCardStateById}
+            onOpenCompanyProfile={handleOpenCompanyProfileFromJob}
+            onOpenJobDetail={handleOpenJobDetail}
+          />
+        )}
+        {activeNav === 'job-detail' && (
+          <UserJobDetailPage
+            user={user}
+            job={selectedJob}
+            onBack={() => updateActiveNav('jobs')}
+            onOpenCompanyProfile={handleOpenCompanyProfileFromJob}
+            onJobMutation={handleJobMutation}
+          />
+        )}
         {activeNav === 'search' && (
           <UserSearchResultsPage
             initialQuery={searchPageQuery}
