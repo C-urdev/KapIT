@@ -281,7 +281,7 @@ Notes:
 4. In production, apply the migrations during a low-traffic window.
 5. Keep all runtime schema helpers enabled immediately after migration deployment.
 6. Confirm startup logs, login, onboarding saves, messaging reads and writes, notification generation, and payment/job-post writes behave normally.
-7. Run `npm run migrate:messages:verify` and `npm run migrate:messages:parity` after deploy if you want explicit messaging confidence checks.
+7. Run explicit messaging verification checks after deploy if you want rollout confidence.
 8. After migration success is confirmed, set `SCHEMA_MANAGEMENT_MODE=migrations` to disable runtime schema mutation without changing app behavior.
 9. Leave the runtime files in place for one or two successful release cycles as guarded no-ops.
 10. Remove fully deprecated runtime schema code only after production has run stably in migration-managed mode.
@@ -302,8 +302,6 @@ Can become no-op immediately after migrations are applied and validated:
 Should remain temporarily even in no-op mode:
 
 - `server/controllers/messagesController.js` wrapper itself, because the controller still serves live messaging traffic
-- `server/scripts/backfillLegacyMessagesToConversations.js`, because it is a separate data-migration utility, not a runtime schema patch
-- `server/scripts/verifyMessagingParity.js`, because it remains useful as rollout verification
 
 Should be removed later, after stable migration-managed releases:
 

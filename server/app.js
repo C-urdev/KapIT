@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const { logger, installConsoleBridge, requestContextMiddleware } = require('./config/logger');
 const authRoutes = require('./routes/authRoutes');
+const paymentWebhookRoutes = require('./routes/paymentWebhookRoutes');
 const messagesRoutes = require('./routes/messagesRoutes');
 const notificationsRoutes = require('./routes/notificationsRoutes');
 const companyRoutes = require('./routes/companyRoutes');
@@ -109,6 +110,7 @@ const createApp = () => {
     next();
   });
 
+  app.use('/api/payments', paymentWebhookRoutes);
   app.use('/api/auth', authApiRateLimiter, authRoutes);
   app.use('/api/match-jobs', developerApiRateLimiter);
   app.use('/api', matchRoutes);
