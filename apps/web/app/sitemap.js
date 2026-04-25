@@ -5,7 +5,6 @@ export default function sitemap() {
   const entries = [
     '/',
     '/jobs',
-    '/job-match',
   ];
 
   return entries.map((path) => ({
