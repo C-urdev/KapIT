@@ -8,6 +8,7 @@ const {
   hasPayPalConfig,
   getPayPalClientId,
   getPayPalClientSecret,
+  getPayPalWebhookId,
 } = require('../config/paymentEnv');
 const { assertLocalPaymentBypassAllowed } = require('../config/localBypass');
 
@@ -51,6 +52,12 @@ const getPayPalCredentials = () => {
   }
 
   return { clientId, clientSecret };
+};
+
+const createHttpError = (statusCode, message) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
 };
 
 const getClientBaseUrl = (req) => {
@@ -269,6 +276,369 @@ const getPayPalAccessToken = async () => {
   }
 
   return data.access_token;
+};
+
+const readPayPalWebhookHeaders = (headers = {}) => {
+  const getHeader = (key) => {
+    const direct = headers[key];
+    if (direct != null) {
+      return String(direct).trim();
+    }
+    const lower = headers[String(key || '').toLowerCase()];
+    if (lower != null) {
+      return String(lower).trim();
+    }
+    return '';
+  };
+
+  const values = {
+    transmissionId: getHeader('paypal-transmission-id'),
+    transmissionTime: getHeader('paypal-transmission-time'),
+    transmissionSig: getHeader('paypal-transmission-sig'),
+    certUrl: getHeader('paypal-cert-url'),
+    authAlgo: getHeader('paypal-auth-algo'),
+  };
+
+  const missing = Object.entries(values)
+    .filter(([, value]) => !value)
+    .map(([key]) => key);
+  if (missing.length) {
+    throw createHttpError(400, `Missing PayPal webhook headers: ${missing.join(', ')}`);
+  }
+
+  return values;
+};
+
+const verifyPayPalWebhookSignature = async ({ headers, webhookEvent }) => {
+  const webhookId = getPayPalWebhookId();
+  if (!webhookId) {
+    throw createHttpError(503, 'PayPal webhook is not configured. Add PAYPAL_WEBHOOK_ID.');
+  }
+
+  if (!webhookEvent || typeof webhookEvent !== 'object') {
+    throw createHttpError(400, 'Invalid PayPal webhook payload.');
+  }
+
+  const parsedHeaders = readPayPalWebhookHeaders(headers);
+  const accessToken = await getPayPalAccessToken();
+  const response = await withRetry(
+    () => fetchWithTimeout(`${getPayPalBaseUrl()}/v1/notifications/verify-webhook-signature`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        transmission_id: parsedHeaders.transmissionId,
+        transmission_time: parsedHeaders.transmissionTime,
+        cert_url: parsedHeaders.certUrl,
+        auth_algo: parsedHeaders.authAlgo,
+        transmission_sig: parsedHeaders.transmissionSig,
+        webhook_id: webhookId,
+        webhook_event: webhookEvent,
+      }),
+    }),
+    { label: 'PayPal webhook signature verification' }
+  );
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw createHttpError(401, data?.message || 'PayPal webhook signature verification failed.');
+  }
+
+  if (String(data?.verification_status || '').toUpperCase() !== 'SUCCESS') {
+    throw createHttpError(401, 'Invalid PayPal webhook signature.');
+  }
+
+  return true;
+};
+
+const extractCaptureReference = (webhookEvent) => {
+  const resource = webhookEvent?.resource || {};
+  const related = resource?.supplementary_data?.related_ids || {};
+
+  const orderId = String(
+    related.order_id ||
+    resource?.order_id ||
+    webhookEvent?.resource?.invoice_id ||
+    ''
+  ).trim();
+  const captureId = String(resource?.id || '').trim();
+  const payerEmail = String(resource?.payer?.email_address || '').trim() || null;
+  const amount = Number(resource?.amount?.value || 0);
+
+  return {
+    orderId: orderId || null,
+    captureId: captureId || null,
+    payerEmail,
+    amount,
+    rawPayload: webhookEvent,
+  };
+};
+
+const findCompanyPaymentByReference = async (client, { orderId, captureId }) => {
+  if (!orderId && !captureId) {
+    return null;
+  }
+
+  const result = await client.query(
+    `SELECT *
+     FROM job_post_payments
+     WHERE provider = 'paypal'
+       AND (
+         ($1::text <> '' AND provider_payment_id = $1)
+         OR ($2::text <> '' AND provider_checkout_id = $2)
+       )
+     ORDER BY updated_at DESC, created_at DESC
+     LIMIT 1
+     FOR UPDATE`,
+    [captureId || '', orderId || '']
+  );
+
+  return result.rows[0] || null;
+};
+
+const findUserPremiumPaymentByReference = async (client, { orderId, captureId }) => {
+  if (!orderId && !captureId) {
+    return null;
+  }
+
+  const result = await client.query(
+    `SELECT *
+     FROM user_premium_payments
+     WHERE provider = 'paypal'
+       AND (
+         ($1::text <> '' AND provider_payment_id = $1)
+         OR ($2::text <> '' AND provider_checkout_id = $2)
+       )
+     ORDER BY updated_at DESC, created_at DESC
+     LIMIT 1
+     FOR UPDATE`,
+    [captureId || '', orderId || '']
+  );
+
+  return result.rows[0] || null;
+};
+
+const resolveCompanyUserId = async (client, companyId) => {
+  const result = await client.query(
+    `SELECT user_id
+     FROM companies
+     WHERE id = $1
+     LIMIT 1`,
+    [companyId]
+  );
+  return result.rows[0]?.user_id || null;
+};
+
+const markCompanyPaymentFailed = async (client, payment, reference) => {
+  const status = String(payment.status || '').toLowerCase();
+  if (status === 'failed') {
+    return { changed: false };
+  }
+  if (!['pending', 'processing'].includes(status)) {
+    return { changed: false };
+  }
+
+  await updatePaymentRecord(client, payment.id, {
+    status: 'failed',
+    provider_checkout_id: reference.orderId || payment.provider_checkout_id,
+    provider_payment_id: reference.captureId || payment.provider_payment_id,
+    payer_email: reference.payerEmail || payment.payer_email,
+    provider_payload: JSON.stringify(reference.rawPayload),
+  });
+  return { changed: true };
+};
+
+const markUserPremiumPaymentFailed = async (client, payment, reference) => {
+  const status = String(payment.status || '').toLowerCase();
+  if (status === 'failed') {
+    return { changed: false };
+  }
+  if (!['pending', 'processing'].includes(status)) {
+    return { changed: false };
+  }
+
+  await updateUserPremiumPaymentRecord(client, payment.id, {
+    status: 'failed',
+    provider_checkout_id: reference.orderId || payment.provider_checkout_id,
+    provider_payment_id: reference.captureId || payment.provider_payment_id,
+    payer_email: reference.payerEmail || payment.payer_email,
+    provider_payload: JSON.stringify(reference.rawPayload),
+  });
+  return { changed: true };
+};
+
+const markCompanyPaymentRefunded = async (client, payment, reference) => {
+  const status = String(payment.status || '').toLowerCase();
+  if (status === 'refunded') {
+    return { changed: false };
+  }
+
+  await updatePaymentRecord(client, payment.id, {
+    status: 'refunded',
+    provider_checkout_id: reference.orderId || payment.provider_checkout_id,
+    provider_payment_id: reference.captureId || payment.provider_payment_id,
+    payer_email: reference.payerEmail || payment.payer_email,
+    provider_payload: JSON.stringify(reference.rawPayload),
+    cancelled_at: new Date(),
+  });
+
+  if (payment.job_id) {
+    await client.query(
+      `UPDATE jobs
+       SET posting_payment_status = 'refunded',
+           status = CASE WHEN status = 'closed' THEN status ELSE 'closed' END,
+           closed_reason = COALESCE(closed_reason, 'payment_refunded'),
+           closed_at = COALESCE(closed_at, CURRENT_TIMESTAMP)
+       WHERE id = $1`,
+      [payment.job_id]
+    );
+  }
+
+  return { changed: true };
+};
+
+const markUserPremiumPaymentRefunded = async (client, payment, reference) => {
+  const status = String(payment.status || '').toLowerCase();
+  if (status === 'refunded') {
+    await client.query(
+      `UPDATE users
+       SET is_premium = false
+       WHERE id = $1::uuid`,
+      [payment.user_id]
+    );
+    return { changed: false };
+  }
+
+  await updateUserPremiumPaymentRecord(client, payment.id, {
+    status: 'refunded',
+    provider_checkout_id: reference.orderId || payment.provider_checkout_id,
+    provider_payment_id: reference.captureId || payment.provider_payment_id,
+    payer_email: reference.payerEmail || payment.payer_email,
+    provider_payload: JSON.stringify(reference.rawPayload),
+    cancelled_at: new Date(),
+  });
+
+  await client.query(
+    `UPDATE users
+     SET is_premium = false
+     WHERE id = $1::uuid`,
+    [payment.user_id]
+  );
+
+  return { changed: true };
+};
+
+const reconcileCompletedCompanyPayment = async (client, payment, reference) => {
+  const status = String(payment.status || '').toLowerCase();
+  if (status === 'paid' && payment.job_id) {
+    return { changed: false };
+  }
+  if (!['pending', 'processing', 'paid'].includes(status)) {
+    return { changed: false };
+  }
+
+  const companyUserId = await resolveCompanyUserId(client, payment.company_id);
+  if (!companyUserId) {
+    throw new Error(`Company user not found for company payment ${payment.id}`);
+  }
+
+  await finalizeVerifiedPayment({
+    client,
+    companyUserId,
+    payment,
+    verification: {
+      providerCheckoutId: reference.orderId || payment.provider_checkout_id,
+      providerPaymentId: reference.captureId || payment.provider_payment_id,
+      payerEmail: reference.payerEmail || payment.payer_email,
+      status: 'paid',
+      rawPayload: reference.rawPayload,
+      amount: Number(reference.amount || payment.amount || 0),
+    },
+  });
+
+  return { changed: true };
+};
+
+const reconcileCompletedUserPremiumPayment = async (client, payment, reference) => {
+  const status = String(payment.status || '').toLowerCase();
+  if (status === 'paid') {
+    return { changed: false };
+  }
+  if (!['pending', 'processing'].includes(status)) {
+    return { changed: false };
+  }
+
+  await finalizeVerifiedUserPremiumPayment({
+    client,
+    userId: payment.user_id,
+    payment,
+    verification: {
+      providerCheckoutId: reference.orderId || payment.provider_checkout_id,
+      providerPaymentId: reference.captureId || payment.provider_payment_id,
+      payerEmail: reference.payerEmail || payment.payer_email,
+      status: 'paid',
+      rawPayload: reference.rawPayload,
+      amount: Number(reference.amount || payment.amount || 0),
+    },
+  });
+
+  return { changed: true };
+};
+
+const reconcilePayPalWebhookEvent = async ({ client, webhookEvent }) => {
+  const eventType = String(webhookEvent?.event_type || '').trim().toUpperCase();
+  const supported = new Set([
+    'PAYMENT.CAPTURE.COMPLETED',
+    'PAYMENT.CAPTURE.DENIED',
+    'PAYMENT.CAPTURE.REFUNDED',
+  ]);
+  if (!supported.has(eventType)) {
+    return { handled: false, ignored: true, reason: 'unsupported_event' };
+  }
+
+  const reference = extractCaptureReference(webhookEvent);
+  if (!reference.orderId && !reference.captureId) {
+    return { handled: false, ignored: true, reason: 'missing_reference' };
+  }
+
+  const companyPayment = await findCompanyPaymentByReference(client, reference);
+  const userPremiumPayment = await findUserPremiumPaymentByReference(client, reference);
+  if (!companyPayment && !userPremiumPayment) {
+    return { handled: false, ignored: true, reason: 'payment_not_found' };
+  }
+
+  let changed = false;
+  if (eventType === 'PAYMENT.CAPTURE.COMPLETED') {
+    if (companyPayment) {
+      changed = (await reconcileCompletedCompanyPayment(client, companyPayment, reference)).changed || changed;
+    }
+    if (userPremiumPayment) {
+      changed = (await reconcileCompletedUserPremiumPayment(client, userPremiumPayment, reference)).changed || changed;
+    }
+  } else if (eventType === 'PAYMENT.CAPTURE.DENIED') {
+    if (companyPayment) {
+      changed = (await markCompanyPaymentFailed(client, companyPayment, reference)).changed || changed;
+    }
+    if (userPremiumPayment) {
+      changed = (await markUserPremiumPaymentFailed(client, userPremiumPayment, reference)).changed || changed;
+    }
+  } else if (eventType === 'PAYMENT.CAPTURE.REFUNDED') {
+    if (companyPayment) {
+      changed = (await markCompanyPaymentRefunded(client, companyPayment, reference)).changed || changed;
+    }
+    if (userPremiumPayment) {
+      changed = (await markUserPremiumPaymentRefunded(client, userPremiumPayment, reference)).changed || changed;
+    }
+  }
+
+  return {
+    handled: true,
+    ignored: false,
+    changed,
+    eventType,
+  };
 };
 
 const createPayPalOrder = async ({ payment, plan, clientBaseUrl }) => {
@@ -893,6 +1263,8 @@ module.exports = {
   completeLocalBypassPayment,
   completeLocalBypassUserPremiumPayment,
   capturePayPalOrder,
+  verifyPayPalWebhookSignature,
+  reconcilePayPalWebhookEvent,
   finalizeVerifiedPayment,
   finalizeVerifiedUserPremiumPayment,
   updatePaymentRecord,

@@ -43,7 +43,7 @@ It includes authentication, onboarding, public/private job flows, applicant mana
 - Authentication/Security: `jsonwebtoken`, `bcrypt`, `helmet`, `cors`, `cookie-parser`, `express-validator`, `zod`
 - Logging/Config: `pino`, `dotenv`
 - OAuth: `google-auth-library`, `@react-oauth/google`
-- Payments/Email: PayPal env-configured flows, `resend` env provider pattern
+- Payments/Email: PayPal env-configured flows, Resend email delivery
 - Testing: Node test runner + `supertest`, Python test files for FastAPI
 - Secret scanning: `gitleaks`
 

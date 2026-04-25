@@ -23,7 +23,7 @@ const RESET_PASSWORD_INVALID_MESSAGE = 'Invalid or expired password reset token.
 
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 const EMAIL_NOT_CONFIGURED_MESSAGE =
-  'Email service is not configured. Set EMAIL_PROVIDER, EMAIL_FROM, and the matching provider API key in .env.local.';
+  'Email service is not configured. Set EMAIL_FROM and RESEND_API_KEY in .env.local.';
 
 const hashToken = (token) => crypto.createHash('sha256').update(String(token || '')).digest('hex');
 const digestForLogs = (value) => crypto.createHash('sha256').update(String(value || '')).digest('hex');

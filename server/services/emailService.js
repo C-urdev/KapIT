@@ -1,18 +1,7 @@
-const EMAIL_PROVIDER = String(process.env.EMAIL_PROVIDER || 'resend').trim().toLowerCase();
-
 const getFromAddress = () => String(process.env.EMAIL_FROM || '').trim();
 
 const canSendEmail = () => {
-  if (EMAIL_PROVIDER === 'resend') {
-    return Boolean(process.env.RESEND_API_KEY && getFromAddress());
-  }
-  if (EMAIL_PROVIDER === 'sendgrid') {
-    return Boolean(process.env.SENDGRID_API_KEY && getFromAddress());
-  }
-  if (EMAIL_PROVIDER === 'mailgun') {
-    return Boolean(process.env.MAILGUN_API_KEY && process.env.MAILGUN_DOMAIN && getFromAddress());
-  }
-  return false;
+  return Boolean(process.env.RESEND_API_KEY && getFromAddress());
 };
 
 const sendViaResend = async ({ to, subject, html, text }) => {
@@ -37,71 +26,9 @@ const sendViaResend = async ({ to, subject, html, text }) => {
   }
 };
 
-const sendViaSendgrid = async ({ to, subject, html, text }) => {
-  const recipients = (Array.isArray(to) ? to : [to]).map((email) => ({ email }));
-  const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      personalizations: [{ to: recipients }],
-      from: { email: getFromAddress() },
-      subject,
-      content: [
-        { type: 'text/plain', value: text || '' },
-        { type: 'text/html', value: html || '' },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const data = await response.text().catch(() => '');
-    throw new Error(`SendGrid delivery failed: ${data || response.statusText}`);
-  }
-};
-
-const sendViaMailgun = async ({ to, subject, html, text }) => {
-  const domain = String(process.env.MAILGUN_DOMAIN || '').trim();
-  const apiKey = String(process.env.MAILGUN_API_KEY || '').trim();
-  const auth = Buffer.from(`api:${apiKey}`).toString('base64');
-
-  const payload = new URLSearchParams();
-  payload.set('from', getFromAddress());
-  payload.set('to', Array.isArray(to) ? to.join(',') : String(to || ''));
-  payload.set('subject', subject);
-  payload.set('text', text || '');
-  payload.set('html', html || '');
-
-  const response = await fetch(`https://api.mailgun.net/v3/${domain}/messages`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${auth}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: payload.toString(),
-  });
-
-  if (!response.ok) {
-    const data = await response.text().catch(() => '');
-    throw new Error(`Mailgun delivery failed: ${data || response.statusText}`);
-  }
-};
-
 const sendEmail = async (input) => {
   if (!canSendEmail()) {
-    return { delivered: false, skipped: true, reason: 'Email provider not configured' };
-  }
-
-  if (EMAIL_PROVIDER === 'sendgrid') {
-    await sendViaSendgrid(input);
-    return { delivered: true, provider: 'sendgrid' };
-  }
-
-  if (EMAIL_PROVIDER === 'mailgun') {
-    await sendViaMailgun(input);
-    return { delivered: true, provider: 'mailgun' };
+    return { delivered: false, skipped: true, reason: 'Resend is not configured' };
   }
 
   await sendViaResend(input);
