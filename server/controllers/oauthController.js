@@ -73,7 +73,9 @@ const getCookieOptions = (maxAgeMs) => ({
   secure: COOKIE_SECURE,
   sameSite: COOKIE_SAME_SITE,
   path: '/',
-  maxAge: maxAgeMs,
+  // Express serializes Max-Age in whole seconds.
+  // Keep at least 1 second so sub-second test TTLs do not become Max-Age=0.
+  maxAge: Math.max(1000, Number(maxAgeMs) || 0),
 });
 
 const clearCookie = (res, cookieName) => {
@@ -181,13 +183,20 @@ const setSocialSignupSession = (res, payload) => {
     res,
     SOCIAL_SIGNUP_COOKIE_NAME,
     SOCIAL_SIGNUP_PURPOSE,
-    payload,
+    {
+      ...payload,
+      expiresAt: Date.now() + SOCIAL_SIGNUP_TTL_MS,
+    },
     SOCIAL_SIGNUP_TTL_MS
   );
 };
 
 const readSocialSignupSession = (req) => {
   const payload = readSignedAuthCookie(req, SOCIAL_SIGNUP_COOKIE_NAME, SOCIAL_SIGNUP_PURPOSE);
+  const expiresAt = Number(payload?.expiresAt || 0);
+  if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+    throw new Error('Social signup session is missing or expired. Please start again.');
+  }
   const email = normalizeEmail(payload?.email);
   const provider = normalizeOAuthProvider(payload?.provider);
   const providerId = String(payload?.providerId || '').trim();
