@@ -78,6 +78,29 @@ const FOOTER_INFO = {
     'This is the main support email of KapIT. Users can contact this email for assistance with account issues, technical problems, job application concerns, or any platform-related questions. The support team aims to respond promptly and help resolve issues efficiently.',
 };
 
+const SOCIAL_LINKS = [
+  {
+    name: 'Product Hunt',
+    href: 'https://www.producthunt.com/@kapitph',
+    icon: ProductHuntIcon,
+  },
+  {
+    name: 'LinkedIn',
+    href: 'https://www.linkedin.com/in/kapit-ph-3a847b406/',
+    icon: LinkedInIcon,
+  },
+  {
+    name: 'X',
+    href: 'https://x.com/kapitjobsph',
+    icon: XLogoIcon,
+  },
+  {
+    name: 'Facebook',
+    href: 'https://www.facebook.com/share/18fvaq4P3z/?mibextid=wwXIfr',
+    icon: FacebookIcon,
+  },
+];
+
 export default function Footer() {
   const [selectedItem, setSelectedItem] = useState(null);
   const selectedInfo = useMemo(() => FOOTER_INFO[selectedItem] ?? '', [selectedItem]);
@@ -132,6 +155,21 @@ export default function Footer() {
               className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#b8ad94] to-transparent opacity-95 shadow-[0_1px_0_rgba(255,255,255,0.45)] dark:via-[#5b6672] dark:shadow-[0_1px_0_rgba(10,14,18,0.75)]"
               aria-hidden="true"
             />
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            {SOCIAL_LINKS.map(({ name, href, icon: Icon }) => (
+              <a
+                key={name}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#a3b18a] bg-white text-[#344e41] transition-colors hover:bg-[#f1efe8] hover:text-[#102a1b] dark:border-[#444d57] dark:bg-[#1f2328] dark:text-[#d0d7dd] dark:hover:bg-[#2b3138] dark:hover:text-white"
+                aria-label={`Open KapIT on ${name}`}
+                title={name}
+              >
+                <Icon className="h-4 w-4" />
+              </a>
+            ))}
+          </div>
           <p className="text-xs text-[#344e41] dark:text-[#d0d7dd]">© {new Date().getFullYear()} KapIT. All rights reserved.</p>
           <p className="text-xs text-[#344e41] dark:text-[#d0d7dd]">KapIT - Empowering Filipino IT Talent</p>
         </div>
@@ -177,5 +215,39 @@ export default function Footer() {
         ) : null}
       </div>
     </footer>
+  );
+}
+
+function ProductHuntIcon({ className = 'h-4 w-4' }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M10 8h3.2a2.8 2.8 0 0 1 0 5.6H10z" />
+      <path d="M10 13.6V17" />
+    </svg>
+  );
+}
+
+function LinkedInIcon({ className = 'h-4 w-4' }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
+      <path d="M6.94 8.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3ZM5.7 9.65h2.5V18H5.7zM9.7 9.65h2.4v1.14h.03c.33-.63 1.16-1.3 2.4-1.3 2.57 0 3.04 1.7 3.04 3.9V18h-2.5v-3.92c0-.94-.02-2.14-1.3-2.14-1.31 0-1.5 1.03-1.5 2.08V18H9.7z" />
+    </svg>
+  );
+}
+
+function XLogoIcon({ className = 'h-4 w-4' }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
+      <path d="M17.8 4H20l-4.8 5.5L21 20h-4.9l-3.8-4.9L7.9 20H5.7l5.2-6-5.6-10h5l3.4 4.5L17.8 4Zm-1.7 14.4h1.4L9.1 5.5H7.6l8.5 12.9Z" />
+    </svg>
+  );
+}
+
+function FacebookIcon({ className = 'h-4 w-4' }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
+      <path d="M13.5 20v-6h2l.3-2.4h-2.3V10c0-.7.2-1.2 1.2-1.2h1.3V6.6c-.2 0-1-.1-1.8-.1-1.8 0-3.1 1.1-3.1 3.2v1.8H9v2.4h2.2v6h2.3Z" />
+    </svg>
   );
 }

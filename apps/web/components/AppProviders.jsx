@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { ThemeProvider } from '@sharedContext/ThemeContext';
 
 const STATIC_TITLES_BY_PATH = {
-  '/': 'Home',
+  '/': 'AI Job Matching Platform',
   '/auth/login': 'Login',
   '/auth/register': 'Register',
   '/forgot-password': 'Forgot Password',
@@ -106,7 +106,12 @@ export default function AppProviders({ children, initialTheme = 'light' }) {
 
   useEffect(() => {
     const titleText = resolveTitleText(pathname);
-    document.title = titleText ? `KapIT | ${titleText}` : 'KapIT';
+    if (pathname === '/') {
+      document.title = 'KapIT - AI Job Matching Platform';
+      return;
+    }
+
+    document.title = titleText ? `KapIT | ${titleText}` : 'KapIT - AI Job Matching Platform';
   }, [pathname]);
 
   return <ThemeProvider initialTheme={initialTheme}>{children}</ThemeProvider>;

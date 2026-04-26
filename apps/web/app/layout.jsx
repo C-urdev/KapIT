@@ -6,10 +6,25 @@ import './globals.css';
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://kapit.online'),
   title: {
-    default: 'KapIT',
+    default: 'KapIT - AI Job Matching Platform',
     template: 'KapIT | %s',
   },
-  description: 'SEO-focused job marketplace for developers and companies.',
+  description:
+    'KapIT helps developers and companies match jobs faster with AI-powered hiring and skill-based discovery.',
+  applicationName: 'KapIT',
+  openGraph: {
+    type: 'website',
+    siteName: 'KapIT',
+    title: 'KapIT - AI Job Matching Platform',
+    description:
+      'KapIT helps developers and companies match jobs faster with AI-powered hiring and skill-based discovery.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'KapIT - AI Job Matching Platform',
+    description:
+      'KapIT helps developers and companies match jobs faster with AI-powered hiring and skill-based discovery.',
+  },
   icons: {
     icon: '/kapit-logo.png',
     shortcut: '/kapit-logo.png',
