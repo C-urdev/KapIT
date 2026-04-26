@@ -72,6 +72,75 @@ export default function SocialSignupFlowClient() {
     return 'Choose account type';
   }, [step]);
 
+  const startOtpStep = async (accountTypeValue, emailOverride = '') => {
+    const signupEmail = String(emailOverride || session?.email || '').trim().toLowerCase();
+    const runtimeIsLocalhost = isLocalhost || (
+      typeof window !== 'undefined' &&
+      ['localhost', '127.0.0.1', '::1'].includes(String(window.location.hostname || '').trim().toLowerCase())
+    );
+    if (!signupEmail) {
+      setError('Social signup session is missing. Please start again.');
+      setStep('invalid');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setInfo('');
+
+    const tryLocalBypass = async () => {
+      const bypass = await requestLocalRegistrationBypassToken({ email: signupEmail });
+      if (bypass?.success && bypass?.verificationToken) {
+        setSelectedAccountType(accountTypeValue);
+        setVerificationToken(bypass.verificationToken);
+        setStep('set-password');
+        setInfo('Localhost bypass is active. Email verification was skipped for this development run.');
+        return true;
+      }
+      return false;
+    };
+
+    try {
+      if (runtimeIsLocalhost && localAuthBypassEnabled) {
+        const bypassed = await tryLocalBypass();
+        if (bypassed) {
+          return;
+        }
+      }
+
+      const result = await sendRegistrationOtp({ email: signupEmail });
+      if (!result?.success) {
+        setError(result?.message || 'Unable to send verification code.');
+        return;
+      }
+      setSelectedAccountType(accountTypeValue);
+      setStep('verify-otp');
+      setInfo(`We sent a 6-digit code to ${signupEmail}.`);
+    } catch (requestError) {
+      const requestMessage = String(requestError?.message || '');
+      const missingEmailProvider = requestError?.status === 503
+        || /email service is not configured|email provider is not configured/i.test(requestMessage);
+
+      if (missingEmailProvider && runtimeIsLocalhost && localAuthBypassEnabled) {
+        try {
+          const bypassed = await tryLocalBypass();
+          if (bypassed) {
+            return;
+          }
+          setError('Localhost bypass is unavailable.');
+          return;
+        } catch (bypassError) {
+          setError(String(bypassError?.message || 'Unable to use localhost bypass right now.'));
+          return;
+        }
+      }
+
+      setError(String(requestError?.message || 'Unable to send verification code right now.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const loadSession = async () => {
       setLoading(true);
@@ -93,6 +162,12 @@ export default function SocialSignupFlowClient() {
           accountTypeHint: hintedType,
         });
         setSelectedAccountType(hintedType || '');
+
+        if (hintedType) {
+          await startOtpStep(hintedType, normalizedEmail);
+          return;
+        }
+
         setStep('account-type');
       } catch (requestError) {
         setStep('invalid');
@@ -110,70 +185,6 @@ export default function SocialSignupFlowClient() {
     const hostname = String(window.location.hostname || '').trim().toLowerCase();
     setIsLocalhost(hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1');
   }, []);
-
-  const startOtpStep = async (accountTypeValue) => {
-    if (!session?.email) {
-      setError('Social signup session is missing. Please start again.');
-      setStep('invalid');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    setInfo('');
-
-    const tryLocalBypass = async () => {
-      const bypass = await requestLocalRegistrationBypassToken({ email: session.email });
-      if (bypass?.success && bypass?.verificationToken) {
-        setSelectedAccountType(accountTypeValue);
-        setVerificationToken(bypass.verificationToken);
-        setStep('set-password');
-        setInfo('Localhost bypass is active. Email verification was skipped for this development run.');
-        return true;
-      }
-      return false;
-    };
-
-    try {
-      if (isLocalhost && localAuthBypassEnabled) {
-        const bypassed = await tryLocalBypass();
-        if (bypassed) {
-          return;
-        }
-      }
-
-      const result = await sendRegistrationOtp({ email: session.email });
-      if (!result?.success) {
-        setError(result?.message || 'Unable to send verification code.');
-        return;
-      }
-      setSelectedAccountType(accountTypeValue);
-      setStep('verify-otp');
-      setInfo(`We sent a 6-digit code to ${session.email}.`);
-    } catch (requestError) {
-      const requestMessage = String(requestError?.message || '');
-      const missingEmailProvider = requestError?.status === 503
-        || /email service is not configured|email provider is not configured/i.test(requestMessage);
-
-      if (missingEmailProvider && isLocalhost && localAuthBypassEnabled) {
-        try {
-          const bypassed = await tryLocalBypass();
-          if (bypassed) {
-            return;
-          }
-          setError('Localhost bypass is unavailable.');
-          return;
-        } catch (bypassError) {
-          setError(String(bypassError?.message || 'Unable to use localhost bypass right now.'));
-          return;
-        }
-      }
-
-      setError(String(requestError?.message || 'Unable to send verification code right now.'));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleChooseAccountType = async (accountTypeValue) => {
     await startOtpStep(accountTypeValue);
@@ -252,15 +263,7 @@ export default function SocialSignupFlowClient() {
   };
 
   const handleBack = () => {
-    if (step === 'set-password') {
-      setStep('verify-otp');
-      return;
-    }
-    if (step === 'verify-otp') {
-      setStep('account-type');
-      return;
-    }
-    router.replace('/auth/login');
+    router.replace('/');
   };
 
   return (
@@ -273,7 +276,7 @@ export default function SocialSignupFlowClient() {
           className="mb-6 inline-flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back
+          Cancel
         </button>
 
         <div className="text-center mb-6">
