@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "node ../../scripts/run-web.js dev",
     "build": "node ../../scripts/run-web.js build",
-    "build:vercel": "node ../../scripts/run-web.js build",
+    "build:vercel": "next build",
     "start": "node ../../scripts/run-web.js start",
     "lint": "next lint"
   },
