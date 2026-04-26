@@ -12,6 +12,7 @@ const TITLES = {
   [COMPANY_PATHS.help]: 'Help',
   [COMPANY_PATHS.premium]: 'Premium',
   [COMPANY_PATHS.postJob]: 'Post a Job',
+  [COMPANY_PATHS.postJobPreAssessment]: 'Pre-Assessment Builder',
   [COMPANY_PATHS.postJobPayment]: 'Posting Payment',
   [COMPANY_PATHS.jobs]: 'Manage Job Listings',
   [COMPANY_PATHS.applicants]: 'Applicants',

@@ -157,12 +157,15 @@ const assertSuccessShape = (body) => {
   assert.equal(hasLegacy || hasEnvelope, true);
 };
 
-test('auth integration: register + login success, wrong password and missing fields fail', async () => {
+test('auth integration: register + login success, generic login failure, and missing fields fail', async () => {
+  process.env.NODE_ENV = 'development';
+  process.env.ENABLE_LOCAL_AUTH_BYPASS = 'true';
+
   const app = loadAppForAuthIntegration();
 
   const registerPayload = {
     username: 'qa_user_001',
-    email: 'qa_user_001@example.com',
+    email: 'mock-qa_user_001@example.com',
     password: 'StrongPass123',
     accountType: 'developer',
   };
@@ -182,7 +185,14 @@ test('auth integration: register + login success, wrong password and missing fie
     .send({ email: registerPayload.email, password: 'WrongPass123' });
   assert.equal(wrongPassword.status, 401);
   assert.equal(wrongPassword.body.success, false);
-  assert.equal(typeof wrongPassword.body.error, 'string');
+  assert.equal(wrongPassword.body.error, 'Invalid email or password');
+
+  const unknownAccount = await request(app)
+    .post('/api/auth/login')
+    .send({ email: 'missing-user@example.com', password: 'WrongPass123' });
+  assert.equal(unknownAccount.status, 401);
+  assert.equal(unknownAccount.body.success, false);
+  assert.equal(unknownAccount.body.error, 'Invalid email or password');
 
   const missingFields = await request(app)
     .post('/api/auth/register')

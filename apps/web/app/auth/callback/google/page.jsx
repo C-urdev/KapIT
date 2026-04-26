@@ -30,64 +30,44 @@ function GoogleCallbackContent() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const redirectToSafeLogin = () => {
+      router.replace('/auth/login?authError=social');
+    };
+
     const params = parseHashParams();
     const oauthError = params.get('error');
     if (oauthError) {
-      router.replace('/auth/login');
+      redirectToSafeLogin();
       return;
     }
 
     const state = params.get('state');
     const idToken = params.get('id_token');
-    const expectedState = (() => {
-      try {
-        return window.sessionStorage.getItem('oauth_google_state');
-      } catch {
-        return null;
-      }
-    })();
 
-    if (!idToken) {
-      router.replace('/auth/login');
-      return;
-    }
-
-    if (expectedState && state && expectedState !== state) {
-      router.replace('/auth/login');
+    if (!idToken || !state) {
+      redirectToSafeLogin();
       return;
     }
 
     const processLogin = async () => {
       try {
-        const accountTypeHint = (() => {
-          try {
-            const raw = window.sessionStorage.getItem('oauth_google_intent');
-            if (!raw) return null;
-            const parsed = JSON.parse(raw);
-            if (!parsed || parsed.state !== state || parsed.mode !== 'signup') {
-              return null;
-            }
-            const normalized = String(parsed.accountType || '').trim().toLowerCase();
-            return normalized === 'company' || normalized === 'developer' ? normalized : null;
-          } catch {
-            return null;
-          }
-        })();
-
-        const data = await loginWithGoogle(idToken, { accountTypeHint });
+        const data = await loginWithGoogle(idToken, { state });
         if (data?.success && data?.user) {
-          try {
-            window.sessionStorage.removeItem('oauth_google_state');
-            window.sessionStorage.removeItem('oauth_google_intent');
-          } catch {
-            // Ignore if storage is unavailable.
-          }
           router.replace(resolvePostAuthPath(data.user));
           return;
         }
-        setError(data?.message || 'Google authentication failed.');
-      } catch {
-        setError('An unexpected error occurred during Google login.');
+        setError('Unable to complete sign-in. Please try again.');
+      } catch (error) {
+        const responseCode = String(error?.data?.code || '').trim();
+        if (responseCode === 'SOCIAL_ACCOUNT_NOT_REGISTERED') {
+          router.replace('/auth/social-signup');
+          return;
+        }
+        if (responseCode === 'OAUTH_STATE_INVALID') {
+          redirectToSafeLogin();
+          return;
+        }
+        setError('Unable to complete sign-in. Please try again.');
       }
     };
 

@@ -20,7 +20,7 @@ const SECTIONS = [
   },
   {
     title: 'Contact',
-    items: ['Email', 'Facebook', 'support@kapit.dev'],
+    items: [],
   },
 ];
 
@@ -74,20 +74,20 @@ const FOOTER_INFO = {
     'For general inquiries and concerns: info@kapit.dev. For partnerships and business-related concerns: business@kapit.dev.',
   Facebook:
     'Official Facebook Page: https://www.facebook.com/share/1E8xGVR69x/?mibextid=wwXlfr. This page is used for updates, announcements, and user engagement.',
-  'support@kapit.dev':
+  'support@kapit.online':
     'This is the main support email of KapIT. Users can contact this email for assistance with account issues, technical problems, job application concerns, or any platform-related questions. The support team aims to respond promptly and help resolve issues efficiently.',
 };
 
 const SOCIAL_LINKS = [
   {
+    name: 'Email',
+    href: 'mailto:support@kapit.online',
+    icon: EmailIcon,
+  },
+  {
     name: 'Product Hunt',
     href: 'https://www.producthunt.com/@kapitph',
     icon: ProductHuntIcon,
-  },
-  {
-    name: 'LinkedIn',
-    href: 'https://www.linkedin.com/in/kapit-ph-3a847b406/',
-    icon: LinkedInIcon,
   },
   {
     name: 'X',
@@ -122,7 +122,10 @@ export default function Footer() {
           </div>
 
           {SECTIONS.map((section) => (
-            <div key={section.title} className="space-y-3">
+            <div
+              key={section.title}
+              className={`space-y-3 ${section.title === 'Contact' ? 'flex flex-col items-start text-left' : ''}`}
+            >
               <div className="text-sm font-semibold text-[#3a5a40] dark:text-white">{section.title}</div>
               <ul className="space-y-2">
                 {section.items.map((item) => {
@@ -146,32 +149,40 @@ export default function Footer() {
                   );
                 })}
               </ul>
+              {section.title === 'Contact' ? (
+                <>
+                  <div className="flex flex-col items-start gap-2.5">
+                    {SOCIAL_LINKS.map(({ name, href, icon: Icon }) => (
+                      <a
+                        key={name}
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        className="group inline-flex items-center gap-2.5 text-sm text-[#344e41] transition-colors hover:text-[#102a1b] dark:text-[#d0d7dd] dark:hover:text-white"
+                        aria-label={`Open KapIT on ${name}`}
+                        title={name}
+                      >
+                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#a3b18a] bg-white text-[#344e41] transition-colors group-hover:bg-[#f1efe8] group-hover:text-[#102a1b] dark:border-[#444d57] dark:bg-[#1f2328] dark:text-[#d0d7dd] dark:group-hover:bg-[#2b3138] dark:group-hover:text-white">
+                          <Icon className="block h-4 w-4" />
+                        </span>
+                        <span className="font-medium">{name}</span>
+                      </a>
+                    ))}
+                  </div>
+                </>
+              ) : null}
             </div>
           ))}
         </div>
 
-        <div className="relative mt-10 pt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative mt-10 pt-8 grid gap-3 sm:grid-cols-3 sm:items-center">
             <div
               className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#b8ad94] to-transparent opacity-95 shadow-[0_1px_0_rgba(255,255,255,0.45)] dark:via-[#5b6672] dark:shadow-[0_1px_0_rgba(10,14,18,0.75)]"
               aria-hidden="true"
             />
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            {SOCIAL_LINKS.map(({ name, href, icon: Icon }) => (
-              <a
-                key={name}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#a3b18a] bg-white text-[#344e41] transition-colors hover:bg-[#f1efe8] hover:text-[#102a1b] dark:border-[#444d57] dark:bg-[#1f2328] dark:text-[#d0d7dd] dark:hover:bg-[#2b3138] dark:hover:text-white"
-                aria-label={`Open KapIT on ${name}`}
-                title={name}
-              >
-                <Icon className="h-4 w-4" />
-              </a>
-            ))}
-          </div>
-          <p className="text-xs text-[#344e41] dark:text-[#d0d7dd]">© {new Date().getFullYear()} KapIT. All rights reserved.</p>
-          <p className="text-xs text-[#344e41] dark:text-[#d0d7dd]">KapIT - Empowering Filipino IT Talent</p>
+          <p className="text-xs text-[#344e41] dark:text-[#d0d7dd] sm:col-start-2 sm:text-center">KapIT - Empowering Filipino IT Talent</p>
+          <div className="hidden sm:block" aria-hidden="true" />
+          <p className="text-xs text-[#344e41] dark:text-[#d0d7dd] sm:col-start-1 sm:row-start-1 sm:text-left">© {new Date().getFullYear()} KapIT. All rights reserved.</p>
         </div>
 
         {selectedItem ? (
@@ -228,10 +239,11 @@ function ProductHuntIcon({ className = 'h-4 w-4' }) {
   );
 }
 
-function LinkedInIcon({ className = 'h-4 w-4' }) {
+function EmailIcon({ className = 'h-4 w-4' }) {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
-      <path d="M6.94 8.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3ZM5.7 9.65h2.5V18H5.7zM9.7 9.65h2.4v1.14h.03c.33-.63 1.16-1.3 2.4-1.3 2.57 0 3.04 1.7 3.04 3.9V18h-2.5v-3.92c0-.94-.02-2.14-1.3-2.14-1.31 0-1.5 1.03-1.5 2.08V18H9.7z" />
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="3.5" y="5.5" width="17" height="13" rx="2" />
+      <path d="m4.5 7 7.5 6 7.5-6" />
     </svg>
   );
 }

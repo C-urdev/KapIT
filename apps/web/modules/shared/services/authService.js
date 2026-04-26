@@ -233,12 +233,15 @@ export const loginUser = async (credentials) => {
 };
 
 export const loginWithGoogle = async (credential, options = {}) => {
-  const accountTypeHint = normalizeAccountType(options?.accountTypeHint);
+  const state = String(options?.state || '').trim();
+  if (!state) {
+    throw new Error('Unable to verify social sign-in request. Please try again.');
+  }
   const data = await authRequest('/google', {
     method: 'POST',
     body: JSON.stringify({
       credential,
-      ...(accountTypeHint ? { accountTypeHint } : {}),
+      state,
     }),
     retryOnUnauthorized: false,
   });
@@ -250,10 +253,63 @@ export const loginWithGoogle = async (credential, options = {}) => {
   return data;
 };
 
-export const loginWithGithub = async (code) => {
+export const loginWithGithub = async (code, options = {}) => {
+  const state = String(options?.state || '').trim();
+  if (!state) {
+    throw new Error('Unable to verify social sign-in request. Please try again.');
+  }
   const data = await authRequest('/github', {
     method: 'POST',
-    body: JSON.stringify({ code }),
+    body: JSON.stringify({
+      code,
+      state,
+    }),
+    retryOnUnauthorized: false,
+  });
+
+  if (data?.user) {
+    data.user = persistUser(data.user);
+  }
+
+  return data;
+};
+
+export const createOAuthState = async ({ provider, mode, accountTypeHint } = {}) => {
+  const normalizedProvider = String(provider || '').trim().toLowerCase();
+  if (normalizedProvider !== 'google' && normalizedProvider !== 'github') {
+    throw new Error('Invalid social provider.');
+  }
+
+  const normalizedMode = String(mode || '').trim().toLowerCase() === 'signup' ? 'signup' : 'login';
+  const normalizedHint = normalizeAccountType(accountTypeHint);
+  return authRequest('/oauth/state', {
+    method: 'POST',
+    body: JSON.stringify({
+      provider: normalizedProvider,
+      mode: normalizedMode,
+      ...(normalizedHint && normalizedMode === 'signup' ? { accountTypeHint: normalizedHint } : {}),
+    }),
+    retryOnUnauthorized: false,
+  });
+};
+
+export const fetchSocialSignupSession = async () => {
+  return authRequest('/social-signup/session', {
+    method: 'GET',
+    retryOnUnauthorized: false,
+  });
+};
+
+export const completeSocialSignup = async ({ socialSignupToken, verificationToken, password, accountType } = {}) => {
+  const normalizedAccountType = normalizeAccountType(accountType);
+  const data = await authRequest('/social/complete-signup', {
+    method: 'POST',
+    body: JSON.stringify({
+      verificationToken,
+      password,
+      accountType: normalizedAccountType,
+      ...(socialSignupToken ? { socialSignupToken } : {}),
+    }),
     retryOnUnauthorized: false,
   });
 

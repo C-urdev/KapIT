@@ -24,6 +24,10 @@ const isDev = process.env.NODE_ENV !== 'production';
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
 const PASSWORD_HASHER = process.env.PASSWORD_HASHER || 'bcrypt';
 const BCRYPT_HASH_PREFIX = /^\$2[aby]\$\d{2}\$/;
+const DUMMY_BCRYPT_HASH =
+  '$2b$12$0mNfQ9Y2r6wN.9J7R1v8VekA7u8Qq7Zy5M7xQm4W8Jw3xN6T7pXlK';
+const FREE_JOB_FEED_DELAY_HOURS = Math.max(0, Number(process.env.FREE_JOB_FEED_DELAY_HOURS || 6));
+const FREE_JOB_FEED_DELAY_MS = FREE_JOB_FEED_DELAY_HOURS * 60 * 60 * 1000;
 const getJwtSecretOrThrow = () => {
   const secret = String(process.env.JWT_SECRET || '').trim();
   if (!secret) {
@@ -108,6 +112,19 @@ const normalizeJobFeedFilters = (query = {}) => {
     salaryRange,
     experienceLevel: allowedExperienceLevels.has(rawExperienceLevel) ? rawExperienceLevel : '',
   };
+};
+
+const isJobVisibleForPlan = (job, plan) => {
+  if (plan?.isPremium || FREE_JOB_FEED_DELAY_MS <= 0) {
+    return true;
+  }
+
+  const postedAtMs = new Date(job?.createdAt || '').getTime();
+  if (!Number.isFinite(postedAtMs)) {
+    return true;
+  }
+
+  return (Date.now() - postedAtMs) >= FREE_JOB_FEED_DELAY_MS;
 };
 
 const upsertJobMatchScore = async (client, { userId, jobId, match }) => {
@@ -361,11 +378,15 @@ const login = async (req, res) => {
       [email]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(401).json({ 
-        success: false, 
+    const genericFailure = () =>
+      res.status(401).json({
+        success: false,
         message: 'Invalid email or password',
       });
+
+    if (result.rows.length === 0) {
+      await verifyPasswordSecurely(password, DUMMY_BCRYPT_HASH).catch(() => false);
+      return genericFailure();
     }
 
     const user = result.rows[0];
@@ -373,10 +394,7 @@ const login = async (req, res) => {
     const isPasswordValid = await verifyPasswordSecurely(password, user.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Invalid email or password',
-      });
+      return genericFailure();
     }
 
     const computedProfileCompleted = computeProfileCompleted(user.user_type, user, user.account_type);
@@ -990,7 +1008,10 @@ const getJobsFeed = async (req, res) => {
     const plan = await getPremiumStateForUser(client, req.user.id);
     const filters = normalizeJobFeedFilters(req.query);
     const values = [req.user.id];
-    const conditions = [`COALESCE(j.posting_payment_status, 'paid') = 'paid'`];
+    const conditions = [
+      `COALESCE(j.posting_payment_status, 'paid') = 'paid'`,
+      `j.status = 'open'`,
+    ];
 
     if (filters.location) {
       values.push(`%${filters.location}%`);
@@ -1175,10 +1196,11 @@ const getJobsFeed = async (req, res) => {
           logo: row.company_logo || '',
         },
       }))
-      .filter((job) => job.status !== 'draft');
+      .filter((job) => job.status === 'open' && job.acceptsApplications !== false)
+      .filter((job) => isJobVisibleForPlan(job, plan));
 
     let cachedMatchMap = new Map();
-    if (plan.isPremium && jobs.length) {
+    if (jobs.length) {
       cachedMatchMap = await loadCachedJobMatchScores(client, {
         userId: req.user.id,
         jobIds: jobs.map((job) => job.id),
@@ -1199,7 +1221,7 @@ const getJobsFeed = async (req, res) => {
       });
     }
 
-    if (plan.isPremium && isAiConfigured()) {
+    if (isAiConfigured()) {
       const profileResult = await client.query(
         `SELECT dp.user_id,
                 COALESCE(dp.full_name, u.name, u.username) AS full_name,
@@ -1268,6 +1290,7 @@ const getJobsFeed = async (req, res) => {
       jobs,
       plan: {
         isPremium: plan.isPremium,
+        delayedJobWindowHours: plan.isPremium ? 0 : FREE_JOB_FEED_DELAY_HOURS,
       },
     });
   } catch (error) {

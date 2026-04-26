@@ -22,6 +22,16 @@
     font-weight: var(--font-weight-body);
   }
 
+  html,
+  body,
+  *,
+  *::before,
+  *::after {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
   body,
   button,
   input,

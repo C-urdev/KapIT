@@ -7,6 +7,16 @@ import { PAYMENT_CANCEL_MESSAGE_TYPE, PAYMENT_MESSAGE_TYPE, STORAGE_KEY } from '
 import ConfirmModal from '@sharedComponents/ui/ConfirmModal';
 import { X } from 'lucide-react';
 
+const extractPreAssessment = (job) => {
+  const payload = job?.draft_payload && typeof job.draft_payload === 'object' ? job.draft_payload : {};
+  const fromPayload = payload?.preAssessment && typeof payload.preAssessment === 'object' ? payload.preAssessment : null;
+  return fromPayload || {
+    enabled: false,
+    instructions: '',
+    questions: [],
+  };
+};
+
 export default function CompanyManageJobsPage() {
   const { jobs, loading, error, refetch } = useCompanyJobs();
   const [actionJobId, setActionJobId] = useState(null);
@@ -96,6 +106,7 @@ export default function CompanyManageJobsPage() {
         location: String(job?.location || '').trim(),
         type: String(job?.type || '').trim(),
         skills: formatSkills(job?.skills),
+        preAssessment: extractPreAssessment(job),
       };
 
       if (!repostDraft.title || !repostDraft.description) {
@@ -135,6 +146,7 @@ export default function CompanyManageJobsPage() {
         location: String(job?.location || '').trim(),
         type: String(job?.type || '').trim(),
         skills: formatSkills(job?.skills),
+        preAssessment: extractPreAssessment(job),
       };
 
       if (!draftPayload.title || !draftPayload.description) {

@@ -1,6 +1,45 @@
 const { normalizeSkills, serializeJobRow } = require('./companyService');
 const { normalizeDeadlineInput } = require('./jobAvailabilityService');
 
+const normalizePreAssessmentDraft = (draft) => {
+  const source = draft?.preAssessment && typeof draft.preAssessment === 'object' ? draft.preAssessment : {};
+  const enabled = Boolean(source.enabled);
+  const instructions = String(source.instructions || '').trim().slice(0, 2000);
+  const questions = Array.isArray(source.questions)
+    ? source.questions
+      .map((entry, index) => {
+        const question = String(entry?.question || '').trim();
+        const imageUrl = String(entry?.imageUrl || '').trim();
+        const criteria = Array.isArray(entry?.criteria)
+          ? entry.criteria.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 20)
+          : [];
+
+        if (!question) {
+          return null;
+        }
+
+        return {
+          id: String(entry?.id || `q${index + 1}`).trim().slice(0, 80) || `q${index + 1}`,
+          question: question.slice(0, 1000),
+          imageUrl: imageUrl.slice(0, 2000000),
+          criteria,
+        };
+      })
+      .filter(Boolean)
+      .slice(0, 12)
+    : [];
+
+  return {
+    enabled,
+    instructions,
+    questions: enabled ? questions : [],
+  };
+};
+
+const buildJobDraftPayload = (draft) => ({
+  preAssessment: normalizePreAssessmentDraft(draft),
+});
+
 const createDraftJobForCompany = async (client, companyId, draft) => {
   const title = String(draft?.title || '').trim();
   const description = String(draft?.description || '').trim();
@@ -11,6 +50,8 @@ const createDraftJobForCompany = async (client, companyId, draft) => {
 
   const normalizedSkills = normalizeSkills(draft?.skills);
   const applicationDeadline = normalizeDeadlineInput(draft?.applicationDeadline);
+
+  const draftPayload = buildJobDraftPayload(draft);
 
   const result = await client.query(
     `INSERT INTO jobs (
@@ -28,7 +69,8 @@ const createDraftJobForCompany = async (client, companyId, draft) => {
        pay_per_use_status,
        published_at,
        active_until,
-       application_deadline
+       application_deadline,
+       draft_payload
      )
      VALUES (
        $1,
@@ -45,7 +87,8 @@ const createDraftJobForCompany = async (client, companyId, draft) => {
        'not_due',
        NULL,
        NULL,
-       $10::timestamptz
+       $10::timestamptz,
+       $11::jsonb
      )
      RETURNING *`,
     [
@@ -59,6 +102,7 @@ const createDraftJobForCompany = async (client, companyId, draft) => {
       draft?.workPreference ? String(draft.workPreference).trim().toLowerCase() : null,
       normalizedSkills,
       applicationDeadline,
+      JSON.stringify(draftPayload),
     ]
   );
 
@@ -112,6 +156,7 @@ const createPublishedJobForCompany = async (client, companyId, draft, plan, paym
 
   const normalizedSkills = normalizeSkills(draft?.skills);
   const applicationDeadline = normalizeDeadlineInput(draft?.applicationDeadline);
+  const draftPayload = buildJobDraftPayload(draft);
 
   const result = await client.query(
     `INSERT INTO jobs (
@@ -135,7 +180,8 @@ const createPublishedJobForCompany = async (client, companyId, draft, plan, paym
        posting_plan_price,
        published_at,
        active_until,
-       application_deadline
+       application_deadline,
+       draft_payload
      )
      VALUES (
        $1,
@@ -158,7 +204,8 @@ const createPublishedJobForCompany = async (client, companyId, draft, plan, paym
        $10::integer,
        CURRENT_TIMESTAMP,
        CURRENT_TIMESTAMP + ($14::integer * INTERVAL '1 day'),
-       $15::timestamptz
+       $15::timestamptz,
+       $16::jsonb
      )
      RETURNING *`,
     [
@@ -177,6 +224,7 @@ const createPublishedJobForCompany = async (client, companyId, draft, plan, paym
       plan.durationLabel,
       plan.durationDays,
       applicationDeadline,
+      JSON.stringify(draftPayload),
     ]
   );
 
@@ -184,6 +232,8 @@ const createPublishedJobForCompany = async (client, companyId, draft, plan, paym
 };
 
 module.exports = {
+  normalizePreAssessmentDraft,
+  buildJobDraftPayload,
   createDraftJobForCompany,
   publishDraftJobForCompany,
   createPublishedJobForCompany,
