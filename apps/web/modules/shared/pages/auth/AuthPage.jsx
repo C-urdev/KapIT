@@ -86,7 +86,6 @@ export default function AuthPage({
     : accountType === 'developer'
       ? 'IT Professional / Developer account'
       : '';
-
   const deriveSignupUsername = (email) => {
     const localPart = String(email || '').split('@')[0] || '';
     const sanitized = localPart.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 50);
@@ -135,6 +134,12 @@ export default function AuthPage({
     setInfoMessage('');
 
     if (authMode === 'signup') {
+      if (!accountType) {
+        setError('Please choose whether you are looking to hire or looking for a job first.');
+        onRequestAccountType?.();
+        return;
+      }
+
       if (formData.password !== formData.confirmPassword) {
         setError('Passwords do not match');
         return;
@@ -207,6 +212,11 @@ export default function AuthPage({
     if (loading) {
       return;
     }
+    if (authMode === 'signup' && !accountType) {
+      setError('Please choose whether you are looking to hire or looking for a job first.');
+      onRequestAccountType?.();
+      return;
+    }
 
     if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && process.env.NODE_ENV !== 'production' && isLocalAuthBypassEnabled && isLoopbackHost()) {
       const email = prompt(`[Developer Mode - Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID]\n\nEnter any existing or new email to simulate logging in with Google:`);
@@ -252,6 +262,11 @@ export default function AuthPage({
 
   const handleGithubClick = async () => {
     if (loading) {
+      return;
+    }
+    if (authMode === 'signup' && !accountType) {
+      setError('Please choose whether you are looking to hire or looking for a job first.');
+      onRequestAccountType?.();
       return;
     }
 

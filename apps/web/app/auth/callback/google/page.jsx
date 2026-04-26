@@ -63,6 +63,14 @@ function GoogleCallbackContent() {
           router.replace('/auth/social-signup');
           return;
         }
+        if (responseCode === 'SOCIAL_SIGNUP_ACCOUNT_TYPE_MISMATCH') {
+          setError('This email is already used by a different account type. Please use another email for this signup path.');
+          return;
+        }
+        if (responseCode === 'SOCIAL_SIGNUP_EMAIL_ALREADY_USED') {
+          setError('This email is already registered. Please sign in with your existing account.');
+          return;
+        }
         if (responseCode === 'OAUTH_STATE_INVALID') {
           redirectToSafeLogin();
           return;

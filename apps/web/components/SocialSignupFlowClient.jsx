@@ -7,6 +7,7 @@ import {
   completeSocialSignup,
   fetchSocialSignupSession,
   isCompanyAccount,
+  requestLocalRegistrationBypassToken,
   sendRegistrationOtp,
   verifyRegistrationOtp,
 } from '@sharedServices/authService';
@@ -61,6 +62,8 @@ export default function SocialSignupFlowClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
+  const [isLocalhost, setIsLocalhost] = useState(false);
+  const localAuthBypassEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS === 'true';
 
   const pageTitle = useMemo(() => {
     if (step === 'verify-otp') return 'Verify your email';
@@ -102,6 +105,12 @@ export default function SocialSignupFlowClient() {
     loadSession();
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hostname = String(window.location.hostname || '').trim().toLowerCase();
+    setIsLocalhost(hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1');
+  }, []);
+
   const startOtpStep = async (accountTypeValue) => {
     if (!session?.email) {
       setError('Social signup session is missing. Please start again.');
@@ -112,7 +121,27 @@ export default function SocialSignupFlowClient() {
     setLoading(true);
     setError('');
     setInfo('');
+
+    const tryLocalBypass = async () => {
+      const bypass = await requestLocalRegistrationBypassToken({ email: session.email });
+      if (bypass?.success && bypass?.verificationToken) {
+        setSelectedAccountType(accountTypeValue);
+        setVerificationToken(bypass.verificationToken);
+        setStep('set-password');
+        setInfo('Localhost bypass is active. Email verification was skipped for this development run.');
+        return true;
+      }
+      return false;
+    };
+
     try {
+      if (isLocalhost && localAuthBypassEnabled) {
+        const bypassed = await tryLocalBypass();
+        if (bypassed) {
+          return;
+        }
+      }
+
       const result = await sendRegistrationOtp({ email: session.email });
       if (!result?.success) {
         setError(result?.message || 'Unable to send verification code.');
@@ -122,6 +151,24 @@ export default function SocialSignupFlowClient() {
       setStep('verify-otp');
       setInfo(`We sent a 6-digit code to ${session.email}.`);
     } catch (requestError) {
+      const requestMessage = String(requestError?.message || '');
+      const missingEmailProvider = requestError?.status === 503
+        || /email service is not configured|email provider is not configured/i.test(requestMessage);
+
+      if (missingEmailProvider && isLocalhost && localAuthBypassEnabled) {
+        try {
+          const bypassed = await tryLocalBypass();
+          if (bypassed) {
+            return;
+          }
+          setError('Localhost bypass is unavailable.');
+          return;
+        } catch (bypassError) {
+          setError(String(bypassError?.message || 'Unable to use localhost bypass right now.'));
+          return;
+        }
+      }
+
       setError(String(requestError?.message || 'Unable to send verification code right now.'));
     } finally {
       setLoading(false);
