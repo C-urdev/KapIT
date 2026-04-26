@@ -7,6 +7,12 @@ import { OTHER_SKILL_VALUE, TECH_SKILL_OPTIONS } from '@companyFeatures/companyS
 import { PAYMENT_CANCEL_MESSAGE_TYPE, PAYMENT_MESSAGE_TYPE, STORAGE_KEY } from '@companyPages/CompanyPostJobPaymentPage';
 import { loadAddressOptions } from '@sharedUtils/philippinesLocations';
 import { companyAPI } from '@companyFeatures/companyAPI';
+import {
+  createPreAssessmentQuestionDraft,
+  DEFAULT_COMPANY_POST_JOB_FORM,
+  loadCompanyPostJobFormDraft,
+  saveCompanyPostJobFormDraft,
+} from '@companyFeatures/postJobDraftStorage';
 
 const CUSTOM_JOB_VALUE = 'Other';
 const JOB_TYPE_OPTIONS = ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship'];
@@ -50,28 +56,30 @@ const SALARY_RANGE_OPTIONS = {
   ],
 };
 const CUSTOM_SALARY_OPTION = 'Other';
+
 export default function CompanyPostJobPage() {
   const [error, setError] = useState('');
   const [paymentPending, setPaymentPending] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState('');
   const [customSkill, setCustomSkill] = useState('');
   const [searchableLocations, setSearchableLocations] = useState([]);
-  const [form, setForm] = useState({
-    selectedTitle: '',
-    customTitle: '',
-    description: '',
-    salaryCurrency: 'PHP',
-    salary: '',
-    customSalary: '',
-    location: '',
-    type: 'Full-time',
-    experienceLevel: '',
-    workPreference: '',
-    applicationDeadline: '',
-    skills: [],
-  });
+  const [hydratedForm, setHydratedForm] = useState(false);
+  const [form, setForm] = useState(DEFAULT_COMPANY_POST_JOB_FORM);
   const salaryRangeOptions = useMemo(() => SALARY_RANGE_OPTIONS[form.salaryCurrency] || SALARY_RANGE_OPTIONS.PHP, [form.salaryCurrency]);
   const usingCustomSalary = form.salary === CUSTOM_SALARY_OPTION;
+
+  useEffect(() => {
+    const draft = loadCompanyPostJobFormDraft();
+    setForm(draft);
+    setHydratedForm(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydratedForm) {
+      return;
+    }
+    saveCompanyPostJobFormDraft(form);
+  }, [form, hydratedForm]);
 
   useEffect(() => {
     let cancelled = false;
@@ -124,6 +132,30 @@ export default function CompanyPostJobPage() {
     const title = form.selectedTitle === CUSTOM_JOB_VALUE ? String(form.customTitle || '').trim() : String(form.selectedTitle || '').trim();
     if (!title) return setError('Please choose a job title.');
     if (!String(form.description || '').trim()) return setError('Please enter a job description.');
+    if (form.preAssessmentEnabled && form.preAssessmentQuestions.length === 0) {
+      return setError('Add at least one pre-assessment question or turn off pre-assessment.');
+    }
+
+    const normalizedPreAssessmentQuestions = form.preAssessmentQuestions
+      .map((question, index) => ({
+        id: String(question?.id || `q${index + 1}`).trim().slice(0, 80) || `q${index + 1}`,
+        question: String(question?.question || '').trim(),
+        imageUrl: String(question?.imageUrl || '').trim(),
+        criteria: Array.isArray(question?.criteria)
+          ? question.criteria.map((item) => String(item || '').trim()).filter(Boolean)
+          : [],
+      }))
+      .filter((question) => question.question);
+
+    if (form.preAssessmentEnabled) {
+      if (normalizedPreAssessmentQuestions.length === 0) {
+        return setError('Each pre-assessment question needs text.');
+      }
+      const missingCriteria = normalizedPreAssessmentQuestions.find((question) => question.criteria.length === 0);
+      if (missingCriteria) {
+        return setError('Each pre-assessment question needs at least one answer criterion.');
+      }
+    }
 
     const payload = {
       title,
@@ -137,6 +169,11 @@ export default function CompanyPostJobPage() {
       workPreference: String(form.workPreference || '').trim().toLowerCase(),
       applicationDeadline: String(form.applicationDeadline || '').trim(),
       skills: formatSkills(form.skills),
+      preAssessment: {
+        enabled: Boolean(form.preAssessmentEnabled),
+        instructions: String(form.preAssessmentInstructions || '').trim(),
+        questions: form.preAssessmentEnabled ? normalizedPreAssessmentQuestions : [],
+      },
     };
 
     try {
@@ -163,6 +200,29 @@ export default function CompanyPostJobPage() {
     } catch (err) {
       setError(err?.message || 'Unable to save the draft or open the payment window right now.');
     }
+  };
+
+  const handleTogglePreAssessment = (checked) => {
+    if (!checked) {
+      setForm((prev) => ({
+        ...prev,
+        preAssessmentEnabled: false,
+      }));
+      return;
+    }
+
+    setForm((prev) => {
+      const next = {
+        ...prev,
+        preAssessmentEnabled: true,
+        preAssessmentQuestions: prev.preAssessmentQuestions.length > 0
+          ? prev.preAssessmentQuestions
+          : [createPreAssessmentQuestionDraft()],
+      };
+      saveCompanyPostJobFormDraft(next);
+      return next;
+    });
+    navigate(COMPANY_PATHS.postJobPreAssessment);
   };
 
   return (
@@ -276,6 +336,39 @@ export default function CompanyPostJobPage() {
             </div>
           </Field>
         </div>
+
+        <section className="rounded-2xl border border-[#bfd0af] dark:border-[#444d57] bg-[#f5f9f2] dark:bg-[#1b2025] p-4 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-bold text-[#2f4d35] dark:text-white">Pre-assessment test (optional)</h3>
+              <p className="text-xs text-[#4f6654] dark:text-[#b9c1c8]">Enable this to redirect into a dedicated builder page where you can create multiple questions, add images, and define answer criteria.</p>
+            </div>
+            <label className="inline-flex items-center gap-2 text-sm font-semibold text-[#344e41] dark:text-white">
+              <input
+                type="checkbox"
+                checked={form.preAssessmentEnabled}
+                onChange={(event) => handleTogglePreAssessment(event.target.checked)}
+                className="h-4 w-4 rounded border-[#a3b18a] text-[#3a5a40] focus:ring-[#588157]"
+              />
+              Enable pre-assessment
+            </label>
+          </div>
+          {form.preAssessmentEnabled ? (
+            <div className="rounded-xl border border-[#bfd0af] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#22272b] p-4">
+              <p className="text-sm text-[#344e41] dark:text-[#d0d7dd]">
+                {form.preAssessmentQuestions.length} question{form.preAssessmentQuestions.length === 1 ? '' : 's'} configured.
+                Use the dedicated builder page to add/edit questions, references, and criteria.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate(COMPANY_PATHS.postJobPreAssessment)}
+                className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[#a3b18a] dark:border-[#444d57] px-3 py-2 text-sm font-semibold text-[#344e41] dark:text-white hover:bg-[#eef3e8] dark:hover:bg-[#353c44]"
+              >
+                Edit pre-assessment
+              </button>
+            </div>
+          ) : null}
+        </section>
 
         <div className="flex gap-3">
           <button type="button" onClick={() => navigate(COMPANY_PATHS.dashboard)} className="px-4 py-2.5 rounded-xl border border-[#a3b18a] dark:border-[#444d57] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors">Cancel</button>

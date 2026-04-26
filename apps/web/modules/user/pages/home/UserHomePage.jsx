@@ -5,6 +5,7 @@ import UserRightSidebar from '@userComponents/UserRightSidebar';
 import CenterFeed from './UserCenterFeed';
 import UserJobsPage from '@userPages/jobs/UserJobsPage';
 import UserJobDetailPage from '@userPages/jobs/UserJobDetailPage';
+import UserPreAssessmentPage from '@userPages/jobs/UserPreAssessmentPage';
 import UserProjectsPage from '@userPages/projects/UserProjectsPage';
 import UserSearchResultsPage from '@userPages/search/UserSearchResultsPage';
 import UserMessagesPage from '@userPages/messages/UserMessagesPage';
@@ -58,7 +59,7 @@ import { getApplicationsForUser } from '@userFeatures/activity/userActivityStora
 const USER_NAV_QUERY_KEY = 'tab';
 const USER_PROFILE_QUERY_KEY = 'profileId';
 const USER_JOB_QUERY_KEY = 'jobId';
-const USER_NAV_TABS = new Set(['home', 'jobs', 'job-detail', 'projects', 'search', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'help', 'tips', 'verified', 'settings', 'public-profile', 'settings-account', 'settings-career', 'settings-notifications', 'settings-saved-jobs', 'settings-applications', 'privacy-settings', 'privacy-change-password', 'privacy-comments', 'privacy-mentions', 'privacy-following', 'privacy-likes']);
+const USER_NAV_TABS = new Set(['home', 'jobs', 'job-detail', 'pre-assessment', 'projects', 'search', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'help', 'tips', 'verified', 'settings', 'public-profile', 'settings-account', 'settings-career', 'settings-notifications', 'settings-saved-jobs', 'settings-applications', 'privacy-settings', 'privacy-change-password', 'privacy-comments', 'privacy-mentions', 'privacy-following', 'privacy-likes']);
 const resolveProfileId = (value) => {
   const normalized = String(value || '').trim();
   return normalized || '';
@@ -112,7 +113,7 @@ const syncUserNavToUrl = (nextNav, options = {}) => {
   } else {
     url.searchParams.delete(USER_PROFILE_QUERY_KEY);
   }
-  if (nextNav === 'job-detail' && jobId) {
+  if ((nextNav === 'job-detail' || nextNav === 'pre-assessment') && jobId) {
     url.searchParams.set(USER_JOB_QUERY_KEY, String(jobId));
   } else {
     url.searchParams.delete(USER_JOB_QUERY_KEY);
@@ -172,6 +173,8 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   const pageBackgroundClass = isMessagesActive ? 'bg-[#dad7cd] dark:bg-[#121212]' : 'bg-[#dad7cd] dark:bg-[#121416]';
   const hideMobileChromeForMessages = isTabletViewport && isMessagesActive && mobileThreadOpen;
   const effectiveMobileChromeHidden = mobileChromeHidden || hideMobileChromeForMessages;
+  const canAccessPreAssessment = Boolean(user?.isPremium);
+  const selectedJobHasApplied = Boolean(selectedJob?.hasApplied);
   const mobileSafeAreaBottomPadding = isMobileShellViewport
     ? effectiveMobileChromeHidden
       ? 'max(1.75rem, calc(env(safe-area-inset-bottom) + 1rem))'
@@ -219,7 +222,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   useEffect(() => {
     syncUserNavToUrl(activeNav, {
       profileId: activeNav === 'public-profile' ? resolveProfileId(publicProfile?.id) : '',
-      jobId: activeNav === 'job-detail' ? resolveJobId(selectedJob?.id) : null,
+      jobId: (activeNav === 'job-detail' || activeNav === 'pre-assessment') ? resolveJobId(selectedJob?.id) : null,
     });
   }, [activeNav, publicProfile, selectedJob]);
 
@@ -268,7 +271,11 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
     let cancelled = false;
 
     const syncJobDetailFromUrl = async () => {
-      if (activeNav !== 'job-detail') {
+      if (activeNav === 'pre-assessment' && !canAccessPreAssessment) {
+        return;
+      }
+
+      if (activeNav !== 'job-detail' && activeNav !== 'pre-assessment') {
         return;
       }
 
@@ -308,7 +315,33 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
     return () => {
       cancelled = true;
     };
-  }, [activeNav, selectedJob, jobCardStateById, savedJobs]);
+  }, [activeNav, canAccessPreAssessment, selectedJob, jobCardStateById, savedJobs]);
+
+  useEffect(() => {
+    if (activeNav !== 'pre-assessment') {
+      return;
+    }
+
+    if (!canAccessPreAssessment) {
+      const jobId = resolveJobId(selectedJob?.id) || getJobIdFromUrl();
+      if (jobId) {
+        updateActiveNav('job-detail', { jobId });
+        return;
+      }
+      updateActiveNav('jobs');
+      return;
+    }
+
+    const jobId = resolveJobId(selectedJob?.id) || getJobIdFromUrl();
+    if (!jobId) {
+      updateActiveNav('jobs');
+      return;
+    }
+
+    if (!selectedJobHasApplied) {
+      updateActiveNav('job-detail', { jobId });
+    }
+  }, [activeNav, canAccessPreAssessment, selectedJob?.id, selectedJobHasApplied]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -579,10 +612,10 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   };
 
   const resolvePublicProfileBackTarget = () => {
-    if (activeNav === 'job-detail') {
+    if (activeNav === 'job-detail' || activeNav === 'pre-assessment') {
       const jobId = resolveJobId(selectedJob?.id);
       if (jobId) {
-        return { nav: 'job-detail', options: { jobId } };
+        return { nav: activeNav, options: { jobId } };
       }
       return { nav: 'jobs', options: {} };
     }
@@ -671,6 +704,36 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
       ...override,
     });
     updateActiveNav('job-detail', { jobId });
+  };
+
+  const handleOpenPreAssessment = (job) => {
+    if (!canAccessPreAssessment) {
+      setPremiumPopupOpen(true);
+      return;
+    }
+
+    const jobId = resolveJobId(job?.id || selectedJob?.id);
+    if (!jobId) {
+      return;
+    }
+
+    const sourceJob = job || selectedJob || {};
+    const hasApplied = Boolean(sourceJob?.hasApplied);
+    if (!hasApplied) {
+      updateActiveNav('job-detail', { jobId });
+      return;
+    }
+
+    const override = jobCardStateById[jobId] || {};
+    setSelectedJob({
+      ...sourceJob,
+      id: jobId,
+      isSaved: typeof sourceJob?.isSaved === 'boolean'
+        ? sourceJob.isSaved
+        : savedJobs.some((entry) => Number(entry?.id) === jobId),
+      ...override,
+    });
+    updateActiveNav('pre-assessment', { jobId });
   };
 
   const handleJobMutation = (jobId, updates = {}) => {
@@ -885,6 +948,20 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
             onBack={() => updateActiveNav('jobs')}
             onOpenCompanyProfile={handleOpenCompanyProfileFromJob}
             onJobMutation={handleJobMutation}
+            onOpenPreAssessment={handleOpenPreAssessment}
+          />
+        )}
+        {activeNav === 'pre-assessment' && (
+          <UserPreAssessmentPage
+            job={selectedJob}
+            onBack={() => {
+              const jobId = resolveJobId(selectedJob?.id);
+              if (jobId) {
+                updateActiveNav('job-detail', { jobId });
+                return;
+              }
+              updateActiveNav('jobs');
+            }}
           />
         )}
         {activeNav === 'search' && (

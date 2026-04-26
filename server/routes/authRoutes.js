@@ -29,7 +29,13 @@ const {
   localRegistrationBypass,
   localPasswordResetBypass,
 } = require('../controllers/authRecoveryController');
-const { googleLogin, githubLogin } = require('../controllers/oauthController');
+const {
+  createOAuthStateSession,
+  getSocialSignupSession,
+  googleLogin,
+  githubLogin,
+  completeSocialSignup,
+} = require('../controllers/oauthController');
 const {
   listUserPremiumPaymentProviders,
   createUserPremiumCheckoutSession,
@@ -77,8 +83,11 @@ router.post('/refresh', validateRequest(writeSchemas.authRefresh), refreshSessio
 router.post('/logout', requireCsrfForCookieAuth, validateRequest(writeSchemas.authLogout), logout);
 
 // OAuth routes
-router.post('/google', loginRateLimiter, googleLogin);
-router.post('/github', loginRateLimiter, githubLogin);
+router.post('/oauth/state', loginRateLimiter, validateRequest(writeSchemas.authOAuthStateCreate), createOAuthStateSession);
+router.post('/google', loginRateLimiter, validateRequest(writeSchemas.authGoogleLogin), googleLogin);
+router.post('/github', loginRateLimiter, validateRequest(writeSchemas.authGithubLogin), githubLogin);
+router.get('/social-signup/session', getSocialSignupSession);
+router.post('/social/complete-signup', loginRateLimiter, validateRequest(writeSchemas.authSocialCompleteSignup), completeSocialSignup);
 
 // Protected routes
 router.get('/me', verifyToken, getCurrentUser);

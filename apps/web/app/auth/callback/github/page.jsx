@@ -23,29 +23,43 @@ function GithubCallbackContent() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const redirectToSafeLogin = () => {
+      router.replace('/auth/login?authError=social');
+    };
+
     const oauthError = searchParams.get('error');
     if (oauthError) {
-      router.replace('/auth/login');
+      redirectToSafeLogin();
       return;
     }
 
     const code = searchParams.get('code');
+    const state = searchParams.get('state');
 
-    if (!code) {
-      router.replace('/auth/login');
+    if (!code || !state) {
+      redirectToSafeLogin();
       return;
     }
 
     const processLogin = async () => {
       try {
-        const data = await loginWithGithub(code);
+        const data = await loginWithGithub(code, { state });
         if (data?.success && data?.user) {
           router.replace(resolvePostAuthPath(data.user));
         } else {
-          setError(data?.message || 'GitHub authentication failed.');
+          setError('Unable to complete sign-in. Please try again.');
         }
-      } catch (err) {
-        setError('An unexpected error occurred during GitHub login.');
+      } catch (error) {
+        const responseCode = String(error?.data?.code || '').trim();
+        if (responseCode === 'SOCIAL_ACCOUNT_NOT_REGISTERED') {
+          router.replace('/auth/social-signup');
+          return;
+        }
+        if (responseCode === 'OAUTH_STATE_INVALID') {
+          redirectToSafeLogin();
+          return;
+        }
+        setError('Unable to complete sign-in. Please try again.');
       }
     };
 

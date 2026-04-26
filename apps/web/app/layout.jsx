@@ -1,29 +1,43 @@
 import AppProviders from '../components/AppProviders';
 import ReleaseSync from '../components/ReleaseSync';
+import {
+  getSiteUrl,
+  SEO_DEFAULT_DESCRIPTION,
+  SEO_DEFAULT_IMAGE_PATH,
+  SEO_DEFAULT_KEYWORDS,
+  SEO_DEFAULT_TITLE,
+  SEO_SITE_NAME,
+} from '../lib/seo';
 import { cookies } from 'next/headers';
 import './globals.css';
 
+const siteUrl = getSiteUrl();
+
 export const metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://kapit.online'),
+  metadataBase: new URL(siteUrl),
   title: {
-    default: 'KapIT - AI Job Matching Platform',
-    template: 'KapIT | %s',
+    default: SEO_DEFAULT_TITLE,
+    template: `${SEO_SITE_NAME} | %s`,
   },
-  description:
-    'KapIT helps developers and companies match jobs faster with AI-powered hiring and skill-based discovery.',
-  applicationName: 'KapIT',
+  description: SEO_DEFAULT_DESCRIPTION,
+  keywords: SEO_DEFAULT_KEYWORDS,
+  applicationName: SEO_SITE_NAME,
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     type: 'website',
-    siteName: 'KapIT',
-    title: 'KapIT - AI Job Matching Platform',
-    description:
-      'KapIT helps developers and companies match jobs faster with AI-powered hiring and skill-based discovery.',
+    url: '/',
+    siteName: SEO_SITE_NAME,
+    title: SEO_DEFAULT_TITLE,
+    description: SEO_DEFAULT_DESCRIPTION,
+    images: [SEO_DEFAULT_IMAGE_PATH],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'KapIT - AI Job Matching Platform',
-    description:
-      'KapIT helps developers and companies match jobs faster with AI-powered hiring and skill-based discovery.',
+    title: SEO_DEFAULT_TITLE,
+    description: SEO_DEFAULT_DESCRIPTION,
+    images: [SEO_DEFAULT_IMAGE_PATH],
   },
   icons: {
     icon: '/kapit-logo.png',

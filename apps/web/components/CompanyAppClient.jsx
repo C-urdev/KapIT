@@ -9,6 +9,7 @@ import { COMPANY_PATHS, navigate, setCompanyNavigator } from '@companyFeatures/c
 import { primeCompanyProfileData, primeCompanyWorkspaceData } from '@companyFeatures/companyHooks';
 import CompanyDashboardPage from '@companyPages/CompanyDashboardPage';
 import CompanyPostJobPage from '@companyPages/CompanyPostJobPage';
+import CompanyPostJobPreAssessmentPage from '@companyPages/CompanyPostJobPreAssessmentPage';
 import CompanyPostJobPaymentPage from '@companyPages/CompanyPostJobPaymentPage';
 import CompanyManageJobsPage from '@companyPages/CompanyManageJobsPage';
 import CompanyApplicantsPage from '@companyPages/CompanyApplicantsPage';
@@ -23,6 +24,7 @@ import HelpPage from '@sharedPages/help/HelpPage';
 
 function renderCompanyRoute(pathname, user, updateUser, onBackFromHelp, onMessagesThreadVisibilityChange, notificationPreference, setNotificationPreference) {
   if (pathname === COMPANY_PATHS.postJobPayment) return <CompanyPostJobPaymentPage />;
+  if (pathname === COMPANY_PATHS.postJobPreAssessment) return <CompanyPostJobPreAssessmentPage />;
   if (pathname === COMPANY_PATHS.postJob) return <CompanyPostJobPage />;
   if (pathname === COMPANY_PATHS.jobs) return <CompanyManageJobsPage />;
   if (pathname === COMPANY_PATHS.applicants) return <CompanyApplicantsPage />;
@@ -91,6 +93,7 @@ export default function CompanyAppClient() {
       COMPANY_PATHS.dashboard,
       COMPANY_PATHS.jobs,
       COMPANY_PATHS.postJob,
+      COMPANY_PATHS.postJobPreAssessment,
     ];
 
     const schedulePrefetch = () => {

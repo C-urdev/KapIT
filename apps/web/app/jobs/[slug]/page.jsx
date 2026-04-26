@@ -1,21 +1,52 @@
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 import JobDetail from '../../../components/JobDetail';
 import { expressFetch } from '../../../lib/api';
+import {
+  SEO_DEFAULT_IMAGE_PATH,
+  SEO_SITE_NAME,
+  toAbsoluteUrl,
+} from '../../../lib/seo';
+
+const getPublicJob = cache(async (slug) => {
+  const data = await expressFetch(`/public/jobs/${slug}`, {
+    next: { revalidate: 300 },
+  });
+  return data?.job || null;
+});
 
 export async function generateMetadata({ params }) {
   try {
-    const data = await expressFetch(`/public/jobs/${params.slug}`, {
-      next: { revalidate: 300 },
-    });
-
-    const job = data?.job;
+    const job = await getPublicJob(params.slug);
     if (!job) {
       return { title: 'Job Details' };
     }
 
+    const title = String(job.title || 'Job Details');
+    const companyName = String(job.company?.name || SEO_SITE_NAME).trim();
+    const description = job.description || `Apply for ${title} at ${companyName}.`;
+    const path = `/jobs/${params.slug}`;
+
     return {
-      title: String(job.title || 'Job Details'),
-      description: job.description || `Apply for ${job.title} at ${job.company?.name || 'KapIT'}.`,
+      title,
+      description,
+      alternates: {
+        canonical: path,
+      },
+      openGraph: {
+        type: 'article',
+        url: toAbsoluteUrl(path),
+        siteName: SEO_SITE_NAME,
+        title,
+        description,
+        images: [SEO_DEFAULT_IMAGE_PATH],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title,
+        description,
+        images: [SEO_DEFAULT_IMAGE_PATH],
+      },
     };
   } catch {
     return { title: 'Job Details' };
@@ -24,15 +55,12 @@ export async function generateMetadata({ params }) {
 
 export default async function JobDetailPage({ params }) {
   try {
-    const data = await expressFetch(`/public/jobs/${params.slug}`, {
-      next: { revalidate: 300 },
-    });
-
-    if (!data?.job) {
+    const job = await getPublicJob(params.slug);
+    if (!job) {
       notFound();
     }
 
-    return <JobDetail job={data.job} />;
+    return <JobDetail job={job} />;
   } catch {
     notFound();
   }

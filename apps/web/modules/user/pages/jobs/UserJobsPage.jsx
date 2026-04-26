@@ -77,6 +77,79 @@ const MAX_DRAG_OFFSET_PX = 120;
 const isInteractiveTarget = (target) => (
   Boolean(target?.closest?.('button, a, input, select, textarea, [role="button"]'))
 );
+const toWordTokens = (value) => (
+  String(value || '')
+    .toLowerCase()
+    .split(/[^a-z0-9+#.]+/g)
+    .map((part) => part.trim())
+    .filter((part) => part.length >= 2)
+);
+const pushTokens = (bucket, value) => {
+  toWordTokens(value).forEach((token) => bucket.add(token));
+};
+const buildUserTokenSet = (user) => {
+  const tokens = new Set();
+  if (!user || typeof user !== 'object') {
+    return tokens;
+  }
+
+  [
+    user?.desiredJob,
+    user?.desired_job,
+    user?.jobTitle,
+    user?.preferredRole,
+    user?.bio,
+    user?.headline,
+    user?.skills,
+    user?.stack,
+  ].forEach((field) => {
+    if (Array.isArray(field)) {
+      field.forEach((item) => pushTokens(tokens, item));
+      return;
+    }
+    pushTokens(tokens, field);
+  });
+
+  return tokens;
+};
+const estimateMatchPercentage = (job, user) => {
+  const userTokens = buildUserTokenSet(user);
+  const jobTokens = new Set();
+
+  [
+    job?.title,
+    job?.description,
+    job?.type,
+    job?.experienceLevel,
+    job?.location,
+    Array.isArray(job?.skills) ? job.skills : [],
+  ].forEach((field) => {
+    if (Array.isArray(field)) {
+      field.forEach((item) => pushTokens(jobTokens, item));
+      return;
+    }
+    pushTokens(jobTokens, field);
+  });
+
+  if (!jobTokens.size) {
+    return 18;
+  }
+
+  if (!userTokens.size) {
+    return 22;
+  }
+
+  let overlapCount = 0;
+  userTokens.forEach((token) => {
+    if (jobTokens.has(token)) {
+      overlapCount += 1;
+    }
+  });
+
+  const overlapRatio = overlapCount / Math.max(1, userTokens.size);
+  const score = 18 + (overlapRatio * 72);
+  return Math.max(8, Math.min(96, Math.round(score)));
+};
 
 const applyStateToJob = (job, savedJobIds, jobCardStateById) => {
   const jobId = resolveJobId(job?.id);
@@ -99,7 +172,6 @@ export default function UserJobsPage({
   onOpenJobDetail,
 }) {
   const [jobs, setJobs] = useState([]);
-  const [jobsPlan, setJobsPlan] = useState({ isPremium: false });
   const [savedJobIds, setSavedJobIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -149,9 +221,6 @@ export default function UserJobsPage({
         const knownSavedIds = savedJobIdsRef.current || [];
         const nextJobs = (Array.isArray(jobsData?.jobs) ? jobsData.jobs : [])
           .map((job) => applyStateToJob(job, knownSavedIds, jobCardStateById));
-        setJobsPlan({
-          isPremium: Boolean(jobsData?.plan?.isPremium),
-        });
         syncApplicationsForUser(user, nextJobs);
         setJobs(nextJobs);
         setActiveIndex((current) => Math.max(0, Math.min(current, Math.max(0, nextJobs.length - 1))));
@@ -283,7 +352,6 @@ export default function UserJobsPage({
   );
 
   const currentJob = jobs[activeIndex] || null;
-  const isPremiumUser = Boolean(user?.isPremium || jobsPlan?.isPremium);
 
   const handleFilterChange = (key, value) => {
     setFilters((current) => {
@@ -626,7 +694,7 @@ export default function UserJobsPage({
             >
               <SquareJobCard
                 job={currentJob}
-                isPremiumUser={isPremiumUser}
+                user={user}
                 onViewCompany={handleOpenCompany}
                 onMoreInfo={handleOpenDetail}
               />
@@ -662,20 +730,24 @@ export default function UserJobsPage({
   );
 }
 
-function SquareJobCard({ job, isPremiumUser, onViewCompany, onMoreInfo }) {
+function SquareJobCard({ job, user, onViewCompany, onMoreInfo }) {
   if (!job) {
     return null;
   }
 
   const status = String(job?.status || 'open').toLowerCase();
   const rawMatchPercentage = Number(job?.matchPercentage);
-  const hasMatchPercentage = Number.isFinite(rawMatchPercentage);
-  const matchPercentage = Math.max(0, Math.min(100, Math.round(rawMatchPercentage)));
+  const hasServerMatchPercentage = Number.isFinite(rawMatchPercentage);
+  const matchPercentage = Number.isFinite(rawMatchPercentage)
+    ? Math.max(0, Math.min(100, Math.round(rawMatchPercentage)))
+    : estimateMatchPercentage(job, user);
+  const hasMatchPercentage = Number.isFinite(matchPercentage);
+  const fitLabel = hasServerMatchPercentage ? 'AI fit' : 'Estimated fit';
 
   return (
     <article className="aspect-square w-full rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] p-5 shadow-sm transition-colors dark:border-[#353c44] dark:bg-[#22272b] sm:p-7">
       <div className="flex h-full flex-col">
-        <div className="mb-4 flex items-start gap-3">
+        <div className="mb-4 flex items-start justify-between gap-3">
           <div className="min-w-0 flex items-center gap-3">
             <div className="inline-flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#588157] to-[#3a5a40] text-white dark:from-[#82ad86] dark:to-[#6f9b74]">
               {job?.company?.logo ? (
@@ -697,14 +769,31 @@ function SquareJobCard({ job, isPremiumUser, onViewCompany, onMoreInfo }) {
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <p className="line-clamp-1 text-sm text-[#344e41] dark:text-[#d0d7dd]">{job?.company?.name || 'Company'}</p>
-                {isPremiumUser && hasMatchPercentage ? (
-                  <span className="shrink-0 rounded-full border border-[#bfd0af] bg-[#eef6ee] px-2.5 py-1 text-xs font-semibold text-[#3a5a40] dark:border-[#4b5a4e] dark:bg-[#2a2f35] dark:text-[#e9f3ea]">
-                    {matchPercentage}% fit
-                  </span>
-                ) : null}
               </div>
             </div>
           </div>
+
+          {hasMatchPercentage ? (
+            <div className="shrink-0 rounded-xl border border-[#c8d5b9] bg-[#eef6ee] px-2.5 py-2 dark:border-[#4b5a4e] dark:bg-[#2a2f35]">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="relative grid h-11 w-11 place-items-center rounded-full"
+                  style={{
+                    background: `conic-gradient(#3a5a40 ${matchPercentage}%, #d7e2ce ${matchPercentage}% 100%)`,
+                  }}
+                  aria-label={`${matchPercentage}% ${fitLabel.toLowerCase()}`}
+                  title={fitLabel}
+                >
+                  <div className="grid h-[39px] w-[39px] place-items-center rounded-full bg-[#f8fbf6] text-[10px] font-bold leading-none text-[#3a5a40] dark:bg-[#22272b] dark:text-[#e9f3ea]">
+                    <span>{matchPercentage}%</span>
+                  </div>
+                </div>
+                <p className="text-[11px] font-semibold leading-tight text-[#3a5a40] dark:text-[#e9f3ea]">
+                  You fit this job {matchPercentage}%
+                </p>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-[#344e41] dark:text-[#d0d7dd]">

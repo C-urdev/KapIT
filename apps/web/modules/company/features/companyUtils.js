@@ -3,6 +3,7 @@ export const COMPANY_PATHS = {
   help: '/company/help',
   premium: '/company/premium',
   postJob: '/company/post-job',
+  postJobPreAssessment: '/company/post-job/pre-assessment',
   postJobPayment: '/company/post-job/payment',
   jobs: '/company/jobs',
   applicants: '/company/applicants',

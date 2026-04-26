@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Moon, Sun, AlertCircle, Eye, EyeOff, GitFork } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
-import { loginUser, loginWithGoogle, loginWithGithub } from '@sharedServices/authService';
+import { createOAuthState, loginUser, loginWithGoogle, loginWithGithub } from '@sharedServices/authService';
 import TermsAndConditionsModal from '@sharedComponents/modals/TermsAndConditionsModal';
 
 export default function AuthPage({
@@ -169,17 +169,7 @@ export default function AuthPage({
       );
     } catch (err) {
       const rawMessage = String(err?.message || '').trim();
-      const normalized = rawMessage.toLowerCase();
-      if (
-        normalized.includes('user not found') ||
-        normalized.includes('account not found') ||
-        normalized.includes('not registered') ||
-        normalized.includes('does not exist')
-      ) {
-        setError('Account not registered. Please create an account first.');
-      } else {
-        setError(rawMessage || 'Unable to sign in. Please check your email and password.');
-      }
+      setError(rawMessage || 'Unable to sign in. Please check your email and password.');
     } finally {
       setLoading(false);
     }
@@ -213,7 +203,7 @@ export default function AuthPage({
     window.location.assign(url);
   };
 
-  const handleGoogleClick = () => {
+  const handleGoogleClick = async () => {
     if (loading) {
       return;
     }
@@ -229,21 +219,25 @@ export default function AuthPage({
       return;
     }
 
-    const redirectUri = `${getSocialAuthBaseUrl()}/auth/callback/google`;
-    const state = crypto.randomUUID();
+    setError('');
+    setLoading(true);
+    let state;
     try {
-      window.sessionStorage.setItem('oauth_google_state', state);
-      window.sessionStorage.setItem(
-        'oauth_google_intent',
-        JSON.stringify({
-          state,
-          mode: authMode,
-          accountType: accountType || null,
-        })
-      );
-    } catch {
-      // Continue without persisted state if storage is unavailable.
+      const oauthState = await createOAuthState({
+        provider: 'google',
+        mode: authMode,
+        accountTypeHint: authMode === 'signup' ? accountType : null,
+      });
+      state = String(oauthState?.state || '').trim();
+      if (!state) {
+        throw new Error('Unable to verify social sign-in request. Please try again.');
+      }
+    } catch (requestError) {
+      setLoading(false);
+      setError(String(requestError?.message || 'Unable to start Google sign-in right now.'));
+      return;
     }
+    const redirectUri = `${getSocialAuthBaseUrl()}/auth/callback/google`;
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,
@@ -256,7 +250,7 @@ export default function AuthPage({
     redirectToExternalAuth(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
   };
 
-  const handleGithubClick = () => {
+  const handleGithubClick = async () => {
     if (loading) {
       return;
     }
@@ -271,8 +265,32 @@ export default function AuthPage({
       alert("GitHub Client ID is not configured.");
       return;
     }
+    setError('');
+    setLoading(true);
+    let state;
+    try {
+      const oauthState = await createOAuthState({
+        provider: 'github',
+        mode: authMode,
+        accountTypeHint: authMode === 'signup' ? accountType : null,
+      });
+      state = String(oauthState?.state || '').trim();
+      if (!state) {
+        throw new Error('Unable to verify social sign-in request. Please try again.');
+      }
+    } catch (requestError) {
+      setLoading(false);
+      setError(String(requestError?.message || 'Unable to start GitHub sign-in right now.'));
+      return;
+    }
     const redirectUri = `${getSocialAuthBaseUrl()}/auth/callback/github`;
-    redirectToExternalAuth(`https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user:email`);
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      scope: 'user:email',
+      state,
+    });
+    redirectToExternalAuth(`https://github.com/login/oauth/authorize?${params.toString()}`);
   };
 
   const handleDeveloperMock = async (provider, email) => {
@@ -284,12 +302,21 @@ export default function AuthPage({
     setLoading(true);
     setError('');
     try {
+      const oauthState = await createOAuthState({
+        provider: provider === 'Google' ? 'google' : 'github',
+        mode: authMode,
+        accountTypeHint: authMode === 'signup' ? accountType : null,
+      });
+      const state = String(oauthState?.state || '').trim();
+      if (!state) {
+        throw new Error('Unable to verify social sign-in request. Please try again.');
+      }
+
       let data;
       if (provider === 'Google') {
-        const accountTypeHint = authMode === 'signup' ? (accountType || null) : null;
-        data = await loginWithGoogle('mock-google-' + email.split('@')[0], { accountTypeHint });
+        data = await loginWithGoogle('mock-google-' + email.split('@')[0], { state });
       } else {
-        data = await loginWithGithub('mock-github-' + email.split('@')[0]);
+        data = await loginWithGithub('mock-github-' + email.split('@')[0], { state });
       }
 
       if (data?.success && data?.user) {

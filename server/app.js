@@ -33,6 +33,14 @@ installConsoleBridge();
 
 const ensureSchemaReady = async () => warmRuntimeSchemas();
 
+const authResponseSecurityHeaders = (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  next();
+};
+
 const createApp = () => {
   const app = express();
   const allowedOrigins = getAllowedOrigins();
@@ -111,7 +119,7 @@ const createApp = () => {
   });
 
   app.use('/api/payments', paymentWebhookRoutes);
-  app.use('/api/auth', authApiRateLimiter, authRoutes);
+  app.use('/api/auth', authApiRateLimiter, authResponseSecurityHeaders, authRoutes);
   app.use('/api/match-jobs', developerApiRateLimiter);
   app.use('/api', matchRoutes);
   app.use('/api/public', publicApiRateLimiter, publicRoutes);

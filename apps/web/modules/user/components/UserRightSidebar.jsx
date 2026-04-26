@@ -67,11 +67,6 @@ export default function UserRightSidebar({ userType }) {
                     isPremium={company.isPremium !== false}
                   />
                 ))}
-                {liveFeaturedCompanies.length === 0 ? (
-                  <p className="text-xs text-[#344e41]/85 dark:text-[#d0d7dd]/85 px-2 pt-1">
-                    This list features companies hiring on KapIT, such as AI and engineering teams.
-                  </p>
-                ) : null}
               </>
             )
           ) : (

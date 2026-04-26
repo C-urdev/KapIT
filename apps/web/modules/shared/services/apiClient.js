@@ -209,7 +209,10 @@ export const apiRequest = async (path, options = {}) => {
       });
     }
 
-    throw new Error(getResponseErrorMessage({ response, data, resolvedPath }));
+    const error = new Error(getResponseErrorMessage({ response, data, resolvedPath }));
+    error.status = response.status;
+    error.data = data;
+    throw error;
   }
 
   return data;

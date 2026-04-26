@@ -48,6 +48,35 @@ const draftSchema = z
     workPreference: z.enum(['fully-remote', 'asynchronous-remote', 'on-site']).or(z.literal('')).optional().default(''),
     applicationDeadline: z.coerce.string().trim().max(40).optional().default(''),
     skills: z.array(z.coerce.string().trim().min(1).max(60)).max(50).optional().default([]),
+    preAssessment: z
+      .object({
+        enabled: z.boolean().optional().default(false),
+        instructions: z.coerce.string().trim().max(2000).optional().default(''),
+        questions: z
+          .array(
+            z.object({
+              id: z.coerce.string().trim().max(80).optional().default(''),
+              question: z.coerce.string().trim().min(1).max(1000),
+              imageUrl: z
+                .coerce.string()
+                .trim()
+                .max(2000000)
+                .refine((value) => !value || isAllowedImageUrl(value), 'Invalid URL')
+                .optional()
+                .default(''),
+              criteria: z.array(z.coerce.string().trim().min(1).max(200)).max(20).optional().default([]),
+            })
+          )
+          .max(12)
+          .optional()
+          .default([]),
+      })
+      .optional()
+      .default({
+        enabled: false,
+        instructions: '',
+        questions: [],
+      }),
   })
   .passthrough();
 
@@ -89,6 +118,41 @@ const writeSchemas = {
   authLocalPasswordResetBypass: schema(z.object({ email }).strict()),
   authVerifyOtp: schema(z.object({ email, code: z.string().length(6).regex(/^\d{6}$/) }).strict()),
   authResetPasswordOtp: schema(z.object({ resetToken: z.string().min(10).max(512), new_password: password }).strict()),
+  authOAuthStateCreate: schema(
+    z
+      .object({
+        provider: z.enum(['google', 'github']),
+        mode: z.enum(['login', 'signup']).optional(),
+        accountTypeHint: accountType.optional(),
+      })
+      .strict()
+  ),
+  authGoogleLogin: schema(
+    z
+      .object({
+        credential: z.string().min(6).max(16384),
+        state: z.string().min(8).max(512),
+      })
+      .strict()
+  ),
+  authGithubLogin: schema(
+    z
+      .object({
+        code: z.string().min(4).max(4096),
+        state: z.string().min(8).max(512),
+      })
+      .strict()
+  ),
+  authSocialCompleteSignup: schema(
+    z
+      .object({
+        socialSignupToken: z.string().min(10).max(4096).optional(),
+        verificationToken: z.string().min(10).max(4096),
+        password,
+        accountType,
+      })
+      .strict()
+  ),
   authRefresh: schema(z.object({}).strict()),
   authLogout: schema(z.object({}).strict()),
   authSaveJob: schema(z.object({ jobId: z.coerce.number().int().positive() }).strict()),
