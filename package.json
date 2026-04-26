@@ -13,6 +13,7 @@
     "audit": "npm audit --audit-level=high",
     "audit:ci": "npm audit --audit-level=high --omit=dev",
     "build": "node scripts/run-web.js build",
+    "build:vercel": "npm ci --prefix apps/web --no-audit --no-fund && node scripts/run-web.js build",
     "test": "node --test \"server/tests/**/*.test.cjs\"",
     "next:dev": "node scripts/run-web.js dev",
     "next:build": "node scripts/run-web.js build",

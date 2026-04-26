@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -30,7 +31,35 @@ const quietStartup = process.env.QUIET_STARTUP === 'true';
 const hideRequestLines = scriptName === 'dev' && process.env.HIDE_NEXT_REQUEST_LINES !== 'false';
 const forceCleanNextDev = process.env.FORCE_CLEAN_NEXT_DEV !== 'false';
 const useTurbopack = scriptName === 'dev' && process.env.NEXT_USE_TURBOPACK !== 'false';
-const nextBin = path.resolve(appDirectory, 'node_modules', 'next', 'dist', 'bin', 'next');
+const appRequire = createRequire(path.join(appDirectory, 'package.json'));
+const resolveNextBin = () => {
+  const fallbackPath = path.resolve(appDirectory, 'node_modules', 'next', 'dist', 'bin', 'next');
+
+  try {
+    return appRequire.resolve('next/dist/bin/next');
+  } catch {}
+
+  try {
+    return createRequire(path.join(repoRoot, 'package.json')).resolve('next/dist/bin/next');
+  } catch {}
+
+  if (fs.existsSync(fallbackPath)) {
+    return fallbackPath;
+  }
+
+  return null;
+};
+
+const nextBin = resolveNextBin();
+if (!nextBin) {
+  console.error(
+    [
+      "Cannot resolve 'next/dist/bin/next' for apps/web.",
+      "Install frontend dependencies first: npm ci --prefix apps/web",
+    ].join('\n'),
+  );
+  process.exit(1);
+}
 const command = process.execPath;
 const args = [nextBin, scriptName];
 
@@ -77,13 +106,30 @@ const ensureDeterministicRoutesManifest = () => {
   const nextDirectory = path.join(appDirectory, '.next');
   const sourceManifest = path.join(nextDirectory, 'routes-manifest.json');
   const deterministicManifest = path.join(nextDirectory, 'routes-manifest-deterministic.json');
+  const shouldSyncToRepoRoot =
+    process.env.CI === 'true' || Boolean(process.env.VERCEL) || Boolean(process.env.DEPLOY_ID);
+  const repoRootNextDirectory = path.join(repoRoot, '.next');
+  const repoRootDeterministicManifest = path.join(repoRootNextDirectory, 'routes-manifest-deterministic.json');
 
   if (fs.existsSync(deterministicManifest) || !fs.existsSync(sourceManifest)) {
+    if (!shouldSyncToRepoRoot || !fs.existsSync(deterministicManifest)) {
+      return;
+    }
+
+    fs.mkdirSync(repoRootNextDirectory, { recursive: true });
+    fs.copyFileSync(deterministicManifest, repoRootDeterministicManifest);
+    console.log('Synced .next/routes-manifest-deterministic.json to repo root');
     return;
   }
 
   fs.copyFileSync(sourceManifest, deterministicManifest);
   console.log('Created .next/routes-manifest-deterministic.json');
+
+  if (shouldSyncToRepoRoot) {
+    fs.mkdirSync(repoRootNextDirectory, { recursive: true });
+    fs.copyFileSync(deterministicManifest, repoRootDeterministicManifest);
+    console.log('Synced .next/routes-manifest-deterministic.json to repo root');
+  }
 };
 
 let child;
