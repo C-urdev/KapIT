@@ -29,6 +29,11 @@ export default function AuthPageClient({ initialMode = 'login' }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const accountType = normalizeAccountType(searchParams.get('type')) || null;
+  const socialNoAccountProviderRaw = String(searchParams.get('socialNoAccount') || '').trim().toLowerCase();
+  const socialNoAccountProvider =
+    socialNoAccountProviderRaw === 'google' || socialNoAccountProviderRaw === 'github'
+      ? socialNoAccountProviderRaw
+      : '';
   const normalizedInitialMode = initialMode === 'signup' && !accountType ? 'login' : initialMode;
 
   const [pendingSignup, setPendingSignup] = useState(null);
@@ -199,6 +204,7 @@ export default function AuthPageClient({ initialMode = 'login' }) {
       <AuthPage
         accountType={accountType}
         initialMode={normalizedInitialMode}
+        socialNoAccountProvider={socialNoAccountProvider}
         onBack={() => router.push('/')}
         onRequestAccountType={() => router.push('/?accountTypeModal=1')}
         onForgotPassword={() => router.push('/forgot-password')}

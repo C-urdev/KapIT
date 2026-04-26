@@ -30,6 +30,16 @@ function GoogleCallbackContent() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const getAndClearOauthStartMode = () => {
+      try {
+        const value = String(window.sessionStorage.getItem('oauth_start_mode') || '').trim().toLowerCase();
+        window.sessionStorage.removeItem('oauth_start_mode');
+        return value === 'signup' ? 'signup' : 'login';
+      } catch {
+        return 'login';
+      }
+    };
+
     const redirectToSafeLogin = () => {
       router.replace('/auth/login?authError=social');
     };
@@ -60,7 +70,12 @@ function GoogleCallbackContent() {
       } catch (error) {
         const responseCode = String(error?.data?.code || '').trim();
         if (responseCode === 'SOCIAL_ACCOUNT_NOT_REGISTERED') {
-          router.replace('/auth/social-signup');
+          const startMode = getAndClearOauthStartMode();
+          if (startMode === 'signup') {
+            router.replace('/auth/social-signup');
+            return;
+          }
+          router.replace('/auth/login?socialNoAccount=google');
           return;
         }
         if (responseCode === 'SOCIAL_SIGNUP_ACCOUNT_TYPE_MISMATCH') {

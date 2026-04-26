@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Moon, Sun, AlertCircle, Eye, EyeOff, GitFork } from 'lucide-react';
+import { Moon, Sun, AlertCircle, Eye, EyeOff, GitFork, X } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
 import { createOAuthState, loginUser, loginWithGoogle, loginWithGithub } from '@sharedServices/authService';
@@ -10,6 +10,7 @@ import TermsAndConditionsModal from '@sharedComponents/modals/TermsAndConditions
 export default function AuthPage({
   userType,
   accountType,
+  socialNoAccountProvider = '',
   onLogin,
   onBeginSignup,
   onRequestAccountType,
@@ -33,6 +34,8 @@ export default function AuthPage({
   const [authTermsOpen, setAuthTermsOpen] = useState(false);
   const [pendingSignupInput, setPendingSignupInput] = useState(null);
   const [termsDecisionError, setTermsDecisionError] = useState('');
+  const [showRegisterPrompt, setShowRegisterPrompt] = useState(false);
+  const [hasAppliedSocialNoAccountPrompt, setHasAppliedSocialNoAccountPrompt] = useState(false);
   const isLocalAuthBypassEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS === 'true';
 
   const isLoopbackHost = () => {
@@ -75,7 +78,24 @@ export default function AuthPage({
     setAuthTermsOpen(false);
     setPendingSignupInput(null);
     setTermsDecisionError('');
+    setShowRegisterPrompt(false);
+    setHasAppliedSocialNoAccountPrompt(false);
   }, [initialMode]);
+
+  useEffect(() => {
+    if (authMode !== 'login' || hasAppliedSocialNoAccountPrompt) {
+      return;
+    }
+    if (!socialNoAccountProvider) {
+      return;
+    }
+
+    const providerLabel = formatSocialProviderLabel(socialNoAccountProvider);
+    setError(`No account is registered for this ${providerLabel} sign-in. Please register first.`);
+    setInfoMessage('');
+    setShowRegisterPrompt(true);
+    setHasAppliedSocialNoAccountPrompt(true);
+  }, [authMode, hasAppliedSocialNoAccountPrompt, socialNoAccountProvider]);
 
   useEffect(() => {
     onWarmRoute?.(authMode === 'signup' ? (accountType || 'developer') : 'login');
@@ -86,6 +106,19 @@ export default function AuthPage({
     : accountType === 'developer'
       ? 'IT Professional / Developer account'
       : '';
+  const shouldSuggestRegister = (message) => {
+    const normalized = String(message || '').trim().toLowerCase();
+    return normalized.includes('invalid email or password')
+      || normalized.includes('invalid credentials')
+      || normalized.includes('user not found');
+  };
+  const formatSocialProviderLabel = (value) =>
+    String(value || '').trim().toLowerCase() === 'google'
+      ? 'Google'
+      : String(value || '').trim().toLowerCase() === 'github'
+        ? 'GitHub'
+        : 'social';
+
   const deriveSignupUsername = (email) => {
     const localPart = String(email || '').split('@')[0] || '';
     const sanitized = localPart.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 50);
@@ -132,6 +165,7 @@ export default function AuthPage({
     e.preventDefault();
     setError('');
     setInfoMessage('');
+    setShowRegisterPrompt(false);
 
     if (authMode === 'signup') {
       if (!accountType) {
@@ -175,6 +209,7 @@ export default function AuthPage({
     } catch (err) {
       const rawMessage = String(err?.message || '').trim();
       setError(rawMessage || 'Unable to sign in. Please check your email and password.');
+      setShowRegisterPrompt(authMode === 'login' && shouldSuggestRegister(rawMessage));
     } finally {
       setLoading(false);
     }
@@ -185,10 +220,11 @@ export default function AuthPage({
     return rawBase.replace(/\/+$/, '');
   };
 
-  const redirectToExternalAuth = (url) => {
+  const redirectToExternalAuth = (url, mode = 'login') => {
     setLoading(true);
     try {
       window.sessionStorage.setItem('oauth_in_progress', '1');
+      window.sessionStorage.setItem('oauth_start_mode', mode === 'signup' ? 'signup' : 'login');
     } catch {
       // Ignore storage failures.
     }
@@ -212,6 +248,7 @@ export default function AuthPage({
     if (loading) {
       return;
     }
+    setShowRegisterPrompt(false);
     if (authMode === 'signup' && !accountType) {
       setError('Please choose whether you are looking to hire or looking for a job first.');
       onRequestAccountType?.();
@@ -257,13 +294,14 @@ export default function AuthPage({
       nonce: crypto.randomUUID(),
       prompt: 'select_account',
     });
-    redirectToExternalAuth(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
+    redirectToExternalAuth(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`, authMode);
   };
 
   const handleGithubClick = async () => {
     if (loading) {
       return;
     }
+    setShowRegisterPrompt(false);
     if (authMode === 'signup' && !accountType) {
       setError('Please choose whether you are looking to hire or looking for a job first.');
       onRequestAccountType?.();
@@ -305,7 +343,7 @@ export default function AuthPage({
       scope: 'user:email',
       state,
     });
-    redirectToExternalAuth(`https://github.com/login/oauth/authorize?${params.toString()}`);
+    redirectToExternalAuth(`https://github.com/login/oauth/authorize?${params.toString()}`, authMode);
   };
 
   const handleDeveloperMock = async (provider, email) => {
@@ -403,7 +441,10 @@ export default function AuthPage({
                 <input
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  onChange={(e) => {
+                    setFormData({...formData, email: e.target.value});
+                    setShowRegisterPrompt(false);
+                  }}
                   className="w-full px-4 py-2 border border-[#a3b18a] dark:border-[#444d57] rounded-lg bg-white dark:bg-[#1a1d20] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74] focus:border-transparent outline-none transition-colors"
                   required
                 />
@@ -415,7 +456,10 @@ export default function AuthPage({
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    onChange={(e) => {
+                      setFormData({...formData, password: e.target.value});
+                      setShowRegisterPrompt(false);
+                    }}
                     className="w-full px-4 py-2 pr-12 border border-[#a3b18a] dark:border-[#444d57] rounded-lg bg-white dark:bg-[#1a1d20] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74] focus:border-transparent outline-none transition-colors"
                     required
                   />
@@ -517,24 +561,67 @@ export default function AuthPage({
                     setAuthMode('signup');
                     setError('');
                     setInfoMessage('');
+                    setShowRegisterPrompt(false);
                     return;
                   }
 
                   setAuthMode('login');
                   setError('');
                   setInfoMessage('');
+                  setShowRegisterPrompt(false);
                 }}
                 className="text-sm text-[#344e41] dark:text-[#d0d7dd]"
               >
                 {authMode === 'login' ? "Don't have an account? " : 'Already have an account? '}
                 <span className="text-[#588157] dark:text-[#6f9b74] hover:underline font-semibold">
-                  {authMode === 'login' ? 'Sign up' : 'Sign in'}
+                  {authMode === 'login' ? 'Register' : 'Sign in'}
                 </span>
               </button>
             </div>
           </div>
         </div>
       </main>
+
+      {showRegisterPrompt ? (
+        <div className="fixed right-4 top-20 z-40 w-[min(92vw,360px)] sm:right-6 sm:top-24">
+          <div
+            role="dialog"
+            aria-label="Register account prompt"
+            className="relative rounded-2xl border border-[#8fa87d] bg-white p-4 shadow-[0_16px_34px_rgba(27,42,29,0.18)] ring-1 ring-[#d8e5d0] dark:border-[#4f5d52] dark:bg-[#22272b] dark:ring-[#314236]"
+          >
+            <button
+              type="button"
+              onClick={() => setShowRegisterPrompt(false)}
+              aria-label="Close register prompt"
+              className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-md text-[#5f6f52] transition-colors hover:bg-[#f0f5f1] hover:text-[#2a3d2f] dark:text-[#adb5be] dark:hover:bg-[#31363d] dark:hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <h3 className="mt-1 text-base font-semibold text-[#2a3d2f] dark:text-white">No account found for this sign in.</h3>
+            <p className="mt-1 text-sm text-[#4b5563] dark:text-[#d0d7dd]">
+              Register an account first, then sign in.
+            </p>
+            <div className="mt-4 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRegisterPrompt(false);
+                  setError('');
+                  setInfoMessage('');
+                  if (!accountType) {
+                    onRequestAccountType?.();
+                    return;
+                  }
+                  setAuthMode('signup');
+                }}
+                className="rounded-lg bg-[#d69d1a] px-4 py-2 text-sm font-semibold text-[#2b1b00] transition-colors hover:bg-[#bf8a11] dark:bg-[#f2cf6d] dark:text-[#3d2b00] dark:hover:bg-[#f7d982]"
+              >
+                Register Account
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Auth-level Terms Modal Overlay */}
       <TermsAndConditionsModal
