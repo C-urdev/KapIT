@@ -21,7 +21,9 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          npm ci --prefix apps/web --no-audit --no-fund
 
       - name: Run lint (if present)
         run: npm run lint --if-present
