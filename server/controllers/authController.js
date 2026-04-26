@@ -236,7 +236,8 @@ const register = async (req, res) => {
   const { email, password, username, userType, accountType, verificationToken, termsAccepted } = req.body;
 
   // Validate inputs
-  if (!email || !password || !username || !userType || !accountType) {
+  // Accept either accountType or userType for backward compatibility.
+  if (!email || !password || !username || (!userType && !accountType)) {
     return res.status(400).json({ message: 'All fields are required' });
   }
 
