@@ -24,11 +24,20 @@ const mockServerModule = (relativePath, exportsValue) => {
   };
 };
 
-const createDatabaseMock = () => {
+const createDatabaseMock = (options = {}) => {
+  const existingUserByEmail = options.existingUserByEmail || null;
+
   const client = {
-    query: async (sql) => {
+    query: async (sql, params = []) => {
       const normalized = String(sql).replace(/\s+/g, ' ').trim();
       if (normalized.startsWith('SELECT * FROM users WHERE')) {
+        if (normalized.includes('LOWER(email) = $1')) {
+          const requestedEmail = String(params[0] || '').trim().toLowerCase();
+          const existingEmail = String(existingUserByEmail?.email || '').trim().toLowerCase();
+          if (existingUserByEmail && requestedEmail && requestedEmail === existingEmail) {
+            return { rows: [existingUserByEmail] };
+          }
+        }
         return { rows: [] };
       }
       return { rows: [] };
@@ -42,9 +51,9 @@ const createDatabaseMock = () => {
   };
 };
 
-const loadApp = () => {
+const loadApp = (options = {}) => {
   clearServerModuleCache();
-  mockServerModule('config/database.js', createDatabaseMock());
+  mockServerModule('config/database.js', createDatabaseMock(options));
   mockServerModule('config/runtimeSchema.js', {
     warmRuntimeSchemas: async () => {},
     ensureBaseUserSchemaReady: async () => {},
@@ -163,4 +172,26 @@ test('Auth route responses send no-store and noindex headers', async () => {
   assert.equal(response.headers['cache-control'], 'no-store, max-age=0');
   assert.equal(response.headers['referrer-policy'], 'no-referrer');
   assert.equal(response.headers['x-robots-tag'], 'noindex, nofollow');
+});
+
+test('OAuth signup blocks account-type mismatch for existing email accounts', async () => {
+  const app = loadApp({
+    existingUserByEmail: {
+      id: 'existing-user-id',
+      email: 'mismatch@example.com',
+      username: 'existing-user',
+      user_type: 'employee',
+      account_type: 'developer',
+      profile_completed: false,
+    },
+  });
+  const agent = createLocalAgent(app);
+  const state = await createOAuthState({ agent, provider: 'github', mode: 'signup' });
+
+  const response = await postLocal(agent, '/api/auth/github')
+    .send({ code: 'mock-github-mismatch', state });
+
+  assert.equal(response.status, 409);
+  assert.equal(response.body.success, false);
+  assert.equal(response.body.code, 'SOCIAL_SIGNUP_ACCOUNT_TYPE_MISMATCH');
 });

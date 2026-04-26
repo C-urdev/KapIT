@@ -53,6 +53,9 @@ const getJwtSecretOrThrow = () => {
 
 const getProviderField = (provider) => (provider === 'google' ? 'google_id' : 'github_id');
 const getResolvedUserType = (accountType) => (accountType === 'company' ? 'company' : 'employee');
+const getUserAccountType = (user) => (
+  normalizeAccountType(user?.account_type) || normalizeAccountType(user?.user_type) || 'developer'
+);
 
 const getCookieOptions = (maxAgeMs) => ({
   httpOnly: true,
@@ -260,11 +263,24 @@ const findExistingUserForSocialLogin = async ({ pgClient, email, provider, provi
     [providerId]
   );
   if (providerResult.rows.length) {
-    return providerResult.rows[0];
+    return {
+      user: providerResult.rows[0],
+      matchType: 'provider',
+    };
   }
 
   const emailResult = await pgClient.query('SELECT * FROM users WHERE LOWER(email) = $1 LIMIT 1', [email]);
-  return emailResult.rows[0] || null;
+  if (emailResult.rows.length) {
+    return {
+      user: emailResult.rows[0],
+      matchType: 'email',
+    };
+  }
+
+  return {
+    user: null,
+    matchType: null,
+  };
 };
 
 const linkProviderToExistingUser = async ({ pgClient, user, provider, providerId }) => {
@@ -299,7 +315,7 @@ const issueSessionForUser = async ({ user, req, res }) => {
   };
 };
 
-const handleSocialLogin = async ({ email, name, provider, providerId, accountTypeHint, req, res }) => {
+const handleSocialLogin = async ({ email, name, provider, providerId, accountTypeHint, oauthMode, req, res }) => {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) {
     return { success: false, statusCode: 400, message: 'Social account email is missing.' };
@@ -308,12 +324,14 @@ const handleSocialLogin = async ({ email, name, provider, providerId, accountTyp
   let pgClient;
   try {
     pgClient = await pool.connect();
-    const existingUser = await findExistingUserForSocialLogin({
+    const existingLookup = await findExistingUserForSocialLogin({
       pgClient,
       email: normalizedEmail,
       provider,
       providerId,
     });
+    const existingUser = existingLookup.user;
+    const existingMatchType = existingLookup.matchType;
 
     if (!existingUser) {
       setSocialSignupSession(res, {
@@ -330,6 +348,29 @@ const handleSocialLogin = async ({ email, name, provider, providerId, accountTyp
         providerId,
         accountTypeHint,
       });
+    }
+
+    if (oauthMode === 'signup' && existingMatchType === 'email') {
+      const existingAccountType = getUserAccountType(existingUser);
+      const normalizedHint = normalizeAccountType(accountTypeHint);
+
+      if (normalizedHint && normalizedHint !== existingAccountType) {
+        return {
+          success: false,
+          statusCode: 409,
+          code: 'SOCIAL_SIGNUP_ACCOUNT_TYPE_MISMATCH',
+          message: 'This email is already used by an existing account with a different account type.',
+          error: 'This email is already used by an existing account with a different account type.',
+        };
+      }
+
+      return {
+        success: false,
+        statusCode: 409,
+        code: 'SOCIAL_SIGNUP_EMAIL_ALREADY_USED',
+        message: 'This email is already registered. Please sign in instead.',
+        error: 'This email is already registered. Please sign in instead.',
+      };
     }
 
     const linkedUser = await linkProviderToExistingUser({
@@ -527,6 +568,7 @@ const googleLogin = async (req, res) => {
         provider: 'google',
         providerId: 'mock-' + Date.now(),
         accountTypeHint: normalizedAccountTypeHint,
+        oauthMode: stateCheck.mode,
         req,
         res,
       });
@@ -556,6 +598,7 @@ const googleLogin = async (req, res) => {
       provider: 'google',
       providerId: payload.sub,
       accountTypeHint: normalizedAccountTypeHint,
+      oauthMode: stateCheck.mode,
       req,
       res,
     });
@@ -599,6 +642,7 @@ const githubLogin = async (req, res) => {
           provider: 'github',
           providerId: 'mock-gh-' + Date.now(),
           accountTypeHint: normalizedAccountTypeHint,
+          oauthMode: stateCheck.mode,
           req,
           res,
         });
@@ -652,6 +696,7 @@ const githubLogin = async (req, res) => {
       provider: 'github',
       providerId: String(userData.id),
       accountTypeHint: normalizedAccountTypeHint,
+      oauthMode: stateCheck.mode,
       req,
       res,
     });
