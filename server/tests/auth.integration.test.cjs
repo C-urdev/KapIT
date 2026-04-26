@@ -74,7 +74,7 @@ const createAuthPoolMock = () => {
         return { rows: row ? [row] : [] };
       }
 
-      if (normalized.startsWith('INSERT INTO users (id, username, email, password, user_type, account_type)')) {
+      if (normalized.startsWith('INSERT INTO users (id, username, email, password, user_type, account_type')) {
         const [id, username, email, password, userType, accountType] = params;
         const now = new Date().toISOString();
         const row = {

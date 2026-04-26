@@ -14,8 +14,19 @@ const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
 const OAUTH_STATE_COOKIE_NAME = process.env.OAUTH_STATE_COOKIE_NAME || 'kapit_oauth_state';
 const SOCIAL_SIGNUP_COOKIE_NAME = process.env.SOCIAL_SIGNUP_COOKIE_NAME || 'kapit_social_signup';
-const OAUTH_STATE_TTL_MS = Math.max(60_000, Number(process.env.OAUTH_STATE_TTL_MS || 10 * 60 * 1000));
-const SOCIAL_SIGNUP_TTL_MS = Math.max(60_000, Number(process.env.SOCIAL_SIGNUP_TTL_MS || 15 * 60 * 1000));
+const parseTtlMs = (rawValue, fallbackMs, minimumMs) => {
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallbackMs;
+  }
+  return Math.max(minimumMs, Math.floor(parsed));
+};
+
+const isProduction = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+const MIN_OAUTH_TTL_MS = isProduction ? 60_000 : 100;
+const MIN_SOCIAL_SIGNUP_TTL_MS = isProduction ? 60_000 : 100;
+const OAUTH_STATE_TTL_MS = parseTtlMs(process.env.OAUTH_STATE_TTL_MS, 10 * 60 * 1000, MIN_OAUTH_TTL_MS);
+const SOCIAL_SIGNUP_TTL_MS = parseTtlMs(process.env.SOCIAL_SIGNUP_TTL_MS, 15 * 60 * 1000, MIN_SOCIAL_SIGNUP_TTL_MS);
 const COOKIE_SECURE = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
 const COOKIE_SAME_SITE = String(process.env.AUTH_COOKIE_SAMESITE || 'lax').toLowerCase() === 'strict' ? 'strict' : 'lax';
 const OAUTH_STATE_PURPOSE = 'oauth-state-store';
