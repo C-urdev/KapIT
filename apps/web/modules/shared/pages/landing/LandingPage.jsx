@@ -203,7 +203,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
             style={{
               background:
                 theme === 'dark'
-                  ? 'radial-gradient(58% 44% at 50% 14%, rgba(96, 165, 250, 0.25) 0%, rgba(129, 140, 248, 0.16) 44%, rgba(18, 20, 22, 0) 86%), radial-gradient(58% 38% at 50% 72%, rgba(99, 102, 241, 0.12) 0%, rgba(18,20,22,0) 78%)'
+                  ? 'radial-gradient(58% 44% at 50% 14%, rgba(226, 232, 240, 0.22) 0%, rgba(148, 163, 184, 0.13) 44%, rgba(18, 20, 22, 0) 86%), radial-gradient(58% 38% at 50% 72%, rgba(163, 230, 53, 0.07) 0%, rgba(18,20,22,0) 78%)'
                   : 'radial-gradient(58% 44% at 50% 14%, rgba(16, 185, 129, 0.1) 0%, rgba(163, 230, 53, 0.06) 44%, rgba(247, 246, 241, 0) 86%), radial-gradient(58% 38% at 50% 72%, rgba(245, 222, 179, 0.18) 0%, rgba(247,246,241,0) 80%)',
             }}
           />
@@ -212,20 +212,20 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
             style={{
               background:
                 theme === 'dark'
-                  ? 'radial-gradient(58% 90% at 50% 100%, rgba(129, 140, 248, 0.26) 0%, rgba(96, 165, 250, 0.16) 36%, rgba(18,20,22,0) 76%)'
+                  ? 'radial-gradient(58% 90% at 50% 100%, rgba(203, 213, 225, 0.2) 0%, rgba(148, 163, 184, 0.12) 36%, rgba(18,20,22,0) 76%)'
                   : 'radial-gradient(58% 90% at 50% 100%, rgba(132, 204, 22, 0.14) 0%, rgba(16, 185, 129, 0.1) 34%, rgba(247,246,241,0) 78%)',
             }}
           />
           <div
             className="landing-bg-wave absolute inset-x-[7%] bottom-[10%] h-20 rounded-[50%] border"
             style={{
-              borderColor: theme === 'dark' ? 'rgba(148,163,184,0.28)' : 'rgba(190, 242, 100, 0.24)',
+              borderColor: theme === 'dark' ? 'rgba(203,213,225,0.24)' : 'rgba(190, 242, 100, 0.24)',
             }}
           />
           <div
             className="landing-bg-wave landing-bg-wave-delay absolute inset-x-[15%] bottom-[11.5%] h-16 rounded-[50%] border"
             style={{
-              borderColor: theme === 'dark' ? 'rgba(129,140,248,0.2)' : 'rgba(163, 230, 53, 0.2)',
+              borderColor: theme === 'dark' ? 'rgba(226,232,240,0.18)' : 'rgba(163, 230, 53, 0.2)',
             }}
           />
           {LANDING_BG_STARS.map((star) => (
@@ -240,7 +240,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
           className="pointer-events-none absolute inset-x-0 top-0 hidden h-[42vh] dark:block"
           style={{
             background:
-              'linear-gradient(180deg, rgba(18,20,22,0.96) 0%, rgba(18,20,22,0.74) 36%, rgba(18,20,22,0.38) 64%, rgba(18,20,22,0) 100%), radial-gradient(58% 54% at 50% 0%, rgba(30,45,42,0.38) 0%, rgba(18,20,22,0) 72%)',
+              'linear-gradient(180deg, rgba(18,20,22,0.96) 0%, rgba(18,20,22,0.74) 36%, rgba(18,20,22,0.38) 64%, rgba(18,20,22,0) 100%), radial-gradient(58% 54% at 50% 0%, rgba(203,213,225,0.14) 0%, rgba(18,20,22,0) 72%)',
           }}
           aria-hidden="true"
         />
@@ -310,14 +310,14 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
                       className="absolute left-1/2 top-1/2 h-12 sm:h-14 w-[102%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border"
                       style={{
                         borderColor:
-                          theme === 'dark' ? 'rgba(147,197,253,0.3)' : 'rgba(253,224,71,0.34)',
+                          theme === 'dark' ? 'rgba(203,213,225,0.28)' : 'rgba(253,224,71,0.34)',
                       }}
                     />
                     <div
                       className="absolute left-1/2 top-1/2 h-9 sm:h-10 w-[84%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border"
                       style={{
                         borderColor:
-                          theme === 'dark' ? 'rgba(129,140,248,0.24)' : 'rgba(250,204,21,0.3)',
+                          theme === 'dark' ? 'rgba(226,232,240,0.22)' : 'rgba(250,204,21,0.3)',
                       }}
                     />
                     <div
@@ -325,7 +325,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
                       style={{
                         background:
                           theme === 'dark'
-                            ? 'radial-gradient(60% 100% at 50% 50%, rgba(129,140,248,0.16) 0%, rgba(59,130,246,0.1) 42%, rgba(0,0,0,0) 76%)'
+                            ? 'radial-gradient(60% 100% at 50% 50%, rgba(203,213,225,0.14) 0%, rgba(148,163,184,0.08) 42%, rgba(0,0,0,0) 76%)'
                             : 'radial-gradient(60% 100% at 50% 50%, rgba(253,224,71,0.2) 0%, rgba(250,204,21,0.12) 42%, rgba(0,0,0,0) 76%)',
                       }}
                     />
