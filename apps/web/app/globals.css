@@ -136,3 +136,80 @@ html::-webkit-scrollbar-thumb {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+@keyframes glowPulse {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.72;
+  }
+  50% {
+    transform: translate3d(0, -6px, 0) scale(1.035);
+    opacity: 0.92;
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.72;
+  }
+}
+
+@keyframes horizonFlow {
+  0% {
+    transform: translate3d(0, 0, 0) scaleX(1);
+    opacity: 0.65;
+  }
+  50% {
+    transform: translate3d(0, 1px, 0) scaleX(1.03);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scaleX(1);
+    opacity: 0.65;
+  }
+}
+
+@keyframes starTwinkle {
+  0% {
+    opacity: 0.22;
+    transform: translate3d(0, 0, 0) scale(0.92);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translate3d(0, -2px, 0) scale(1.05);
+  }
+  100% {
+    opacity: 0.22;
+    transform: translate3d(0, 0, 0) scale(0.92);
+  }
+}
+
+.landing-bg-glow {
+  will-change: transform, opacity;
+  animation: glowPulse 15s ease-in-out infinite;
+}
+
+.landing-bg-horizon,
+.landing-bg-wave,
+.landing-bg-streak {
+  will-change: transform, opacity;
+  animation: horizonFlow 19s ease-in-out infinite;
+}
+
+.landing-bg-wave-delay {
+  animation-delay: 4.5s;
+}
+
+.landing-bg-star {
+  will-change: transform, opacity;
+  animation: starTwinkle 7.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-bg-glow,
+  .landing-bg-horizon,
+  .landing-bg-wave,
+  .landing-bg-streak,
+  .landing-bg-star {
+    animation: none !important;
+    transform: none !important;
+  }
+}

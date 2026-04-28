@@ -36,6 +36,25 @@ const CATEGORIES = [
   { title: 'Cloud & DevOps', icon: Cloud },
 ];
 
+const LANDING_BG_STARS = [
+  { top: '8%', left: '10%', size: 'h-1 w-1', delay: '0s' },
+  { top: '12%', left: '24%', size: 'h-1.5 w-1.5', delay: '0.8s' },
+  { top: '10%', left: '42%', size: 'h-1 w-1', delay: '1.4s' },
+  { top: '15%', left: '59%', size: 'h-1.5 w-1.5', delay: '0.5s' },
+  { top: '11%', left: '76%', size: 'h-1 w-1', delay: '1.8s' },
+  { top: '18%', left: '89%', size: 'h-1.5 w-1.5', delay: '1.1s' },
+  { top: '26%', left: '13%', size: 'h-1 w-1', delay: '0.7s' },
+  { top: '31%', left: '31%', size: 'h-1.5 w-1.5', delay: '1.9s' },
+  { top: '35%', left: '49%', size: 'h-1 w-1', delay: '0.3s' },
+  { top: '39%', left: '66%', size: 'h-1.5 w-1.5', delay: '1.5s' },
+  { top: '43%', left: '84%', size: 'h-1 w-1', delay: '0.9s' },
+  { top: '52%', left: '17%', size: 'h-1.5 w-1.5', delay: '1.2s' },
+  { top: '57%', left: '37%', size: 'h-1 w-1', delay: '0.2s' },
+  { top: '63%', left: '56%', size: 'h-1.5 w-1.5', delay: '1.6s' },
+  { top: '68%', left: '74%', size: 'h-1 w-1', delay: '0.6s' },
+  { top: '74%', left: '91%', size: 'h-1.5 w-1.5', delay: '1.3s' },
+];
+
 export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn }) {
   const { theme, toggleTheme } = useTheme();
   const [query, setQuery] = useState('');
@@ -178,6 +197,45 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
           }}
           aria-hidden="true"
         />
+        <div className="pointer-events-none absolute inset-0 z-[1] overflow-hidden" aria-hidden="true">
+          <div
+            className="landing-bg-glow absolute inset-0"
+            style={{
+              background:
+                theme === 'dark'
+                  ? 'radial-gradient(58% 44% at 50% 14%, rgba(96, 165, 250, 0.25) 0%, rgba(129, 140, 248, 0.16) 44%, rgba(18, 20, 22, 0) 86%), radial-gradient(58% 38% at 50% 72%, rgba(99, 102, 241, 0.12) 0%, rgba(18,20,22,0) 78%)'
+                  : 'radial-gradient(58% 44% at 50% 14%, rgba(16, 185, 129, 0.1) 0%, rgba(163, 230, 53, 0.06) 44%, rgba(247, 246, 241, 0) 86%), radial-gradient(58% 38% at 50% 72%, rgba(245, 222, 179, 0.18) 0%, rgba(247,246,241,0) 80%)',
+            }}
+          />
+          <div
+            className="landing-bg-horizon absolute inset-x-[-10%] bottom-[8%] h-36 sm:h-44"
+            style={{
+              background:
+                theme === 'dark'
+                  ? 'radial-gradient(58% 90% at 50% 100%, rgba(129, 140, 248, 0.26) 0%, rgba(96, 165, 250, 0.16) 36%, rgba(18,20,22,0) 76%)'
+                  : 'radial-gradient(58% 90% at 50% 100%, rgba(132, 204, 22, 0.14) 0%, rgba(16, 185, 129, 0.1) 34%, rgba(247,246,241,0) 78%)',
+            }}
+          />
+          <div
+            className="landing-bg-wave absolute inset-x-[7%] bottom-[10%] h-20 rounded-[50%] border"
+            style={{
+              borderColor: theme === 'dark' ? 'rgba(148,163,184,0.28)' : 'rgba(190, 242, 100, 0.24)',
+            }}
+          />
+          <div
+            className="landing-bg-wave landing-bg-wave-delay absolute inset-x-[15%] bottom-[11.5%] h-16 rounded-[50%] border"
+            style={{
+              borderColor: theme === 'dark' ? 'rgba(129,140,248,0.2)' : 'rgba(163, 230, 53, 0.2)',
+            }}
+          />
+          {LANDING_BG_STARS.map((star) => (
+            <span
+              key={`${star.top}-${star.left}`}
+              className={`landing-bg-star absolute ${star.size} rounded-full bg-[#fde68a]/95 shadow-[0_0_6px_rgba(250,204,21,0.55)] dark:bg-white/80 dark:shadow-none`}
+              style={{ top: star.top, left: star.left, animationDelay: star.delay }}
+            />
+          ))}
+        </div>
         <div
           className="pointer-events-none absolute inset-x-0 top-0 hidden h-[42vh] dark:block"
           style={{
@@ -246,6 +304,31 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
                     >
                       Join as Developer <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </button>
+                  </div>
+                  <div className="pointer-events-none relative mt-4 sm:mt-6 h-14 sm:h-16 z-[3]" aria-hidden="true">
+                    <div
+                      className="absolute left-1/2 top-1/2 h-12 sm:h-14 w-[102%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border"
+                      style={{
+                        borderColor:
+                          theme === 'dark' ? 'rgba(147,197,253,0.3)' : 'rgba(253,224,71,0.34)',
+                      }}
+                    />
+                    <div
+                      className="absolute left-1/2 top-1/2 h-9 sm:h-10 w-[84%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border"
+                      style={{
+                        borderColor:
+                          theme === 'dark' ? 'rgba(129,140,248,0.24)' : 'rgba(250,204,21,0.3)',
+                      }}
+                    />
+                    <div
+                      className="absolute left-1/2 top-1/2 h-7 w-[104%] -translate-x-1/2 -translate-y-1/2"
+                      style={{
+                        background:
+                          theme === 'dark'
+                            ? 'radial-gradient(60% 100% at 50% 50%, rgba(129,140,248,0.16) 0%, rgba(59,130,246,0.1) 42%, rgba(0,0,0,0) 76%)'
+                            : 'radial-gradient(60% 100% at 50% 50%, rgba(253,224,71,0.2) 0%, rgba(250,204,21,0.12) 42%, rgba(0,0,0,0) 76%)',
+                      }}
+                    />
                   </div>
                 </div>
               </form>
