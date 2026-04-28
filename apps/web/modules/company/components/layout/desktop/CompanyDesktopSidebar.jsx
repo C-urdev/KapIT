@@ -1,10 +1,11 @@
 import React from 'react';
-import { CircleHelp, LayoutDashboard, Briefcase, MessageCircle, LogOut, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Settings, WalletCards } from 'lucide-react';
+import { CircleHelp, LayoutDashboard, Briefcase, MessageCircle, Users, LogOut, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Settings, WalletCards } from 'lucide-react';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
 
 const LINKS = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: COMPANY_PATHS.dashboard },
   { key: 'jobs', label: 'Manage Jobs', icon: Briefcase, path: COMPANY_PATHS.jobs },
+  { key: 'applicants', label: 'Applicants', icon: Users, path: COMPANY_PATHS.applicants },
   { key: 'messages', label: 'Messages', icon: MessageCircle, path: COMPANY_PATHS.messages },
 ];
 
