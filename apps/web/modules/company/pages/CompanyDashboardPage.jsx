@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { Briefcase, PlusCircle, WalletCards, Search, MapPin, ChevronDown, ArrowDownUp } from 'lucide-react';
+import { Briefcase, PlusCircle, Search, MapPin, ChevronDown, ArrowDownUp } from 'lucide-react';
 import { useCompanyJobs } from '@companyFeatures/companyHooks';
 import { COMPANY_PATHS, formatJobStatus, navigate } from '@companyFeatures/companyUtils';
 import { clearCompanyPostJobFormDraft } from '@companyFeatures/postJobDraftStorage';
+import TimedInfoPopup from '@sharedComponents/ui/TimedInfoPopup';
 
 function OverviewIconAction({ icon: Icon, label, onClick, variant = 'default' }) {
   const isPrimary = variant === 'primary';
@@ -128,7 +129,6 @@ function CompactJobRow({ job, onManage, onOpenApplicants }) {
           >
             <span className={`h-2.5 w-2.5 rounded-full ${statusDot}`} />
             <span>{formatJobStatus(status)}</span>
-            <ChevronDown className="h-4 w-4 text-[#6b7280] dark:text-[#b3bcc5]" />
           </button>
         </div>
 
@@ -215,6 +215,11 @@ export default function CompanyDashboardPage() {
 
   return (
     <div className="space-y-8">
+      <TimedInfoPopup
+        title="Pay before posting"
+        message="Before you post a job, payment is required and the listing goes live only after the selected plan is confirmed. Reposting an old job also opens the merchant payment page again, so every live listing follows the same plan-selection flow."
+        dismissKey="dashboard_pay_before_posting"
+      />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-[#3a5a40] dark:text-white">Overview</h2>
@@ -222,19 +227,6 @@ export default function CompanyDashboardPage() {
         <div className="ml-auto flex w-auto flex-wrap items-center justify-end gap-2">
           <OverviewIconAction icon={PlusCircle} label="Post a job" variant="primary" onClick={handleStartFreshPostJob} />
           <OverviewIconAction icon={Search} label="Search developers" onClick={() => navigate(COMPANY_PATHS.search)} />
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[linear-gradient(135deg,#f8fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#31363d,#202428)] p-3.5 sm:p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
-        <div className="flex items-start gap-2.5 sm:gap-3">
-          <div className="rounded-lg sm:rounded-xl bg-[#f8fbf6]/80 dark:bg-[#1a1d20] p-2 sm:p-3 border border-[#d6d3c9] dark:border-[#444d57]">
-            <WalletCards className="w-4 h-4 sm:w-5 sm:h-5 text-[#3a5a40] dark:text-[#f0c766]" />
-          </div>
-          <div>
-            <h3 className="text-base sm:text-lg font-bold text-[#3a5a40] dark:text-white">Pay before posting</h3>
-            <p className="mt-1 text-[13px] sm:text-sm text-[#344e41] dark:text-[#eceff2]">Before you post a job, payment is required and the listing goes live only after the selected plan is confirmed.</p>
-            <p className="mt-1 text-[13px] sm:text-sm text-[#344e41] dark:text-[#eceff2]">Reposting an old job also opens the merchant payment page again, so every live listing follows the same plan-selection flow.</p>
-          </div>
         </div>
       </div>
 

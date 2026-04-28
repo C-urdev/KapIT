@@ -4,6 +4,7 @@ import ApplicantCard from '@companyComponents/CompanyApplicantCard';
 import { companyAPI } from '@companyFeatures/companyAPI';
 import { useCompanyAnalytics, useCompanyApplicants } from '@companyFeatures/companyHooks';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
+import TimedInfoPopup from '@sharedComponents/ui/TimedInfoPopup';
 import { getPublicProfile, getStoredUser } from '@sharedServices/authService';
 import PublicProfilePage from '@sharedPages/public-profile/PublicProfilePage';
 
@@ -54,6 +55,47 @@ export default function CompanyApplicantsPage() {
     ],
     [analytics?.totalApplicants, analytics?.totalJobs, applicants.length, selectedJobId, visibleApplicants.length],
   );
+  const pipelineData = useMemo(() => {
+    const sourceApplicants = selectedJobId ? visibleApplicants : applicants;
+    const grouped = sourceApplicants.reduce(
+      (acc, item) => {
+        const raw = String(item?.status || '').trim().toLowerCase();
+        if (!raw || raw === 'pending' || raw === 'applied') {
+          acc.applied += 1;
+          return acc;
+        }
+        if (raw === 'reviewed' || raw === 'reviewing' || raw === 'on_hold' || raw === 'on hold') {
+          acc.reviewing += 1;
+          return acc;
+        }
+        if (raw === 'interviewed' || raw === 'interview' || raw === 'phone_screen' || raw === 'telephone' || raw === 'skill_check') {
+          acc.interviewed += 1;
+          return acc;
+        }
+        if (raw === 'accepted' || raw === 'hired' || raw === 'joined') {
+          acc.hired += 1;
+          return acc;
+        }
+        if (raw === 'rejected' || raw === 'declined') {
+          acc.rejected += 1;
+          return acc;
+        }
+        acc.other += 1;
+        return acc;
+      },
+      { applied: 0, reviewing: 0, interviewed: 0, hired: 0, rejected: 0, other: 0 },
+    );
+
+    return [
+      { label: 'Total', value: sourceApplicants.length, color: '#5f97bd' },
+      { label: 'Applied', value: grouped.applied, color: '#7aa7c8' },
+      { label: 'On hold / Reviewing', value: grouped.reviewing, color: '#6f9bb9' },
+      { label: 'Interviewed', value: grouped.interviewed, color: '#8fb4d0' },
+      { label: 'Hired', value: grouped.hired, color: '#6b9b68' },
+      { label: 'Rejected / Declined', value: grouped.rejected, color: '#cf4a62' },
+      { label: 'Other', value: grouped.other, color: '#9ca3af' },
+    ];
+  }, [selectedJobId, visibleApplicants, applicants]);
 
   const handleViewProfile = async (user) => {
     if (!user?.id) return;
@@ -105,6 +147,11 @@ export default function CompanyApplicantsPage() {
 
   return (
     <div className="space-y-6">
+      <TimedInfoPopup
+        title="Hiring flow"
+        message="Use Hire candidate when you make a selection. The job will be marked filled, and if you reopen the role later, it will go through the posting payment flow again before going live."
+        dismissKey="applicants_hiring_flow"
+      />
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Applicants</h2>
@@ -133,15 +180,15 @@ export default function CompanyApplicantsPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[linear-gradient(135deg,#f8fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#31363d,#202428)] p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
-        <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Hiring flow</h3>
-        <p className="mt-2 text-sm text-[#344e41] dark:text-[#eceff2]">Use <span className="font-semibold text-[#3a5a40] dark:text-white">Hire candidate</span> when you make a selection. The job will be marked filled, and if you reopen the role later, it will go through the posting payment flow again before going live.</p>
-        {plan?.isPremium ? <p className="mt-2 text-sm text-[#344e41] dark:text-[#eceff2]">Premium employer AI ranking is enabled. Match scores appear after refreshing the ranking for a job.</p> : null}
-      </div>
-
       <div className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
         <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Applicants snapshot graph</h3>
         <SummaryGraph data={analyticsLoading && !selectedJobId ? [] : summaryValues} />
+      </div>
+      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
+        <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">
+          {selectedJobId ? 'Applicant pipeline' : 'Applicants pipeline'}
+        </h3>
+        <PipelineGraph data={pipelineData} />
       </div>
 
       {feedback && <p className="text-sm text-[#3a5a40] dark:text-[#f0c766]">{feedback}</p>}
@@ -246,6 +293,50 @@ function SummaryGraph({ data }) {
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function PipelineGraph({ data }) {
+  const maxValue = Math.max(...data.map((item) => Number(item?.value || 0)), 1);
+
+  return (
+    <div className="mt-4 overflow-x-auto">
+      <div className="min-w-[760px]">
+        <div className="grid grid-cols-7 gap-3 rounded-2xl border border-[#d6d3c9] bg-[#f8fbf6] p-4 dark:border-[#444d57] dark:bg-[#202428]">
+          {data.map((item) => {
+            const value = Number(item?.value || 0);
+            const barHeight = Math.max(value > 0 ? Math.round((value / maxValue) * 96) : 0, value > 0 ? 18 : 0);
+            const isJoined = item.label.toLowerCase() === 'joined';
+            const isDeclined = item.label.toLowerCase() === 'declined';
+            return (
+              <div key={item.label} className="flex flex-col items-center">
+                <div className="h-6 text-xl leading-none font-semibold text-[#4b5563] dark:text-[#d0d7dd]">{value}</div>
+                <div className="mt-1 flex h-24 w-full items-end justify-center">
+                  {value > 0 ? (
+                    <div
+                      className="w-10 rounded-md shadow-sm"
+                      style={{
+                        height: `${barHeight}px`,
+                        background: item.color,
+                      }}
+                    />
+                  ) : (
+                    <div className="h-1 w-10 rounded bg-[#d6d3c9] dark:bg-[#3b424b]" />
+                  )}
+                </div>
+                <div
+                  className={`mt-2 text-xs font-semibold leading-tight text-center ${
+                    isDeclined ? 'text-[#cf4a62] dark:text-[#fda4af]' : isJoined ? 'text-[#6b9b68] dark:text-[#86efac]' : 'text-[#374151] dark:text-[#d0d7dd]'
+                  }`}
+                >
+                  {item.label}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

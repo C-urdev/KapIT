@@ -5,7 +5,8 @@ import { COMPANY_PATHS, formatSkills, navigate } from '@companyFeatures/companyU
 import { TECH_JOB_TITLE_OPTIONS } from '@companyFeatures/companyJobTitleOptions';
 import { OTHER_SKILL_VALUE, TECH_SKILL_OPTIONS } from '@companyFeatures/companySkillOptions';
 import { PAYMENT_CANCEL_MESSAGE_TYPE, PAYMENT_MESSAGE_TYPE, STORAGE_KEY } from '@companyPages/CompanyPostJobPaymentPage';
-import { loadAddressOptions } from '@sharedUtils/philippinesLocations';
+import { getCountryOptions } from '@sharedUtils/countryOptions';
+import { cleanPlaceName, loadProvinceCityData } from '@sharedUtils/philippinesLocations';
 import { companyAPI } from '@companyFeatures/companyAPI';
 import {
   createPreAssessmentQuestionDraft,
@@ -57,15 +58,70 @@ const SALARY_RANGE_OPTIONS = {
   ],
 };
 const CUSTOM_SALARY_OPTION = 'Other';
+const parseLocation = (rawLocation, provinceOptions, provinceCodeByLabel, getCitiesForProvince) => {
+  const locationText = String(rawLocation || '').trim();
+  const locationParts = locationText
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const hasCountrySegment = locationParts.length >= 3;
+  const country = hasCountrySegment ? locationParts[locationParts.length - 1] : 'Philippines';
+  const normalized = hasCountrySegment ? locationParts.slice(0, -1).join(', ') : locationText.replace(/,\s*Philippines\s*$/i, '').trim();
+
+  if (!normalized) {
+    return { provinceCode: '', city: '', country };
+  }
+  if (String(country || '').trim().toLowerCase() !== 'philippines') {
+    return { provinceCode: '', city: cleanPlaceName(normalized), country };
+  }
+
+  const parts = normalized.split(',').map((part) => part.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    const city = cleanPlaceName(parts[0]);
+    const provinceCode = provinceCodeByLabel[cleanPlaceName(parts[1]).toLowerCase()] || '';
+    return { provinceCode, city, country };
+  }
+
+  const cityOnly = cleanPlaceName(normalized);
+  for (const option of provinceOptions) {
+    const cities = getCitiesForProvince(option.code);
+    if (cities.some((item) => item.name.toLowerCase() === cityOnly.toLowerCase())) {
+      return { provinceCode: option.code, city: cityOnly, country };
+    }
+  }
+
+  return { provinceCode: '', city: '', country };
+};
+
+const formatLocation = (city, provinceCode, provinceLabelByCode, country) => {
+  const normalizedCountry = String(country || 'Philippines').trim() || 'Philippines';
+  if (normalizedCountry.toLowerCase() !== 'philippines') {
+    const cityText = String(city || '').trim();
+    return cityText ? `${cityText}, ${normalizedCountry}` : normalizedCountry;
+  }
+  const provinceLabel = provinceLabelByCode[provinceCode] || '';
+  if (!city || !provinceLabel) {
+    return '';
+  }
+  return `${city}, ${provinceLabel}, ${normalizedCountry}`;
+};
 
 export default function CompanyPostJobPage() {
   const [error, setError] = useState('');
   const [paymentPending, setPaymentPending] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState('');
   const [customSkill, setCustomSkill] = useState('');
-  const [searchableLocations, setSearchableLocations] = useState([]);
+  const [locationData, setLocationData] = useState({
+    provinceOptions: [],
+    provinceLabelByCode: {},
+    provinceCodeByLabel: {},
+    getCitiesForProvince: () => [],
+  });
   const [hydratedForm, setHydratedForm] = useState(false);
   const [form, setForm] = useState(DEFAULT_COMPANY_POST_JOB_FORM);
+  const countryOptions = useMemo(() => getCountryOptions(), []);
+  const isPhilippines = String(form.country || '').trim().toLowerCase() === 'philippines';
+  const cityOptions = useMemo(() => locationData.getCitiesForProvince(form.provinceCode), [form.provinceCode, locationData]);
   const salaryRangeOptions = useMemo(() => SALARY_RANGE_OPTIONS[form.salaryCurrency] || SALARY_RANGE_OPTIONS.PHP, [form.salaryCurrency]);
   const usingCustomSalary = form.salary === CUSTOM_SALARY_OPTION;
 
@@ -86,9 +142,9 @@ export default function CompanyPostJobPage() {
     let cancelled = false;
 
     const loadLocations = async () => {
-      const options = await loadAddressOptions();
+      const nextData = await loadProvinceCityData();
       if (!cancelled) {
-        setSearchableLocations(options);
+        setLocationData(nextData);
       }
     };
 
@@ -98,6 +154,55 @@ export default function CompanyPostJobPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!locationData.provinceOptions.length) {
+      return;
+    }
+
+    setForm((prev) => {
+      if (prev.provinceCode || prev.city) {
+        return prev;
+      }
+
+      const nextLocation = parseLocation(
+        prev.location || '',
+        locationData.provinceOptions,
+        locationData.provinceCodeByLabel,
+        locationData.getCitiesForProvince
+      );
+      return {
+        ...prev,
+        provinceCode: nextLocation.provinceCode,
+        city: nextLocation.city,
+        country: nextLocation.country || prev.country || 'Philippines',
+        location: formatLocation(nextLocation.city, nextLocation.provinceCode, locationData.provinceLabelByCode, nextLocation.country || prev.country),
+      };
+    });
+  }, [locationData]);
+
+  useEffect(() => {
+    if (!isPhilippines) {
+      return;
+    }
+    setForm((prev) => {
+      const nextCities = locationData.getCitiesForProvince(prev.provinceCode);
+      const hasCity = nextCities.some((option) => option.name === prev.city);
+      const nextCity = hasCity ? prev.city : '';
+      return {
+        ...prev,
+        city: nextCity,
+        location: formatLocation(nextCity, prev.provinceCode, locationData.provinceLabelByCode, prev.country),
+      };
+    });
+  }, [form.provinceCode, locationData, isPhilippines]);
+
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      location: formatLocation(prev.city, prev.provinceCode, locationData.provinceLabelByCode, prev.country),
+    }));
+  }, [form.city, form.country, locationData]);
 
   useEffect(() => {
     const handleMessage = (event) => {
@@ -293,7 +398,51 @@ export default function CompanyPostJobPage() {
               </button>
             )}
           </Field>
-          <Field label="Location (optional)"><SearchableSelect value={form.location} onChange={(location) => setForm((prev) => ({ ...prev, location }))} options={searchableLocations} placeholder="Select a municipality or city in the Philippines" searchPlaceholder="Search municipality, city, or province" searchInTrigger /></Field>
+          <Field label="Country (optional)">
+            <SearchableSelect
+              value={form.country}
+              onChange={(country) =>
+                setForm((prev) => ({
+                  ...prev,
+                  country,
+                  provinceCode: String(country || '').trim().toLowerCase() === 'philippines' ? prev.provinceCode : '',
+                }))}
+              options={countryOptions}
+              placeholder="Select a country"
+              searchPlaceholder="Search country"
+              searchInTrigger
+            />
+          </Field>
+          <Field label="Location (optional)">
+            {isPhilippines ? (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <SearchableSelect
+                  value={form.provinceCode}
+                  onChange={(provinceCode) => setForm((prev) => ({ ...prev, provinceCode }))}
+                  options={locationData.provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
+                  placeholder="Select a province"
+                  searchPlaceholder="Search provinces"
+                  searchInTrigger
+                />
+                <SearchableSelect
+                  value={form.city}
+                  onChange={(city) => setForm((prev) => ({ ...prev, city }))}
+                  options={cityOptions.map((city) => ({ value: city.name, label: city.name }))}
+                  placeholder={form.provinceCode ? 'Select a city or municipality' : 'Select a province first'}
+                  searchPlaceholder="Search city or municipality"
+                  disabled={!form.provinceCode}
+                  searchInTrigger
+                />
+              </div>
+            ) : (
+              <input
+                value={form.city}
+                onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
+                className="field"
+                placeholder="Enter your location in this country"
+              />
+            )}
+          </Field>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

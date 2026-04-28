@@ -5,6 +5,7 @@ import { useCompanyJobs } from '@companyFeatures/companyHooks';
 import { COMPANY_PATHS, formatSkills, navigate } from '@companyFeatures/companyUtils';
 import { PAYMENT_CANCEL_MESSAGE_TYPE, PAYMENT_MESSAGE_TYPE, STORAGE_KEY } from '@companyPages/CompanyPostJobPaymentPage';
 import ConfirmModal from '@sharedComponents/ui/ConfirmModal';
+import TimedInfoPopup from '@sharedComponents/ui/TimedInfoPopup';
 import { X } from 'lucide-react';
 
 const extractPreAssessment = (job) => {
@@ -194,15 +195,15 @@ export default function CompanyManageJobsPage() {
 
   return (
     <div className="space-y-6">
+      <TimedInfoPopup
+        title="Manage persisted postings"
+        message="Every job listed here comes from the database. Unpaid jobs stay in draft until you use Pay now, while only paid jobs are published to developers."
+        dismissKey="manage_jobs_persisted_postings"
+      />
       <div>
         <div>
           <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Manage jobs</h2>
         </div>
-      </div>
-
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[linear-gradient(135deg,#f6fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#31363d,#202428)] p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
-        <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Manage persisted postings</h3>
-        <p className="mt-2 text-sm text-[#344e41] dark:text-[#eceff2]">Every job listed here comes from the database. Unpaid jobs stay in draft until you use Pay now, while only paid jobs are published to developers.</p>
       </div>
 
       <div className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">

@@ -219,19 +219,19 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
           <div
             className="landing-bg-wave absolute inset-x-[7%] bottom-[10%] h-20 rounded-[50%] border"
             style={{
-              borderColor: theme === 'dark' ? 'rgba(203,213,225,0.24)' : 'rgba(190, 242, 100, 0.24)',
+              borderColor: theme === 'dark' ? 'rgba(203,213,225,0.24)' : 'rgba(132, 204, 22, 0.34)',
             }}
           />
           <div
             className="landing-bg-wave landing-bg-wave-delay absolute inset-x-[15%] bottom-[11.5%] h-16 rounded-[50%] border"
             style={{
-              borderColor: theme === 'dark' ? 'rgba(226,232,240,0.18)' : 'rgba(163, 230, 53, 0.2)',
+              borderColor: theme === 'dark' ? 'rgba(226,232,240,0.18)' : 'rgba(101, 163, 13, 0.3)',
             }}
           />
           {LANDING_BG_STARS.map((star) => (
             <span
               key={`${star.top}-${star.left}`}
-              className={`landing-bg-star absolute ${star.size} rounded-full bg-[#fde68a]/95 shadow-[0_0_6px_rgba(250,204,21,0.55)] dark:bg-white/80 dark:shadow-none`}
+              className={`landing-bg-star absolute ${star.size} rounded-full bg-[#facc15] shadow-[0_0_9px_rgba(217,119,6,0.5)] dark:bg-white/80 dark:shadow-none`}
               style={{ top: star.top, left: star.left, animationDelay: star.delay }}
             />
           ))}
@@ -310,14 +310,14 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
                       className="absolute left-1/2 top-1/2 h-12 sm:h-14 w-[102%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border"
                       style={{
                         borderColor:
-                          theme === 'dark' ? 'rgba(203,213,225,0.28)' : 'rgba(253,224,71,0.34)',
+                          theme === 'dark' ? 'rgba(203,213,225,0.28)' : 'rgba(217,119,6,0.42)',
                       }}
                     />
                     <div
                       className="absolute left-1/2 top-1/2 h-9 sm:h-10 w-[84%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border"
                       style={{
                         borderColor:
-                          theme === 'dark' ? 'rgba(226,232,240,0.22)' : 'rgba(250,204,21,0.3)',
+                          theme === 'dark' ? 'rgba(226,232,240,0.22)' : 'rgba(202,138,4,0.36)',
                       }}
                     />
                     <div
@@ -326,7 +326,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
                         background:
                           theme === 'dark'
                             ? 'radial-gradient(60% 100% at 50% 50%, rgba(203,213,225,0.14) 0%, rgba(148,163,184,0.08) 42%, rgba(0,0,0,0) 76%)'
-                            : 'radial-gradient(60% 100% at 50% 50%, rgba(253,224,71,0.2) 0%, rgba(250,204,21,0.12) 42%, rgba(0,0,0,0) 76%)',
+                            : 'radial-gradient(60% 100% at 50% 50%, rgba(245,158,11,0.24) 0%, rgba(217,119,6,0.14) 42%, rgba(0,0,0,0) 76%)',
                       }}
                     />
                   </div>

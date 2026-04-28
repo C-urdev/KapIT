@@ -39,6 +39,9 @@ export default function AuthPageClient({ initialMode = 'login' }) {
   const [pendingSignup, setPendingSignup] = useState(null);
   const [otpCode, setOtpCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [infoMessage, setInfoMessage] = useState('');
   const [error, setError] = useState('');
   const [isLocalhost, setIsLocalhost] = useState(false);
   const localAuthBypassEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS === 'true';
@@ -66,6 +69,16 @@ export default function AuthPageClient({ initialMode = 'login' }) {
     const hostname = String(window.location.hostname || '').trim().toLowerCase();
     setIsLocalhost(hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1');
   }, []);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) {
+      return undefined;
+    }
+    const timer = window.setTimeout(() => {
+      setResendCooldown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [resendCooldown]);
 
   const handleBeginSignup = async (signupData) => {
     setLoading(true);
@@ -140,6 +153,28 @@ export default function AuthPageClient({ initialMode = 'login' }) {
     }
   };
 
+  const handleResendCode = async () => {
+    if (!pendingSignup || resending || resendCooldown > 0) return;
+
+    setResending(true);
+    setError('');
+    setInfoMessage('');
+
+    try {
+      const response = await sendRegistrationOtp({ email: pendingSignup.email });
+      if (!response?.success) {
+        throw new Error(response?.message || 'Unable to resend code right now.');
+      }
+      setInfoMessage('A new verification code has been sent to your email.');
+      setResendCooldown(30);
+      setOtpCode('');
+    } catch (err) {
+      setError(String(err?.message || 'Unable to resend code right now.'));
+    } finally {
+      setResending(false);
+    }
+  };
+
   if (pendingSignup) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#dad7cd] to-[#f5f5f2] dark:from-[#121416] dark:to-[#22272b]">
@@ -170,6 +205,12 @@ export default function AuthPageClient({ initialMode = 'login' }) {
             </div>
           )}
 
+          {infoMessage && (
+            <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900 dark:bg-emerald-950/30">
+              <p className="text-sm text-emerald-700 dark:text-emerald-300">{infoMessage}</p>
+            </div>
+          )}
+
           <div className="flex flex-col gap-4">
             <input
               type="text"
@@ -193,6 +234,16 @@ export default function AuthPageClient({ initialMode = 'login' }) {
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirm'}
             </button>
+            <div className="mt-1 flex items-center justify-center text-sm">
+              <button
+                type="button"
+                onClick={handleResendCode}
+                disabled={loading || resending || resendCooldown > 0}
+                className="text-[#588157] dark:text-[#6f9b74] hover:underline font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {resending ? 'Sending...' : resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
+              </button>
+            </div>
             {isLocalhost && localAuthBypassEnabled ? (
               <button
                 type="button"

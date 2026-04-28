@@ -7,6 +7,7 @@ import {
   LogOut,
   MessageCircle,
   Settings,
+  Users,
 } from 'lucide-react';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
 
@@ -127,6 +128,14 @@ export default function CompanyMobileMenuDrawer({ open, active, user, onClose, o
               onClick={() => {
                 onClose();
                 navigate(COMPANY_PATHS.messages);
+              }}
+            />
+            <ShortcutCard
+              icon={Users}
+              label="Applicants"
+              onClick={() => {
+                onClose();
+                navigate(COMPANY_PATHS.applicants);
               }}
             />
           </div>
