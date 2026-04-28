@@ -47,6 +47,9 @@ const parseLocation = (rawLocation, provinceOptions, provinceCodeByLabel, getCit
   if (!normalized) {
     return { provinceCode: '', city: '', country };
   }
+  if (String(country || '').trim().toLowerCase() !== 'philippines') {
+    return { provinceCode: '', city: cleanPlaceName(normalized), country };
+  }
 
   const parts = normalized.split(',').map((part) => part.trim()).filter(Boolean);
   if (parts.length >= 2) {
@@ -67,11 +70,16 @@ const parseLocation = (rawLocation, provinceOptions, provinceCodeByLabel, getCit
 };
 
 const formatLocation = (city, provinceCode, provinceLabelByCode, country) => {
+  const normalizedCountry = String(country || 'Philippines').trim() || 'Philippines';
+  if (normalizedCountry.toLowerCase() !== 'philippines') {
+    const cityText = String(city || '').trim();
+    return cityText ? `${cityText}, ${normalizedCountry}` : normalizedCountry;
+  }
   const provinceLabel = provinceLabelByCode[provinceCode] || '';
   if (!city || !provinceLabel) {
     return '';
   }
-  return `${city}, ${provinceLabel}, ${country || 'Philippines'}`;
+  return `${city}, ${provinceLabel}, ${normalizedCountry}`;
 };
 
 const readFileAsDataUrl = (file) =>
@@ -164,6 +172,7 @@ export function CompanyInfoSettingsPage({ user, onBack, onUpdated }) {
     phoneNumber: user?.phone || '',
   });
   const countryOptions = useMemo(() => getCountryOptions(), []);
+  const isPhilippines = String(form.country || '').trim().toLowerCase() === 'philippines';
 
   const cityOptions = useMemo(() => locationData.getCitiesForProvince(form.provinceCode), [form.provinceCode, locationData]);
 
@@ -246,6 +255,9 @@ export function CompanyInfoSettingsPage({ user, onBack, onUpdated }) {
   }, [locationData]);
 
   useEffect(() => {
+    if (!isPhilippines) {
+      return;
+    }
     setForm((prev) => {
       const nextCities = locationData.getCitiesForProvince(prev.provinceCode);
       const hasCity = nextCities.some((option) => option.name === prev.city);
@@ -256,7 +268,7 @@ export function CompanyInfoSettingsPage({ user, onBack, onUpdated }) {
         location: formatLocation(nextCity, prev.provinceCode, locationData.provinceLabelByCode, prev.country),
       };
     });
-  }, [form.provinceCode, locationData]);
+  }, [form.provinceCode, locationData, isPhilippines]);
 
   useEffect(() => {
     setForm((prev) => ({
@@ -372,39 +384,58 @@ export function CompanyInfoSettingsPage({ user, onBack, onUpdated }) {
             <input value={form.website} onChange={(event) => setForm((current) => ({ ...current, website: event.target.value }))} className="field" placeholder="https://" />
           </Field>
 
-          <Field label="Province" required>
-            <SearchableSelect
-              value={form.provinceCode}
-              onChange={(provinceCode) => setForm((p) => ({ ...p, provinceCode }))}
-              options={locationData.provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
-              placeholder="Select a province"
-              searchPlaceholder="Search provinces"
-              className="field"
-            />
-          </Field>
-
-          <Field label="City / Municipality" required>
-            <SearchableSelect
-              value={form.city}
-              onChange={(city) => setForm((p) => ({ ...p, city }))}
-              options={cityOptions.map((city) => ({ value: city.name, label: city.name }))}
-              placeholder={form.provinceCode ? 'Select a city or municipality' : 'Select a province first'}
-              searchPlaceholder="Search cities"
-              disabled={!form.provinceCode}
-              className="field"
-            />
-          </Field>
-
           <Field label="Country">
             <SearchableSelect
               value={form.country}
-              onChange={(country) => setForm((p) => ({ ...p, country }))}
+              onChange={(country) =>
+                setForm((p) => ({
+                  ...p,
+                  country,
+                  provinceCode: String(country || '').trim().toLowerCase() === 'philippines' ? p.provinceCode : '',
+                }))
+              }
               options={countryOptions}
               placeholder="Select a country"
               searchPlaceholder="Search countries"
               className="field"
             />
           </Field>
+
+          {isPhilippines ? (
+            <>
+              <Field label="Province" required>
+                <SearchableSelect
+                  value={form.provinceCode}
+                  onChange={(provinceCode) => setForm((p) => ({ ...p, provinceCode }))}
+                  options={locationData.provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
+                  placeholder="Select a province"
+                  searchPlaceholder="Search provinces"
+                  className="field"
+                />
+              </Field>
+
+              <Field label="City / Municipality" required>
+                <SearchableSelect
+                  value={form.city}
+                  onChange={(city) => setForm((p) => ({ ...p, city }))}
+                  options={cityOptions.map((city) => ({ value: city.name, label: city.name }))}
+                  placeholder={form.provinceCode ? 'Select a city or municipality' : 'Select a province first'}
+                  searchPlaceholder="Search cities"
+                  disabled={!form.provinceCode}
+                  className="field"
+                />
+              </Field>
+            </>
+          ) : (
+            <Field label="City / State / Region">
+              <input
+                value={form.city}
+                onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))}
+                className="field"
+                placeholder="Enter your location in this country (optional)"
+              />
+            </Field>
+          )}
 
           <Field label="Company Description" full>
             <textarea value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} className="field min-h-24" />

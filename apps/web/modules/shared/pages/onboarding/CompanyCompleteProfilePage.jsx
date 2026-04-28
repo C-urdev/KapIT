@@ -26,17 +26,18 @@ export default function CompleteCompanyProfilePage({ user, onSubmit, onLogout })
     socials: normalizeSocialsText(user?.socials),
     bio: user?.bio || '',
   });
+  const isPhilippines = String(formData.country || '').trim().toLowerCase() === 'philippines';
 
   const isFormComplete = useMemo(
     () =>
       Boolean(
         formData.companyName.trim() &&
-          formData.address.trim() &&
+          (isPhilippines ? formData.address.trim() : true) &&
           formData.industry.trim() &&
           formData.companySize &&
           formData.email.trim()
       ),
-    [formData]
+    [formData, isPhilippines]
   );
 
   const handleSubmit = (event) => {
@@ -51,9 +52,11 @@ export default function CompleteCompanyProfilePage({ user, onSubmit, onLogout })
     const addressText = String(formData.address || '').trim();
     const countryText = String(formData.country || '').trim() || 'Philippines';
     const escapedCountry = countryText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const addressWithCountry = new RegExp(`,\\s*${escapedCountry}\\s*$`, 'i').test(addressText)
-      ? addressText
-      : `${addressText}, ${countryText}`;
+    const addressWithCountry = !addressText
+      ? (isPhilippines ? '' : countryText)
+      : new RegExp(`,\\s*${escapedCountry}\\s*$`, 'i').test(addressText)
+        ? addressText
+        : `${addressText}, ${countryText}`;
 
     onSubmit({
       companyName: formData.companyName,
@@ -160,14 +163,14 @@ export default function CompleteCompanyProfilePage({ user, onSubmit, onLogout })
               />
             </Field>
 
-            <Field label="Address">
+            <Field label={isPhilippines ? 'Address' : 'Location'}>
               <input
                 type="text"
                 value={formData.address}
                 onChange={(event) => setFormData({ ...formData, address: event.target.value })}
                 className="w-full input-base"
-                placeholder="City, Province"
-                required
+                placeholder={isPhilippines ? 'City, Province' : 'City, State/Region'}
+                required={isPhilippines}
               />
             </Field>
 
