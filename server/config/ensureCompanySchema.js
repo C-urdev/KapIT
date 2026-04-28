@@ -148,6 +148,7 @@ const ensureCompanySchema = async () => {
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS active_until TIMESTAMP;");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS application_deadline TIMESTAMPTZ;");
+    await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS draft_payload JSONB NOT NULL DEFAULT '{}'::jsonb;");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS closed_at TIMESTAMP;");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS hired_at TIMESTAMP;");
     await client.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;");
