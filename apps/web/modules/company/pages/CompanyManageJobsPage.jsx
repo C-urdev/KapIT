@@ -175,17 +175,20 @@ export default function CompanyManageJobsPage() {
 
   const handleDelete = async (job) => {
     if (!job?.id) return;
+    const previousJobs = displayJobs;
     setActionJobId(job.id);
     setFeedback('');
+    setDeleteJob(null);
+    setDisplayJobs((currentJobs) => currentJobs.filter((currentJob) => currentJob.id !== job.id));
     try {
       await companyAPI.deleteJob(job.id);
       setFeedback(`Deleted "${job.title}" from your listings and database.`);
-      await refetch();
+      refetch({ force: true, silent: true }).catch(() => {});
     } catch (err) {
+      setDisplayJobs(previousJobs);
       setFeedback(err?.message || 'Failed to delete job.');
     } finally {
       setActionJobId(null);
-      setDeleteJob(null);
     }
   };
 

@@ -49,6 +49,9 @@ const parseLocation = (rawLocation, provinceOptions, provinceCodeByLabel, getCit
   if (!normalized) {
     return { provinceCode: '', city: '', country };
   }
+  if (String(country || '').trim().toLowerCase() !== 'philippines') {
+    return { provinceCode: '', city: cleanPlaceName(normalized), country };
+  }
 
   const parts = normalized.split(',').map((part) => part.trim()).filter(Boolean);
   if (parts.length >= 2) {
@@ -69,11 +72,16 @@ const parseLocation = (rawLocation, provinceOptions, provinceCodeByLabel, getCit
 };
 
 const formatLocation = (city, provinceCode, provinceLabelByCode, country) => {
+  const normalizedCountry = String(country || 'Philippines').trim() || 'Philippines';
+  if (normalizedCountry.toLowerCase() !== 'philippines') {
+    const cityText = String(city || '').trim();
+    return cityText ? `${cityText}, ${normalizedCountry}` : normalizedCountry;
+  }
   const provinceLabel = provinceLabelByCode[provinceCode] || '';
   if (!city || !provinceLabel) {
     return '';
   }
-  return `${city}, ${provinceLabel}, ${country || 'Philippines'}`;
+  return `${city}, ${provinceLabel}, ${normalizedCountry}`;
 };
 
 export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout }) {
@@ -100,9 +108,9 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
     country: 'Philippines',
     location: String(user?.address || ''),
     contactEmail: user?.email || '',
-    phoneNumber: user?.phone || '',
   });
   const countryOptions = useMemo(() => getCountryOptions(), []);
+  const isPhilippines = String(form.country || '').trim().toLowerCase() === 'philippines';
 
   const cityOptions = useMemo(() => locationData.getCitiesForProvince(form.provinceCode), [form.provinceCode, locationData]);
 
@@ -151,6 +159,9 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
   }, [locationData, user]);
 
   useEffect(() => {
+    if (!isPhilippines) {
+      return;
+    }
     setForm((prev) => {
       const nextCities = locationData.getCitiesForProvince(prev.provinceCode);
       const hasCity = nextCities.some((option) => option.name === prev.city);
@@ -161,7 +172,7 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
         location: formatLocation(nextCity, prev.provinceCode, locationData.provinceLabelByCode, prev.country),
       };
     });
-  }, [form.provinceCode, locationData]);
+  }, [form.provinceCode, locationData, isPhilippines]);
 
   useEffect(() => {
     setForm((prev) => ({
@@ -195,7 +206,6 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
         website: form.website,
         location: form.location,
         contactEmail: form.contactEmail,
-        phoneNumber: form.phoneNumber,
       });
     } finally {
       setSaving(false);
@@ -306,34 +316,53 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
                     placeholder="https://"
                   />
                 </Field>
-                <Field label="Province">
-                  <SearchableSelect
-                    value={form.provinceCode}
-                    onChange={(provinceCode) => setForm((p) => ({ ...p, provinceCode }))}
-                    options={locationData.provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
-                    placeholder="Select a province"
-                    searchPlaceholder="Search provinces"
-                  />
-                </Field>
-                <Field label="City / Municipality">
-                  <SearchableSelect
-                    value={form.city}
-                    onChange={(city) => setForm((p) => ({ ...p, city }))}
-                    options={cityOptions.map((city) => ({ value: city.name, label: city.name }))}
-                    placeholder={form.provinceCode ? 'Select a city or municipality' : 'Select a province first'}
-                    searchPlaceholder="Search cities"
-                    disabled={!form.provinceCode}
-                  />
-                </Field>
                 <Field label="Country">
                   <SearchableSelect
                     value={form.country}
-                    onChange={(country) => setForm((p) => ({ ...p, country }))}
+                    onChange={(country) =>
+                      setForm((p) => ({
+                        ...p,
+                        country,
+                        provinceCode: String(country || '').trim().toLowerCase() === 'philippines' ? p.provinceCode : '',
+                      }))
+                    }
                     options={countryOptions}
                     placeholder="Select a country"
                     searchPlaceholder="Search countries"
                   />
                 </Field>
+                {isPhilippines ? (
+                  <>
+                    <Field label="Province">
+                      <SearchableSelect
+                        value={form.provinceCode}
+                        onChange={(provinceCode) => setForm((p) => ({ ...p, provinceCode }))}
+                        options={locationData.provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
+                        placeholder="Select a province"
+                        searchPlaceholder="Search provinces"
+                      />
+                    </Field>
+                    <Field label="City / Municipality">
+                      <SearchableSelect
+                        value={form.city}
+                        onChange={(city) => setForm((p) => ({ ...p, city }))}
+                        options={cityOptions.map((city) => ({ value: city.name, label: city.name }))}
+                        placeholder={form.provinceCode ? 'Select a city or municipality' : 'Select a province first'}
+                        searchPlaceholder="Search cities"
+                        disabled={!form.provinceCode}
+                      />
+                    </Field>
+                  </>
+                ) : (
+                  <Field label="City / State / Region (Optional)">
+                    <input
+                      value={form.city}
+                      onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))}
+                      className="field"
+                      placeholder="Enter your location in this country"
+                    />
+                  </Field>
+                )}
                 <Field label="Company Description (Optional)" full>
                   <textarea
                     value={form.description}
@@ -349,14 +378,6 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Field label="Contact Email">
                   <input value={form.contactEmail} readOnly className="field bg-[#f5f5f2] dark:bg-[#1a1d20]/60" />
-                </Field>
-                <Field label="Phone Number (Optional)">
-                  <input
-                    value={form.phoneNumber}
-                    onChange={(e) => setForm((p) => ({ ...p, phoneNumber: e.target.value }))}
-                    className="field"
-                    placeholder="+63 9xx xxx xxxx"
-                  />
                 </Field>
               </div>
             </Section>
