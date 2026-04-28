@@ -43,6 +43,24 @@ export default function AuthPageClient({ initialMode = 'login' }) {
   const [isLocalhost, setIsLocalhost] = useState(false);
   const localAuthBypassEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS === 'true';
 
+  const completeRegistration = async (signupData, verificationToken) => {
+    const data = await registerUser({
+      username: signupData.username,
+      email: signupData.email,
+      password: signupData.password,
+      accountType: signupData.accountType || accountType || 'developer',
+      verificationToken,
+      termsAccepted: signupData?.termsAccepted === true,
+    });
+
+    if (data?.user) {
+      router.replace(resolvePostAuthPath(data.user));
+      return;
+    }
+
+    throw new Error(data?.message || 'Failed to register account.');
+  };
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const hostname = String(window.location.hostname || '').trim().toLowerCase();
@@ -56,32 +74,29 @@ export default function AuthPageClient({ initialMode = 'login' }) {
       const res = await sendRegistrationOtp({ email: signupData.email });
       if (res.success) {
         setPendingSignup(signupData);
-      } else {
-        alert(res.message || 'Failed to send verification code.');
+        return;
       }
+
+      const otpMessage = String(res?.message || 'Unable to send verification code right now.').trim();
+      if (isLocalhost && localAuthBypassEnabled) {
+        const bypassRes = await requestLocalRegistrationBypassToken({ email: signupData.email });
+        if (!bypassRes?.success || !bypassRes?.verificationToken) {
+          throw new Error(bypassRes?.message || otpMessage);
+        }
+        await completeRegistration(signupData, bypassRes.verificationToken);
+        return;
+      }
+
+      throw new Error(otpMessage);
     } catch (err) {
-      alert('Unable to send verification code right now.');
+      throw new Error(String(err?.message || 'Unable to send verification code right now.'));
     } finally {
       setLoading(false);
     }
   };
 
   const registerWithVerifiedToken = async (verificationToken) => {
-    const data = await registerUser({
-      username: pendingSignup.username,
-      email: pendingSignup.email,
-      password: pendingSignup.password,
-      accountType: pendingSignup.accountType || accountType || 'developer',
-      verificationToken,
-      termsAccepted: pendingSignup?.termsAccepted === true,
-    });
-
-    if (data?.user) {
-      router.replace(resolvePostAuthPath(data.user));
-      return;
-    }
-
-    throw new Error(data?.message || 'Failed to register account.');
+    await completeRegistration(pendingSignup, verificationToken);
   };
 
   const verifyAndRegister = async () => {

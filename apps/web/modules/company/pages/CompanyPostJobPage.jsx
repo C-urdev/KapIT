@@ -20,6 +20,7 @@ const EXPERIENCE_LEVEL_OPTIONS = ['Intern', 'Junior', 'Mid', 'Senior'];
 const WORK_PREFERENCE_OPTIONS = [
   { value: 'fully-remote', label: 'Fully remote' },
   { value: 'asynchronous-remote', label: 'Asynchronous remote' },
+  { value: 'hybrid', label: 'Hybrid' },
   { value: 'on-site', label: 'On-site' },
 ];
 const SALARY_CURRENCY_OPTIONS = ['PHP', 'USD', 'EUR'];

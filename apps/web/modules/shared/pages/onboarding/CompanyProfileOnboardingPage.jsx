@@ -108,6 +108,7 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
     country: 'Philippines',
     location: String(user?.address || ''),
     contactEmail: user?.email || '',
+    phoneNumber: user?.phone || '',
   });
   const countryOptions = useMemo(() => getCountryOptions(), []);
   const isPhilippines = String(form.country || '').trim().toLowerCase() === 'philippines';
@@ -206,6 +207,7 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
         website: form.website,
         location: form.location,
         contactEmail: form.contactEmail,
+        phoneNumber: form.phoneNumber,
       });
     } finally {
       setSaving(false);

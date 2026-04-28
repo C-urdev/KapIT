@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Briefcase, PlusCircle, WalletCards, Search, MapPin, ChevronDown, ArrowDownUp } from 'lucide-react';
 import { useCompanyJobs } from '@companyFeatures/companyHooks';
 import { COMPANY_PATHS, formatJobStatus, navigate } from '@companyFeatures/companyUtils';
+import { clearCompanyPostJobFormDraft } from '@companyFeatures/postJobDraftStorage';
 
 function OverviewIconAction({ icon: Icon, label, onClick, variant = 'default' }) {
   const isPrimary = variant === 'primary';
@@ -204,6 +205,14 @@ export default function CompanyDashboardPage() {
     [jobs.length, jobsByStatus.filled, jobsByStatus.open, totalApplicants],
   );
 
+  const handleStartFreshPostJob = () => {
+    clearCompanyPostJobFormDraft();
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('company-post-job-draft');
+    }
+    navigate(COMPANY_PATHS.postJob);
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -211,7 +220,7 @@ export default function CompanyDashboardPage() {
           <h2 className="text-xl sm:text-2xl font-extrabold text-[#3a5a40] dark:text-white">Overview</h2>
         </div>
         <div className="ml-auto flex w-auto flex-wrap items-center justify-end gap-2">
-          <OverviewIconAction icon={PlusCircle} label="Post a job" variant="primary" onClick={() => navigate(COMPANY_PATHS.postJob)} />
+          <OverviewIconAction icon={PlusCircle} label="Post a job" variant="primary" onClick={handleStartFreshPostJob} />
           <OverviewIconAction icon={Search} label="Search developers" onClick={() => navigate(COMPANY_PATHS.search)} />
         </div>
       </div>

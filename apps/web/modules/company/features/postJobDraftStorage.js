@@ -70,3 +70,11 @@ export const saveCompanyPostJobFormDraft = (draft) => {
   const normalized = normalizeCompanyPostJobFormDraft(draft);
   window.localStorage.setItem(COMPANY_POST_JOB_FORM_STORAGE_KEY, JSON.stringify(normalized));
 };
+
+export const clearCompanyPostJobFormDraft = () => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.localStorage.removeItem(COMPANY_POST_JOB_FORM_STORAGE_KEY);
+};

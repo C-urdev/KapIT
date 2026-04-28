@@ -3,6 +3,7 @@ import { CheckCircle2, ChevronDown, CreditCard, ExternalLink, ShieldCheck, X } f
 import { companyAPI } from '@companyFeatures/companyAPI';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
 import { JOB_POST_PLANS, PAYMENT_PROVIDERS, PLAN_FEATURES } from '@companyFeatures/companyPaymentCatalog';
+import { clearCompanyPostJobFormDraft } from '@companyFeatures/postJobDraftStorage';
 
 const STORAGE_KEY = 'company-post-job-draft';
 const PAYMENT_MESSAGE_TYPE = 'company-post-job-payment-success';
@@ -145,6 +146,7 @@ export default function CompanyPostJobPaymentPage() {
           const data = await companyAPI.capturePayPalCheckout({ paymentId, orderId });
           paymentCompletedRef.current = true;
           window.localStorage.removeItem(STORAGE_KEY);
+          clearCompanyPostJobFormDraft();
           setCompletedCheckout({
             providerId: 'paypal',
             payment: data?.payment || null,
@@ -233,6 +235,7 @@ export default function CompanyPostJobPaymentPage() {
 
       paymentCompletedRef.current = true;
       window.localStorage.removeItem(STORAGE_KEY);
+      clearCompanyPostJobFormDraft();
       setCurrentPaymentId(data?.payment?.id || '');
       setCompletedCheckout({
         providerId: paymentMethod,
