@@ -68,7 +68,7 @@ export default function UserSearchResultsPage({
   useEffect(() => {
     const timer = setTimeout(() => {
       void runSearch(query, scope);
-    }, 220);
+    }, 300);
     return () => clearTimeout(timer);
   }, [query, scope]);
 

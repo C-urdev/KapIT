@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {
   Building2,
   ChevronLeft,
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { getPublicProfile } from '@sharedServices/authService';
 import { getMessages, listConversations, sendMessage } from '@sharedServices/messageService';
+import MessagesSkeleton from '../../../../components/shared/skeletons/MessagesSkeleton';
 
 const QUICK_EMOJIS = ['😀', '😂', '😊', '😍', '👍', '👌', '👏', '🙏', '🔥', '🎉', '💯', '❤️', '😢', '😭', '💀', '🕵️'];
 const MAX_IMAGE_BYTES = 100 * 1024 * 1024;
@@ -451,6 +452,10 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
     },
     [loadMessages, selectedConversation?.id]
   );
+
+  if (loadingConversations && !conversations.length) {
+    return <MessagesSkeleton />;
+  }
 
   return (
     <div className={`mx-auto flex h-full min-h-0 w-full ${isCompanyVariant ? 'max-w-[min(100%,1560px)] px-0 xl:px-4' : 'max-w-[min(100%,1420px)] px-0'} justify-center xl:transition-all xl:duration-300 xl:ease-out ${introReady ? 'xl:translate-y-0 xl:opacity-100' : 'xl:translate-y-1 xl:opacity-0'}`}>

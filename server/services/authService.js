@@ -299,7 +299,7 @@ const ensureOtpTable = async (client) => {
 const issueOtp = async ({ email, ipAddress }) => {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) {
-    return { message: OTP_GENERIC_MESSAGE };
+    return { success: false, statusCode: 400, message: 'Please provide a valid email address.' };
   }
 
   if (!canSendEmail()) {
@@ -318,7 +318,7 @@ const issueOtp = async ({ email, ipAddress }) => {
     );
     if (!userResult.rows.length) {
       logger.info({ emailDigest: digestForLogs(normalizedEmail), ipAddress }, 'OTP requested for unknown email.');
-      return { message: OTP_GENERIC_MESSAGE };
+      return { success: false, statusCode: 404, message: 'No account found with this email address.' };
     }
 
     // Generate 6-digit code

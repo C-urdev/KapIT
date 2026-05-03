@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, ArrowLeft, Briefcase, Building2, CheckCircle2, Eye, EyeOff, Loader2, Mail } from 'lucide-react';
 import {
@@ -53,7 +53,7 @@ export default function SocialSignupFlowClient() {
   const [session, setSession] = useState(null);
   const [step, setStep] = useState('loading');
   const [selectedAccountType, setSelectedAccountType] = useState('');
-  const [otpCode, setOtpCode] = useState('');
+  const [digits, setDigits] = useState(['', '', '', '', '', '']);
   const [verificationToken, setVerificationToken] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -64,6 +64,70 @@ export default function SocialSignupFlowClient() {
   const [info, setInfo] = useState('');
   const [isLocalhost, setIsLocalhost] = useState(false);
   const localAuthBypassEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS === 'true';
+
+  const inputRefs = useRef([]);
+
+  const strength = useMemo(() => {
+    if (!password) return 0;
+    let s = 0;
+    if (password.length >= 8) s++;
+    if (/[A-Z]/.test(password)) s++;
+    if (/[a-z]/.test(password)) s++;
+    if (/\d/.test(password)) s++;
+    if (/[^a-zA-Z0-9]/.test(password)) s++;
+    return s;
+  }, [password]);
+
+  const strengthLabel = ['', 'Very weak', 'Weak', 'Fair', 'Strong', 'Very strong'][strength] || '';
+  const strengthColor = [
+    '',
+    'bg-red-500',
+    'bg-orange-400',
+    'bg-yellow-400',
+    'bg-emerald-400',
+    'bg-emerald-500',
+  ][strength] || '';
+
+  const handleDigitChange = (idx, val) => {
+    const clean = val.replace(/\D/g, '');
+    if (clean.length === 6) {
+      const next = clean.split('');
+      setDigits(next);
+      inputRefs.current[5]?.focus();
+      return;
+    }
+    const single = clean.slice(-1);
+    const updated = [...digits];
+    updated[idx] = single;
+    setDigits(updated);
+    if (single && idx < 5) {
+      inputRefs.current[idx + 1]?.focus();
+    }
+  };
+
+  const handleDigitKeyDown = (idx, e) => {
+    if (e.key === 'Backspace') {
+      if (digits[idx]) {
+        const updated = [...digits];
+        updated[idx] = '';
+        setDigits(updated);
+      } else if (idx > 0) {
+        inputRefs.current[idx - 1]?.focus();
+      }
+    }
+    if (e.key === 'ArrowLeft' && idx > 0) inputRefs.current[idx - 1]?.focus();
+    if (e.key === 'ArrowRight' && idx < 5) inputRefs.current[idx + 1]?.focus();
+  };
+
+  const handleDigitPaste = (e) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (!text) return;
+    const next = text.split('').concat(['', '', '', '', '', '']).slice(0, 6);
+    setDigits(next);
+    const lastFilled = Math.min(text.length, 5);
+    inputRefs.current[lastFilled]?.focus();
+  };
 
   const pageTitle = useMemo(() => {
     if (step === 'verify-otp') return 'Verify your email';
@@ -191,7 +255,8 @@ export default function SocialSignupFlowClient() {
   };
 
   const handleVerifyOtp = async () => {
-    if (otpCode.length !== 6) {
+    const code = digits.join('');
+    if (code.length !== 6) {
       setError('Enter the 6-digit code sent to your email.');
       return;
     }
@@ -206,7 +271,7 @@ export default function SocialSignupFlowClient() {
     setError('');
     setInfo('');
     try {
-      const result = await verifyRegistrationOtp({ email: session.email, code: otpCode });
+      const result = await verifyRegistrationOtp({ email: session.email, code });
       if (!result?.success || !result?.verificationToken) {
         setError(result?.message || 'Invalid verification code.');
         return;
@@ -361,18 +426,37 @@ export default function SocialSignupFlowClient() {
 
         {step === 'verify-otp' ? (
           <div className="space-y-3">
-            <input
-              type="text"
-              maxLength={6}
-              value={otpCode}
-              onChange={(event) => setOtpCode(event.target.value.replace(/\D/g, ''))}
-              placeholder="000000"
-              className="w-full text-center text-3xl tracking-[0.5em] font-semibold px-4 py-3 border border-[#a3b18a] dark:border-[#444d57] rounded-xl bg-white dark:bg-[#1a1d20] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#3a5a40] dark:focus:ring-[#6f9b74] outline-none transition-colors"
-            />
+            <div className="flex items-center justify-center gap-2 sm:gap-3 my-2" onPaste={handleDigitPaste}>
+              {digits.map((d, i) => (
+                <input
+                  key={i}
+                  ref={(el) => (inputRefs.current[i] = el)}
+                  id={`otp-${i}`}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={d}
+                  onChange={(e) => handleDigitChange(i, e.target.value)}
+                  onKeyDown={(e) => handleDigitKeyDown(i, e)}
+                  disabled={loading}
+                  className={`w-11 h-13 sm:w-13 sm:h-14 text-center text-xl font-bold border rounded-xl outline-none transition-all
+                    ${
+                      d
+                        ? 'border-[#588157] dark:border-[#6f9b74] bg-[#f0f5f1] dark:bg-[#353c44] text-[#3a5a40] dark:text-[#6f9b74]'
+                        : 'border-[#a3b18a] dark:border-[#444d57] bg-white dark:bg-[#1a1d20] text-[#344e41] dark:text-white'
+                    }
+                    focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74] focus:border-transparent
+                    disabled:opacity-50 disabled:cursor-not-allowed`}
+                  style={{ width: '2.75rem', height: '3.5rem' }}
+                  autoComplete="off"
+                  aria-label={`Digit ${i + 1}`}
+                />
+              ))}
+            </div>
             <button
               type="button"
               onClick={handleVerifyOtp}
-              disabled={loading || otpCode.length !== 6}
+              disabled={loading || digits.join('').length !== 6}
               className="w-full h-12 bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Verify code'}
@@ -415,7 +499,23 @@ export default function SocialSignupFlowClient() {
               </button>
             </div>
 
-            <div className="relative">
+            {password && (
+              <div className="mt-2 space-y-1">
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div
+                      key={i}
+                      className={`h-1 flex-1 rounded-full transition-all ${
+                        i <= strength ? strengthColor : 'bg-[#e5e7eb] dark:bg-[#444d57]'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className="text-xs text-[#6b7280] dark:text-[#adb5be]">{strengthLabel}</p>
+              </div>
+            )}
+
+            <div className="relative mt-4">
               <input
                 type={showConfirmPassword ? 'text' : 'password'}
                 value={confirmPassword}
@@ -432,6 +532,20 @@ export default function SocialSignupFlowClient() {
                 {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
+            
+            {confirmPassword && password && (
+              <p
+                className={`mt-1 text-xs ${
+                  password === confirmPassword ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'
+                }`}
+              >
+                {password === confirmPassword ? '✓ Passwords match' : '✗ Passwords do not match'}
+              </p>
+            )}
+
+            <p className="text-xs text-[#6b7280] dark:text-[#adb5be] mt-2 mb-4">
+              At least 8 characters with uppercase, lowercase, and a number.
+            </p>
 
             <button
               type="button"
