@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { logoutAndRedirect } from '@sharedServices/authService';
+import { ToastProvider } from '@sharedComponents/ui/ToastProvider';
 import SessionGate from './SessionGate';
 import CompanyLayout from '@companyLayouts/CompanyLayout';
 import { COMPANY_PATHS, navigate, setCompanyNavigator } from '@companyFeatures/companyUtils';
@@ -166,7 +167,7 @@ export default function CompanyAppClient() {
   };
 
   return (
-    <>
+    <ToastProvider>
       <SessionGate requiredAccountType="company" redirectTo="/">
         {({ user, updateUser }) => (
           <>
@@ -191,7 +192,7 @@ export default function CompanyAppClient() {
           </>
         )}
       </SessionGate>
-    </>
+    </ToastProvider>
   );
 }
 

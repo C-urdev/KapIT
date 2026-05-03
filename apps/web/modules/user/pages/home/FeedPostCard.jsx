@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Bookmark, EyeOff, MessageCircle, MoreHorizontal, Share2, ThumbsUp, Trash2, UserX, X } from 'lucide-react';
+import { useToast } from '@sharedComponents/ui/ToastProvider';
 import { ActionButton, ReactionPicker } from './CenterFeedActionButton';
 import CenterFeedCommentsView from './CenterFeedCommentsView';
 import CenterFeedShareSheet from './CenterFeedShareSheet';
@@ -123,6 +124,7 @@ const getResolvedPostOwnerName = (post, fallbackDisplayName = '') => {
 };
 
 export default function FeedPostCard({ post, user, displayName, profileImage, userInitial, isMenuOpen, onOpenMenu, onCloseMenu, onToggleSavePost, onReactToPost, onAddComment, onReactToComment, onToggleSharePost, onDeletePost, isHidden = false, onHidePost, onUndoHidePost, onHideAuthor, enableMenu = true, isSavedOverride = false }) {
+  const toast = useToast();
   const actorKey = getActorKey(user);
   const authorDisplayName = getResolvedPostOwnerName(post, displayName);
   const authorInitial = String(authorDisplayName || 'U').charAt(0).toUpperCase();
@@ -202,13 +204,13 @@ export default function FeedPostCard({ post, user, displayName, profileImage, us
   };
 
   const handleReportPost = () => {
-    window.alert('Post reported. Thanks for your feedback.');
+    toast.success('Post reported. Thanks for your feedback.');
     onCloseMenu?.();
   };
 
   const handleBlockAuthor = () => {
     onHideAuthor?.();
-    window.alert(`${authorDisplayName} has been blocked in this feed view.`);
+    toast.info(`${authorDisplayName} has been blocked in this feed view.`);
     onCloseMenu?.();
   };
 

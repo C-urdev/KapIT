@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Bookmark, Building2, MapPin } from 'lucide-react';
+import { useToast } from '@sharedComponents/ui/ToastProvider';
 import { applyToJob, removeSavedJob, saveJob } from '@sharedServices/authService';
 import { formatJobStatus, statusBadgeClass } from '@companyFeatures/companyUtils';
 import { saveApplicationForUser } from '@userFeatures/activity/userActivityStorage';
@@ -16,14 +17,13 @@ export default function UserJobDetailPage({
   const [applying, setApplying] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [feedback, setFeedback] = useState('');
+  const toast = useToast();
 
   useEffect(() => {
     setCurrentJob(job || null);
     setApplying(false);
     setSaving(false);
     setError('');
-    setFeedback('');
   }, [job]);
 
   const status = String(currentJob?.status || 'open').toLowerCase();
@@ -47,7 +47,6 @@ export default function UserJobDetailPage({
 
     setApplying(true);
     setError('');
-    setFeedback('');
 
     try {
       await applyToJob(currentJob.id);
@@ -63,7 +62,7 @@ export default function UserJobDetailPage({
       });
       setCurrentJob((prev) => ({ ...(prev || {}), hasApplied: true }));
       onJobMutation?.(currentJob.id, { hasApplied: true });
-      setFeedback('Application sent successfully.');
+      toast.success('Application sent successfully.');
     } catch (err) {
       setError(err?.message || 'Failed to apply to job.');
     } finally {
@@ -79,19 +78,18 @@ export default function UserJobDetailPage({
 
     setSaving(true);
     setError('');
-    setFeedback('');
 
     try {
       if (isSaved) {
         await removeSavedJob(jobId);
         setCurrentJob((prev) => ({ ...(prev || {}), isSaved: false }));
         onJobMutation?.(jobId, { isSaved: false });
-        setFeedback('Removed from Saved Jobs.');
+        toast.info('Removed from Saved Jobs.');
       } else {
         await saveJob(jobId);
         setCurrentJob((prev) => ({ ...(prev || {}), isSaved: true }));
         onJobMutation?.(jobId, { isSaved: true });
-        setFeedback('Saved to Saved Jobs.');
+        toast.success('Saved to Saved Jobs.');
       }
     } catch (err) {
       setError(err?.message || 'Failed to update saved jobs.');
@@ -209,7 +207,7 @@ export default function UserJobDetailPage({
           </div>
         </section>
 
-        {feedback ? <p className="mt-4 text-sm text-[#3a5a40] dark:text-[#f0c766]">{feedback}</p> : null}
+        </section>
         {error ? <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p> : null}
 
         <div className="mt-auto flex w-full items-end gap-3 pt-8">

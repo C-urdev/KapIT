@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Building2, ChevronDown, MapPin, Search, SlidersHorizontal, X } from 'lucide-react';
 import { getJobsFeed, getSavedJobs } from '@sharedServices/authService';
 import { formatJobStatus, statusBadgeClass } from '@companyFeatures/companyUtils';
+import { useToast } from '@sharedComponents/ui/ToastProvider';
 import { syncApplicationsForUser } from '@userFeatures/activity/userActivityStorage';
 import JobsSkeleton from '../../../../components/shared/skeletons/JobsSkeleton';
 
@@ -176,7 +177,7 @@ export default function UserJobsPage({
   const [savedJobIds, setSavedJobIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [feedback, setFeedback] = useState('');
+  const toast = useToast();
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -386,7 +387,6 @@ export default function UserJobsPage({
     setFilters(EMPTY_FILTERS);
     setAppliedFilters(EMPTY_FILTERS);
     setShowAdvancedFilters(false);
-    setFeedback('');
     lastAutoOpenRef.current = '';
   };
 
@@ -637,7 +637,6 @@ export default function UserJobsPage({
         </div>
       </form>
 
-      {feedback ? <p className="text-sm text-[#3a5a40] dark:text-[#f0c766]">{feedback}</p> : null}
       {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
 
       {loading ? (

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
+import { useToast } from '@sharedComponents/ui/ToastProvider';
 import { companyAPI } from '@companyFeatures/companyAPI';
 
 const createRelatedCompany = () => ({ name: '', shortDescription: '', website: '' });
@@ -42,6 +43,7 @@ const downscaleImageDataUrl = (dataUrl, { maxSize = 320, quality = 0.85 } = {}) 
   });
 
 export default function CompanyProfilePage({ user, onUpdated }) {
+  const toast = useToast();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -142,7 +144,7 @@ export default function CompanyProfilePage({ user, onUpdated }) {
       };
       const data = await companyAPI.updateProfile(payload);
       onUpdated?.(data?.company, payload);
-      window.alert('Company profile saved.');
+      toast.success('Company profile saved.');
     } catch (err) {
       setError(err?.message || 'Failed to save company profile');
     } finally {
