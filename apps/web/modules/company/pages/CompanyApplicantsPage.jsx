@@ -4,6 +4,7 @@ import ApplicantCard from '@companyComponents/CompanyApplicantCard';
 import { companyAPI } from '@companyFeatures/companyAPI';
 import { useCompanyAnalytics, useCompanyApplicants } from '@companyFeatures/companyHooks';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
+import { useToast } from '@sharedComponents/ui/ToastProvider';
 import TimedInfoPopup from '@sharedComponents/ui/TimedInfoPopup';
 import { getPublicProfile, getStoredUser } from '@sharedServices/authService';
 import PublicProfilePage from '@sharedPages/public-profile/PublicProfilePage';
@@ -16,7 +17,7 @@ export default function CompanyApplicantsPage() {
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [actionApplicantId, setActionApplicantId] = useState(null);
-  const [feedback, setFeedback] = useState('');
+  const toast = useToast();
   const [rankingJobId, setRankingJobId] = useState(null);
   const selectedJobId = useMemo(
     () => String(searchParams?.get('job') || '').trim(),
@@ -118,13 +119,12 @@ export default function CompanyApplicantsPage() {
   const handleStatusUpdate = async (applicant, status, successMessage) => {
     if (!applicant?.id) return;
     setActionApplicantId(applicant.id);
-    setFeedback('');
     try {
       await companyAPI.updateApplicantStatus(applicant.id, status);
-      setFeedback(successMessage);
+      toast.success(successMessage);
       await Promise.all([refetch(), refetchAnalytics()]);
     } catch (err) {
-      setFeedback(err?.message || 'Failed to update applicant.');
+      toast.error(err?.message || 'Failed to update applicant.');
     } finally {
       setActionApplicantId(null);
     }
@@ -133,13 +133,12 @@ export default function CompanyApplicantsPage() {
   const handleRankApplicants = async (jobId) => {
     if (!jobId) return;
     setRankingJobId(jobId);
-    setFeedback('');
     try {
       await companyAPI.rankApplicantsForJob(jobId);
       await refetch();
-      setFeedback('Applicant ranking was refreshed for this job.');
+      toast.info('Applicant ranking was refreshed for this job.');
     } catch (err) {
-      setFeedback(err?.message || 'Failed to rank applicants.');
+      toast.error(err?.message || 'Failed to rank applicants.');
     } finally {
       setRankingJobId(null);
     }
@@ -191,7 +190,6 @@ export default function CompanyApplicantsPage() {
         <PipelineGraph data={pipelineData} />
       </div>
 
-      {feedback && <p className="text-sm text-[#3a5a40] dark:text-[#f0c766]">{feedback}</p>}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
       {analyticsError && <p className="text-sm text-red-600 dark:text-red-400">{analyticsError}</p>}
       {loading ? (

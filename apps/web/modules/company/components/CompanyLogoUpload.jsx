@@ -1,5 +1,6 @@
 import React from 'react';
 import { Image, X } from 'lucide-react';
+import { useToast } from '@sharedComponents/ui/ToastProvider';
 
 const readAsDataUrl = (file) =>
   new Promise((resolve, reject) => {
@@ -10,19 +11,20 @@ const readAsDataUrl = (file) =>
   });
 
 export default function CompanyLogoUpload({ value, onChange, compact = false }) {
+  const toast = useToast();
   const hasValue = Boolean(value);
 
   const handleFile = async (file) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      window.alert('Please upload an image file.');
+      toast.warning('Please upload an image file.');
       return;
     }
     try {
       const dataUrl = await readAsDataUrl(file);
       onChange?.(dataUrl);
     } catch {
-      window.alert('Failed to read image. Please try again.');
+      toast.error('Failed to read image. Please try again.');
     }
   };
 

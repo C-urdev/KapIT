@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import DeveloperProfile from '@sharedPages/onboarding/DeveloperProfileOnboardingPage';
 import { logoutAndRedirect, updateStoredUser } from '@sharedServices/authService';
 import { saveDeveloperProfile } from '@userFeatures/developer/userDeveloperAPI';
+import { ToastProvider } from '@sharedComponents/ui/ToastProvider';
 import SessionGate from './SessionGate';
 
 export default function DeveloperOnboardingClient() {
@@ -13,7 +14,7 @@ export default function DeveloperOnboardingClient() {
   };
 
   return (
-    <>
+    <ToastProvider>
       <SessionGate requiredAccountType="developer" redirectTo="/" allowIncompleteProfile>
         {({ user, setUser }) => (
           <DeveloperProfile
@@ -32,6 +33,6 @@ export default function DeveloperOnboardingClient() {
           />
         )}
       </SessionGate>
-    </>
+    </ToastProvider>
   );
 }

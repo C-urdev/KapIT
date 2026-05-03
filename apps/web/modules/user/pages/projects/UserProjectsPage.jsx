@@ -13,6 +13,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import { useToast } from '@sharedComponents/ui/ToastProvider';
 
 const emptyProjectForm = {
   title: '',
@@ -97,6 +98,7 @@ const getFileSizeLabel = (project) => {
 };
 
 export default function UserProjectsPage({ userType, user, onUpdateUser }) {
+  const toast = useToast();
   const projects = useMemo(() => normalizeProjects(user?.projects), [user?.projects]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState('');
@@ -200,7 +202,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
       await saveProjects(nextProjects);
     } catch (deleteError) {
       console.error(deleteError);
-      window.alert(deleteError?.message || 'Failed to delete project.');
+      toast.error(deleteError?.message || 'Failed to delete project.');
     }
   };
 

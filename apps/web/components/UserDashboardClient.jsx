@@ -2,6 +2,7 @@
 
 import UserHomePage from '@userPages/home/UserHomePage';
 import { logoutAndRedirect, updateMyProfile } from '@sharedServices/authService';
+import { ToastProvider } from '@sharedComponents/ui/ToastProvider';
 import SessionGate from './SessionGate';
 
 const PROFILE_PATCH_FIELDS = new Set([
@@ -32,7 +33,7 @@ export default function UserDashboardClient() {
   };
 
   return (
-    <>
+    <ToastProvider>
       <SessionGate requiredAccountType="developer" redirectTo="/">
         {({ user, updateUser }) => (
           <UserHomePage
@@ -64,7 +65,6 @@ export default function UserDashboardClient() {
           />
         )}
       </SessionGate>
-
-    </>
+    </ToastProvider>
   );
 }

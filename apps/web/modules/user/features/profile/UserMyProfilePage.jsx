@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Edit3, GraduationCap, Link2, MapPin, Mail, Pencil, Phone, User } from 'lucide-react';
+import { useToast } from '@sharedComponents/ui/ToastProvider';
 import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
 import { Avatar } from '@userPages/home/CenterFeedPostShared';
 import FeedPostCard from '@userPages/home/FeedPostCard';
@@ -66,6 +67,7 @@ export default function UserMyProfilePage({
   onDeletePost,
   savedPostIds = [],
 }) {
+  const toast = useToast();
   const displayName = user?.fullName || user?.name || user?.username || 'User';
   const initial = displayName.charAt(0).toUpperCase();
   const profileImage = user?.profileImage || '';
@@ -114,7 +116,7 @@ export default function UserMyProfilePage({
       setEditing(false);
     } catch (error) {
       console.error(error);
-      window.alert(error?.message || 'Failed to save profile changes.');
+      toast.error(error?.message || 'Failed to save profile changes.');
     }
   };
 
@@ -139,7 +141,7 @@ export default function UserMyProfilePage({
         }
       } catch (error) {
         console.error(error);
-        window.alert('Failed to update profile picture. Please try a smaller image.');
+        toast.error('Failed to update profile picture. Please try a smaller image.');
       }
     })();
   };

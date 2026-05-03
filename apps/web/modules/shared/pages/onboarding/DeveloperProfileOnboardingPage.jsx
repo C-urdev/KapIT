@@ -1,5 +1,6 @@
 import React, { useEffect, useId, useMemo, useState } from 'react';
 import { ArrowLeft, Briefcase, LogOut, Moon, Sun, UserCircle2 } from 'lucide-react';
+import { useToast } from '@sharedComponents/ui/ToastProvider';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
 import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
@@ -149,6 +150,7 @@ const formatLocation = (city, provinceCode, provinceLabelByCode) => {
 };
 
 export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogout }) {
+  const toast = useToast();
   const { theme, toggleTheme } = useTheme();
   const profileImageInputId = useId();
   const [locationData, setLocationData] = useState({
@@ -297,14 +299,14 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
   const onPickPhoto = async (file) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      window.alert('Please upload an image file.');
+      toast.warning('Please upload an image file.');
       return;
     }
     try {
       const dataUrl = await readAsDataUrl(file);
       setForm((prev) => ({ ...prev, profileImage: dataUrl }));
     } catch {
-      window.alert('Failed to read image. Please try again.');
+      toast.error('Failed to read image. Please try again.');
     }
   };
 

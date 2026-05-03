@@ -6,7 +6,8 @@ import { COMPANY_PATHS, formatSkills, navigate } from '@companyFeatures/companyU
 import { PAYMENT_CANCEL_MESSAGE_TYPE, PAYMENT_MESSAGE_TYPE, STORAGE_KEY } from '@companyPages/CompanyPostJobPaymentPage';
 import ConfirmModal from '@sharedComponents/ui/ConfirmModal';
 import TimedInfoPopup from '@sharedComponents/ui/TimedInfoPopup';
-import ManageJobsSkeleton from '../../../components/shared/skeletons/ManageJobsSkeleton';
+import ManageJobsSkeleton from '../../../../components/shared/skeletons/ManageJobsSkeleton';
+import { useToast } from '@sharedComponents/ui/ToastProvider';
 import { X } from 'lucide-react';
 
 const extractPreAssessment = (job) => {
@@ -22,7 +23,7 @@ const extractPreAssessment = (job) => {
 export default function CompanyManageJobsPage() {
   const { jobs, loading, error, refetch } = useCompanyJobs();
   const [actionJobId, setActionJobId] = useState(null);
-  const [feedback, setFeedback] = useState('');
+  const toast = useToast();
   const [displayJobs, setDisplayJobs] = useState([]);
   const [detailsJob, setDetailsJob] = useState(null);
   const [deleteJob, setDeleteJob] = useState(null);
@@ -38,12 +39,12 @@ export default function CompanyManageJobsPage() {
       const syncPaymentState = async () => {
         if (event.data?.type === PAYMENT_MESSAGE_TYPE) {
           window.localStorage.removeItem(STORAGE_KEY);
-          setFeedback('Payment confirmed and the job was published successfully.');
+          toast.success('Payment confirmed and the job was published successfully.');
           await refetch();
           return;
         }
         if (event.data?.type === PAYMENT_CANCEL_MESSAGE_TYPE) {
-          setFeedback('Payment was canceled or closed. The saved draft is still unpublished so you can retry anytime.');
+          toast.info('Payment was canceled or closed. The saved draft is still unpublished so you can retry anytime.');
         }
       };
 
@@ -75,7 +76,6 @@ export default function CompanyManageJobsPage() {
   const handleClose = async (job) => {
     if (!job?.id) return;
     setActionJobId(job.id);
-    setFeedback('');
     try {
       const data = await companyAPI.updateJobStatus(job.id, 'closed');
       setDisplayJobs((currentJobs) => currentJobs.map((currentJob) => (
@@ -87,10 +87,10 @@ export default function CompanyManageJobsPage() {
           }
           : currentJob
       )));
-      setFeedback(`Closed "${job.title}".`);
+      toast.info(`Closed "${job.title}".`);
       await refetch();
     } catch (err) {
-      setFeedback(err?.message || 'Failed to close job.');
+      toast.error(err?.message || 'Failed to close job.');
     } finally {
       setActionJobId(null);
     }
@@ -99,7 +99,6 @@ export default function CompanyManageJobsPage() {
   const handleReopen = async (job) => {
     if (!job?.id) return;
     setActionJobId(job.id);
-    setFeedback('');
     try {
       const repostDraft = {
         title: String(job?.title || '').trim(),
@@ -127,9 +126,9 @@ export default function CompanyManageJobsPage() {
           paymentWindow.focus();
         }
       }
-      setFeedback(`Reposting "${job.title}" requires payment again. Complete the merchant payment to publish it.`);
+      toast.info(`Reposting "${job.title}" requires payment again. Complete the merchant payment to publish it.`);
     } catch (err) {
-      setFeedback(err?.message || 'Failed to start reposting job.');
+      toast.error(err?.message || 'Failed to start reposting job.');
     } finally {
       setActionJobId(null);
     }
@@ -138,7 +137,6 @@ export default function CompanyManageJobsPage() {
   const handlePayNow = async (job) => {
     if (!job?.id) return;
     setActionJobId(job.id);
-    setFeedback('');
     try {
       const draftPayload = {
         jobId: job.id,
@@ -167,9 +165,9 @@ export default function CompanyManageJobsPage() {
           paymentWindow.focus();
         }
       }
-      setFeedback(`Draft saved for "${job.title}". Complete payment in the merchant window to publish it.`);
+      toast.info(`Draft saved for "${job.title}". Complete payment in the merchant window to publish it.`);
     } catch (err) {
-      setFeedback(err?.message || 'Failed to open payment for this draft job.');
+      toast.error(err?.message || 'Failed to open payment for this draft job.');
     } finally {
       setActionJobId(null);
     }
@@ -179,16 +177,15 @@ export default function CompanyManageJobsPage() {
     if (!job?.id) return;
     const previousJobs = displayJobs;
     setActionJobId(job.id);
-    setFeedback('');
     setDeleteJob(null);
     setDisplayJobs((currentJobs) => currentJobs.filter((currentJob) => currentJob.id !== job.id));
     try {
       await companyAPI.deleteJob(job.id);
-      setFeedback(`Deleted "${job.title}" from your listings and database.`);
+      toast.success(`Deleted "${job.title}" from your listings and database.`);
       refetch({ force: true, silent: true }).catch(() => {});
     } catch (err) {
       setDisplayJobs(previousJobs);
-      setFeedback(err?.message || 'Failed to delete job.');
+      toast.error(err?.message || 'Failed to delete job.');
     } finally {
       setActionJobId(null);
     }
@@ -212,7 +209,6 @@ export default function CompanyManageJobsPage() {
         <SummaryGraph data={graphData} />
       </div>
 
-      {feedback && <p className="text-sm text-[#3a5a40] dark:text-[#f0c766]">{feedback}</p>}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
       {loading ? (
         <ManageJobsSkeleton />
