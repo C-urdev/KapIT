@@ -65,7 +65,7 @@ const getResponseErrorMessage = ({ response, data, resolvedPath }) => {
   }
 
   if (response.status === 404) {
-    return `Request failed: ${resolvedPath} was not found.`;
+    return message || `Request failed: ${resolvedPath} was not found.`;
   }
 
   return message || 'Request failed';

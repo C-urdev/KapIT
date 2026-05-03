@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, Bell, Eye, MessageCircle, MoreHorizontal, Trash2, X } from 'lucide-react';
 import { getNotifications, markNotificationsRead } from '@sharedServices/notificationsService';
+import NotificationsSkeleton from '../../../components/shared/skeletons/NotificationsSkeleton';
 
 const formatNotificationTime = (value) => {
   if (!value) return '';
@@ -178,7 +179,7 @@ export default function CompanyNotificationsPage({ onReadAll }) {
       </div>
 
       {loading ? (
-        <StateBlock>Loading notifications...</StateBlock>
+        <NotificationsSkeleton />
       ) : error ? (
         <StateBlock tone="error">{error}</StateBlock>
       ) : items.length > 0 ? (

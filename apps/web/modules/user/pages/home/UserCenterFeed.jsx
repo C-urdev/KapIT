@@ -2,9 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { Plus, Search } from 'lucide-react';
 import CenterFeedPosts from './CenterFeedPosts';
 import { Avatar } from './CenterFeedPostShared';
+import FeedSkeleton from '../../../../components/shared/skeletons/FeedSkeleton';
 
 export default function CenterFeed(props) {
-  const { user, userType, onOpenComposer, posts = [], onToggleSavePost, onReactToPost, onAddComment, onReactToComment, onToggleSharePost, onDeletePost, onBrowsePeople, onExploreProjects, savedPostIds = [] } = props;
+  const { loading, user, userType, onOpenComposer, posts = [], onToggleSavePost, onReactToPost, onAddComment, onReactToComment, onToggleSharePost, onDeletePost, onBrowsePeople, onExploreProjects, savedPostIds = [] } = props;
   const displayName = user?.fullName || user?.name || user?.username || 'User';
   const userInitial = displayName.charAt(0).toUpperCase();
   const profileImage = user?.profileImage || '';
@@ -41,7 +42,9 @@ export default function CenterFeed(props) {
         </div>
       </div>
 
-      {visiblePosts.length > 0 ? (
+      {loading ? (
+        <FeedSkeleton />
+      ) : visiblePosts.length > 0 ? (
         <CenterFeedPosts
           posts={visiblePosts}
           user={user}

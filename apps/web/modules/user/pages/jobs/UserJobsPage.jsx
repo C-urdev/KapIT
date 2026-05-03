@@ -3,6 +3,7 @@ import { Building2, ChevronDown, MapPin, Search, SlidersHorizontal, X } from 'lu
 import { getJobsFeed, getSavedJobs } from '@sharedServices/authService';
 import { formatJobStatus, statusBadgeClass } from '@companyFeatures/companyUtils';
 import { syncApplicationsForUser } from '@userFeatures/activity/userActivityStorage';
+import JobsSkeleton from '../../../../components/shared/skeletons/JobsSkeleton';
 
 const EMPTY_FILTERS = {
   q: '',
@@ -640,7 +641,7 @@ export default function UserJobsPage({
       {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
 
       {loading ? (
-        <p className="text-sm text-[#4b5563] dark:text-[#d0d7dd]">Loading jobs...</p>
+        <JobsSkeleton />
       ) : jobs.length === 0 ? (
         <div className="bg-[#f8fbf6] dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-6">
           <p className="text-[#344e41] dark:text-[#d0d7dd]">

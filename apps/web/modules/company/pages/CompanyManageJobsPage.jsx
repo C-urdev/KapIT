@@ -6,6 +6,7 @@ import { COMPANY_PATHS, formatSkills, navigate } from '@companyFeatures/companyU
 import { PAYMENT_CANCEL_MESSAGE_TYPE, PAYMENT_MESSAGE_TYPE, STORAGE_KEY } from '@companyPages/CompanyPostJobPaymentPage';
 import ConfirmModal from '@sharedComponents/ui/ConfirmModal';
 import TimedInfoPopup from '@sharedComponents/ui/TimedInfoPopup';
+import ManageJobsSkeleton from '../../../components/shared/skeletons/ManageJobsSkeleton';
 import { X } from 'lucide-react';
 
 const extractPreAssessment = (job) => {
@@ -214,7 +215,7 @@ export default function CompanyManageJobsPage() {
       {feedback && <p className="text-sm text-[#3a5a40] dark:text-[#f0c766]">{feedback}</p>}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
       {loading ? (
-        <p className="text-sm text-[#4b5563] dark:text-[#d0d7dd]">Loading jobs...</p>
+        <ManageJobsSkeleton />
       ) : displayJobs.length === 0 ? (
         <div className="rounded-xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] p-6 transition-colors duration-300">
           <p className="text-[#344e41] dark:text-[#d0d7dd]">No job listings yet.</p>

@@ -126,7 +126,6 @@ function StepEmail({ onNext }) {
     setLoading(true);
     try {
       await sendPasswordResetOtp({ email: trimmed });
-      // Always advance (generic backend response for security)
       onNext(trimmed);
     } catch (err) {
       setError(String(err?.message || 'Unable to send code. Please try again.'));
@@ -374,15 +373,7 @@ function StepVerify({ email, onNext, onBack }) {
         </button>
       ) : null}
 
-      <div className="flex items-center justify-between mt-2 text-sm">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-1 text-[#588157] dark:text-[#6f9b74] hover:underline font-medium"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Change email
-        </button>
+      <div className="flex items-center justify-end mt-2 text-sm">
         <button
           type="button"
           onClick={handleResend}

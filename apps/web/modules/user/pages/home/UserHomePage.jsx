@@ -149,6 +149,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   const [canReturnToSettings, setCanReturnToSettings] = useState(false);
   const [posts, setPosts] = useState([]);
   const [feedPosts, setFeedPosts] = useState([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
   const [publicProfile, setPublicProfile] = useState(null);
   const [messageTargetId, setMessageTargetId] = useState('');
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
@@ -183,6 +184,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
 
   const syncPostState = async () => {
     try {
+      setLoadingPosts(true);
       const [myPosts, allFeedPosts] = await Promise.all([
         listMyPosts(),
         listFeedPosts(),
@@ -193,6 +195,8 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
     } catch {
       setPosts([]);
       setFeedPosts([]);
+    } finally {
+      setLoadingPosts(false);
     }
   };
 
@@ -895,6 +899,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
             </aside>
             <main className="xl:col-span-9 2xl:col-span-6">
               <CenterFeed
+                loading={loadingPosts}
                 user={user}
                 userType={userType}
                 onOpenComposer={() => setComposerOpen(true)}

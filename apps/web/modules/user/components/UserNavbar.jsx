@@ -87,7 +87,7 @@ export default function UserNavbar({
           setSearchLoading(false);
         }
       }
-    }, 250);
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
