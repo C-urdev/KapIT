@@ -20,6 +20,7 @@ class CandidatePayload(BaseModel):
     resume_text: str | None = ''
     skills: list[str] = Field(default_factory=list)
     location: str | None = ''
+    preferred_type: str | None = ''
     experience_years: int | None = None
 
 

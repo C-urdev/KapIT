@@ -1,58 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { Edit3, GraduationCap, Link2, MapPin, Mail, Pencil, Phone, User } from 'lucide-react';
+import { Edit3, GraduationCap, Link2, Loader2, MapPin, Mail, Pencil, Phone, User } from 'lucide-react';
 import { useToast } from '@sharedComponents/ui/ToastProvider';
 import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
 import { Avatar } from '@userPages/home/CenterFeedPostShared';
 import FeedPostCard from '@userPages/home/FeedPostCard';
 import { normalizeSocialsText } from '@sharedUtils/socials';
-
-const readFileAsDataUrl = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
-    reader.onerror = () => reject(new Error('Failed to read file'));
-    reader.readAsDataURL(file);
-  });
-
-const downscaleImageDataUrl = (dataUrl, { maxSize = 320, quality = 0.85 } = {}) =>
-  new Promise((resolve) => {
-    const image = new Image();
-    image.onload = () => {
-      const width = image.naturalWidth || image.width || 0;
-      const height = image.naturalHeight || image.height || 0;
-
-      if (!width || !height) {
-        resolve(dataUrl);
-        return;
-      }
-
-      const scale = Math.min(1, maxSize / Math.max(width, height));
-      const targetWidth = Math.max(1, Math.round(width * scale));
-      const targetHeight = Math.max(1, Math.round(height * scale));
-
-      const canvas = document.createElement('canvas');
-      canvas.width = targetWidth;
-      canvas.height = targetHeight;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        resolve(dataUrl);
-        return;
-      }
-
-      ctx.drawImage(image, 0, 0, targetWidth, targetHeight);
-
-      try {
-        const next = canvas.toDataURL('image/jpeg', quality);
-        resolve(typeof next === 'string' && next.length ? next : dataUrl);
-      } catch {
-        resolve(dataUrl);
-      }
-    };
-
-    image.onerror = () => resolve(dataUrl);
-    image.src = dataUrl;
-  });
+import ImageCropperModal from '@sharedComponents/modals/ImageCropperModal';
+import { readFileAsDataUrl, validateImageFile } from '@sharedUtils/imageUpload';
 
 export default function UserMyProfilePage({
   user,
@@ -78,6 +32,9 @@ export default function UserMyProfilePage({
       : 0;
   const [editing, setEditing] = useState(false);
   const [menuPostId, setMenuPostId] = useState(null);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [rawImage, setRawImage] = useState('');
+  const [profileImageBusy, setProfileImageBusy] = useState(false);
   const normalizedUserSocials = useMemo(() => normalizeSocialsText(user?.socials), [user?.socials]);
   const [formData, setFormData] = useState({
     fullName: user?.fullName || user?.name || user?.username || '',
@@ -125,25 +82,46 @@ export default function UserMyProfilePage({
     if (!file) {
       return;
     }
+    const validation = validateImageFile(file);
+    if (!validation.ok) {
+      toast.warning(validation.message);
+      return;
+    }
 
     (async () => {
       try {
+        setProfileImageBusy(true);
         const raw = await readFileAsDataUrl(file);
-        const nextImage = await downscaleImageDataUrl(raw, { maxSize: 320, quality: 0.85 });
-
-        setFormData((prev) => ({
-          ...prev,
-          profileImage: nextImage || prev.profileImage,
-        }));
-
-        if (nextImage) {
-          await onUpdateUser?.({ profileImage: nextImage });
-        }
+        setRawImage(raw);
+        setCropOpen(true);
       } catch (error) {
         console.error(error);
-        toast.error('Failed to update profile picture. Please try a smaller image.');
+        toast.error('Failed to read selected image.');
+      } finally {
+        setProfileImageBusy(false);
       }
     })();
+  };
+
+  const handleConfirmCrop = async (croppedDataUrl) => {
+    try {
+      setProfileImageBusy(true);
+      setFormData((prev) => ({
+        ...prev,
+        profileImage: croppedDataUrl || prev.profileImage,
+      }));
+      if (croppedDataUrl) {
+        await onUpdateUser?.({ profileImage: croppedDataUrl });
+      }
+      toast.success('Profile photo updated.');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to update profile picture. Please try again.');
+    } finally {
+      setProfileImageBusy(false);
+      setCropOpen(false);
+      setRawImage('');
+    }
   };
 
   return (
@@ -162,8 +140,8 @@ export default function UserMyProfilePage({
                 )}
                 </div>
                 <label className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-[#3a5a40] dark:bg-[#1a1d20] border border-white/70 dark:border-[#6f9b74]/40 text-white flex items-center justify-center cursor-pointer hover:scale-105 transition-transform">
-                  <Pencil className="w-4 h-4" />
-                  <input type="file" accept="image/*" onChange={handleProfileImageSelect} className="hidden" />
+                  {profileImageBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pencil className="w-4 h-4" />}
+                  <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleProfileImageSelect} className="hidden" disabled={profileImageBusy} />
                 </label>
               </div>
               <div className="space-y-0.5 max-w-[460px]">
@@ -273,6 +251,18 @@ export default function UserMyProfilePage({
           </div>
         </div>
       )}
+
+      <ImageCropperModal
+        isOpen={cropOpen}
+        imageSrc={rawImage}
+        title="Crop profile photo"
+        confirmLabel="Use cropped photo"
+        onClose={() => {
+          setCropOpen(false);
+          setRawImage('');
+        }}
+        onConfirm={handleConfirmCrop}
+      />
     </div>
   );
 }

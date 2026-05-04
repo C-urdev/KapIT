@@ -69,6 +69,7 @@ const buildCandidateProfilePayload = (profile) => ({
   resume_text: profile?.resumeText || profile?.resume || '',
   skills: Array.isArray(profile?.skills) ? profile.skills : [],
   location: profile?.location || profile?.address || '',
+  preferred_type: profile?.preferredType || profile?.workPreference || '',
   experience_years: profile?.yearsOfExperience == null ? null : Number(profile.yearsOfExperience),
 });
 

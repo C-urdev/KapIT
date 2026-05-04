@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertCircle, ArrowLeft, Loader2, Mail } from 'lucide-react';
 import AuthPage from '@sharedPages/auth/AuthPage';
@@ -44,6 +44,7 @@ export default function AuthPageClient({ initialMode = 'login' }) {
   const [infoMessage, setInfoMessage] = useState('');
   const [error, setError] = useState('');
   const [isLocalhost, setIsLocalhost] = useState(false);
+  const otpInputRefs = useRef([]);
   const localAuthBypassEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS === 'true';
 
   const completeRegistration = async (signupData, verificationToken) => {
@@ -175,6 +176,67 @@ export default function AuthPageClient({ initialMode = 'login' }) {
     }
   };
 
+  const otpDigits = Array.from({ length: 6 }, (_, index) => otpCode[index] || '');
+
+  const setOtpDigitAt = (index, digit) => {
+    const nextDigits = [...otpDigits];
+    nextDigits[index] = digit;
+    setOtpCode(nextDigits.join(''));
+  };
+
+  const handleOtpChange = (index, rawValue) => {
+    const value = rawValue.replace(/\D/g, '');
+    if (!value) {
+      setOtpDigitAt(index, '');
+      return;
+    }
+
+    const digit = value[value.length - 1];
+    setOtpDigitAt(index, digit);
+    if (index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, event) => {
+    if (event.key === 'Backspace') {
+      if (otpDigits[index]) {
+        setOtpDigitAt(index, '');
+        return;
+      }
+
+      if (index > 0) {
+        otpInputRefs.current[index - 1]?.focus();
+        setOtpDigitAt(index - 1, '');
+      }
+    }
+
+    if (event.key === 'ArrowLeft' && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+
+    if (event.key === 'ArrowRight' && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (event) => {
+    const pasted = event.clipboardData?.getData('text')?.replace(/\D/g, '') || '';
+    if (!pasted) {
+      return;
+    }
+
+    event.preventDefault();
+    const merged = pasted.slice(0, 6).split('');
+    while (merged.length < 6) {
+      merged.push('');
+    }
+    setOtpCode(merged.join(''));
+
+    const focusIndex = Math.min(Math.max(pasted.length - 1, 0), 5);
+    otpInputRefs.current[focusIndex]?.focus();
+  };
+
   if (pendingSignup) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#dad7cd] to-[#f5f5f2] dark:from-[#121416] dark:to-[#22272b]">
@@ -212,20 +274,31 @@ export default function AuthPageClient({ initialMode = 'login' }) {
           )}
 
           <div className="flex flex-col gap-4">
-            <input
-              type="text"
-              maxLength={6}
-              value={otpCode}
-              onChange={(e) => {
-                const val = e.target.value.replace(/\D/g, '');
-                setOtpCode(val);
-                if (val.length === 6 && !loading) {
-                  // We simulate hitting submit automatically on 6th char or wait for button
-                }
-              }}
-              placeholder="000000"
-              className="w-full text-center text-3xl tracking-[0.5em] font-semibold px-4 py-3 border border-[#a3b18a] dark:border-[#444d57] rounded-xl bg-white dark:bg-[#1a1d20] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#3a5a40] dark:focus:ring-[#6f9b74] outline-none transition-colors"
-            />
+            <div className="flex items-center justify-center gap-2 sm:gap-3 my-1" onPaste={handleOtpPaste}>
+              {otpDigits.map((digit, index) => (
+                <input
+                  key={index}
+                  ref={(element) => {
+                    otpInputRefs.current[index] = element;
+                  }}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(event) => handleOtpChange(index, event.target.value)}
+                  onKeyDown={(event) => handleOtpKeyDown(index, event)}
+                  disabled={loading}
+                  className={`w-11 h-13 sm:w-13 sm:h-14 text-center text-xl font-bold border rounded-xl outline-none transition-all ${
+                    digit
+                      ? 'border-[#588157] dark:border-[#6f9b74] bg-[#f0f5f1] dark:bg-[#353c44] text-[#3a5a40] dark:text-[#6f9b74]'
+                      : 'border-[#a3b18a] dark:border-[#444d57] bg-white dark:bg-[#1a1d20] text-[#344e41] dark:text-white'
+                  } focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed`}
+                  style={{ width: '2.75rem', height: '3.5rem' }}
+                  autoComplete="one-time-code"
+                  aria-label={`Digit ${index + 1}`}
+                />
+              ))}
+            </div>
             
             <button
               onClick={verifyAndRegister}

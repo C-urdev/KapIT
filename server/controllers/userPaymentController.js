@@ -14,6 +14,7 @@ const {
   finalizeVerifiedUserPremiumPayment,
   updateUserPremiumPaymentRecord,
 } = require('../services/paymentService');
+const { sendUserPremiumPaymentEmail } = require('../services/emailService');
 
 const listUserPremiumPaymentProviders = async (req, res) => {
   try {
@@ -119,6 +120,17 @@ const captureUserPremiumPayPalCheckout = async (req, res) => {
     });
 
     await client.query('COMMIT');
+    await sendUserPremiumPaymentEmail({
+      to: result?.user?.email || req.user?.email,
+      fullName: result?.user?.name || result?.user?.full_name || result?.user?.username || req.user?.name || req.user?.username,
+      planLabel: result?.payment?.plan_label || USER_PREMIUM_PLAN.label,
+      durationLabel: result?.payment?.plan_duration || USER_PREMIUM_PLAN.durationLabel,
+      amount: Number(result?.payment?.amount || USER_PREMIUM_PLAN.price || 0),
+      paidAt: result?.payment?.paid_at || new Date().toISOString(),
+      provider: result?.payment?.provider || 'paypal',
+    }).catch((error) => {
+      logger.warn({ err: error }, 'User premium payment email delivery failed.');
+    });
     return res.json({ success: true, payment: result.payment, user: serializeUser(result.user) });
   } catch (error) {
     if (client) {
@@ -179,6 +191,17 @@ const completeLocalBypassUserPremiumCheckout = async (req, res) => {
     });
 
     await client.query('COMMIT');
+    await sendUserPremiumPaymentEmail({
+      to: result?.user?.email || req.user?.email,
+      fullName: result?.user?.name || result?.user?.full_name || result?.user?.username || req.user?.name || req.user?.username,
+      planLabel: result?.payment?.plan_label || USER_PREMIUM_PLAN.label,
+      durationLabel: result?.payment?.plan_duration || USER_PREMIUM_PLAN.durationLabel,
+      amount: Number(result?.payment?.amount || USER_PREMIUM_PLAN.price || 0),
+      paidAt: result?.payment?.paid_at || new Date().toISOString(),
+      provider: result?.payment?.provider || provider,
+    }).catch((error) => {
+      logger.warn({ err: error }, 'User premium localhost bypass receipt email failed.');
+    });
     return res.json({
       success: true,
       payment: result.payment,

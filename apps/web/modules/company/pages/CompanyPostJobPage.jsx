@@ -108,6 +108,7 @@ const formatLocation = (city, provinceCode, provinceLabelByCode, country) => {
 
 export default function CompanyPostJobPage() {
   const [error, setError] = useState('');
+  const [paymentInfoOpen, setPaymentInfoOpen] = useState(true);
   const [paymentPending, setPaymentPending] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState('');
   const [customSkill, setCustomSkill] = useState('');
@@ -274,6 +275,7 @@ export default function CompanyPostJobPage() {
       experienceLevel: String(form.experienceLevel || '').trim().toLowerCase(),
       workPreference: String(form.workPreference || '').trim().toLowerCase(),
       applicationDeadline: String(form.applicationDeadline || '').trim(),
+      hiresNeeded: Math.max(1, Math.min(50, Number(form.hiresNeeded || 1) || 1)),
       skills: formatSkills(form.skills),
       preAssessment: {
         enabled: Boolean(form.preAssessmentEnabled),
@@ -337,16 +339,36 @@ export default function CompanyPostJobPage() {
         <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Post a job</h2>
       </div>
 
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[linear-gradient(135deg,#f8fbf5,#edf5ea)] dark:bg-[linear-gradient(135deg,#31363d,#202428)] p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
-        <div className="flex items-start gap-3">
-          <div className="rounded-xl bg-[#f8fbf6]/80 dark:bg-[#1a1d20] p-3 border border-[#d6d3c9] dark:border-[#444d57]"><WalletCards className="w-5 h-5 text-[#3a5a40] dark:text-[#f0c766]" /></div>
-          <div>
-            <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Payment before publishing</h3>
-            <p className="mt-1 text-sm text-[#344e41] dark:text-[#eceff2]">Selecting <span className="font-semibold text-[#3a5a40] dark:text-white">Post job</span> first saves this role as a draft in your company account, then opens the secure payment window.</p>
-            <p className="mt-1 text-sm text-[#344e41] dark:text-[#eceff2]">If checkout is canceled, the draft stays saved and unpublished so you can pay later from Manage Jobs.</p>
+      {paymentInfoOpen ? (
+        <div className="fixed inset-0 z-[80] pointer-events-none">
+          <div className="pointer-events-auto absolute right-4 top-[72px] w-[min(92vw,620px)] rounded-2xl border border-[#a3b18a] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#22272b] p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="rounded-xl bg-[#f8fbf6]/80 dark:bg-[#1a1d20] p-3 border border-[#d6d3c9] dark:border-[#444d57]">
+                  <WalletCards className="w-4.5 h-4.5 text-[#3a5a40] dark:text-[#f0c766]" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Payment before publishing</h3>
+                  <p className="mt-2 text-[15px] leading-7 text-[#344e41] dark:text-[#eceff2]">
+                    Selecting <span className="font-semibold text-[#3a5a40] dark:text-white">Post job</span> first saves this role as a draft in your company account, then opens the secure payment window.
+                  </p>
+                  <p className="mt-1.5 text-[15px] leading-7 text-[#344e41] dark:text-[#eceff2]">
+                    If checkout is canceled, the draft stays saved and unpublished so you can pay later from Manage Jobs.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPaymentInfoOpen(false)}
+                className="rounded-lg p-2 text-[#344e41] hover:bg-[#eef3e8] dark:text-[#d0d7dd] dark:hover:bg-[#353c44]"
+                aria-label="Close payment information"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
       {paymentPending && <p className="text-sm text-[#3a5a40] dark:text-[#f0c766]">Draft saved. Finish the payment in the merchant window to publish this job.</p>}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
@@ -461,11 +483,29 @@ export default function CompanyPostJobPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Work preference (optional)">
-            <select value={form.workPreference} onChange={(e) => setForm((prev) => ({ ...prev, workPreference: e.target.value }))} className="field">
+            <select value={form.workPreference || ''} onChange={(e) => setForm((prev) => ({ ...prev, workPreference: e.target.value }))} className="field">
               <option value="">Select work preference</option>
               {WORK_PREFERENCE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
           </Field>
+          <Field label="Hires needed">
+            <input
+              type="number"
+              min={1}
+              max={50}
+              value={form.hiresNeeded}
+              onChange={(e) => {
+                const nextValue = Number(e.target.value || 1);
+                const normalized = Number.isFinite(nextValue) ? nextValue : 1;
+                setForm((prev) => ({ ...prev, hiresNeeded: Math.max(1, Math.min(50, normalized)) }));
+              }}
+              className="field"
+              placeholder="1"
+            />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Application deadline (optional)">
             <input
               type="date"

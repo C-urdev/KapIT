@@ -368,10 +368,11 @@ const updateApplicantStatus = async (req, res) => {
     }
 
     const applicationResult = await client.query(
-      `SELECT a.id, a.job_id, a.user_id, a.status, j.company_id, j.status AS job_status
+      `SELECT a.id, a.job_id, a.user_id, a.status, j.company_id, j.status AS job_status, COALESCE(j.hires_needed, 1) AS hires_needed
        FROM applications a
        JOIN jobs j ON j.id = a.job_id
-       WHERE a.id = $1 AND j.company_id = $2`,
+       WHERE a.id = $1 AND j.company_id = $2
+       FOR UPDATE OF a, j`,
       [applicationId, company.id]
     );
 
@@ -385,6 +386,56 @@ const updateApplicantStatus = async (req, res) => {
     if (status === 'accepted' && application.job_status === 'filled') {
       await client.query('ROLLBACK');
       return res.status(400).json({ success: false, message: 'This job is already filled. Reopen it to hire again.' });
+    }
+    if (status === 'accepted' && application.job_status !== 'open') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, message: 'Only open jobs can accept new hires.' });
+    }
+
+    if (status === 'accepted' && String(application.status || '').toLowerCase() === 'accepted') {
+      const refreshed = await client.query(
+        `SELECT a.id,
+                a.status,
+                a.resume_url,
+                a.created_at,
+                a.updated_at,
+                j.id AS job_id,
+                j.title AS job_title,
+                j.status AS job_status,
+                u.id AS user_id,
+                u.username,
+                u.email,
+                u.desired_job,
+                u.address,
+                u.profile_image
+         FROM applications a
+         JOIN jobs j ON j.id = a.job_id
+         JOIN users u ON u.id = a.user_id
+         WHERE a.id = $1`,
+        [applicationId]
+      );
+      await client.query('ROLLBACK');
+      const row = refreshed.rows[0];
+      return res.json({
+        success: true,
+        applicant: {
+          id: row.id,
+          status: row.status,
+          resumeUrl: row.resume_url || '',
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+          job: { id: row.job_id, title: row.job_title, status: row.job_status },
+          user: {
+            id: row.user_id,
+            username: row.username,
+            email: row.email,
+            desiredJob: row.desired_job || '',
+            address: row.address || '',
+            profileImage: row.profile_image || '',
+          },
+        },
+        job: null,
+      });
     }
 
     const actorResult = await client.query(
@@ -408,63 +459,117 @@ const updateApplicantStatus = async (req, res) => {
     let job = null;
 
     if (status === 'accepted') {
+      const acceptedCountResult = await client.query(
+        `SELECT COUNT(*)::int AS accepted_count
+         FROM applications
+         WHERE job_id = $1
+           AND status = 'accepted'`,
+        [application.job_id]
+      );
+      const acceptedCount = Number(acceptedCountResult.rows[0]?.accepted_count || 0);
+      const hiresNeeded = Math.max(1, Number(application.hires_needed || 1));
+      const isFullyHired = acceptedCount >= hiresNeeded;
+
       const jobResult = await client.query(
         `UPDATE jobs
-         SET status = 'filled',
-             closed_reason = 'hired',
-             pay_per_use_status = 'due',
-             filled_application_id = $1,
-             filled_candidate_user_id = $2,
-             closed_at = CURRENT_TIMESTAMP,
+         SET status = CASE WHEN $1::boolean THEN 'filled' ELSE 'open' END,
+             closed_reason = CASE WHEN $1::boolean THEN 'hired' ELSE NULL END,
+             pay_per_use_status = CASE WHEN $1::boolean THEN 'due' ELSE pay_per_use_status END,
+             filled_application_id = CASE WHEN $1::boolean THEN $2 ELSE NULL END,
+             filled_candidate_user_id = CASE WHEN $1::boolean THEN $3 ELSE NULL END,
+             closed_at = CASE WHEN $1::boolean THEN CURRENT_TIMESTAMP ELSE NULL END,
              hired_at = CURRENT_TIMESTAMP
-         WHERE id = $3
+         WHERE id = $4
          RETURNING *`,
-        [applicationId, application.user_id, application.job_id]
+        [isFullyHired, applicationId, application.user_id, application.job_id]
       );
       job = serializeJobRow(jobResult.rows[0]);
 
-      await client.query(
-        `UPDATE applications
-         SET status = CASE WHEN id = $1 THEN 'accepted' ELSE 'rejected' END,
-             updated_at = CURRENT_TIMESTAMP
-         WHERE job_id = $2`,
-        [applicationId, application.job_id]
+      const jobTitle = String(job?.title || 'the role');
+      const candidateResult = await client.query(
+        `SELECT email, username
+         FROM users
+         WHERE id = $1
+         LIMIT 1`,
+        [application.user_id]
       );
 
-      const affectedApplicants = await client.query(
-        `SELECT a.id, a.user_id, a.status, j.title AS job_title, u.email, u.username
-         FROM applications a
-         JOIN jobs j ON j.id = a.job_id
-         JOIN users u ON u.id = a.user_id
-         WHERE a.job_id = $1`,
-        [application.job_id]
-      );
+      await createNotification(client, {
+        userId: application.user_id,
+        actorUserId: req.user.id,
+        type: 'application_status',
+        title: 'Application accepted',
+        message: isFullyHired
+          ? `${actorLabel} hired you for ${jobTitle}.`
+          : `${actorLabel} hired you for ${jobTitle}. (${acceptedCount}/${hiresNeeded} hired)`,
+        metadata: {
+          actorLabel,
+          status: 'accepted',
+          jobTitle,
+          eventAt: new Date().toISOString(),
+          acceptedCount,
+          hiresNeeded,
+        },
+      });
 
-      for (const item of affectedApplicants.rows) {
-        const isAcceptedApplicant = Number(item.id) === applicationId;
-        await createNotification(client, {
-          userId: item.user_id,
-          actorUserId: req.user.id,
-          type: 'application_status',
-          title: isAcceptedApplicant ? 'Application accepted' : 'Application update',
-          message: isAcceptedApplicant
-            ? `${actorLabel} hired you for ${item.job_title}.`
-            : `${actorLabel} updated your application for ${item.job_title} to rejected.`,
-          metadata: {
-            actorLabel,
-            status: isAcceptedApplicant ? 'accepted' : 'rejected',
-            jobTitle: item.job_title,
-            eventAt: new Date().toISOString(),
-          },
-        });
+      await sendApplicationStatusEmail({
+        to: candidateResult.rows[0]?.email || '',
+        candidateName: candidateResult.rows[0]?.username || '',
+        jobTitle,
+        companyLabel: actorLabel,
+        status: 'accepted',
+      }).catch(() => null);
 
-        await sendApplicationStatusEmail({
-          to: item.email,
-          candidateName: item.username,
-          jobTitle: item.job_title,
-          companyLabel: actorLabel,
-          status: isAcceptedApplicant ? 'accepted' : 'rejected',
-        }).catch(() => null);
+      if (isFullyHired) {
+        const autoRejected = await client.query(
+          `UPDATE applications
+           SET status = 'rejected',
+               updated_at = CURRENT_TIMESTAMP
+           WHERE job_id = $1
+             AND id <> $2
+             AND status NOT IN ('accepted', 'rejected')
+           RETURNING id`,
+          [application.job_id, applicationId]
+        );
+
+        const autoRejectedIds = autoRejected.rows
+          .map((item) => Number(item.id))
+          .filter((id) => Number.isInteger(id) && id > 0);
+
+        if (autoRejectedIds.length) {
+          const affectedApplicants = await client.query(
+            `SELECT a.id, a.user_id, j.title AS job_title, u.email, u.username
+             FROM applications a
+             JOIN jobs j ON j.id = a.job_id
+             JOIN users u ON u.id = a.user_id
+             WHERE a.id = ANY($1::bigint[])`,
+            [autoRejectedIds]
+          );
+
+          for (const item of affectedApplicants.rows) {
+            await createNotification(client, {
+              userId: item.user_id,
+              actorUserId: req.user.id,
+              type: 'application_status',
+              title: 'Application update',
+              message: `${actorLabel} updated your application for ${item.job_title} to rejected.`,
+              metadata: {
+                actorLabel,
+                status: 'rejected',
+                jobTitle: item.job_title,
+                eventAt: new Date().toISOString(),
+              },
+            });
+
+            await sendApplicationStatusEmail({
+              to: item.email,
+              candidateName: item.username,
+              jobTitle: item.job_title,
+              companyLabel: actorLabel,
+              status: 'rejected',
+            }).catch(() => null);
+          }
+        }
       }
     }
 

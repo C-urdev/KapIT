@@ -6,7 +6,7 @@ import { COMPANY_PATHS, formatSkills, navigate } from '@companyFeatures/companyU
 import { PAYMENT_CANCEL_MESSAGE_TYPE, PAYMENT_MESSAGE_TYPE, STORAGE_KEY } from '@companyPages/CompanyPostJobPaymentPage';
 import ConfirmModal from '@sharedComponents/ui/ConfirmModal';
 import TimedInfoPopup from '@sharedComponents/ui/TimedInfoPopup';
-import ManageJobsSkeleton from '../../../../components/shared/skeletons/ManageJobsSkeleton';
+import ManageJobsSkeleton from '../../../components/shared/skeletons/ManageJobsSkeleton';
 import { useToast } from '@sharedComponents/ui/ToastProvider';
 import { X } from 'lucide-react';
 

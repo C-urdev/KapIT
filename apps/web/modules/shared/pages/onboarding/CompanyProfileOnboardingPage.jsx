@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Building2, LogOut, Moon, Sun } from 'lucide-react';
+import { useToast } from '@sharedComponents/ui/ToastProvider';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
 import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
@@ -85,8 +86,10 @@ const formatLocation = (city, provinceCode, provinceLabelByCode, country) => {
 };
 
 export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout }) {
+  const toast = useToast();
   const { theme, toggleTheme } = useTheme();
   const [saving, setSaving] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const [locationData, setLocationData] = useState({
     provinceOptions: [],
     provinceLabelByCode: {},
@@ -193,9 +196,37 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
     );
   }, [form]);
 
+  const finalIndustry = form.industry === OTHER_COMPANY_TYPE_OPTION ? form.customIndustry : form.industry;
+  const missing = useMemo(
+    () => ({
+      companyName: !String(form.companyName).trim(),
+      industry: !String(finalIndustry).trim(),
+      companySize: !String(form.companySize).trim(),
+      location: !String(form.location).trim(),
+      contactEmail: !String(form.contactEmail).trim(),
+      provinceCode: isPhilippines && !String(form.provinceCode).trim(),
+      city: isPhilippines && !String(form.city).trim(),
+    }),
+    [finalIndustry, form, isPhilippines]
+  );
+
+  const sectionInvalid = useMemo(
+    () => ({
+      identity: missing.companyName || missing.industry || missing.companySize,
+      details: missing.location || missing.provinceCode || missing.city,
+      contact: missing.contactEmail,
+    }),
+    [missing]
+  );
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isComplete || saving) return;
+    if (saving) return;
+    if (!isComplete) {
+      setSubmitAttempted(true);
+      toast.warning('Please fill in the highlighted required fields.');
+      return;
+    }
     setSaving(true);
     try {
       await onSubmit?.({
@@ -262,53 +293,55 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-8">
-            <Section title="Company Identity">
+          <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-8">
+            <Section title="Company Identity" invalid={submitAttempted && sectionInvalid.identity}>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Field label="Company Logo (Optional)" full>
                   <CompanyLogoUpload value={form.logoUrl} onChange={(logoUrl) => setForm((p) => ({ ...p, logoUrl }))} compact />
                 </Field>
-                <Field label="Company Name">
+                <Field label="Company Name" required invalid={submitAttempted && missing.companyName}>
                   <input
                     value={form.companyName}
                     onChange={(e) => setForm((p) => ({ ...p, companyName: e.target.value }))}
-                    className="field"
-                    required
+                    className={`field ${submitAttempted && missing.companyName ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
                   />
                 </Field>
-                <Field label="Company Type">
-                  <SearchableSelect
-                    value={form.industry}
-                    onChange={(industry) => setForm((p) => ({ ...p, industry }))}
-                    options={COMPANY_TYPE_OPTIONS}
-                    placeholder="Select company type"
-                    searchPlaceholder="Search company types"
-                  />
+                <Field label="Company Type" required invalid={submitAttempted && missing.industry}>
+                  <div className={submitAttempted && missing.industry ? 'rounded-xl ring-2 ring-red-500/80' : ''}>
+                    <SearchableSelect
+                      value={form.industry}
+                      onChange={(industry) => setForm((p) => ({ ...p, industry }))}
+                      options={COMPANY_TYPE_OPTIONS}
+                      placeholder="Select company type"
+                      searchPlaceholder="Search company types"
+                    />
+                  </div>
                 </Field>
                 {form.industry === OTHER_COMPANY_TYPE_OPTION ? (
-                  <Field label="Other Company Type">
+                  <Field label="Other Company Type" required invalid={submitAttempted && missing.industry}>
                     <input
                       value={form.customIndustry}
                       onChange={(e) => setForm((p) => ({ ...p, customIndustry: e.target.value }))}
-                      className="field"
+                      className={`field ${submitAttempted && missing.industry ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
                       placeholder="Enter your company type"
-                      required
                     />
                   </Field>
                 ) : null}
-                <Field label="Company Size">
-                  <SearchableSelect
-                    value={form.companySize}
-                    onChange={(companySize) => setForm((p) => ({ ...p, companySize }))}
-                    options={COMPANY_SIZE_OPTIONS}
-                    placeholder="Select company size"
-                    searchPlaceholder="Search company size"
-                  />
+                <Field label="Company Size" required invalid={submitAttempted && missing.companySize}>
+                  <div className={submitAttempted && missing.companySize ? 'rounded-xl ring-2 ring-red-500/80' : ''}>
+                    <SearchableSelect
+                      value={form.companySize}
+                      onChange={(companySize) => setForm((p) => ({ ...p, companySize }))}
+                      options={COMPANY_SIZE_OPTIONS}
+                      placeholder="Select company size"
+                      searchPlaceholder="Search company size"
+                    />
+                  </div>
                 </Field>
               </div>
             </Section>
 
-            <Section title="Company Details">
+            <Section title="Company Details" invalid={submitAttempted && sectionInvalid.details}>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Field label="Website (Optional)">
                   <input
@@ -335,24 +368,28 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
                 </Field>
                 {isPhilippines ? (
                   <>
-                    <Field label="Province">
-                      <SearchableSelect
-                        value={form.provinceCode}
-                        onChange={(provinceCode) => setForm((p) => ({ ...p, provinceCode }))}
-                        options={locationData.provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
-                        placeholder="Select a province"
-                        searchPlaceholder="Search provinces"
-                      />
+                    <Field label="Province" required invalid={submitAttempted && missing.provinceCode}>
+                      <div className={submitAttempted && missing.provinceCode ? 'rounded-xl ring-2 ring-red-500/80' : ''}>
+                        <SearchableSelect
+                          value={form.provinceCode}
+                          onChange={(provinceCode) => setForm((p) => ({ ...p, provinceCode }))}
+                          options={locationData.provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
+                          placeholder="Select a province"
+                          searchPlaceholder="Search provinces"
+                        />
+                      </div>
                     </Field>
-                    <Field label="City / Municipality">
-                      <SearchableSelect
-                        value={form.city}
-                        onChange={(city) => setForm((p) => ({ ...p, city }))}
-                        options={cityOptions.map((city) => ({ value: city.name, label: city.name }))}
-                        placeholder={form.provinceCode ? 'Select a city or municipality' : 'Select a province first'}
-                        searchPlaceholder="Search cities"
-                        disabled={!form.provinceCode}
-                      />
+                    <Field label="City / Municipality" required invalid={submitAttempted && missing.city}>
+                      <div className={submitAttempted && missing.city ? 'rounded-xl ring-2 ring-red-500/80' : ''}>
+                        <SearchableSelect
+                          value={form.city}
+                          onChange={(city) => setForm((p) => ({ ...p, city }))}
+                          options={cityOptions.map((city) => ({ value: city.name, label: city.name }))}
+                          placeholder={form.provinceCode ? 'Select a city or municipality' : 'Select a province first'}
+                          searchPlaceholder="Search cities"
+                          disabled={!form.provinceCode}
+                        />
+                      </div>
                     </Field>
                   </>
                 ) : (
@@ -376,10 +413,10 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
               </div>
             </Section>
 
-            <Section title="Contact Information">
+            <Section title="Contact Information" invalid={submitAttempted && sectionInvalid.contact}>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Field label="Contact Email">
-                  <input value={form.contactEmail} readOnly className="field bg-[#f5f5f2] dark:bg-[#1a1d20]/60" />
+                <Field label="Contact Email" required invalid={submitAttempted && missing.contactEmail}>
+                  <input value={form.contactEmail} readOnly className={`field bg-[#f5f5f2] dark:bg-[#1a1d20]/60 ${submitAttempted && missing.contactEmail ? 'border-red-500' : ''}`} />
                 </Field>
               </div>
             </Section>
@@ -387,7 +424,7 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
             <div className="flex items-center justify-end gap-3">
               <button
                 type="submit"
-                disabled={!isComplete || saving}
+                disabled={saving}
                 className="rounded-xl bg-[#3a5a40] px-5 py-3 font-semibold text-white hover:bg-[#344e41] disabled:cursor-not-allowed disabled:opacity-60 dark:border dark:border-[#6f9b74]/30 dark:bg-[#353c44] dark:text-[#eceff2] dark:hover:bg-[#4a535d]"
               >
                 {saving ? 'Saving...' : 'Save company profile'}
@@ -400,7 +437,7 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
   );
 }
 
-function Section({ title, children }) {
+function Section({ title, children, invalid = false }) {
   return (
     <section>
       <h2 className="text-lg font-bold text-[#2f3e2f] dark:text-white">{title}</h2>
@@ -409,10 +446,13 @@ function Section({ title, children }) {
   );
 }
 
-function Field({ label, full = false, children }) {
+function Field({ label, full = false, children, invalid = false, required = false }) {
   return (
     <div className={full ? 'md:col-span-2' : ''}>
-      <label className="mb-1 block text-sm font-semibold text-[#3a5a40] dark:text-slate-200">{label}</label>
+      <label className={`mb-1 block text-sm font-semibold ${invalid ? 'text-red-700 dark:text-red-300' : 'text-[#3a5a40] dark:text-slate-200'}`}>
+        {label}
+        {required ? <span className="ml-1 text-red-600 dark:text-red-400">*</span> : null}
+      </label>
       {children}
     </div>
   );

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import CompanyProfileOnboarding from '@sharedPages/onboarding/CompanyProfileOnboardingPage';
 import { logoutAndRedirect, updateStoredUser } from '@sharedServices/authService';
 import { saveCompanyProfileOnboarding } from '@companyFeatures/companyAPI';
+import { ToastProvider } from '@sharedComponents/ui/ToastProvider';
 import SessionGate from './SessionGate';
 
 export default function CompanyOnboardingClient() {
@@ -13,7 +14,7 @@ export default function CompanyOnboardingClient() {
   };
 
   return (
-    <>
+    <ToastProvider>
       <SessionGate requiredAccountType="company" redirectTo="/" allowIncompleteProfile>
         {({ user, setUser }) => (
           <CompanyProfileOnboarding
@@ -32,6 +33,6 @@ export default function CompanyOnboardingClient() {
           />
         )}
       </SessionGate>
-    </>
+    </ToastProvider>
   );
 }

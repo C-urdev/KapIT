@@ -23,3 +23,5 @@ CLAUDE.md
 .agents/skills/
 .cursorrules
 SECURITY_ROTATION.md
+
+.agents/gemini-skills/

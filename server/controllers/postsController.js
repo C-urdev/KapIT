@@ -246,26 +246,68 @@ const listFeedPosts = async (req, res) => {
     client = await pool.connect();
     await ensurePostsTable(client);
 
-    const result = await client.query(
-      `SELECT p.*,
-              u.email AS owner_email,
-              u.username AS owner_username,
-              dp.full_name AS owner_full_name,
-              u.name AS owner_name,
-              u.company_name AS owner_company_name,
-              u.profile_image AS owner_profile_image
-       FROM user_posts p
-       JOIN users u ON u.id = p.owner_user_id
-       LEFT JOIN developer_profiles dp ON dp.user_id = u.id
-       WHERE p.owner_user_id = $1
-          OR ${sqlPostIsPublic}
-       ORDER BY p.created_at DESC, p.id DESC`,
-      [req.user.id]
-    );
+    const rawLimit = Number(req.query?.limit);
+    const hasPaginationInput = Number.isInteger(rawLimit) && rawLimit > 0;
+    const limit = hasPaginationInput ? Math.min(Math.max(rawLimit, 1), 50) : null;
+    const cursorCreatedAt = String(req.query?.cursorCreatedAt || '').trim();
+    const cursorId = Number(req.query?.cursorId);
+    const hasCursor = Boolean(cursorCreatedAt) && Number.isInteger(cursorId) && cursorId > 0;
+
+    const baseSelect = `SELECT p.*,
+                               u.email AS owner_email,
+                               u.username AS owner_username,
+                               dp.full_name AS owner_full_name,
+                               u.name AS owner_name,
+                               u.company_name AS owner_company_name,
+                               u.profile_image AS owner_profile_image
+                        FROM user_posts p
+                        JOIN users u ON u.id = p.owner_user_id
+                        LEFT JOIN developer_profiles dp ON dp.user_id = u.id
+                        WHERE (p.owner_user_id = $1 OR ${sqlPostIsPublic})`;
+
+    let result;
+    if (hasPaginationInput) {
+      if (hasCursor) {
+        result = await client.query(
+          `${baseSelect}
+             AND (p.created_at, p.id) < ($2::timestamptz, $3::bigint)
+           ORDER BY p.created_at DESC, p.id DESC
+           LIMIT $4`,
+          [req.user.id, cursorCreatedAt, cursorId, limit + 1]
+        );
+      } else {
+        result = await client.query(
+          `${baseSelect}
+           ORDER BY p.created_at DESC, p.id DESC
+           LIMIT $2`,
+          [req.user.id, limit + 1]
+        );
+      }
+    } else {
+      result = await client.query(
+        `${baseSelect}
+         ORDER BY p.created_at DESC, p.id DESC`,
+        [req.user.id]
+      );
+    }
+
+    const rows = Array.isArray(result?.rows) ? result.rows : [];
+    const hasMore = hasPaginationInput && rows.length > limit;
+    const slicedRows = hasPaginationInput ? rows.slice(0, limit) : rows;
+    const posts = slicedRows.map(toPostDto);
+    const tail = slicedRows[slicedRows.length - 1];
 
     return res.json({
       success: true,
-      posts: result.rows.map(toPostDto),
+      posts,
+      ...(hasPaginationInput
+        ? {
+            hasMore,
+            nextCursor: hasMore && tail
+              ? { createdAt: tail.created_at, id: Number(tail.id) }
+              : null,
+          }
+        : {}),
     });
   } catch (error) {
     logger.error('List feed posts error:', error);

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertCircle, ArrowLeft, Briefcase, Building2, CheckCircle2, Eye, EyeOff, Loader2, Mail } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Briefcase, Building2, CheckCircle2, Eye, EyeOff, Loader2, Mail, ShieldCheck } from 'lucide-react';
 import {
   completeSocialSignup,
   fetchSocialSignupSession,
@@ -47,6 +47,34 @@ const ACCOUNT_TYPE_OPTIONS = [
 ];
 
 const getAccountTypeLabel = (value) => (value === 'company' ? 'Company' : value === 'developer' ? 'Developer' : '');
+
+const mapSignupErrorMessage = (value) => {
+  const raw = String(value || '').trim();
+  if (!raw) {
+    return 'Something went wrong. Please try again.';
+  }
+
+  const lower = raw.toLowerCase();
+  if (lower.includes('validation error at "body.password"') || lower.includes('password')) {
+    if (lower.includes('too small') || lower.includes('>=8') || lower.includes('at least 8')) {
+      return 'Password must be at least 8 characters long.';
+    }
+  }
+  if (lower.includes('verification token is missing')) {
+    return 'Your verification session expired. Please verify your email code again.';
+  }
+  if (lower.includes('social signup session is missing') || lower.includes('missing or expired')) {
+    return 'Your sign-up session expired. Please sign in with Google again.';
+  }
+  if (lower.includes('unable to send verification code')) {
+    return 'We could not send the verification code right now. Please try again.';
+  }
+  if (lower.includes('invalid verification code')) {
+    return 'The verification code is invalid. Please check and try again.';
+  }
+
+  return raw;
+};
 
 export default function SocialSignupFlowClient() {
   const router = useRouter();
@@ -199,7 +227,7 @@ export default function SocialSignupFlowClient() {
         }
       }
 
-      setError(String(requestError?.message || 'Unable to send verification code right now.'));
+      setError(mapSignupErrorMessage(requestError?.message || 'Unable to send verification code right now.'));
     } finally {
       setLoading(false);
     }
@@ -235,7 +263,7 @@ export default function SocialSignupFlowClient() {
         setStep('account-type');
       } catch (requestError) {
         setStep('invalid');
-        setError(String(requestError?.message || 'Social signup session is missing or expired. Please try again.'));
+        setError(mapSignupErrorMessage(requestError?.message || 'Social signup session is missing or expired. Please try again.'));
       } finally {
         setLoading(false);
       }
@@ -279,7 +307,7 @@ export default function SocialSignupFlowClient() {
       setVerificationToken(result.verificationToken);
       setStep('set-password');
     } catch (requestError) {
-      setError(String(requestError?.message || 'Unable to verify this code.'));
+      setError(mapSignupErrorMessage(requestError?.message || 'Unable to verify this code.'));
     } finally {
       setLoading(false);
     }
@@ -321,29 +349,15 @@ export default function SocialSignupFlowClient() {
 
       router.replace(resolvePostAuthPath(result.user));
     } catch (requestError) {
-      setError(String(requestError?.message || 'Unable to complete social signup right now.'));
+      setError(mapSignupErrorMessage(requestError?.message || 'Unable to complete social signup right now.'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBack = () => {
-    router.replace('/');
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#dad7cd] to-[#f5f5f2] dark:from-[#121416] dark:to-[#22272b]">
       <div className="bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-2xl p-8 max-w-md w-full shadow-lg">
-        <button
-          type="button"
-          onClick={handleBack}
-          disabled={loading}
-          className="mb-6 inline-flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Cancel
-        </button>
-
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#3a5a40]/10 dark:bg-[#6f9b74]/10 mb-4">
             {step === 'set-password' ? (
@@ -425,7 +439,20 @@ export default function SocialSignupFlowClient() {
         ) : null}
 
         {step === 'verify-otp' ? (
-          <div className="space-y-3">
+          <div className="space-y-4">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#f0f5f1] dark:bg-[#353c44] mb-4">
+                <ShieldCheck className="w-7 h-7 text-[#3a5a40] dark:text-[#6f9b74]" />
+              </div>
+              <h2 className="text-2xl font-bold text-[#3a5a40] dark:text-white mb-1">Enter verification code</h2>
+              <p className="text-sm text-[#6b7280] dark:text-[#adb5be]">
+                We sent a 6-digit code to{' '}
+                <span className="font-semibold text-[#3a5a40] dark:text-[#d0d7dd]">{session?.email || ''}</span>
+              </p>
+            </div>
+
+            <StepDots step={2} />
+
             <div className="flex items-center justify-center gap-2 sm:gap-3 my-2" onPaste={handleDigitPaste}>
               {digits.map((d, i) => (
                 <input
@@ -469,11 +496,32 @@ export default function SocialSignupFlowClient() {
             >
               Resend code
             </button>
+            <div className="text-center">
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => setStep('account-type')}
+                className="inline-flex items-center gap-1 text-sm text-[#588157] dark:text-[#6f9b74] hover:underline font-medium disabled:opacity-50"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Back to Sign up
+              </button>
+            </div>
           </div>
         ) : null}
 
         {step === 'set-password' ? (
-          <div className="space-y-3">
+          <div className="space-y-4">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#f0f5f1] dark:bg-[#353c44] mb-4">
+                <CheckCircle2 className="w-7 h-7 text-[#3a5a40] dark:text-[#6f9b74]" />
+              </div>
+              <h2 className="text-2xl font-bold text-[#3a5a40] dark:text-white mb-1">Set your password</h2>
+              <p className="text-sm text-[#6b7280] dark:text-[#adb5be]">Create a strong password for your new account.</p>
+            </div>
+
+            <StepDots step={3} />
+
             {selectedAccountType ? (
               <div className="inline-flex items-center gap-2 rounded-lg bg-[#f0f5f1] px-3 py-2 text-xs font-medium text-[#3a5a40] dark:bg-[#1a1d20] dark:text-[#d0d7dd]">
                 <CheckCircle2 className="h-4 w-4" />
@@ -558,6 +606,19 @@ export default function SocialSignupFlowClient() {
           </div>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function StepDots({ step = 1 }) {
+  return (
+    <div className="mb-4 flex items-center justify-center gap-2">
+      {[1, 2, 3].map((value) => (
+        <span
+          key={value}
+          className={`h-2.5 w-2.5 rounded-full ${step >= value ? 'bg-[#588157] dark:bg-[#6f9b74]' : 'bg-[#d6d3c9] dark:bg-[#444d57]'}`}
+        />
+      ))}
     </div>
   );
 }

@@ -47,6 +47,7 @@ const draftSchema = z
     experienceLevel: z.enum(['intern', 'junior', 'mid', 'senior']).or(z.literal('')).optional().default(''),
     workPreference: z.enum(['fully-remote', 'asynchronous-remote', 'hybrid', 'on-site']).or(z.literal('')).optional().default(''),
     applicationDeadline: z.coerce.string().trim().max(40).optional().default(''),
+    hiresNeeded: z.coerce.number().int().min(1).max(50).optional().default(1),
     skills: z.array(z.coerce.string().trim().min(1).max(60)).max(50).optional().default([]),
     preAssessment: z
       .object({

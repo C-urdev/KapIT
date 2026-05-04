@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import UserNavbar from '@userComponents/UserNavbar';
 import UserLeftSidebar from '@userComponents/UserLeftSidebar';
 import UserRightSidebar from '@userComponents/UserRightSidebar';
@@ -13,7 +13,7 @@ import UserNotificationsPage from '@userPages/notifications/UserNotificationsPag
 import PublicProfilePage from '@sharedPages/public-profile/PublicProfilePage';
 import HelpPage from '@sharedPages/help/HelpPage';
 import UserPremiumPopup from '@userPages/premium/UserPremiumPopup';
-import { USER_PREMIUM_PAYMENT_PATH, USER_PREMIUM_PAYMENT_SUCCESS } from '@userPages/premium/UserPremiumPopup';
+import { USER_PREMIUM_PAYMENT_PATH, USER_PREMIUM_PAYMENT_SUCCESS, USER_PREMIUM_PAYMENT_STORAGE_KEY } from '@userPages/premium/UserPremiumPopup';
 import PostComposerModal from '@userFeatures/posts/UserPostComposerModal';
 import UserMyProfilePage from '@userFeatures/profile/UserMyProfilePage';
 import UserAccountSettingsModal from '@userFeatures/profile/UserAccountSettingsModal';
@@ -57,6 +57,7 @@ import { ArrowLeft, BadgeCheck, Building2, Lightbulb, Sparkles, UserCircle } fro
 import { getApplicationsForUser } from '@userFeatures/activity/userActivityStorage';
 
 const USER_NAV_QUERY_KEY = 'tab';
+const FEED_PAGE_SIZE = 10;
 const USER_PROFILE_QUERY_KEY = 'profileId';
 const USER_JOB_QUERY_KEY = 'jobId';
 const USER_NAV_TABS = new Set(['home', 'jobs', 'job-detail', 'pre-assessment', 'projects', 'search', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'help', 'tips', 'verified', 'settings', 'public-profile', 'settings-account', 'settings-career', 'settings-notifications', 'settings-saved-jobs', 'settings-applications', 'privacy-settings', 'privacy-change-password', 'privacy-comments', 'privacy-mentions', 'privacy-following', 'privacy-likes']);
@@ -150,6 +151,9 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   const [posts, setPosts] = useState([]);
   const [feedPosts, setFeedPosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
+  const [loadingMorePosts, setLoadingMorePosts] = useState(false);
+  const [hasMoreFeedPosts, setHasMoreFeedPosts] = useState(false);
+  const [feedCursor, setFeedCursor] = useState(null);
   const [publicProfile, setPublicProfile] = useState(null);
   const [messageTargetId, setMessageTargetId] = useState('');
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
@@ -166,6 +170,10 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   const [isMobileShellViewport, setIsMobileShellViewport] = useState(false);
   const [mobileChromeHidden, setMobileChromeHidden] = useState(false);
   const [mobileThreadOpen, setMobileThreadOpen] = useState(false);
+  const feedRequestInFlightRef = useRef(false);
+  const feedCursorRef = useRef(null);
+  const hasMoreFeedPostsRef = useRef(false);
+  const feedPostsRef = useRef([]);
   const lastScrollYRef = useRef(0);
   const isMessagesActive = activeNav === 'messages';
   const isSettingsActive = activeNav === 'settings';
@@ -182,23 +190,98 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
       : 'max(7rem, calc(env(safe-area-inset-bottom) + 5.75rem))'
     : undefined;
 
-  const syncPostState = async () => {
+  useEffect(() => {
+    feedCursorRef.current = feedCursor;
+  }, [feedCursor]);
+
+  useEffect(() => {
+    hasMoreFeedPostsRef.current = hasMoreFeedPosts;
+  }, [hasMoreFeedPosts]);
+
+  useEffect(() => {
+    feedPostsRef.current = Array.isArray(feedPosts) ? feedPosts : [];
+  }, [feedPosts]);
+
+  const mergePostsById = useCallback((currentPosts, incomingPosts) => {
+    const next = [];
+    const seenIds = new Set();
+    [...(Array.isArray(currentPosts) ? currentPosts : []), ...(Array.isArray(incomingPosts) ? incomingPosts : [])]
+      .forEach((post) => {
+        const id = Number(post?.id);
+        if (!Number.isInteger(id) || id <= 0 || seenIds.has(id)) {
+          return;
+        }
+        seenIds.add(id);
+        next.push(post);
+      });
+    return next;
+  }, []);
+
+  const syncPostState = useCallback(async () => {
     try {
+      feedRequestInFlightRef.current = true;
       setLoadingPosts(true);
-      const [myPosts, allFeedPosts] = await Promise.all([
+      setLoadingMorePosts(false);
+      const [myPosts, feedResponse] = await Promise.all([
         listMyPosts(),
-        listFeedPosts(),
+        listFeedPosts({ limit: FEED_PAGE_SIZE }),
       ]);
+      const allFeedPosts = Array.isArray(feedResponse)
+        ? feedResponse
+        : (Array.isArray(feedResponse?.posts) ? feedResponse.posts : []);
+      const initialHasMore = Array.isArray(feedResponse)
+        ? false
+        : Boolean(feedResponse?.hasMore);
+      const initialCursor = Array.isArray(feedResponse)
+        ? null
+        : (feedResponse?.nextCursor || null);
 
       setPosts(myPosts);
       setFeedPosts(allFeedPosts);
+      setHasMoreFeedPosts(initialHasMore);
+      setFeedCursor(initialCursor);
     } catch {
       setPosts([]);
       setFeedPosts([]);
+      setHasMoreFeedPosts(false);
+      setFeedCursor(null);
     } finally {
+      feedRequestInFlightRef.current = false;
       setLoadingPosts(false);
     }
-  };
+  }, []);
+
+  const loadMoreFeedPosts = useCallback(async () => {
+    if (feedRequestInFlightRef.current || !hasMoreFeedPostsRef.current) {
+      return;
+    }
+
+    const cursor = feedCursorRef.current;
+    if (!cursor?.createdAt || !Number.isInteger(Number(cursor?.id))) {
+      setHasMoreFeedPosts(false);
+      return;
+    }
+
+    try {
+      feedRequestInFlightRef.current = true;
+      setLoadingMorePosts(true);
+      const feedResponse = await listFeedPosts({
+        limit: FEED_PAGE_SIZE,
+        cursorCreatedAt: cursor.createdAt,
+        cursorId: Number(cursor.id),
+      });
+
+      const incomingPosts = Array.isArray(feedResponse?.posts) ? feedResponse.posts : [];
+      setFeedPosts((current) => mergePostsById(current, incomingPosts));
+      setHasMoreFeedPosts(Boolean(feedResponse?.hasMore));
+      setFeedCursor(feedResponse?.nextCursor || null);
+    } catch {
+      // Keep current cursor and hasMore state so observer can retry on next intersection.
+    } finally {
+      feedRequestInFlightRef.current = false;
+      setLoadingMorePosts(false);
+    }
+  }, [mergePostsById]);
 
   const updateActiveNav = (nextNav, options = {}) => {
     setActiveNav(nextNav);
@@ -489,24 +572,46 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   }, []);
 
   useEffect(() => {
+    const syncPremiumState = async (payload) => {
+      setPremiumPopupOpen(false);
+      const nextPremium = payload?.updates?.isPremium;
+      if (typeof nextPremium === 'boolean') {
+        await onUpdateUser?.({ isPremium: nextPremium });
+      }
+    };
+
     const handleMessage = (event) => {
       if (event.origin !== window.location.origin) return;
       if (event.data?.type !== USER_PREMIUM_PAYMENT_SUCCESS) return;
-
-      const syncPremiumState = async () => {
-        setPremiumPopupOpen(false);
-        if (event.data?.updates) {
-          await onUpdateUser?.(event.data.updates);
-        }
-      };
-
-      Promise.resolve(syncPremiumState()).catch((error) => {
+      Promise.resolve(syncPremiumState(event.data)).catch((error) => {
         console.error('User premium payment message handling failed:', error);
       });
     };
 
+    const handleStorage = (event) => {
+      if (event.key !== USER_PREMIUM_PAYMENT_STORAGE_KEY || !event.newValue) {
+        return;
+      }
+
+      try {
+        const payload = JSON.parse(event.newValue);
+        if (payload?.type !== USER_PREMIUM_PAYMENT_SUCCESS) {
+          return;
+        }
+        Promise.resolve(syncPremiumState(payload)).catch((error) => {
+          console.error('User premium payment storage handling failed:', error);
+        });
+      } catch {
+        // Ignore malformed payloads.
+      }
+    };
+
     window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, [onUpdateUser]);
 
   useEffect(() => {
@@ -900,6 +1005,9 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
             <main className="xl:col-span-9 2xl:col-span-6">
               <CenterFeed
                 loading={loadingPosts}
+                loadingMorePosts={loadingMorePosts}
+                hasMorePosts={hasMoreFeedPosts}
+                onLoadMorePosts={loadMoreFeedPosts}
                 user={user}
                 userType={userType}
                 onOpenComposer={() => setComposerOpen(true)}

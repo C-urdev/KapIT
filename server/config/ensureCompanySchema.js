@@ -48,6 +48,7 @@ const ensureCompanySchema = async () => {
         published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         active_until TIMESTAMP,
         application_deadline TIMESTAMPTZ,
+        hires_needed INTEGER NOT NULL DEFAULT 1,
         closed_at TIMESTAMP,
         hired_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -148,9 +149,26 @@ const ensureCompanySchema = async () => {
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS active_until TIMESTAMP;");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS application_deadline TIMESTAMPTZ;");
+    await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS hires_needed INTEGER NOT NULL DEFAULT 1;");
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'jobs_hires_needed_check'
+        ) THEN
+          ALTER TABLE jobs
+          ADD CONSTRAINT jobs_hires_needed_check
+          CHECK (hires_needed >= 1 AND hires_needed <= 50);
+        END IF;
+      END$$;
+    `);
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS draft_payload JSONB NOT NULL DEFAULT '{}'::jsonb;");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS closed_at TIMESTAMP;");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS hired_at TIMESTAMP;");
+    await client.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS status VARCHAR(40) DEFAULT 'pending';");
+    await client.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS resume_url TEXT;");
     await client.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;");
 
     await client.query('CREATE INDEX IF NOT EXISTS idx_companies_user_id ON companies(user_id);');

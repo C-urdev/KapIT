@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Moon, Sun, AlertCircle, Eye, EyeOff, GitFork, X } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
@@ -19,6 +19,14 @@ export default function AuthPage({
   initialMode = 'login',
   onWarmRoute,
 }) {
+  const PASSWORD_HINT = 'At least 8 characters with uppercase, lowercase, and a number.';
+  const hasValidPasswordShape = (value) => (
+    String(value || '').length >= 8
+    && /[A-Z]/.test(String(value || ''))
+    && /[a-z]/.test(String(value || ''))
+    && /\d/.test(String(value || ''))
+  );
+
   const { theme, toggleTheme } = useTheme();
   const [authMode, setAuthMode] = useState(initialMode);
   const [loading, setLoading] = useState(false);
@@ -37,6 +45,19 @@ export default function AuthPage({
   const [showRegisterPrompt, setShowRegisterPrompt] = useState(false);
   const [hasAppliedSocialNoAccountPrompt, setHasAppliedSocialNoAccountPrompt] = useState(false);
   const isLocalAuthBypassEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS === 'true';
+  const passwordStrength = useMemo(() => {
+    const password = String(formData.password || '');
+    if (!password) return 0;
+    let strength = 0;
+    if (password.length >= 8) strength += 1;
+    if (/[A-Z]/.test(password)) strength += 1;
+    if (/[a-z]/.test(password)) strength += 1;
+    if (/\d/.test(password)) strength += 1;
+    if (/[^a-zA-Z0-9]/.test(password)) strength += 1;
+    return strength;
+  }, [formData.password]);
+  const passwordStrengthLabel = ['', 'Very weak', 'Weak', 'Fair', 'Strong', 'Very strong'][passwordStrength] || '';
+  const passwordStrengthColor = ['', 'bg-red-500', 'bg-orange-400', 'bg-yellow-400', 'bg-emerald-400', 'bg-emerald-500'][passwordStrength] || '';
 
   const isLoopbackHost = () => {
     const host = String(window.location.hostname || '').trim().toLowerCase();
@@ -176,6 +197,10 @@ export default function AuthPage({
 
       if (formData.password !== formData.confirmPassword) {
         setError('Passwords do not match');
+        return;
+      }
+      if (!hasValidPasswordShape(formData.password)) {
+        setError(PASSWORD_HINT);
         return;
       }
 
@@ -472,6 +497,21 @@ export default function AuthPage({
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
+                {authMode === 'signup' && formData.password ? (
+                  <div className="mt-2 space-y-1">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((value) => (
+                        <div
+                          key={value}
+                          className={`h-1 flex-1 rounded-full transition-all ${
+                            value <= passwordStrength ? passwordStrengthColor : 'bg-[#e5e7eb] dark:bg-[#444d57]'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs text-[#6b7280] dark:text-[#adb5be]">{passwordStrengthLabel}</p>
+                  </div>
+                ) : null}
               </div>
 
               {authMode === 'signup' && (
@@ -494,6 +534,17 @@ export default function AuthPage({
                       {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
+                  {formData.confirmPassword && formData.password ? (
+                    <p
+                      className={`mt-1 text-xs ${
+                        formData.password === formData.confirmPassword
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-red-500 dark:text-red-400'
+                      }`}
+                    >
+                      {formData.password === formData.confirmPassword ? '✓ Passwords match' : '✗ Passwords do not match'}
+                    </p>
+                  ) : null}
                 </div>
               )}
 
