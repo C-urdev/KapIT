@@ -383,7 +383,7 @@ export default function CompanyPostJobPaymentPage() {
                   })}
                 </div>
 
-                <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-3.5">
+                <div>
                   <p className="text-sm font-semibold text-[#102a1b] dark:text-white">All plans include</p>
                   <ul className="mt-2.5 space-y-1.5 text-sm text-[#344e41] dark:text-[#eceff2]">
                     {PLAN_FEATURES.map((feature) => (
@@ -451,7 +451,7 @@ export default function CompanyPostJobPaymentPage() {
                 </div>
               </div>
 
-              <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f5f5f2] dark:bg-[#1f2328] p-3.5 text-sm text-[#344e41] dark:text-[#e2e6e9]">
+              <div className="text-sm text-[#344e41] dark:text-[#e2e6e9]">
                 The draft stays saved until payment is verified. If checkout fails or is cancelled, the job remains unpublished and you can safely try again.
               </div>
 
@@ -515,9 +515,9 @@ export default function CompanyPostJobPaymentPage() {
                   </p>
                 </div>
 
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4 space-y-3 text-sm">
-                    <h3 className="text-base font-semibold text-[#102a1b] dark:text-white">What You Paid For</h3>
+                <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4 sm:p-5">
+                  <h3 className="text-base font-semibold text-[#102a1b] dark:text-white">Payment details</h3>
+                  <div className="mt-3 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
                     <div>
                       <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Paid plan</p>
                       <p className="font-semibold text-[#102a1b] dark:text-white">{paidPlanLabel}</p>
@@ -534,10 +534,6 @@ export default function CompanyPostJobPaymentPage() {
                       <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Published job</p>
                       <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout?.job?.title || draft?.title || '--'}</p>
                     </div>
-                  </div>
-
-                  <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4 space-y-3 text-sm">
-                    <h3 className="text-base font-semibold text-[#102a1b] dark:text-white">Billing Information</h3>
                     <div>
                       <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Payment provider</p>
                       <p className="font-semibold text-[#102a1b] dark:text-white">{completedProvider?.label || completedCheckout?.payment?.provider || '--'}</p>
@@ -554,40 +550,10 @@ export default function CompanyPostJobPaymentPage() {
                       <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Provider reference</p>
                       <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout?.payment?.provider_payment_id || completedCheckout?.payment?.provider_checkout_id || '--'}</p>
                     </div>
-                    <div>
+                    <div className="sm:col-span-2">
                       <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Paid on</p>
                       <p className="font-semibold text-[#102a1b] dark:text-white">{paidAt || 'Just now'}</p>
                     </div>
-                  </div>
-                </div>
-
-                <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4">
-                  <p className="text-sm font-semibold text-[#102a1b] dark:text-white">All plans</p>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    {plans.map((plan) => {
-                      const purchased = completedPlan?.id === plan.id || completedCheckout?.payment?.plan_id === plan.id;
-                      return (
-                        <div
-                          key={`receipt-plan-${plan.id}`}
-                          className={`rounded-[16px] border p-3 ${
-                            purchased
-                              ? 'border-[#588157] bg-[#eef6ee] dark:border-[#82ad86] dark:bg-[#2a2f35]'
-                              : 'border-[#d6d3c9] bg-[#fbfcfa] dark:border-[#444d57] dark:bg-[#202428]'
-                          }`}
-                        >
-                          <p className="text-sm font-semibold text-[#102a1b] dark:text-white">{plan.label}</p>
-                          <p className="mt-1 text-lg font-semibold text-[#102a1b] dark:text-white">PHP {Number(plan.price || 0).toLocaleString()}</p>
-                          <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#588157] dark:text-[#e2b94d]">
-                            Active for {plan.durationLabel}
-                          </p>
-                          {purchased ? (
-                            <p className="mt-2 inline-flex rounded-full bg-[#3a5a40] px-2 py-0.5 text-[11px] font-semibold text-white dark:bg-[#82ad86] dark:text-[#121416]">
-                              Purchased
-                            </p>
-                          ) : null}
-                        </div>
-                      );
-                    })}
                   </div>
                 </div>
 

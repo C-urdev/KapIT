@@ -10,6 +10,7 @@ import {
 
 const USER_PREMIUM_PAYMENT_PATH = '/premium/payment';
 const USER_PREMIUM_PAYMENT_SUCCESS = 'user-premium-payment-success';
+const USER_PREMIUM_PAYMENT_STORAGE_KEY = 'kapit:user-premium-payment-success';
 
 const PREMIUM_PLAN = {
   id: 'premium',
@@ -116,6 +117,17 @@ function PlanCard({ plan, onUpgrade, buttonLabel, disabled = false }) {
 }
 
 const notifyOpener = (payload) => {
+  try {
+    const snapshot = {
+      type: USER_PREMIUM_PAYMENT_SUCCESS,
+      ...payload,
+      timestamp: Date.now(),
+    };
+    window.localStorage.setItem(USER_PREMIUM_PAYMENT_STORAGE_KEY, JSON.stringify(snapshot));
+  } catch {
+    // Best effort only; postMessage remains the primary sync channel.
+  }
+
   if (window.opener && !window.opener.closed) {
     window.opener.postMessage({ type: USER_PREMIUM_PAYMENT_SUCCESS, ...payload }, window.location.origin);
   }
@@ -217,7 +229,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
           const data = await captureUserPremiumPayPalCheckout({ paymentId, orderId });
           if (data?.user) {
             await onConfirmUpgrade?.(data.user);
-            notifyOpener({ updates: data.user });
+            notifyOpener({ updates: { isPremium: Boolean(data.user?.isPremium) } });
           }
           setCompletedCheckout({
             providerId: 'paypal',
@@ -289,7 +301,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
       });
       if (data?.user) {
         await onConfirmUpgrade?.(data.user);
-        notifyOpener({ updates: data.user });
+        notifyOpener({ updates: { isPremium: Boolean(data.user?.isPremium) } });
       }
       setCurrentPaymentId(data?.payment?.id || '');
       setCompletedCheckout({
@@ -330,8 +342,8 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
   };
 
   return (
-    <div className="overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
-      <div className="mb-4 flex flex-wrap items-center gap-2 sm:flex-nowrap">
+    <div className="overflow-y-auto bg-[linear-gradient(180deg,#f7faf5_0%,#f3f7ef_100%)] dark:bg-[linear-gradient(180deg,#11161c_0%,#161d24_100%)] px-4 py-5 sm:px-6 sm:py-6">
+      <div className="mb-5 flex flex-wrap items-center gap-2 sm:flex-nowrap rounded-2xl border border-[#d6e1cf] bg-white/80 px-3 py-3 shadow-[0_10px_28px_rgba(16,42,27,0.06)] dark:border-[#304356] dark:bg-[#1b2128]">
         {[
           { key: 1, label: 'Plan' },
           { key: 2, label: 'Payment' },
@@ -344,7 +356,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
               <div className="flex items-center gap-2">
                 <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold transition-colors ${
                   active
-                    ? 'border-[#588157] bg-[#588157] text-white dark:border-[#82ad86] dark:bg-[#82ad86] dark:text-[#121416]'
+                    ? 'border-[#2f6b4f] bg-[#2f6b4f] text-white dark:border-[#82ad86] dark:bg-[#82ad86] dark:text-[#121416]'
                     : 'border-[#c7d5c0] bg-[#f8fbf6] text-[#7b8a7f] dark:border-[#35506f] dark:bg-[#102139] dark:text-[#8fa8c4]'
                 }`}>
                   {complete ? <CheckCircle2 className="h-4 w-4" /> : step.key}
@@ -353,14 +365,14 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
                   {step.label}
                 </span>
               </div>
-              {index < 2 ? <div className={`h-px flex-1 min-w-6 ${stepState > step.key ? 'bg-[#588157] dark:bg-[#82ad86]' : 'bg-[#d8ddd1] dark:bg-[#444d57]'}`} /> : null}
+              {index < 2 ? <div className={`h-px flex-1 min-w-6 ${stepState > step.key ? 'bg-[#2f6b4f] dark:bg-[#82ad86]' : 'bg-[#d8ddd1] dark:bg-[#444d57]'}`} /> : null}
             </React.Fragment>
           );
         })}
       </div>
 
-      <div className={completedCheckout ? 'flex justify-center' : 'grid gap-4 lg:grid-cols-[1.25fr_0.75fr] lg:gap-5'}>
-        <div className={`${completedCheckout ? 'hidden' : 'space-y-4'} rounded-[24px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6]/90 dark:bg-[#1b1f23] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]`}>
+      <div className={completedCheckout ? 'flex justify-center' : 'grid gap-4'}>
+        <div className={`${completedCheckout ? 'hidden' : 'space-y-5'} rounded-[24px] border border-[#d6e1cf] dark:border-[#3a4b5e] bg-white/92 dark:bg-[#1a1f26] p-4 sm:p-6 shadow-[0_18px_48px_rgba(16,42,27,0.08)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.28)]`}>
           <div className="flex flex-col gap-3 border-b border-[#d6d3c9] dark:border-[#444d57] pb-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm text-[#5f6f52] dark:text-[#b3bcc5]">Selected plan</p>
@@ -373,12 +385,12 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div>
               <h2 className="text-xl font-semibold text-[#102a1b] dark:text-white">Plan Summary</h2>
             </div>
 
-            <div className="rounded-[20px] border border-[#588157] bg-[linear-gradient(180deg,#f4f8f1,#eaf2e5)] p-3.5 text-left shadow-[0_16px_40px_rgba(88,129,87,0.16)] dark:border-[#82ad86] dark:bg-[linear-gradient(180deg,#31363d,#202428)]">
+            <div className="rounded-[20px] border border-[#76a07b] bg-[linear-gradient(165deg,#f6fbf4,#e9f2e6)] p-4 text-left shadow-[0_16px_40px_rgba(58,90,64,0.14)] dark:border-[#82ad86] dark:bg-[linear-gradient(180deg,#31363d,#202428)]">
               <div className="flex items-center gap-2">
                 <Crown className="h-5 w-5 text-[#588157] dark:text-[#e2b94d]" />
                 <p className="text-base font-semibold text-[#102a1b] dark:text-white">{PREMIUM_PLAN.name}</p>
@@ -391,32 +403,21 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
               </div>
             </div>
 
-            <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-3.5">
+            <div>
               <p className="text-sm font-semibold text-[#102a1b] dark:text-white">Premium includes</p>
-              <div className="mt-2.5 space-y-2">
+              <div className="mt-3 space-y-2">
                 {PREMIUM_PLAN.features.map(({ text }) => (
-                  <label
+                  <div
                     key={text}
-                    className="flex items-center gap-2 rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-3 py-2 text-xs font-medium text-[#344e41] dark:border-[#4b5560] dark:bg-[#1f2328] dark:text-[#eceff2]"
+                    className="flex items-center gap-2 rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-3 py-2.5 text-xs font-medium text-[#344e41] dark:border-[#4b5560] dark:bg-[#1f2328] dark:text-[#eceff2]"
                   >
-                    <input
-                      type="radio"
-                      checked
-                      readOnly
-                      aria-label={text}
-                      className="h-3.5 w-3.5 accent-[#588157] dark:accent-[#82ad86]"
-                    />
+                    <CheckCircle2 className="h-4 w-4 text-[#588157] dark:text-[#82ad86]" />
                     <span>{text}</span>
-                  </label>
+                  </div>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-3.5 space-y-1">
-              <p className="text-sm text-[#5f6f52] dark:text-[#c0c8d0]">Premium will be activated for</p>
-              <p className="text-lg font-semibold text-[#102a1b] dark:text-white">{displayName}</p>
-              <p className="text-sm text-[#344e41] dark:text-[#eceff2]">{user?.email || 'No email on file'}</p>
-            </div>
           </div>
 
           <div className="space-y-2.5">
@@ -433,10 +434,10 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
                     key={provider.id}
                     type="button"
                     onClick={() => setPaymentMethod(provider.id)}
-                    className={`rounded-[20px] border p-3.5 text-left transition-colors ${
+                    className={`rounded-[20px] border p-4 text-left transition-all duration-200 ${
                       selected
-                        ? 'border-[#588157] bg-[#eef6ee] shadow-[0_12px_30px_rgba(88,129,87,0.1)] dark:border-[#82ad86] dark:bg-[#2a2f35]'
-                        : 'border-[#d6d3c9] bg-[#fbfcfa] hover:bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#202428] dark:hover:bg-[#132844]'
+                        ? 'border-[#588157] bg-[#eef6ee] shadow-[0_12px_30px_rgba(88,129,87,0.14)] dark:border-[#82ad86] dark:bg-[#2a2f35]'
+                        : 'border-[#d6d3c9] bg-[#fbfcfa] hover:bg-[#f5f5f2] hover:-translate-y-[1px] dark:border-[#444d57] dark:bg-[#202428] dark:hover:bg-[#132844]'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -470,7 +471,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
             </div>
           )}
 
-          <div className="flex flex-col gap-3 border-t border-[#e3ebf3] dark:border-[#444d57] pt-3 sm:flex-row sm:flex-wrap">
+          <div className="flex flex-col gap-3 border-t border-[#e3ebf3] dark:border-[#444d57] pt-4 sm:flex-row sm:flex-wrap">
             <button
               type="button"
               onClick={handleCancel}
@@ -482,7 +483,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
               type="button"
               onClick={handleConfirm}
               disabled={loading || verifying}
-              className="w-full rounded-2xl bg-[#3a5a40] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#344e41] disabled:opacity-60 dark:bg-[#82ad86] dark:text-[#121416] dark:hover:bg-[#9bc49f] sm:w-auto sm:min-w-[240px]"
+              className="w-full rounded-2xl bg-[linear-gradient(180deg,#3f6c46,#2f5a36)] px-6 py-3 font-semibold text-white transition-all hover:brightness-105 disabled:opacity-60 dark:bg-[#82ad86] dark:text-[#121416] dark:hover:bg-[#9bc49f] sm:w-auto sm:min-w-[260px]"
             >
               {loading ? 'Processing payment...' : `Pay PHP ${PREMIUM_PLAN.amount.toLocaleString()} with ${selectedProvider.label}`}
             </button>
@@ -562,36 +563,6 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
             </div>
 
             <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4">
-              <p className="text-sm font-semibold text-[#102a1b] dark:text-white">All plans</p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                {plans.map((plan) => {
-                  const purchased = String(plan.id) === String(PREMIUM_PLAN.id);
-                  return (
-                    <div
-                      key={`premium-done-plan-${plan.id}`}
-                      className={`rounded-[16px] border p-3 ${
-                        purchased
-                          ? 'border-[#588157] bg-[#eef6ee] dark:border-[#82ad86] dark:bg-[#2a2f35]'
-                          : 'border-[#d6d3c9] bg-[#fbfcfa] dark:border-[#444d57] dark:bg-[#202428]'
-                      }`}
-                    >
-                      <p className="text-sm font-semibold text-[#102a1b] dark:text-white">{plan.name}</p>
-                      <p className="mt-1 text-lg font-semibold text-[#102a1b] dark:text-white">PHP {Number(plan.amount || 0).toLocaleString()}</p>
-                      <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#588157] dark:text-[#e2b94d]">
-                        {purchased ? 'Billed monthly' : 'Starter'}
-                      </p>
-                      {purchased ? (
-                        <p className="mt-2 inline-flex rounded-full bg-[#3a5a40] px-2 py-0.5 text-[11px] font-semibold text-white dark:bg-[#82ad86] dark:text-[#121416]">
-                          Purchased
-                        </p>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4">
               <p className="text-sm font-semibold text-[#102a1b] dark:text-white">Premium includes</p>
               <ul className="mt-2.5 space-y-1.5 text-sm text-[#344e41] dark:text-[#eceff2]">
                 {PREMIUM_PLAN.features.map(({ text }) => (
@@ -601,16 +572,6 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
                   </li>
                 ))}
               </ul>
-            </div>
-
-            <div className="flex border-t border-[#e3ebf3] pt-3 dark:border-[#444d57]">
-              <button
-                type="button"
-                onClick={standalone ? onClose : onBack}
-                className="w-full rounded-2xl bg-[#3a5a40] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#344e41] dark:bg-[#82ad86] dark:text-[#121416] dark:hover:bg-[#9bc49f] sm:ml-auto sm:w-auto sm:min-w-[150px]"
-              >
-                Done
-              </button>
             </div>
           </div>
         ) : null}
@@ -714,4 +675,4 @@ export function UserPremiumPaymentWindow({ user, onUpgrade }) {
   );
 }
 
-export { USER_PREMIUM_PAYMENT_PATH, USER_PREMIUM_PAYMENT_SUCCESS };
+export { USER_PREMIUM_PAYMENT_PATH, USER_PREMIUM_PAYMENT_SUCCESS, USER_PREMIUM_PAYMENT_STORAGE_KEY };

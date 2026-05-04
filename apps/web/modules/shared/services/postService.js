@@ -27,9 +27,40 @@ const withOptionalImageUrl = (payload, imageUrl) => {
   };
 };
 
-export const listFeedPosts = async () => {
-  const data = await authRequest('/posts/feed');
-  return Array.isArray(data?.posts) ? data.posts : [];
+export const listFeedPosts = async (options = {}) => {
+  const limit = Number(options?.limit);
+  const cursorCreatedAt = String(options?.cursorCreatedAt || '').trim();
+  const cursorId = Number(options?.cursorId);
+
+  const params = new URLSearchParams();
+  if (Number.isInteger(limit) && limit > 0) {
+    params.set('limit', String(limit));
+  }
+  if (cursorCreatedAt) {
+    params.set('cursorCreatedAt', cursorCreatedAt);
+  }
+  if (Number.isInteger(cursorId) && cursorId > 0) {
+    params.set('cursorId', String(cursorId));
+  }
+
+  const query = params.toString();
+  const data = await authRequest(`/posts/feed${query ? `?${query}` : ''}`);
+  const posts = Array.isArray(data?.posts) ? data.posts : [];
+
+  if (!params.has('limit') && !params.has('cursorCreatedAt') && !params.has('cursorId')) {
+    return posts;
+  }
+
+  return {
+    posts,
+    hasMore: Boolean(data?.hasMore),
+    nextCursor: data?.nextCursor && typeof data.nextCursor === 'object'
+      ? {
+          createdAt: String(data.nextCursor.createdAt || '').trim(),
+          id: Number(data.nextCursor.id) || null,
+        }
+      : null,
+  };
 };
 
 export const listMyPosts = async () => {

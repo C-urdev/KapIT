@@ -1,6 +1,7 @@
 import React, { useEffect, useId, useMemo, useState } from 'react';
 import { ArrowLeft, Briefcase, LogOut, Moon, Sun, UserCircle2 } from 'lucide-react';
 import { useToast } from '@sharedComponents/ui/ToastProvider';
+import ImageCropperModal from '@sharedComponents/modals/ImageCropperModal';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
 import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
@@ -9,6 +10,7 @@ import PortfolioCard from '@userComponents/developer/UserPortfolioCard';
 import ResumeUploader from '@userComponents/developer/UserResumeUploader';
 import { developerAPI } from '@userFeatures/developer/userDeveloperAPI';
 import { navigate } from '@companyFeatures/companyUtils';
+import { readFileAsDataUrl, validateImageFile } from '@sharedUtils/imageUpload';
 import { cleanPlaceName, loadProvinceCityData } from '@sharedUtils/philippinesLocations';
 
 const JOB_TITLE_OPTIONS = {
@@ -106,14 +108,6 @@ const WORK_PREFERENCE_OPTIONS = [
   { value: 'hybrid', label: 'Hybrid' },
   { value: 'on-site', label: 'On-site' },
 ];
-const readAsDataUrl = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ''));
-    reader.onerror = () => reject(new Error('Failed to read file'));
-    reader.readAsDataURL(file);
-  });
-
 const parseLocation = (rawLocation, provinceOptions, provinceCodeByLabel, getCitiesForProvince) => {
   const normalized = String(rawLocation || '')
     .replace(/,\s*Philippines\s*$/i, '')
@@ -166,6 +160,10 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
   const savedSchool = String(user?.school || '');
   const isSavedCustomSchool = savedSchool && !SCHOOL_OPTIONS.includes(savedSchool);
   const [saving, setSaving] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [rawProfileImage, setRawProfileImage] = useState('');
+  const [cropOpen, setCropOpen] = useState(false);
+  const [photoLoading, setPhotoLoading] = useState(false);
   const [form, setForm] = useState({
     profileImage: user?.profileImage || '',
     fullName: user?.fullName || user?.name || '',
@@ -296,23 +294,74 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
     );
   }, [form, requiresCustomEducation, requiresCustomSchool, requiresVocationalCourse]);
 
+  const missing = useMemo(
+    () => ({
+      fullName: !String(form.fullName).trim(),
+      provinceCode: !String(form.provinceCode).trim(),
+      city: !String(form.city).trim(),
+      phoneNumber: !String(form.phoneNumber).trim(),
+      jobTitle: !String(form.jobTitle).trim(),
+      yearsOfExperience: !String(form.yearsOfExperience).trim(),
+      preferredRole: !String(form.preferredRole).trim(),
+      educationAttainment: !String(form.educationAttainment).trim(),
+      vocationalCourse: requiresVocationalCourse && !String(form.vocationalCourse).trim(),
+      customEducationAttainment: requiresCustomEducation && !String(form.customEducationAttainment).trim(),
+      school: !String(form.school).trim(),
+      customSchool: requiresCustomSchool && !String(form.customSchool).trim(),
+      aboutMe: !String(form.aboutMe).trim(),
+    }),
+    [form, requiresCustomEducation, requiresCustomSchool, requiresVocationalCourse]
+  );
+
+  const sectionInvalid = useMemo(
+    () => ({
+      basic: missing.fullName || missing.provinceCode || missing.city || missing.phoneNumber,
+      professional: missing.jobTitle || missing.yearsOfExperience || missing.preferredRole,
+      education:
+        missing.educationAttainment ||
+        missing.vocationalCourse ||
+        missing.customEducationAttainment ||
+        missing.school ||
+        missing.customSchool,
+      about: missing.aboutMe,
+    }),
+    [missing]
+  );
+
   const onPickPhoto = async (file) => {
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast.warning('Please upload an image file.');
+    const validation = validateImageFile(file);
+    if (!validation.ok) {
+      toast.warning(validation.message);
       return;
     }
     try {
-      const dataUrl = await readAsDataUrl(file);
-      setForm((prev) => ({ ...prev, profileImage: dataUrl }));
-    } catch {
-      toast.error('Failed to read image. Please try again.');
+      setPhotoLoading(true);
+      const dataUrl = await readFileAsDataUrl(file);
+      setRawProfileImage(dataUrl);
+      setCropOpen(true);
+    } catch (error) {
+      toast.error(error?.message || 'Failed to read image. Please try again.');
+    } finally {
+      setPhotoLoading(false);
     }
+  };
+
+  const handleConfirmCrop = async (croppedDataUrl) => {
+    setForm((prev) => ({ ...prev, profileImage: croppedDataUrl || prev.profileImage }));
+    setCropOpen(false);
+    setRawProfileImage('');
+    toast.success('Profile photo cropped successfully.');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isComplete || saving) return;
+    if (saving) return;
+    if (!isComplete) {
+      setSubmitAttempted(true);
+      toast.warning('Please fill in the highlighted required fields.');
+      return;
+    }
     setSaving(true);
     try {
       const educationAttainment = requiresVocationalCourse
@@ -397,7 +446,7 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-8">
+          <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-8">
             <Section title="Profile Picture (Optional)" icon={UserCircle2}>
               <div className="flex items-center gap-4">
                 <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-[#a3b18a] bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#1a1d20]">
@@ -421,40 +470,47 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
                   >
                     Upload
                   </label>
+                  {photoLoading ? (
+                    <p className="mt-2 text-xs text-[#5f6f52] dark:text-slate-400">Preparing image...</p>
+                  ) : null}
                   <p className="mt-2 text-xs text-[#5f6f52] dark:text-slate-400">JPG/PNG recommended.</p>
                 </div>
               </div>
             </Section>
 
-            <Section title="Basic Information">
+            <Section title="Basic Information" invalid={submitAttempted && sectionInvalid.basic}>
               <Grid>
-                <Field label="Full Name (First name, M.I., Last name)" required>
-                  <input value={form.fullName} onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))} className="field" placeholder="e.g. Juan D. Dela Cruz" title="Enter your full name in this format: First name, middle initial, last name." required />
+                <Field label="Full Name (First name, M.I., Last name)" required invalid={submitAttempted && missing.fullName}>
+                  <input value={form.fullName} onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))} className={`field ${submitAttempted && missing.fullName ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="e.g. Juan D. Dela Cruz" title="Enter your full name in this format: First name, middle initial, last name." />
                 </Field>
-                <Field label="Province" required>
-                  <SearchableSelect
-                    value={form.provinceCode}
-                    onChange={(provinceCode) => setForm((p) => ({ ...p, provinceCode }))}
-                    options={locationData.provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
-                    placeholder="Select a province"
-                    searchPlaceholder="Search provinces"
-                  />
+                <Field label="Province" required invalid={submitAttempted && missing.provinceCode}>
+                  <div className={submitAttempted && missing.provinceCode ? 'rounded-xl ring-2 ring-red-500/70' : ''}>
+                    <SearchableSelect
+                      value={form.provinceCode}
+                      onChange={(provinceCode) => setForm((p) => ({ ...p, provinceCode }))}
+                      options={locationData.provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
+                      placeholder="Select a province"
+                      searchPlaceholder="Search provinces"
+                    />
+                  </div>
                 </Field>
-                <Field label="City / Municipality" required>
-                  <SearchableSelect
-                    value={form.city}
-                    onChange={(city) => setForm((p) => ({ ...p, city }))}
-                    options={cityOptions.map((city) => ({ value: city.name, label: city.name }))}
-                    placeholder={form.provinceCode ? 'Select a city or municipality' : 'Select a province first'}
-                    searchPlaceholder="Search cities"
-                    disabled={!form.provinceCode}
-                  />
+                <Field label="City / Municipality" required invalid={submitAttempted && missing.city}>
+                  <div className={submitAttempted && missing.city ? 'rounded-xl ring-2 ring-red-500/70' : ''}>
+                    <SearchableSelect
+                      value={form.city}
+                      onChange={(city) => setForm((p) => ({ ...p, city }))}
+                      options={cityOptions.map((city) => ({ value: city.name, label: city.name }))}
+                      placeholder={form.provinceCode ? 'Select a city or municipality' : 'Select a province first'}
+                      searchPlaceholder="Search cities"
+                      disabled={!form.provinceCode}
+                    />
+                  </div>
                 </Field>
                 <Field label="Country">
                   <input value="Philippines" readOnly className="field bg-[#f5f5f2] dark:bg-[#1a1d20]/60" />
                 </Field>
-                <Field label="Phone Number" required>
-                  <input value={form.phoneNumber} onChange={(e) => setForm((p) => ({ ...p, phoneNumber: e.target.value }))} className="field" placeholder="e.g. +63 9xx xxx xxxx" required />
+                <Field label="Phone Number" required invalid={submitAttempted && missing.phoneNumber}>
+                  <input value={form.phoneNumber} onChange={(e) => setForm((p) => ({ ...p, phoneNumber: e.target.value }))} className={`field ${submitAttempted && missing.phoneNumber ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="e.g. +63 9xx xxx xxxx" />
                 </Field>
                 <Field label="Email" required>
                   <input value={form.email} readOnly className="field bg-[#f5f5f2] dark:bg-[#1a1d20]/60" />
@@ -462,29 +518,33 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
               </Grid>
             </Section>
 
-            <Section title="Professional Details">
+            <Section title="Professional Details" invalid={submitAttempted && sectionInvalid.professional}>
               <Grid>
-                <Field label="Job Title" required>
-                  <SearchableSelect
-                    value={form.jobTitle}
-                    onChange={(jobTitle) => setForm((p) => ({ ...p, jobTitle }))}
-                    options={JOB_TITLES}
-                    placeholder="Select a job title"
-                    searchPlaceholder="Search job titles"
-                  />
+                <Field label="Job Title" required invalid={submitAttempted && missing.jobTitle}>
+                  <div className={submitAttempted && missing.jobTitle ? 'rounded-xl ring-2 ring-red-500/70' : ''}>
+                    <SearchableSelect
+                      value={form.jobTitle}
+                      onChange={(jobTitle) => setForm((p) => ({ ...p, jobTitle }))}
+                      options={JOB_TITLES}
+                      placeholder="Select a job title"
+                      searchPlaceholder="Search job titles"
+                    />
+                  </div>
                 </Field>
-                <Field label="Years of Experience" required>
-                  <input type="number" min="0" max="60" value={form.yearsOfExperience} onChange={(e) => setForm((p) => ({ ...p, yearsOfExperience: e.target.value }))} className="field" placeholder="e.g. 3" required />
+                <Field label="Years of Experience" required invalid={submitAttempted && missing.yearsOfExperience}>
+                  <input type="number" min="0" max="60" value={form.yearsOfExperience} onChange={(e) => setForm((p) => ({ ...p, yearsOfExperience: e.target.value }))} className={`field ${submitAttempted && missing.yearsOfExperience ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="e.g. 3" />
                 </Field>
-                <Field label="Preferred IT Role" full required>
-                  <SearchableSelect
-                    value={form.preferredRole}
-                    onChange={(preferredRole) => setForm((p) => ({ ...p, preferredRole }))}
-                    options={preferredRoleOptions}
-                    placeholder={form.jobTitle ? 'Select a preferred IT role' : 'Select a job title first'}
-                    searchPlaceholder="Search roles"
-                    disabled={!form.jobTitle}
-                  />
+                <Field label="Preferred IT Role" full required invalid={submitAttempted && missing.preferredRole}>
+                  <div className={submitAttempted && missing.preferredRole ? 'rounded-xl ring-2 ring-red-500/70' : ''}>
+                    <SearchableSelect
+                      value={form.preferredRole}
+                      onChange={(preferredRole) => setForm((p) => ({ ...p, preferredRole }))}
+                      options={preferredRoleOptions}
+                      placeholder={form.jobTitle ? 'Select a preferred IT role' : 'Select a job title first'}
+                      searchPlaceholder="Search roles"
+                      disabled={!form.jobTitle}
+                    />
+                  </div>
                 </Field>
                 <Field label="Skills (Optional)" full>
                   <SkillTags value={form.skills} onChange={(skills) => setForm((p) => ({ ...p, skills }))} placeholder="Type a skill and press Enter" />
@@ -492,52 +552,56 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
               </Grid>
             </Section>
 
-            <Section title="Education">
+            <Section title="Education" invalid={submitAttempted && sectionInvalid.education}>
               <Grid>
-                <Field label="Educational Attainment" required>
-                  <SearchableSelect
-                    value={form.educationAttainment}
-                    onChange={(educationAttainment) =>
-                      setForm((p) => ({
-                        ...p,
-                        educationAttainment,
-                        vocationalCourse: educationAttainment === VOCATIONAL_EDUCATION_OPTION ? p.vocationalCourse : '',
-                        customEducationAttainment: educationAttainment === OTHER_EDUCATION_OPTION ? p.customEducationAttainment : '',
-                      }))
-                    }
-                    options={EDUCATIONAL_ATTAINMENT_OPTIONS}
-                    placeholder="Select educational attainment"
-                    searchPlaceholder="Search education"
-                  />
+                <Field label="Educational Attainment" required invalid={submitAttempted && missing.educationAttainment}>
+                  <div className={submitAttempted && missing.educationAttainment ? 'rounded-xl ring-2 ring-red-500/70' : ''}>
+                    <SearchableSelect
+                      value={form.educationAttainment}
+                      onChange={(educationAttainment) =>
+                        setForm((p) => ({
+                          ...p,
+                          educationAttainment,
+                          vocationalCourse: educationAttainment === VOCATIONAL_EDUCATION_OPTION ? p.vocationalCourse : '',
+                          customEducationAttainment: educationAttainment === OTHER_EDUCATION_OPTION ? p.customEducationAttainment : '',
+                        }))
+                      }
+                      options={EDUCATIONAL_ATTAINMENT_OPTIONS}
+                      placeholder="Select educational attainment"
+                      searchPlaceholder="Search education"
+                    />
+                  </div>
                 </Field>
-                <Field label="School / University" required>
-                  <SearchableSelect
-                    value={form.school}
-                    onChange={(school) =>
-                      setForm((p) => ({
-                        ...p,
-                        school,
-                        customSchool: school === OTHER_SCHOOL_OPTION ? p.customSchool : '',
-                      }))
-                    }
-                    options={SCHOOL_OPTIONS}
-                    placeholder="Select a school or university"
-                    searchPlaceholder="Search schools"
-                  />
+                <Field label="School / University" required invalid={submitAttempted && missing.school}>
+                  <div className={submitAttempted && missing.school ? 'rounded-xl ring-2 ring-red-500/70' : ''}>
+                    <SearchableSelect
+                      value={form.school}
+                      onChange={(school) =>
+                        setForm((p) => ({
+                          ...p,
+                          school,
+                          customSchool: school === OTHER_SCHOOL_OPTION ? p.customSchool : '',
+                        }))
+                      }
+                      options={SCHOOL_OPTIONS}
+                      placeholder="Select a school or university"
+                      searchPlaceholder="Search schools"
+                    />
+                  </div>
                 </Field>
                 {requiresVocationalCourse ? (
-                  <Field label="Specify Vocational Course" required>
-                    <input value={form.vocationalCourse} onChange={(e) => setForm((p) => ({ ...p, vocationalCourse: e.target.value }))} className="field" placeholder="e.g. Computer Programming NC IV" required />
+                  <Field label="Specify Vocational Course" required invalid={submitAttempted && missing.vocationalCourse}>
+                    <input value={form.vocationalCourse} onChange={(e) => setForm((p) => ({ ...p, vocationalCourse: e.target.value }))} className={`field ${submitAttempted && missing.vocationalCourse ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="e.g. Computer Programming NC IV" />
                   </Field>
                 ) : null}
                 {requiresCustomEducation ? (
-                  <Field label="Specify Educational Attainment" required>
-                    <input value={form.customEducationAttainment} onChange={(e) => setForm((p) => ({ ...p, customEducationAttainment: e.target.value }))} className="field" placeholder="Type your educational attainment" required />
+                  <Field label="Specify Educational Attainment" required invalid={submitAttempted && missing.customEducationAttainment}>
+                    <input value={form.customEducationAttainment} onChange={(e) => setForm((p) => ({ ...p, customEducationAttainment: e.target.value }))} className={`field ${submitAttempted && missing.customEducationAttainment ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="Type your educational attainment" />
                   </Field>
                 ) : null}
                 {requiresCustomSchool ? (
-                  <Field label="Specify School / University" required>
-                    <input value={form.customSchool} onChange={(e) => setForm((p) => ({ ...p, customSchool: e.target.value }))} className="field" placeholder="Type your school or university" required />
+                  <Field label="Specify School / University" required invalid={submitAttempted && missing.customSchool}>
+                    <input value={form.customSchool} onChange={(e) => setForm((p) => ({ ...p, customSchool: e.target.value }))} className={`field ${submitAttempted && missing.customSchool ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="Type your school or university" />
                   </Field>
                 ) : null}
                 <Field label="Certifications (Optional)" full>
@@ -578,8 +642,8 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
               </div>
             </Section>
 
-            <Section title="About Me">
-              <textarea value={form.aboutMe} onChange={(e) => setForm((p) => ({ ...p, aboutMe: e.target.value }))} className="field min-h-28" placeholder="Short description about you, your work style, and what you're looking for. (Optional)" />
+            <Section title="About Me" invalid={submitAttempted && sectionInvalid.about}>
+              <textarea value={form.aboutMe} onChange={(e) => setForm((p) => ({ ...p, aboutMe: e.target.value }))} className={`field min-h-28 ${submitAttempted && missing.aboutMe ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="Short description about you, your work style, and what you're looking for. (Optional)" />
             </Section>
 
             <Section title="Resume (Optional)">
@@ -591,18 +655,30 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
             </Section>
 
             <div className="flex items-center justify-end gap-3">
-              <button type="submit" disabled={!isComplete || saving} className="rounded-xl bg-[#3a5a40] px-5 py-3 font-semibold text-white hover:bg-[#344e41] disabled:cursor-not-allowed disabled:opacity-60 dark:border dark:border-[#6f9b74]/30 dark:bg-[#353c44] dark:text-[#eceff2] dark:hover:bg-[#4a535d]">
+              <button type="submit" disabled={saving} className="rounded-xl bg-[#3a5a40] px-5 py-3 font-semibold text-white hover:bg-[#344e41] disabled:cursor-not-allowed disabled:opacity-60 dark:border dark:border-[#6f9b74]/30 dark:bg-[#353c44] dark:text-[#eceff2] dark:hover:bg-[#4a535d]">
                 {saving ? 'Saving...' : 'Save profile'}
               </button>
             </div>
           </form>
         </div>
       </main>
+
+      <ImageCropperModal
+        isOpen={cropOpen}
+        imageSrc={rawProfileImage}
+        title="Crop profile photo"
+        confirmLabel="Use cropped photo"
+        onClose={() => {
+          setCropOpen(false);
+          setRawProfileImage('');
+        }}
+        onConfirm={handleConfirmCrop}
+      />
     </div>
   );
 }
 
-function Section({ title, icon: Icon, children }) {
+function Section({ title, icon: Icon, children, invalid = false }) {
   return (
     <section>
       <div className="flex items-center gap-2">
@@ -618,10 +694,10 @@ function Grid({ children }) {
   return <div className="grid grid-cols-1 gap-4 md:grid-cols-2">{children}</div>;
 }
 
-function Field({ label, full = false, required = false, children }) {
+function Field({ label, full = false, required = false, invalid = false, children }) {
   return (
     <div className={full ? 'md:col-span-2' : ''}>
-      <label className="mb-1 block text-sm font-semibold text-[#3a5a40] dark:text-slate-200">
+      <label className={`mb-1 block text-sm font-semibold ${invalid ? 'text-red-700 dark:text-red-300' : 'text-[#3a5a40] dark:text-slate-200'}`}>
         {label}
         {required ? <span className="ml-1 text-red-600 dark:text-red-400">*</span> : null}
       </label>

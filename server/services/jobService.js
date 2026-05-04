@@ -49,6 +49,7 @@ const createDraftJobForCompany = async (client, companyId, draft) => {
   }
 
   const normalizedSkills = normalizeSkills(draft?.skills);
+  const hiresNeeded = Math.max(1, Math.min(50, Number(draft?.hiresNeeded || 1) || 1));
   const applicationDeadline = normalizeDeadlineInput(draft?.applicationDeadline);
 
   const draftPayload = buildJobDraftPayload(draft);
@@ -70,6 +71,7 @@ const createDraftJobForCompany = async (client, companyId, draft) => {
        published_at,
        active_until,
        application_deadline,
+       hires_needed,
        draft_payload
      )
      VALUES (
@@ -88,7 +90,8 @@ const createDraftJobForCompany = async (client, companyId, draft) => {
        NULL,
        NULL,
        $10::timestamptz,
-       $11::jsonb
+       $11::integer,
+       $12::jsonb
      )
      RETURNING *`,
     [
@@ -102,6 +105,7 @@ const createDraftJobForCompany = async (client, companyId, draft) => {
       draft?.workPreference ? String(draft.workPreference).trim().toLowerCase() : null,
       normalizedSkills,
       applicationDeadline,
+      hiresNeeded,
       JSON.stringify(draftPayload),
     ]
   );
@@ -155,6 +159,7 @@ const createPublishedJobForCompany = async (client, companyId, draft, plan, paym
   }
 
   const normalizedSkills = normalizeSkills(draft?.skills);
+  const hiresNeeded = Math.max(1, Math.min(50, Number(draft?.hiresNeeded || 1) || 1));
   const applicationDeadline = normalizeDeadlineInput(draft?.applicationDeadline);
   const draftPayload = buildJobDraftPayload(draft);
 
@@ -181,6 +186,7 @@ const createPublishedJobForCompany = async (client, companyId, draft, plan, paym
        published_at,
        active_until,
        application_deadline,
+       hires_needed,
        draft_payload
      )
      VALUES (
@@ -205,7 +211,8 @@ const createPublishedJobForCompany = async (client, companyId, draft, plan, paym
        CURRENT_TIMESTAMP,
        CURRENT_TIMESTAMP + ($14::integer * INTERVAL '1 day'),
        $15::timestamptz,
-       $16::jsonb
+       $16::integer,
+       $17::jsonb
      )
      RETURNING *`,
     [
@@ -224,6 +231,7 @@ const createPublishedJobForCompany = async (client, companyId, draft, plan, paym
       plan.durationLabel,
       plan.durationDays,
       applicationDeadline,
+      hiresNeeded,
       JSON.stringify(draftPayload),
     ]
   );

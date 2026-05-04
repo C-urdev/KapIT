@@ -11,6 +11,11 @@ const { appendSearchScopeFilterClause } = require('../services/accountSearchServ
 const { logger } = require('../config/logger');
 const { normalizeSocialsText } = require('../utils/socials');
 const {
+  createProfileMatchSignature,
+  createJobMatchSignature,
+  isMatchCacheValid,
+} = require('../utils/matchSignatures');
+const {
   attachSessionCookies,
   clearSessionCookies,
   verifyRefreshTokenSession,
@@ -127,7 +132,7 @@ const isJobVisibleForPlan = (job, plan) => {
   return (Date.now() - postedAtMs) >= FREE_JOB_FEED_DELAY_MS;
 };
 
-const upsertJobMatchScore = async (client, { userId, jobId, match }) => {
+const upsertJobMatchScore = async (client, { userId, jobId, match, profileSignature, jobSignature }) => {
   await client.query(
     `INSERT INTO job_match_scores (
        user_id,
@@ -154,15 +159,19 @@ const upsertJobMatchScore = async (client, { userId, jobId, match }) => {
         strengths: match?.strengths || [],
         concerns: match?.concerns || [],
         keywordOverlap: match?.keyword_overlap || [],
+        profileSignature: String(profileSignature || ''),
+        jobSignature: String(jobSignature || ''),
+        scoringVersion: 'v2',
       }),
     ]
   );
 };
 
-const loadCachedJobMatchScores = async (client, { userId, jobIds }) => {
-  const normalizedJobIds = Array.isArray(jobIds)
-    ? jobIds.map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0)
+const loadCachedJobMatchScores = async (client, { userId, jobs, profileSignature }) => {
+  const normalizedJobs = Array.isArray(jobs)
+    ? jobs.filter((job) => Number.isInteger(Number(job?.id)) && Number(job.id) > 0)
     : [];
+  const normalizedJobIds = normalizedJobs.map((job) => Number(job.id));
 
   if (!normalizedJobIds.length) {
     return new Map();
@@ -180,8 +189,15 @@ const loadCachedJobMatchScores = async (client, { userId, jobIds }) => {
   );
 
   const map = new Map();
+  const jobById = new Map(normalizedJobs.map((job) => [Number(job.id), job]));
   for (const row of result.rows) {
     const metadata = row?.metadata && typeof row.metadata === 'object' ? row.metadata : {};
+    const jobForRow = jobById.get(Number(row.job_id));
+    const expectedJobSignature = createJobMatchSignature(jobForRow);
+    if (!isMatchCacheValid({ metadata, profileSignature, jobSignature: expectedJobSignature })) {
+      continue;
+    }
+
     map.set(Number(row.job_id), {
       matchPercentage: Number(row.match_percentage || 0),
       atsScore: Number(row.ats_score || 0),
@@ -934,7 +950,7 @@ const clampInt = (raw, fallback, min, max) => {
 
 const FEATURED_COMPANY_RECENT_HIRE_DAYS = clampInt(process.env.FEATURED_COMPANY_RECENT_HIRE_DAYS, 60, 7, 365);
 const FEATURED_COMPANY_NEW_DAYS = clampInt(process.env.FEATURED_COMPANY_NEW_DAYS, 180, 7, 730);
-const FEATURED_COMPANY_LIMIT = clampInt(process.env.FEATURED_COMPANY_LIMIT, 10, 1, 25);
+const FEATURED_COMPANY_LIMIT = clampInt(process.env.FEATURED_COMPANY_LIMIT, 3, 1, 25);
 
 // @desc    Companies with recent hires (for employee home sidebar)
 // @route   GET /api/auth/featured-companies
@@ -957,6 +973,7 @@ const getFeaturedCompaniesByRecentHires = async (req, res) => {
            'Recently hired on KapIT'
          ) AS subtitle,
          MAX(j.hired_at) AS last_hire_at,
+         COUNT(*)::int AS recent_hire_count,
          (c.created_at >= CURRENT_TIMESTAMP - ($2 * INTERVAL '1 day')) AS is_new_company
        FROM companies c
        INNER JOIN jobs j ON j.company_id = c.id
@@ -966,8 +983,10 @@ const getFeaturedCompaniesByRecentHires = async (req, res) => {
        LEFT JOIN company_profiles cp ON cp.user_id = c.user_id
        GROUP BY c.id, c.name, c.created_at, c.short_description, u.company_name, u.username, u.industry, cp.industry
        ORDER BY
+         COUNT(*) DESC,
+         MAX(j.hired_at) DESC,
          (c.created_at >= CURRENT_TIMESTAMP - ($2 * INTERVAL '1 day')) DESC NULLS LAST,
-         MAX(j.hired_at) DESC
+         c.created_at DESC
        LIMIT $3`,
       [FEATURED_COMPANY_RECENT_HIRE_DAYS, FEATURED_COMPANY_NEW_DAYS, FEATURED_COMPANY_LIMIT]
     );
@@ -977,6 +996,7 @@ const getFeaturedCompaniesByRecentHires = async (req, res) => {
       name: row.name,
       subtitle: row.subtitle,
       lastHireAt: row.last_hire_at ? new Date(row.last_hire_at).toISOString() : null,
+      recentHireCount: Number(row.recent_hire_count || 0),
       isNewCompany: Boolean(row.is_new_company),
     }));
 
@@ -1200,11 +1220,37 @@ const getJobsFeed = async (req, res) => {
       .filter((job) => job.status === 'open' && job.acceptsApplications !== false)
       .filter((job) => isJobVisibleForPlan(job, plan));
 
+    let profile = null;
+    let profileSignature = '';
+    if (isAiConfigured()) {
+      const profileResult = await client.query(
+        `SELECT dp.user_id,
+                COALESCE(dp.full_name, u.name, u.username) AS full_name,
+                COALESCE(dp.preferred_it_role, u.desired_job, dp.job_title) AS preferred_role,
+                COALESCE(dp.bio, u.bio, '') AS bio,
+                COALESCE(dp.resume_url, '') AS resume_url,
+                COALESCE(dp.skills, ARRAY[]::text[]) AS skills,
+                COALESCE(dp.location, u.address, '') AS location,
+                COALESCE(dp.experience_years, 0) AS experience_years
+         FROM users u
+         LEFT JOIN developer_profiles dp ON dp.user_id = u.id
+         WHERE u.id = $1
+         LIMIT 1`,
+        [req.user.id]
+      );
+
+      profile = profileResult.rows[0] || null;
+      if (profile) {
+        profileSignature = createProfileMatchSignature(profile);
+      }
+    }
+
     let cachedMatchMap = new Map();
     if (jobs.length) {
       cachedMatchMap = await loadCachedJobMatchScores(client, {
         userId: req.user.id,
-        jobIds: jobs.map((job) => job.id),
+        jobs,
+        profileSignature,
       }).catch(() => new Map());
 
       jobs = jobs.map((job) => {
@@ -1223,23 +1269,6 @@ const getJobsFeed = async (req, res) => {
     }
 
     if (isAiConfigured()) {
-      const profileResult = await client.query(
-        `SELECT dp.user_id,
-                COALESCE(dp.full_name, u.name, u.username) AS full_name,
-                COALESCE(dp.preferred_it_role, u.desired_job, dp.job_title) AS preferred_role,
-                COALESCE(dp.bio, u.bio, '') AS bio,
-                COALESCE(dp.resume_url, '') AS resume_url,
-                COALESCE(dp.skills, ARRAY[]::text[]) AS skills,
-                COALESCE(dp.location, u.address, '') AS location,
-                COALESCE(dp.experience_years, 0) AS experience_years
-         FROM users u
-         LEFT JOIN developer_profiles dp ON dp.user_id = u.id
-         WHERE u.id = $1
-         LIMIT 1`,
-        [req.user.id]
-      );
-
-      const profile = profileResult.rows[0];
       const jobsNeedingScores = jobs.filter((job) => !cachedMatchMap.has(Number(job.id)));
       if (profile && jobsNeedingScores.length) {
         const aiResult = await matchJobsForCandidateWithBudget({
@@ -1268,6 +1297,8 @@ const getJobsFeed = async (req, res) => {
               userId: req.user.id,
               jobId: job.id,
               match,
+              profileSignature,
+              jobSignature: createJobMatchSignature(job),
             }).catch(() => null);
 
             return {
@@ -1540,10 +1571,10 @@ const applyToJob = async (req, res) => {
               j.active_until,
               j.application_deadline,
               c.user_id AS company_user_id
-       FROM jobs
+       FROM jobs j
        LEFT JOIN companies c ON c.id = j.company_id
-       WHERE id = $1
-         AND COALESCE(posting_payment_status, 'paid') = 'paid'
+       WHERE j.id = $1
+         AND COALESCE(j.posting_payment_status, 'paid') = 'paid'
        LIMIT 1`,
       [jobId]
     );
@@ -1651,7 +1682,7 @@ const applyToJob = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
-    logger.error('Apply to job error:', error);
+    logger.error({ err: error }, 'Apply to job error');
     return res.status(500).json({
       success: false,
       message: 'Server error while applying to job',

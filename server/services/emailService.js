@@ -1,4 +1,12 @@
 const getFromAddress = () => String(process.env.EMAIL_FROM || '').trim();
+const escapeHtml = (value) =>
+  String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+const formatPhp = (amount) => `PHP ${Number(amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const canSendEmail = () => {
   return Boolean(process.env.RESEND_API_KEY && getFromAddress());
@@ -112,14 +120,124 @@ const sendOtpEmail = async ({ to, code, expiresInMinutes = 10 }) => {
   ].join('\n');
 
   const html = `
-    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f2937;max-width:480px;margin:0 auto;">
-      <h2 style="color:#3a5a40;">Verify your identity</h2>
-      <p>Use the code below to reset your KapIT password.</p>
-      <div style="font-size:36px;font-weight:bold;letter-spacing:10px;padding:16px 24px;background:#f5f5f2;border-radius:8px;text-align:center;color:#3a5a40;margin:16px 0;">
-        ${code}
+    <div style="margin:0;background:#f4f7f3;padding:24px 12px;font-family:Arial,sans-serif;color:#1f2937;">
+      <div style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #dde5d8;border-radius:14px;overflow:hidden;">
+        <div style="background:linear-gradient(120deg,#3a5a40,#588157);padding:18px 22px;color:#ffffff;">
+          <div style="font-size:12px;letter-spacing:0.08em;opacity:0.9;">KAPIT SECURITY</div>
+          <h2 style="margin:6px 0 0 0;font-size:22px;line-height:1.3;">Your verification code</h2>
+        </div>
+        <div style="padding:22px;">
+          <p style="margin:0 0 10px 0;">Use this one-time code to continue your request.</p>
+          <div style="margin:14px 0 16px 0;padding:14px 16px;border:1px dashed #b6c7aa;background:#f8fbf6;border-radius:10px;text-align:center;">
+            <span style="font-size:34px;font-weight:700;letter-spacing:0.34em;color:#2f4b34;">${escapeHtml(code)}</span>
+          </div>
+          <p style="margin:0 0 6px 0;font-size:14px;">Expires in <strong>${escapeHtml(expiresInMinutes)} minutes</strong>.</p>
+          <p style="margin:0;font-size:13px;color:#4b5563;">If this was not you, ignore this email. Never share this code.</p>
+        </div>
       </div>
-      <p>This code expires in <strong>${expiresInMinutes} minutes</strong>.</p>
-      <p>If you did not request this, you can safely ignore this email.</p>
+    </div>
+  `;
+
+  return sendEmail({ to, subject, text, html });
+};
+
+const sendUserPremiumPaymentEmail = async ({
+  to,
+  fullName,
+  planLabel,
+  amount,
+  durationLabel,
+  paidAt,
+  provider,
+}) => {
+  if (!to) {
+    return { delivered: false, skipped: true, reason: 'No recipient email' };
+  }
+
+  const safePlan = String(planLabel || 'Premium').trim() || 'Premium';
+  const safeDuration = String(durationLabel || 'subscription').trim() || 'subscription';
+  const subject = `KapIT receipt: ${safePlan} (${formatPhp(amount)})`;
+  const greeting = String(fullName || '').trim() || 'there';
+  const safeProvider = String(provider || '').trim().toUpperCase() || 'PAYMENT';
+  const paidText = paidAt ? new Date(paidAt).toLocaleString('en-PH') : new Date().toLocaleString('en-PH');
+
+  const text = [
+    `Hi ${greeting},`,
+    '',
+    `Your KapIT premium purchase was successful.`,
+    `Plan: ${safePlan}`,
+    `Duration: ${safeDuration}`,
+    `Amount: ${formatPhp(amount)}`,
+    `Provider: ${safeProvider}`,
+    `Paid at: ${paidText}`,
+    '',
+    `Thank you for upgrading to KapIT Premium.`,
+  ].join('\n');
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f2937;max-width:560px;margin:0 auto;">
+      <h2 style="color:#3a5a40;">Premium purchase confirmed</h2>
+      <p>Hi ${escapeHtml(greeting)}, your payment was completed successfully.</p>
+      <table style="width:100%;border-collapse:collapse;border:1px solid #dbe7d3;border-radius:8px;overflow:hidden;">
+        <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Plan</td><td style="padding:10px;border-bottom:1px solid #e5ece0;"><strong>${escapeHtml(safePlan)}</strong></td></tr>
+        <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Duration</td><td style="padding:10px;border-bottom:1px solid #e5ece0;">${escapeHtml(safeDuration)}</td></tr>
+        <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Amount</td><td style="padding:10px;border-bottom:1px solid #e5ece0;"><strong>${escapeHtml(formatPhp(amount))}</strong></td></tr>
+        <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Provider</td><td style="padding:10px;border-bottom:1px solid #e5ece0;">${escapeHtml(safeProvider)}</td></tr>
+        <tr><td style="padding:10px;">Paid at</td><td style="padding:10px;">${escapeHtml(paidText)}</td></tr>
+      </table>
+      <p style="margin-top:14px;">Thank you for choosing KapIT.</p>
+    </div>
+  `;
+
+  return sendEmail({ to, subject, text, html });
+};
+
+const sendCompanyJobPostPaymentEmail = async ({
+  to,
+  companyName,
+  jobTitle,
+  planLabel,
+  amount,
+  durationLabel,
+  paidAt,
+  provider,
+}) => {
+  if (!to) {
+    return { delivered: false, skipped: true, reason: 'No recipient email' };
+  }
+
+  const safeCompany = String(companyName || '').trim() || 'your company';
+  const safeTitle = String(jobTitle || '').trim() || 'Untitled job';
+  const safePlan = String(planLabel || 'Job posting').trim() || 'Job posting';
+  const safeDuration = String(durationLabel || 'listing').trim() || 'listing';
+  const safeProvider = String(provider || '').trim().toUpperCase() || 'PAYMENT';
+  const paidText = paidAt ? new Date(paidAt).toLocaleString('en-PH') : new Date().toLocaleString('en-PH');
+  const subject = `KapIT receipt: ${safePlan} for "${safeTitle}"`;
+
+  const text = [
+    `Hello ${safeCompany},`,
+    '',
+    `Your job post payment was successful.`,
+    `Job: ${safeTitle}`,
+    `Plan: ${safePlan}`,
+    `Duration: ${safeDuration}`,
+    `Amount: ${formatPhp(amount)}`,
+    `Provider: ${safeProvider}`,
+    `Paid at: ${paidText}`,
+  ].join('\n');
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f2937;max-width:560px;margin:0 auto;">
+      <h2 style="color:#3a5a40;">Job post payment confirmed</h2>
+      <p>Hello ${escapeHtml(safeCompany)}, your payment was completed.</p>
+      <table style="width:100%;border-collapse:collapse;border:1px solid #dbe7d3;border-radius:8px;overflow:hidden;">
+        <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Job</td><td style="padding:10px;border-bottom:1px solid #e5ece0;"><strong>${escapeHtml(safeTitle)}</strong></td></tr>
+        <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Plan</td><td style="padding:10px;border-bottom:1px solid #e5ece0;">${escapeHtml(safePlan)}</td></tr>
+        <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Duration</td><td style="padding:10px;border-bottom:1px solid #e5ece0;">${escapeHtml(safeDuration)}</td></tr>
+        <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Amount</td><td style="padding:10px;border-bottom:1px solid #e5ece0;"><strong>${escapeHtml(formatPhp(amount))}</strong></td></tr>
+        <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Provider</td><td style="padding:10px;border-bottom:1px solid #e5ece0;">${escapeHtml(safeProvider)}</td></tr>
+        <tr><td style="padding:10px;">Paid at</td><td style="padding:10px;">${escapeHtml(paidText)}</td></tr>
+      </table>
     </div>
   `;
 
@@ -132,4 +250,6 @@ module.exports = {
   sendApplicationStatusEmail,
   sendPasswordResetEmail,
   sendOtpEmail,
+  sendUserPremiumPaymentEmail,
+  sendCompanyJobPostPaymentEmail,
 };

@@ -14,6 +14,7 @@ const {
   finalizeVerifiedPayment,
   updatePaymentRecord,
 } = require('../services/paymentService');
+const { sendCompanyJobPostPaymentEmail } = require('../services/emailService');
 
 const listJobPostingPlans = async (req, res) => {
   try {
@@ -136,6 +137,18 @@ const capturePayPalCheckout = async (req, res) => {
     });
 
     await client.query('COMMIT');
+    await sendCompanyJobPostPaymentEmail({
+      to: req.user?.email || null,
+      companyName: req.user?.company_name || req.user?.name || req.user?.username || 'Company',
+      jobTitle: result?.job?.title || payment?.draft_payload?.title || 'Untitled job',
+      planLabel: result?.payment?.plan_label || payment?.plan_label || 'Job posting',
+      durationLabel: result?.payment?.plan_duration || payment?.plan_duration || '',
+      amount: Number(result?.payment?.amount || payment?.amount || 0),
+      paidAt: result?.payment?.paid_at || new Date().toISOString(),
+      provider: result?.payment?.provider || payment?.provider || 'paypal',
+    }).catch((error) => {
+      logger.warn({ err: error }, 'Company payment receipt email delivery failed.');
+    });
     return res.json({ success: true, payment: result.payment, job: result.job });
   } catch (error) {
     if (client) {
@@ -206,6 +219,18 @@ const completeLocalBypassCheckout = async (req, res) => {
     });
 
     await client.query('COMMIT');
+    await sendCompanyJobPostPaymentEmail({
+      to: req.user?.email || null,
+      companyName: req.user?.company_name || req.user?.name || req.user?.username || 'Company',
+      jobTitle: result?.job?.title || req.body?.draft?.title || 'Untitled job',
+      planLabel: result?.payment?.plan_label || 'Job posting',
+      durationLabel: result?.payment?.plan_duration || '',
+      amount: Number(result?.payment?.amount || 0),
+      paidAt: result?.payment?.paid_at || new Date().toISOString(),
+      provider: result?.payment?.provider || provider,
+    }).catch((error) => {
+      logger.warn({ err: error }, 'Company localhost bypass receipt email failed.');
+    });
     return res.json({ success: true, payment: result.payment, job: result.job });
   } catch (error) {
     if (client) {

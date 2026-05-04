@@ -1,52 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@sharedComponents/ui/ToastProvider';
 import { companyAPI } from '@companyFeatures/companyAPI';
+import ImageCropperModal from '@sharedComponents/modals/ImageCropperModal';
+import { readFileAsDataUrl, validateImageFile } from '@sharedUtils/imageUpload';
 
 const createRelatedCompany = () => ({ name: '', shortDescription: '', website: '' });
-
-const readFileAsDataUrl = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
-    reader.onerror = () => reject(new Error('Failed to read file'));
-    reader.readAsDataURL(file);
-  });
-
-const downscaleImageDataUrl = (dataUrl, { maxSize = 320, quality = 0.85 } = {}) =>
-  new Promise((resolve) => {
-    const image = new Image();
-    image.onload = () => {
-      const width = image.naturalWidth || image.width || 0;
-      const height = image.naturalHeight || image.height || 0;
-      if (!width || !height) return resolve(dataUrl);
-
-      const scale = Math.min(1, maxSize / Math.max(width, height));
-      const targetWidth = Math.max(1, Math.round(width * scale));
-      const targetHeight = Math.max(1, Math.round(height * scale));
-
-      const canvas = document.createElement('canvas');
-      canvas.width = targetWidth;
-      canvas.height = targetHeight;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return resolve(dataUrl);
-      ctx.drawImage(image, 0, 0, targetWidth, targetHeight);
-
-      try {
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      } catch {
-        resolve(dataUrl);
-      }
-    };
-    image.onerror = () => resolve(dataUrl);
-    image.src = dataUrl;
-  });
 
 export default function CompanyProfilePage({ user, onUpdated }) {
   const toast = useToast();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [logoBusy, setLogoBusy] = useState(false);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [rawImage, setRawImage] = useState('');
   const [form, setForm] = useState({
     name: user?.companyName || user?.username || '',
     logo: user?.profileImage || '',
@@ -102,15 +70,30 @@ export default function CompanyProfilePage({ user, onUpdated }) {
   const handleLogoSelect = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    const validation = validateImageFile(file);
+    if (!validation.ok) {
+      toast.warning(validation.message);
+      return;
+    }
     (async () => {
       try {
+        setLogoBusy(true);
         const raw = await readFileAsDataUrl(file);
-        const next = await downscaleImageDataUrl(raw, { maxSize: 320, quality: 0.85 });
-        setForm((prev) => ({ ...prev, logo: next }));
+        setRawImage(raw);
+        setCropOpen(true);
       } catch (err) {
         setError(err?.message || 'Failed to load image');
+      } finally {
+        setLogoBusy(false);
       }
     })();
+  };
+
+  const handleConfirmCrop = async (croppedDataUrl) => {
+    setForm((prev) => ({ ...prev, logo: croppedDataUrl }));
+    setCropOpen(false);
+    setRawImage('');
+    toast.success('Logo updated.');
   };
 
   const handleRelatedCompanyChange = (index, key, value) => {
@@ -200,8 +183,9 @@ export default function CompanyProfilePage({ user, onUpdated }) {
           <div className="space-y-1">
             <div className="text-sm font-semibold text-[#3a5a40] dark:text-white">Company logo</div>
             <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#444d57] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] cursor-pointer text-sm transition-colors">
-              Upload
-              <input type="file" accept="image/*" className="hidden" onChange={handleLogoSelect} />
+              {logoBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {logoBusy ? 'Preparing...' : 'Upload'}
+              <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" className="hidden" onChange={handleLogoSelect} disabled={logoBusy} />
             </label>
           </div>
         </div>
@@ -269,6 +253,18 @@ export default function CompanyProfilePage({ user, onUpdated }) {
           </button>
         </div>
       </div>
+
+      <ImageCropperModal
+        isOpen={cropOpen}
+        imageSrc={rawImage}
+        title="Crop company logo"
+        confirmLabel="Use cropped logo"
+        onClose={() => {
+          setCropOpen(false);
+          setRawImage('');
+        }}
+        onConfirm={handleConfirmCrop}
+      />
     </div>
   );
 }

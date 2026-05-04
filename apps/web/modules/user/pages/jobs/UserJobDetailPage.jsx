@@ -206,8 +206,6 @@ export default function UserJobDetailPage({
             )) : <p className="text-sm text-[#344e41] dark:text-[#d0d7dd]">No specific skills listed.</p>}
           </div>
         </section>
-
-        </section>
         {error ? <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p> : null}
 
         <div className="mt-auto flex w-full items-end gap-3 pt-8">

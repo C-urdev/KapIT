@@ -11,15 +11,16 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
   const resumeUrl = applicant?.resumeUrl;
   const jobStatus = String(applicant?.job?.status || 'open').toLowerCase();
   const applicantStatus = String(applicant?.status || 'pending').toLowerCase();
+  const isOpen = jobStatus === 'open';
   const isFilled = jobStatus === 'filled';
   const isAccepted = applicantStatus === 'accepted';
   const isRejected = applicantStatus === 'rejected';
   const isReviewed = applicantStatus === 'reviewed';
   const aiMatch = applicant?.ai?.matchPercentage;
   const aiAtsScore = applicant?.ai?.atsScore;
-  const canReview = !actionLoading && !isAccepted && !isReviewed;
-  const canReject = !actionLoading && !isAccepted && !isRejected;
-  const canHire = !actionLoading && !isAccepted && !isRejected && !isFilled;
+  const canReview = !actionLoading && isOpen && !isAccepted && !isRejected && !isReviewed && !isFilled;
+  const canReject = !actionLoading && isOpen && !isAccepted && !isRejected && !isFilled;
+  const canHire = !actionLoading && isOpen && !isAccepted && !isRejected && !isFilled;
 
   return (
     <>

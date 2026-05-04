@@ -20,11 +20,6 @@ const PROFILE_PATCH_FIELDS = new Set([
   'birthday',
   'age',
   'sex',
-  'companyName',
-  'industry',
-  'companySize',
-  'website',
-  'hiringFor',
 ]);
 
 export default function UserDashboardClient() {
@@ -52,6 +47,13 @@ export default function UserDashboardClient() {
                 } else {
                   localOnlyUpdates[key] = value;
                 }
+              }
+
+              if (
+                Object.keys(persistedUpdates).length === 1 &&
+                Object.prototype.hasOwnProperty.call(persistedUpdates, 'isPremium')
+              ) {
+                return updateUser({ isPremium: Boolean(persistedUpdates.isPremium), ...localOnlyUpdates });
               }
 
               const hasPersistedUpdates = Object.keys(persistedUpdates).length > 0;

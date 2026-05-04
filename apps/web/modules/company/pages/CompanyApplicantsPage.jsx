@@ -122,7 +122,7 @@ export default function CompanyApplicantsPage() {
     try {
       await companyAPI.updateApplicantStatus(applicant.id, status);
       toast.success(successMessage);
-      await Promise.all([refetch(), refetchAnalytics()]);
+      await Promise.all([refetch({ force: true }), refetchAnalytics({ force: true })]);
     } catch (err) {
       toast.error(err?.message || 'Failed to update applicant.');
     } finally {
@@ -135,7 +135,7 @@ export default function CompanyApplicantsPage() {
     setRankingJobId(jobId);
     try {
       await companyAPI.rankApplicantsForJob(jobId);
-      await refetch();
+      await refetch({ force: true });
       toast.info('Applicant ranking was refreshed for this job.');
     } catch (err) {
       toast.error(err?.message || 'Failed to rank applicants.');
@@ -218,7 +218,7 @@ export default function CompanyApplicantsPage() {
               onMessage={handleMessage}
               onReview={(current) => handleStatusUpdate(current, 'reviewed', `Marked ${current?.user?.username || 'applicant'} as reviewed.`)}
               onReject={(current) => handleStatusUpdate(current, 'rejected', `Rejected ${current?.user?.username || 'applicant'}.`)}
-              onHire={(current) => handleStatusUpdate(current, 'accepted', `Hired ${current?.user?.username || 'applicant'} and marked the job as filled.`)}
+              onHire={(current) => handleStatusUpdate(current, 'accepted', `Hired ${current?.user?.username || 'applicant'}.`)}
             />
           ))}
         </div>

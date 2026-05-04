@@ -3,14 +3,6 @@ import { Award, TrendingUp } from 'lucide-react';
 import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
 import { getFeaturedCompanies } from '@sharedServices/authService';
 
-/** Pinned sample row so Featured Companies is never empty in demos; not tied to `jobs.hired_at`. */
-const DEMO_FOUNDIT_FEATURED = {
-  id: '__demo_foundit_featured__',
-  name: 'Foundit',
-  subtitle: 'AI and engineering company',
-  isPremium: true,
-};
-
 export default function UserRightSidebar({ userType }) {
   const [featuredCompanies, setFeaturedCompanies] = useState([]);
   const [featuredLoaded, setFeaturedLoaded] = useState(false);
@@ -35,13 +27,10 @@ export default function UserRightSidebar({ userType }) {
     };
   }, [userType]);
 
-  const liveFeaturedCompanies =
-    userType === 'employee'
-      ? featuredCompanies.filter((c) => String(c.name || '').trim().toLowerCase() !== 'foundit')
-      : [];
-
   const sidebarFeaturedCompanies =
-    userType === 'employee' && featuredLoaded ? [DEMO_FOUNDIT_FEATURED, ...liveFeaturedCompanies] : [];
+    userType === 'employee' && featuredLoaded
+      ? featuredCompanies.slice(0, 3)
+      : [];
 
   return (
     <div className="space-y-4">
@@ -58,16 +47,20 @@ export default function UserRightSidebar({ userType }) {
             !featuredLoaded ? (
               <p className="text-sm text-[#344e41] dark:text-[#d0d7dd] px-2">Loading featured companies…</p>
             ) : (
-              <>
-                {sidebarFeaturedCompanies.map((company) => (
-                  <RecommendationItem
-                    key={company.id}
-                    name={company.name || 'Company'}
-                    subtitle={company.subtitle || 'Recently hired on KapIT'}
-                    isPremium={company.isPremium !== false}
-                  />
-                ))}
-              </>
+              sidebarFeaturedCompanies.length > 0 ? (
+                <>
+                  {sidebarFeaturedCompanies.map((company) => (
+                    <RecommendationItem
+                      key={company.id}
+                      name={company.name || 'Company'}
+                      subtitle={company.subtitle || 'Recently hired on KapIT'}
+                      isPremium={company.isPremium !== false}
+                    />
+                  ))}
+                </>
+              ) : (
+                <p className="text-sm text-[#344e41] dark:text-[#d0d7dd] px-2">No featured companies yet.</p>
+              )
             )
           ) : (
             <>

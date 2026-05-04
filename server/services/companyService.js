@@ -61,6 +61,7 @@ const normalizeRelatedCompanies = (items) => {
 const serializeJobRow = (row) => ({
   ...row,
   applicant_count: Number(row?.applicant_count || 0),
+  hires_needed: Math.max(1, Number(row?.hires_needed || 1)),
   pay_per_use_fee: Number(row?.pay_per_use_fee || 0),
   posting_plan_duration_days: row?.posting_plan_duration_days == null ? null : Number(row.posting_plan_duration_days),
   posting_plan_price: row?.posting_plan_price == null ? null : Number(row.posting_plan_price),

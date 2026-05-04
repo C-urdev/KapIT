@@ -148,9 +148,21 @@ const estimateMatchPercentage = (job, user) => {
     }
   });
 
-  const overlapRatio = overlapCount / Math.max(1, userTokens.size);
-  const score = 18 + (overlapRatio * 72);
-  return Math.max(8, Math.min(96, Math.round(score)));
+  const overlapRatio = overlapCount / Math.max(1, Math.min(userTokens.size, 24));
+  const desiredRoleTokens = new Set(toWordTokens(user?.preferredRole || user?.desiredJob || user?.desired_job || user?.jobTitle));
+  const titleTokens = new Set(toWordTokens(job?.title));
+  let roleOverlap = 0;
+  desiredRoleTokens.forEach((token) => {
+    if (titleTokens.has(token)) {
+      roleOverlap += 1;
+    }
+  });
+  const roleBonus = desiredRoleTokens.size
+    ? Math.min(18, Math.round((roleOverlap / desiredRoleTokens.size) * 18))
+    : 0;
+
+  const score = 22 + (overlapRatio * 56) + roleBonus;
+  return Math.max(10, Math.min(96, Math.round(score)));
 };
 
 const applyStateToJob = (job, savedJobIds, jobCardStateById) => {
