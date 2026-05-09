@@ -19,9 +19,7 @@ let frontendPort = Number(process.env.NEXTJS_PORT || 3000);
 const FRONTEND_SCRIPT = process.env.FRONTEND_SCRIPT || 'dev';
 const REUSE_EXISTING_BACKEND = process.env.REUSE_EXISTING_BACKEND === 'true';
 const BACKEND_WATCH_ENABLED = process.env.BACKEND_WATCH === 'true';
-const nodeCommand = process.execPath;
-const serverEntry = path.resolve(repoRoot, 'server/server.js');
-const webEntry = path.resolve(repoRoot, 'scripts/run-web.js');
+const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const isWindows = process.platform === 'win32';
 const quietStartup = process.env.QUIET_STARTUP !== 'false';
 const hideNextNetworkLine = process.env.HIDE_NEXT_NETWORK_LINE !== 'false';
@@ -33,20 +31,30 @@ const buildChildEnv = () => ({
   NEXT_TELEMETRY_DISABLED: process.env.NEXT_TELEMETRY_DISABLED || '1',
 });
 
-const runNodeScript = (entry, args = [], nodeArgs = []) => {
-  return spawn(nodeCommand, [...nodeArgs, entry, ...args], {
+const runNpmScript = (prefixDir, scriptName) => {
+  const args = ['--silent', '--prefix', path.resolve(repoRoot, prefixDir), 'run', scriptName];
+  const options = {
     stdio: 'inherit',
     shell: false,
     env: buildChildEnv(),
-  });
+  };
+
+  try {
+    return spawn(npmCommand, args, options);
+  } catch (error) {
+    const canRetryWithShell =
+      process.platform === 'win32' && (error?.code === 'EINVAL' || error?.code === 'EPERM');
+
+    if (!canRetryWithShell) {
+      throw error;
+    }
+
+    return spawn('cmd.exe', ['/d', '/s', '/c', npmCommand, ...args], options);
+  }
 };
 
 const runBackendServer = () => {
-  if (!BACKEND_WATCH_ENABLED) {
-    return runNodeScript(serverEntry);
-  }
-
-  return runNodeScript(serverEntry, [], ['--watch']);
+  return runNpmScript('backend', BACKEND_WATCH_ENABLED ? 'watch' : 'start');
 };
 
 const runPowerShell = (command) =>
@@ -211,7 +219,7 @@ const startFrontend = () => {
   }
 
   frontendStarted = true;
-  frontendProcess = runNodeScript(webEntry, [FRONTEND_SCRIPT]);
+  frontendProcess = runNpmScript('frontend', FRONTEND_SCRIPT);
 
   frontendProcess.on('exit', (code) => {
     shutdown(code ?? 0);

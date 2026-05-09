@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDirectory, '..');
-const testsRoot = path.join(repoRoot, 'server', 'tests');
+const testsRoot = path.join(repoRoot, 'backend', 'api', 'tests');
 
 const collectTestFiles = (directory) => {
   const entries = fs.readdirSync(directory, { withFileTypes: true });

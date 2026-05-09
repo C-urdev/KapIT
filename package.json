@@ -5,40 +5,27 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/start-dev.js",
-    "server": "node server/server.js",
-    "server:watch": "node --watch server/server.js",
+    "server": "npm --prefix backend run start",
+    "server:watch": "npm --prefix backend run watch",
     "start": "node scripts/start-dev.js",
-    "migrate:posts:reassign-owner": "node server/scripts/reassignPostOwnership.js",
+    "frontend:dev": "npm --prefix frontend run dev",
+    "frontend:build": "npm --prefix frontend run build",
+    "frontend:start": "npm --prefix frontend run start",
+    "backend:start": "npm --prefix backend run start",
+    "backend:watch": "npm --prefix backend run watch",
+    "migrate:posts:reassign-owner": "npm --prefix backend run migrate:posts:reassign-owner",
     "security:secrets": "gitleaks detect --source . --config .gitleaks.toml --redact",
-    "audit": "npm audit --audit-level=high",
-    "audit:ci": "npm audit --audit-level=high --omit=dev",
-    "build": "node scripts/run-web.js build",
-    "build:vercel": "npm ci --prefix apps/web --no-audit --no-fund && node scripts/run-web.js build",
-    "test": "node scripts/run-tests.js",
-    "next:dev": "node scripts/run-web.js dev",
-    "next:build": "node scripts/run-web.js build",
-    "fastapi:dev": "cd services/ai-fastapi && uvicorn main:app --reload --port 8000"
+    "audit": "npm audit --prefix backend --audit-level=high && npm audit --prefix frontend --audit-level=high",
+    "audit:ci": "npm audit --prefix backend --audit-level=high --omit=dev && npm audit --prefix frontend --audit-level=high --omit=dev",
+    "build": "npm --prefix frontend run build",
+    "build:vercel": "npm ci --prefix frontend --no-audit --no-fund && npm --prefix frontend run build:vercel",
+    "test": "npm --prefix backend run test",
+    "next:dev": "npm --prefix frontend run dev",
+    "next:build": "npm --prefix frontend run build",
+    "lint": "npm --prefix frontend run lint",
+    "fastapi:dev": "npm --prefix backend run fastapi:dev"
   },
   "dependencies": {
-    "@react-oauth/google": "^0.13.5",
-    "bcrypt": "^6.0.0",
-    "cookie-parser": "^1.4.6",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "express-validator": "^7.3.2",
-    "google-auth-library": "^10.6.2",
-    "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "pg": "^8.11.3",
-    "pino": "^10.3.1",
-    "redis": "^5.12.1",
-    "zod": "^4.3.6"
-  },
-  "devDependencies": {
-    "supertest": "^7.2.2"
-  },
-  "overrides": {
-    "path-to-regexp": "0.1.13"
+    "dotenv": "^16.3.1"
   }
 }

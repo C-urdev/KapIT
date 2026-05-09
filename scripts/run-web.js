@@ -10,7 +10,7 @@ const repoRoot = path.resolve(scriptDirectory, '..');
 
 // Load local overrides first, then base .env as fallback values.
 // This keeps explicit shell/env-platform variables as highest priority.
-// Do not hard-fail if dotenv is unavailable in package-scoped installs (e.g. Netlify base=apps/web).
+// Do not hard-fail if dotenv is unavailable in package-scoped installs (e.g. Netlify base=frontend).
 try {
   const dotenvModule = await import('dotenv');
   const dotenv = dotenvModule?.default || dotenvModule;
@@ -23,7 +23,7 @@ try {
 }
 
 const scriptName = process.argv[2] || 'dev';
-const appDirectory = path.resolve(repoRoot, 'apps/web');
+const appDirectory = path.resolve(repoRoot, 'frontend');
 const nextHost = process.env.NEXTJS_HOST;
 const nextPort = process.env.NEXTJS_PORT || '3000';
 const hideNetworkLine = process.env.HIDE_NEXT_NETWORK_LINE === 'true';
@@ -54,8 +54,8 @@ const nextBin = resolveNextBin();
 if (!nextBin) {
   console.error(
     [
-      "Cannot resolve 'next/dist/bin/next' for apps/web.",
-      "Install frontend dependencies first: npm ci --prefix apps/web",
+      "Cannot resolve 'next/dist/bin/next' for frontend.",
+      "Install frontend dependencies first: npm ci --prefix frontend",
     ].join('\n'),
   );
   process.exit(1);
@@ -150,7 +150,7 @@ try {
 }
 
 if (hideNetworkLine || quietStartup || hideRequestLines) {
-  const requestLogPattern = /^\s*(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\s+\/\S+\s+\d{3}\s+in\s+\d+ms/i;
+  const requestLogPattern = /^\s*(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\s+\/\S*\s+\d{3}\s+in\s+\d+(?:\.\d+)?(?:ms|s)\b/i;
 
   const shouldSkipLine = (line) => {
     if (hideNetworkLine && line.includes('- Network:')) {
@@ -161,14 +161,18 @@ if (hideNetworkLine || quietStartup || hideRequestLines) {
       return true;
     }
 
-    if (quietStartup) {
-      if (!line.trim()) {
-        return true;
-      }
+      if (quietStartup) {
+        if (!line.trim()) {
+          return true;
+        }
 
-      if (line.includes('- Environments:')) {
-        return true;
-      }
+        if (/^\s*[○◌]\s+Compiling\b/i.test(line)) {
+          return true;
+        }
+
+        if (line.includes('- Environments:')) {
+          return true;
+        }
 
       if (line.includes('- Experiments')) {
         return true;
