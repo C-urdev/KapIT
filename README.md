@@ -18,7 +18,7 @@ It includes authentication, onboarding, public/private job flows, applicant mana
   - `docs/screenshots/user-dashboard.png`
   - `docs/screenshots/company-dashboard.png`
 
-## 🧰 Tech Stack (Auto-Detected)
+## 🧰 Tech Stack 
 
 ### 🌐 Frontend
 

@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { User, LogOut, Moon, Sun } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
+import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
 import { normalizeSocialsText } from '@sharedUtils/socials';
 
 const VOCATIONAL_OPTION = 'High School Graduate with Vocational Course';
