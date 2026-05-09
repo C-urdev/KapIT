@@ -6,17 +6,17 @@ This file is the single source of truth for repository layout and frontend place
 
 ```text
 kapIT/
-|- apps/
-|  `- web/                  # Next.js frontend
-|- server/                  # Express API server
-|  |- config/
-|  |- controllers/
-|  |- middleware/
-|  |- routes/
-|  |- services/
-|  |- tests/
-|  `- validation/
-|- services/
+|- frontend/                # Next.js frontend
+|- backend/
+|  |- api/                  # Express API server
+|  |  |- config/
+|  |  |- controllers/
+|  |  |- middleware/
+|  |  |- routes/
+|  |  |- services/
+|  |  |- tests/
+|  |  `- validation/
+|  |- serverless/           # Serverless adapter (Vercel-style)
 |  `- ai-fastapi/           # Optional FastAPI AI microservice
 |- database/
 |  |- migrations/           # SQL migrations
@@ -30,9 +30,9 @@ kapIT/
 
 Use these domains for frontend code ownership:
 
-- `apps/web/src/shared` for shared code used by both user and company flows.
-- `apps/web/src/user` for user-only code.
-- `apps/web/src/company` for company-only code.
+- `frontend/modules/shared` for shared code used by both user and company flows.
+- `frontend/modules/user` for user-only code.
+- `frontend/modules/company` for company-only code.
 
 ## Placement Rules
 

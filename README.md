@@ -22,7 +22,7 @@ It includes authentication, onboarding, public/private job flows, applicant mana
 
 ### 🌐 Frontend
 
-- Next.js (App Router + Pages usage in `apps/web`)
+- Next.js (App Router + Pages usage in `frontend`)
 - React
 - Tailwind CSS
 - PostCSS
@@ -31,7 +31,7 @@ It includes authentication, onboarding, public/private job flows, applicant mana
 
 - Node.js
 - Express
-- FastAPI (optional AI service in `services/ai-fastapi`)
+- FastAPI (optional AI service in `backend/ai-fastapi`)
 
 ### 🗄️ Database
 
@@ -86,19 +86,19 @@ It includes authentication, onboarding, public/private job flows, applicant mana
 
 Use `.env.example` as the single source of truth for environment variables.
 
-1. Copy `.env.example` to `.env` (and to `apps/web/.env.local` if needed for frontend-only overrides).
+1. Copy `.env.example` to `.env` (and to `frontend/.env.local` if needed for frontend-only overrides).
 2. Fill required secrets and URLs.
 3. Keep production secrets in your hosting provider settings, not in Git.
 
 ## ⚙️ How It Works
 
-1. The Next.js frontend (`apps/web`) serves pages and client flows.
+1. The Next.js frontend (`frontend`) serves pages and client flows.
 2. Frontend API calls target `/api/*`, which are routed to the Express backend.
-3. Express (`server`) handles auth, profiles, jobs, applications, messaging, notifications, posts, and payment-related flows.
+3. Express (`backend/api`) handles auth, profiles, jobs, applications, messaging, notifications, posts, and payment-related flows.
 4. Express persists core data in PostgreSQL and can use Redis if configured.
-5. For AI-enabled endpoints, Express calls the FastAPI service (`services/ai-fastapi`) through `FASTAPI_URL`.
+5. For AI-enabled endpoints, Express calls the FastAPI service (`backend/ai-fastapi`) through `FASTAPI_URL`.
 6. Public deployment is split:
-   - Frontend: Netlify (`apps/web/netlify.toml`)
+   - Frontend: Netlify (`frontend/netlify.toml`)
    - Backend: Render (`render.yaml`)
 
 ## 🗂️ Folder Structure

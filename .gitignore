@@ -6,13 +6,13 @@ node_modules
 !.env.example
 .next
 dist
-apps/web/.next
+frontend/.next
 .venv
-services/ai-fastapi/.venv
-server/uploads
+backend/ai-fastapi/.venv
+backend/api/uploads
 *.log
-apps/web/next.dev.out.log
-apps/web/next.dev.err.log
+frontend/next.dev.out.log
+frontend/next.dev.err.log
 server.dev.log
 server.dev.err.log
 
