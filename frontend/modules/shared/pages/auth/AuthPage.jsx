@@ -133,12 +133,13 @@ export default function AuthPage({
       || normalized.includes('invalid credentials')
       || normalized.includes('user not found');
   };
-  const formatSocialProviderLabel = (value) =>
-    String(value || '').trim().toLowerCase() === 'google'
+  function formatSocialProviderLabel(value) {
+    return String(value || '').trim().toLowerCase() === 'google'
       ? 'Google'
       : String(value || '').trim().toLowerCase() === 'github'
         ? 'GitHub'
         : 'social';
+  }
 
   const deriveSignupUsername = (email) => {
     const localPart = String(email || '').split('@')[0] || '';
