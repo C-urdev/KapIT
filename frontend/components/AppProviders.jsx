@@ -3,6 +3,8 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { ThemeProvider } from '@sharedContext/ThemeContext';
+import FaqChatbot from '@sharedComponents/support/FaqChatbot';
+import ChatbotErrorBoundary from './ChatbotErrorBoundary';
 
 const STATIC_TITLES_BY_PATH = {
   '/': 'AI Job Matching Platform',
@@ -114,5 +116,12 @@ export default function AppProviders({ children, initialTheme = 'light' }) {
     document.title = titleText ? `KapIT | ${titleText}` : 'KapIT - AI Job Matching Platform';
   }, [pathname]);
 
-  return <ThemeProvider initialTheme={initialTheme}>{children}</ThemeProvider>;
+  return (
+    <ThemeProvider initialTheme={initialTheme}>
+      {children}
+      <ChatbotErrorBoundary>
+        <FaqChatbot />
+      </ChatbotErrorBoundary>
+    </ThemeProvider>
+  );
 }

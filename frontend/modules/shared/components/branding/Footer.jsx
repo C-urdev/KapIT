@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 
 const SECTIONS = [
@@ -12,11 +12,11 @@ const SECTIONS = [
   },
   {
     title: 'Companies',
-    items: ['Find talent', 'Post projects', 'Pricing'],
+    items: ['Find talent', 'Post projects'],
   },
   {
     title: 'Resources',
-    items: ['Help Center', 'Safety', 'Community', 'FAQ'],
+    items: ['Help Center', 'Safety', 'Community', 'FAQ', 'Pricing'],
   },
   {
     title: 'Contact',
@@ -106,8 +106,24 @@ export default function Footer() {
   const selectedInfo = useMemo(() => FOOTER_INFO[selectedItem] ?? '', [selectedItem]);
   const isStructuredInfo = Boolean(selectedInfo && typeof selectedInfo === 'object' && Array.isArray(selectedInfo.items));
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const handleFooterInfoOpen = (event) => {
+      const item = event?.detail?.item;
+      if (!item || !FOOTER_INFO[item]) return;
+      setSelectedItem(item);
+      window.requestAnimationFrame(() => {
+        document.getElementById('kapit-footer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    };
+
+    window.addEventListener('kapit:footer-info-open', handleFooterInfoOpen);
+    return () => window.removeEventListener('kapit:footer-info-open', handleFooterInfoOpen);
+  }, []);
+
   return (
-    <footer className="relative bg-white dark:bg-[#121416]">
+    <footer id="kapit-footer" className="relative bg-white dark:bg-[#121416]">
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#b8ad94] to-transparent opacity-95 shadow-[0_1px_0_rgba(255,255,255,0.45)] dark:via-[#5b6672] dark:shadow-[0_1px_0_rgba(10,14,18,0.75)]"
         aria-hidden="true"
