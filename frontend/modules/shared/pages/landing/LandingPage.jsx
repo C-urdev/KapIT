@@ -240,7 +240,8 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
 
-    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    // Keep orbit layout for larger desktops only; smaller viewports use the safer mobile carousel.
+    const mediaQuery = window.matchMedia('(min-width: 1280px)');
     const updateCarouselMode = (event) => {
       setIsDesktopCarousel(event.matches);
     };
@@ -264,10 +265,10 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-gradient-to-b dark:from-[#121416] dark:via-[#1a1d20] dark:to-[#22272b]">
+    <div className="min-h-screen flex flex-col bg-[#edf3ef] dark:bg-gradient-to-b dark:from-[#121416] dark:via-[#1a1d20] dark:to-[#22272b]">
       <div ref={topRef} />
       <header className="sticky top-0 z-40 overflow-visible border-b border-black/5 bg-white/78 dark:border-[#2f353c] dark:bg-[#121416]/90 backdrop-blur-xl">
-        <div className="relative w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-4 flex flex-wrap lg:flex-nowrap justify-between items-center gap-3">
+        <div className="relative w-full max-w-[min(100%,1700px)] mx-auto px-6 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 py-4 flex flex-wrap lg:flex-nowrap justify-between items-center gap-3">
           <button
             type="button"
             onClick={scrollToTop}
@@ -280,7 +281,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
 
           <nav
             ref={navMenuRef}
-            className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-8 xl:gap-10 overflow-visible"
+            className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-11 xl:gap-14 overflow-visible"
             onMouseLeave={handleHeaderDropdownClose}
             onMouseEnter={() => {
               if (headerDropdownCloseTimerRef.current) {
@@ -420,9 +421,9 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
                           <div className="h-36 rounded-lg bg-gradient-to-r from-[#f59e0b] via-[#f97316] to-[#ec4899] p-2">
                             <div className="h-full rounded-md bg-white/90" />
                           </div>
-                          <p className="mt-3 text-lg font-medium text-[#111827] dark:text-white">Introducing Help Desk</p>
+                          <p className="mt-3 text-lg font-medium text-[#111827] dark:text-white">Introducing ATS Resume Format</p>
                           <p className="mt-1 line-clamp-2 text-sm text-[#4b5563] dark:text-[#cbd5e1]">
-                            Manage customer support workflows in one place with clearer handoffs and faster responses.
+                            Build ATS-friendly resumes with cleaner structure, keyword alignment, and stronger screening compatibility.
                           </p>
                         </button>
                       </>
@@ -489,7 +490,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
         <ThinSectionLine className="bottom-0" />
       </header>
 
-      <section className="relative overflow-hidden min-h-[calc(100vh-5rem)] flex flex-col">
+      <section className="relative overflow-hidden min-h-[100dvh] flex flex-col">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
@@ -505,7 +506,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
               background:
                 theme === 'dark'
                   ? 'radial-gradient(58% 44% at 50% 14%, rgba(226, 232, 240, 0.22) 0%, rgba(148, 163, 184, 0.13) 44%, rgba(18, 20, 22, 0) 86%), radial-gradient(58% 38% at 50% 72%, rgba(163, 230, 53, 0.07) 0%, rgba(18,20,22,0) 78%)'
-                  : 'radial-gradient(58% 44% at 50% 14%, rgba(16, 185, 129, 0.1) 0%, rgba(163, 230, 53, 0.06) 44%, rgba(247, 246, 241, 0) 86%), radial-gradient(58% 38% at 50% 72%, rgba(245, 222, 179, 0.18) 0%, rgba(247,246,241,0) 80%)',
+                  : 'radial-gradient(58% 44% at 50% 14%, rgba(16, 185, 129, 0.03) 0%, rgba(163, 230, 53, 0.018) 44%, rgba(247, 246, 241, 0) 86%), radial-gradient(58% 38% at 50% 72%, rgba(245, 222, 179, 0.12) 0%, rgba(247,246,241,0) 80%)',
             }}
           />
           <div
@@ -514,19 +515,19 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
               background:
                 theme === 'dark'
                   ? 'radial-gradient(58% 90% at 50% 100%, rgba(203, 213, 225, 0.2) 0%, rgba(148, 163, 184, 0.12) 36%, rgba(18,20,22,0) 76%)'
-                  : 'radial-gradient(58% 90% at 50% 100%, rgba(132, 204, 22, 0.14) 0%, rgba(16, 185, 129, 0.1) 34%, rgba(247,246,241,0) 78%)',
+                  : 'radial-gradient(58% 90% at 50% 100%, rgba(132, 204, 22, 0.045) 0%, rgba(16, 185, 129, 0.03) 34%, rgba(247,246,241,0) 78%)',
             }}
           />
           <div
             className="landing-bg-wave absolute inset-x-[7%] bottom-[10%] h-20 rounded-[50%] border"
             style={{
-              borderColor: theme === 'dark' ? 'rgba(203,213,225,0.24)' : 'rgba(132, 204, 22, 0.34)',
+              borderColor: theme === 'dark' ? 'rgba(203,213,225,0.24)' : 'rgba(132, 204, 22, 0.3)',
             }}
           />
           <div
             className="landing-bg-wave landing-bg-wave-delay absolute inset-x-[15%] bottom-[11.5%] h-16 rounded-[50%] border"
             style={{
-              borderColor: theme === 'dark' ? 'rgba(226,232,240,0.18)' : 'rgba(101, 163, 13, 0.3)',
+              borderColor: theme === 'dark' ? 'rgba(226,232,240,0.18)' : 'rgba(101, 163, 13, 0.26)',
             }}
           />
           {LANDING_BG_STARS.map((star) => (
@@ -545,13 +546,14 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
           }}
           aria-hidden="true"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/5 to-white dark:from-[#121416]/58 dark:via-[#121416]/34 dark:to-[#1a1d20]" aria-hidden="true" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/12 via-white/16 to-[#f4f7f3] dark:from-[#121416]/58 dark:via-[#121416]/34 dark:to-[#1a1d20]" aria-hidden="true" />
 
         <div className="relative flex-1 flex items-center">
           <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-10 sm:py-12 lg:py-14">
             <div className="max-w-5xl mx-auto text-center w-full">
-              <h2 className="mt-2 text-5xl sm:text-6xl lg:text-7xl xl:text-[5.2rem] font-extrabold tracking-tight leading-[0.95] text-[#102a1b] dark:text-white max-w-5xl mx-auto">
-                Connect Filipino IT Talent with Opportunity
+              <h2 className="mt-2 text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.2rem] font-extrabold tracking-tight leading-[0.95] text-[#102a1b] dark:text-white max-w-[72rem] mx-auto">
+                <span className="block md:whitespace-nowrap">Connect Filipino IT</span>
+                <span className="block md:whitespace-nowrap">Talent with Opportunity</span>
               </h2>
               <p className="mt-5 sm:mt-6 text-[1rem] sm:text-[1.08rem] lg:text-[1.12rem] leading-relaxed font-medium text-[#2f4e39] dark:text-[#d0d7dd] max-w-3xl mx-auto">
                 KapIT is a focused hiring marketplace where companies find vetted developers and IT professionals discover real, skill-matched opportunities.
@@ -640,34 +642,35 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
           </div>
         </div>
 
-        <div className="relative z-20 bg-white/95 dark:bg-[#1a1d20]/95 backdrop-blur lg:sticky lg:top-[72px]">
-          <ThinSectionLine className="top-0" />
-          <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-4 sm:py-5">
-            <div className="flex flex-col md:flex-row items-center justify-center md:justify-between gap-4">
-              <p className="text-sm font-semibold text-[#344e41] dark:text-[#d0d7dd]">
-                Trusted by companies hiring Filipino tech talent
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-                {TRUSTED_LOGOS.map((name) => (
-                  <div
-                    key={name}
-                    className="text-sm font-semibold tracking-wide text-slate-500 dark:text-slate-400 opacity-80 grayscale"
-                  >
-                    {name}
-                  </div>
-                ))}
-              </div>
+      </section>
+
+      <section className="relative bg-gradient-to-b from-[#edf3ef] via-[#ecefe9] to-[#e5e0d4] dark:bg-gradient-to-b dark:from-[#1a1d20] dark:via-[#1d2226] dark:to-[#20262b] backdrop-blur">
+        <ThinSectionLine className="top-0" />
+        <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-5 sm:py-6">
+          <div className="flex flex-col md:flex-row items-center justify-center md:justify-between gap-4">
+            <p className="text-sm font-semibold tracking-[0.01em] text-[#2f4e39] dark:text-[#d0d7dd]">
+              Trusted by companies hiring Filipino tech talent
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+              {TRUSTED_LOGOS.map((name) => (
+                <div
+                  key={name}
+                  className="text-sm font-semibold tracking-wide text-[#5f6f67] dark:text-slate-400 opacity-80 grayscale"
+                >
+                  {name}
+                </div>
+              ))}
             </div>
           </div>
-          <ThinSectionLine className="bottom-0" />
         </div>
+        <ThinSectionLine className="bottom-0" />
       </section>
 
       <section
         ref={categoriesRef}
         className="relative bg-gradient-to-b from-[#e2ddcf] via-[#ebe6da] to-[#f7f6f1] dark:bg-gradient-to-b dark:from-[#1a1d20] dark:via-[#202428] dark:to-[#23282e] scroll-mt-24"
       >
-        <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 pt-14 pb-10 min-h-[360px] sm:min-h-[400px]">
+        <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-12 sm:py-14 lg:py-16">
           <div className="max-w-3xl">
             <h3 className="text-3xl font-bold text-[#102a1b] dark:text-white">Explore categories</h3>
           </div>
@@ -684,7 +687,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
       </section>
 
       <section className="relative bg-gradient-to-b from-[#fbfaf6] via-[#fbfaf6] via-[97%] to-[#f8f4ec] dark:bg-gradient-to-b dark:from-[#23282e] dark:via-[#202428] dark:to-[#1a1d20]">
-        <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 pt-14 pb-10 min-h-[360px] sm:min-h-[400px]">
+        <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-12 sm:py-14 lg:py-16">
           <div className="max-w-3xl">
             <h3 className="text-3xl font-bold text-[#102a1b] dark:text-white">How KapIT works</h3>
           </div>
@@ -732,7 +735,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
       </section>
 
       <section className="relative bg-gradient-to-b from-[#f8f4ec] via-[#eee9de] via-[8%] to-[#e2ddcf] dark:bg-gradient-to-b dark:from-[#1a1d20] dark:via-[#23282e] dark:to-[#121416]">
-        <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 pt-14 pb-10 min-h-[360px] sm:min-h-[400px] flex items-center">
+        <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-12 sm:py-14 lg:py-16 flex items-center">
           <div className="w-full px-2 sm:px-0 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-10">
             <div className="max-w-2xl">
               <h3 className="text-3xl font-bold text-[#102a1b] dark:text-white">
@@ -758,6 +761,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
             </div>
           </div>
         </div>
+        <ThinSectionLine className="bottom-0 z-10" />
       </section>
 
       <Footer />
@@ -770,7 +774,7 @@ function CategoryCard({ icon: Icon, title, onClick, className = '' }) {
     <button
       type="button"
       onClick={onClick}
-      className={`group flex min-h-[164px] w-[min(78vw,320px)] shrink-0 flex-col text-left rounded-2xl bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] p-5 sm:min-h-[176px] sm:w-[280px] sm:p-6 lg:min-h-[210px] lg:w-[360px] lg:rounded-[1.75rem] lg:p-8 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all ${className}`}
+      className={`group flex min-h-[164px] w-[min(78vw,320px)] shrink-0 flex-col text-left rounded-2xl bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] p-5 sm:min-h-[176px] sm:w-[280px] sm:p-6 lg:min-h-[200px] lg:w-[320px] lg:rounded-[1.6rem] lg:p-7 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all ${className}`}
     >
       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#f5f5f2] dark:bg-[#353c44] lg:h-14 lg:w-14 lg:rounded-2xl">
         <Icon className="h-6 w-6 text-[#588157] dark:text-[#6f9b74] lg:h-7 lg:w-7" />

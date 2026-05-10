@@ -100,7 +100,7 @@
 
 html {
   scrollbar-width: thin;
-  scrollbar-color: rgba(88, 129, 87, 0.35) transparent;
+  scrollbar-color: rgba(58, 90, 64, 0.88) rgba(88, 129, 87, 0.28);
 }
 
 html::-webkit-scrollbar {
@@ -108,11 +108,12 @@ html::-webkit-scrollbar {
 }
 
 html::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(88, 129, 87, 0.28);
+  border-radius: 999px;
 }
 
 html::-webkit-scrollbar-thumb {
-  background-color: rgba(88, 129, 87, 0.35);
+  background-color: rgba(58, 90, 64, 0.88);
   border-radius: 999px;
 }
 
