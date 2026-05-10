@@ -11,6 +11,15 @@ import {
   Users,
   Moon,
   Sun,
+  ChevronDown,
+  Building2,
+  UserRound,
+  BriefcaseBusiness,
+  FileText,
+  LifeBuoy,
+  UsersRound,
+  ShieldCheck,
+  CircleHelp,
 } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 import Footer from '@sharedComponents/branding/Footer';
@@ -26,6 +35,66 @@ const QUICK_TAGS = [
 ];
 
 const TRUSTED_LOGOS = ['Google', 'Microsoft', 'PayPal', 'Meta'];
+const TOP_NAV_LINKS = [
+  { label: 'Solutions', hasDropdown: true, footerItem: 'Find talent' },
+  { label: 'Resources', hasDropdown: true, footerItem: 'Help Center' },
+  { label: 'Pricing', hasDropdown: false, href: '/pricing', footerItem: 'Pricing' },
+];
+const TOP_NAV_DROPDOWNS = {
+  Solutions: [
+    {
+      heading: 'DEVELOPERS',
+      items: [
+        {
+          title: 'Create profile',
+          description: 'Build your profile to get matched with opportunities.',
+          footerItem: 'Create profile',
+          icon: UserRound,
+        },
+        {
+          title: 'Portfolios',
+          description: 'Showcase your projects, skills, and achievements.',
+          footerItem: 'Portfolios',
+          icon: FileText,
+        },
+        {
+          title: 'Projects',
+          description: 'Join projects and collaborate with hiring companies.',
+          footerItem: 'Projects',
+          icon: BriefcaseBusiness,
+        },
+      ],
+    },
+    {
+      heading: 'COMPANIES',
+      items: [
+        {
+          title: 'Find talent',
+          description: 'Search and connect with the right IT candidates.',
+          footerItem: 'Find talent',
+          icon: Building2,
+        },
+        {
+          title: 'Post projects',
+          description: 'Publish job posts and receive qualified applicants.',
+          footerItem: 'Post projects',
+          icon: BriefcaseBusiness,
+        },
+      ],
+    },
+  ],
+  Resources: [
+    {
+      heading: 'QUICK LINKS',
+      items: [
+        { title: 'Help Center', description: 'Find answers and platform guides', footerItem: 'Help Center', icon: LifeBuoy },
+        { title: 'Community', description: 'Product updates and collaboration', footerItem: 'Community', icon: UsersRound },
+        { title: 'Safety', description: 'Security, trust, and best practices', footerItem: 'Safety', icon: ShieldCheck },
+        { title: 'FAQ', description: 'Latest answers to common questions', footerItem: 'FAQ', icon: CircleHelp },
+      ],
+    },
+  ],
+};
 
 const CATEGORIES = [
   { title: 'Programming & Tech', icon: Code2 },
@@ -36,30 +105,51 @@ const CATEGORIES = [
   { title: 'Cloud & DevOps', icon: Cloud },
 ];
 
-const LANDING_BG_STARS = [
-  { top: '8%', left: '10%', size: 'h-1 w-1', delay: '0s' },
-  { top: '12%', left: '24%', size: 'h-1.5 w-1.5', delay: '0.8s' },
-  { top: '10%', left: '42%', size: 'h-1 w-1', delay: '1.4s' },
-  { top: '15%', left: '59%', size: 'h-1.5 w-1.5', delay: '0.5s' },
-  { top: '11%', left: '76%', size: 'h-1 w-1', delay: '1.8s' },
-  { top: '18%', left: '89%', size: 'h-1.5 w-1.5', delay: '1.1s' },
-  { top: '26%', left: '13%', size: 'h-1 w-1', delay: '0.7s' },
-  { top: '31%', left: '31%', size: 'h-1.5 w-1.5', delay: '1.9s' },
-  { top: '35%', left: '49%', size: 'h-1 w-1', delay: '0.3s' },
-  { top: '39%', left: '66%', size: 'h-1.5 w-1.5', delay: '1.5s' },
-  { top: '43%', left: '84%', size: 'h-1 w-1', delay: '0.9s' },
-  { top: '52%', left: '17%', size: 'h-1.5 w-1.5', delay: '1.2s' },
-  { top: '57%', left: '37%', size: 'h-1 w-1', delay: '0.2s' },
-  { top: '63%', left: '56%', size: 'h-1.5 w-1.5', delay: '1.6s' },
-  { top: '68%', left: '74%', size: 'h-1 w-1', delay: '0.6s' },
-  { top: '74%', left: '91%', size: 'h-1.5 w-1.5', delay: '1.3s' },
-];
+const LANDING_BG_STARS = (() => {
+  const stars = [];
+  let seed = 182736;
+  const count = 9;
+  const sizes = ['h-1 w-1', 'h-1.5 w-1.5'];
+
+  const rand = () => {
+    seed = (seed * 1664525 + 1013904223) % 4294967296;
+    return seed / 4294967296;
+  };
+
+  const isInsideNoStarZone = (top, left) => {
+    // Keep the hero center clean: heading, subheading, search, and chips area.
+    const inHorizontalCenter = left >= 18 && left <= 84;
+    const inVerticalCenter = top >= 14 && top <= 74;
+    return inHorizontalCenter && inVerticalCenter;
+  };
+
+  const isOnSideLanes = (left) => left <= 16 || left >= 84;
+
+  while (stars.length < count) {
+    const top = Math.round((8 + rand() * 76) * 10) / 10; // 8% - 84%
+    const left = Math.round((6 + rand() * 88) * 10) / 10; // 6% - 94%
+    if (isInsideNoStarZone(top, left)) continue;
+    if (!isOnSideLanes(left)) continue;
+
+    stars.push({
+      top: `${top}%`,
+      left: `${left}%`,
+      size: sizes[stars.length % 2],
+      delay: `${(rand() * 2).toFixed(2)}s`,
+    });
+  }
+
+  return stars;
+})();
 
 export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn }) {
   const { theme, toggleTheme } = useTheme();
   const [query, setQuery] = useState('');
   const [highlightGetStarted, setHighlightGetStarted] = useState(false);
   const [isDesktopCarousel, setIsDesktopCarousel] = useState(false);
+  const [openHeaderDropdown, setOpenHeaderDropdown] = useState(null);
+  const headerDropdownCloseTimerRef = useRef(null);
+  const navMenuRef = useRef(null);
   const topRef = useRef(null);
   const categoriesRef = useRef(null);
 
@@ -83,6 +173,62 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
   const handleJoinDeveloperClick = () => {
     onJoinDeveloper?.();
   };
+
+  const handleTopNavClick = (footerItem) => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent('kapit:footer-info-open', { detail: { item: footerItem } }));
+  };
+
+  const handleHeaderDropdownOpen = (label) => {
+    if (headerDropdownCloseTimerRef.current) {
+      window.clearTimeout(headerDropdownCloseTimerRef.current);
+      headerDropdownCloseTimerRef.current = null;
+    }
+    setOpenHeaderDropdown(label);
+  };
+
+  const handleHeaderDropdownClose = () => {
+    if (headerDropdownCloseTimerRef.current) {
+      window.clearTimeout(headerDropdownCloseTimerRef.current);
+    }
+    headerDropdownCloseTimerRef.current = window.setTimeout(() => {
+      setOpenHeaderDropdown(null);
+      headerDropdownCloseTimerRef.current = null;
+    }, 120);
+  };
+
+  const handleHeaderTopLinkClick = (link) => {
+    if (link.hasDropdown) {
+      setOpenHeaderDropdown((current) => (current === link.label ? null : link.label));
+      return;
+    }
+    if (link.href) {
+      window.location.href = link.href;
+      return;
+    }
+    handleTopNavClick(link.footerItem);
+  };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const handleOutsidePointerDown = (event) => {
+      if (!openHeaderDropdown) return;
+      if (navMenuRef.current?.contains(event.target)) return;
+      setOpenHeaderDropdown(null);
+    };
+
+    window.addEventListener('pointerdown', handleOutsidePointerDown);
+    return () => window.removeEventListener('pointerdown', handleOutsidePointerDown);
+  }, [openHeaderDropdown]);
+
+  useEffect(() => {
+    return () => {
+      if (headerDropdownCloseTimerRef.current) {
+        window.clearTimeout(headerDropdownCloseTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleOpenAccountChoice = () => {
     highlightTopGetStarted();
@@ -120,8 +266,8 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-gradient-to-b dark:from-[#121416] dark:via-[#1a1d20] dark:to-[#22272b]">
       <div ref={topRef} />
-      <header className="sticky top-0 z-30 border-b border-black/5 bg-white/78 dark:border-[#2f353c] dark:bg-[#121416]/90 backdrop-blur-xl">
-        <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-4 flex flex-wrap justify-between items-center gap-3">
+      <header className="sticky top-0 z-40 overflow-visible border-b border-black/5 bg-white/78 dark:border-[#2f353c] dark:bg-[#121416]/90 backdrop-blur-xl">
+        <div className="relative w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-4 flex flex-wrap lg:flex-nowrap justify-between items-center gap-3">
           <button
             type="button"
             onClick={scrollToTop}
@@ -132,7 +278,162 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
             <h1 className="text-xl sm:text-2xl font-bold text-[#3a5a40] dark:text-white">KapIT</h1>
           </button>
 
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          <nav
+            ref={navMenuRef}
+            className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-8 xl:gap-10 overflow-visible"
+            onMouseLeave={handleHeaderDropdownClose}
+            onMouseEnter={() => {
+              if (headerDropdownCloseTimerRef.current) {
+                window.clearTimeout(headerDropdownCloseTimerRef.current);
+                headerDropdownCloseTimerRef.current = null;
+              }
+            }}
+          >
+            {TOP_NAV_LINKS.map((link) => (
+              <div key={link.label} className="relative" onMouseEnter={() => link.hasDropdown && handleHeaderDropdownOpen(link.label)}>
+                <button
+                  type="button"
+                  onClick={() => handleHeaderTopLinkClick(link)}
+                  className="inline-flex items-center gap-1 text-[1.02rem] font-semibold text-[#3a5a40] dark:text-white transition-colors"
+                  style={{ fontFamily: 'var(--font-desktop)' }}
+                  aria-expanded={link.hasDropdown ? openHeaderDropdown === link.label : undefined}
+                >
+                  <span>{link.label}</span>
+                  {link.hasDropdown ? (
+                    <ChevronDown
+                      className={`h-4 w-4 opacity-75 transition-transform ${openHeaderDropdown === link.label ? 'rotate-180' : ''}`}
+                      aria-hidden="true"
+                    />
+                  ) : null}
+                </button>
+              </div>
+            ))}
+
+            {openHeaderDropdown && TOP_NAV_DROPDOWNS[openHeaderDropdown] ? (
+              <div
+                className="pointer-events-auto absolute left-1/2 top-full z-50 mt-6 -translate-x-1/2 overflow-hidden rounded-2xl border border-[#d7d7d7] bg-white shadow-[0_14px_32px_rgba(0,0,0,0.12)] dark:border-[#444d57] dark:bg-[#1a1d20]"
+                style={{ width: '860px', maxWidth: '92vw' }}
+                onMouseEnter={() => {
+                  if (headerDropdownCloseTimerRef.current) {
+                    window.clearTimeout(headerDropdownCloseTimerRef.current);
+                    headerDropdownCloseTimerRef.current = null;
+                  }
+                }}
+                onMouseLeave={handleHeaderDropdownClose}
+              >
+                <div
+                  className="grid"
+                  style={{
+                    gridTemplateColumns: openHeaderDropdown === 'Solutions' ? '1fr 1fr' : '1.08fr 0.92fr',
+                  }}
+                >
+                  <div className="p-5">
+                    <p className="text-xs font-medium tracking-[0.22em] text-[#6b7280] dark:text-[#94a3b8]">
+                      {TOP_NAV_DROPDOWNS[openHeaderDropdown][0].heading}
+                    </p>
+                    <div className="mt-4 space-y-1.5">
+                      {TOP_NAV_DROPDOWNS[openHeaderDropdown][0].items.map((item) => {
+                        const ItemIcon = item.icon;
+
+                        return (
+                          <button
+                            key={item.title}
+                            type="button"
+                            onClick={() => {
+                              handleTopNavClick(item.footerItem);
+                              handleHeaderDropdownClose();
+                            }}
+                            className="group flex w-full items-start gap-3 rounded-xl px-1.5 py-2.5 text-left hover:bg-white/80 dark:hover:bg-[#22272b]"
+                          >
+                            <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#d0d4d9] bg-[#f3f4f6] text-[#6b7280] dark:border-[#4b5563] dark:bg-[#232931] dark:text-[#cbd5e1]">
+                              <ItemIcon className="h-5 w-5" />
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block text-[1.02rem] font-medium text-[#1f2937] dark:text-white">{item.title}</span>
+                              <span className="mt-0.5 block text-[0.98rem] text-[#4b5563] dark:text-[#cbd5e1]">
+                                {item.description}
+                              </span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="relative p-5">
+                    {openHeaderDropdown === 'Solutions' ? (
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute left-0 top-4 bottom-4 w-px bg-[#d9d9d9] dark:bg-[#3b4450]"
+                      />
+                    ) : (
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute left-0 top-0 bottom-0 w-px bg-[#dfdfdf] dark:bg-[#3b4450]"
+                      />
+                    )}
+                    {openHeaderDropdown === 'Solutions' ? (
+                      <>
+                        <p className="text-xs font-medium tracking-[0.22em] text-[#6b7280] dark:text-[#94a3b8]">
+                          {TOP_NAV_DROPDOWNS.Solutions[1].heading}
+                        </p>
+                        <div className="mt-4 space-y-1.5">
+                          {TOP_NAV_DROPDOWNS.Solutions[1].items.map((item) => {
+                            const ItemIcon = item.icon;
+                            return (
+                              <button
+                                key={item.title}
+                                type="button"
+                                onClick={() => {
+                                  handleTopNavClick(item.footerItem);
+                                  handleHeaderDropdownClose();
+                                }}
+                                className="group flex w-full items-start gap-3 rounded-xl px-1.5 py-2.5 text-left hover:bg-white/80 dark:hover:bg-[#22272b]"
+                              >
+                                <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#d0d4d9] bg-[#f3f4f6] text-[#6b7280] dark:border-[#4b5563] dark:bg-[#232931] dark:text-[#cbd5e1]">
+                                  <ItemIcon className="h-5 w-5" />
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="block text-[1.02rem] font-medium text-[#1f2937] dark:text-white">{item.title}</span>
+                                  <span className="mt-0.5 block text-[0.98rem] text-[#4b5563] dark:text-[#cbd5e1]">
+                                    {item.description}
+                                  </span>
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xs font-medium tracking-[0.22em] text-[#6b7280] dark:text-[#94a3b8]">
+                          RECENT UPDATE
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleTopNavClick('Help Center');
+                            handleHeaderDropdownClose();
+                          }}
+                          className="mt-4 block w-full rounded-xl border border-[#d0d4d9] bg-white p-2 text-left hover:bg-[#fafafa] dark:border-[#4b5563] dark:bg-[#232931] dark:hover:bg-[#28303a]"
+                        >
+                          <div className="h-36 rounded-lg bg-gradient-to-r from-[#f59e0b] via-[#f97316] to-[#ec4899] p-2">
+                            <div className="h-full rounded-md bg-white/90" />
+                          </div>
+                          <p className="mt-3 text-lg font-medium text-[#111827] dark:text-white">Introducing Help Desk</p>
+                          <p className="mt-1 line-clamp-2 text-sm text-[#4b5563] dark:text-[#cbd5e1]">
+                            Manage customer support workflows in one place with clearer handoffs and faster responses.
+                          </p>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </nav>
+
+          <div className="ml-auto lg:ml-0 flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"
               onClick={onSignIn}
@@ -247,14 +548,17 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/5 to-white dark:from-[#121416]/58 dark:via-[#121416]/34 dark:to-[#1a1d20]" aria-hidden="true" />
 
         <div className="relative flex-1 flex items-center">
-          <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-16 sm:py-20 lg:py-24">
-            <div className="max-w-6xl mx-auto text-center w-full">
-              <h2 className="mt-8 text-5xl sm:text-6xl lg:text-7xl xl:text-[5.5rem] font-extrabold tracking-tight text-[#102a1b] dark:text-white max-w-6xl mx-auto">
+          <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-10 sm:py-12 lg:py-14">
+            <div className="max-w-5xl mx-auto text-center w-full">
+              <h2 className="mt-2 text-5xl sm:text-6xl lg:text-7xl xl:text-[5.2rem] font-extrabold tracking-tight leading-[0.95] text-[#102a1b] dark:text-white max-w-5xl mx-auto">
                 Connect Filipino IT Talent with Opportunity
               </h2>
+              <p className="mt-5 sm:mt-6 text-[1rem] sm:text-[1.08rem] lg:text-[1.12rem] leading-relaxed font-medium text-[#2f4e39] dark:text-[#d0d7dd] max-w-3xl mx-auto">
+                KapIT is a focused hiring marketplace where companies find vetted developers and IT professionals discover real, skill-matched opportunities.
+              </p>
 
-              <form onSubmit={handleSearch} className="mt-16 sm:mt-20">
-                <div className="mx-auto max-w-5xl">
+              <form onSubmit={handleSearch} className="mt-10 sm:mt-12">
+                <div className="mx-auto max-w-4xl">
                   <div className="flex items-stretch gap-2 overflow-hidden rounded-3xl bg-white/85 dark:bg-[#1a1d20]/85 border border-[#a3b18a] dark:border-[#444d57] shadow-lg shadow-black/5 dark:shadow-[#6f9b74]/10 p-2 backdrop-blur">
                     <div className="flex min-w-0 flex-1 items-center pl-3">
                       <Search className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 text-[#588157] dark:text-[#6f9b74]" />
@@ -273,7 +577,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
                     </button>
                   </div>
 
-                  <div className="mt-8 flex flex-wrap justify-center gap-4">
+                  <div className="mt-7 flex flex-wrap justify-center gap-3">
                     {QUICK_TAGS.map((tag) => (
                       <button
                         key={tag}
@@ -289,7 +593,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
                     ))}
                   </div>
 
-                  <div className="mt-12 sm:mt-14 flex flex-row flex-wrap items-center justify-center gap-3 sm:gap-5">
+                  <div className="mt-10 sm:mt-12 flex flex-row flex-wrap items-center justify-center gap-3 sm:gap-4">
                     <button
                       type="button"
                       onClick={handleOpenAccountChoice}
