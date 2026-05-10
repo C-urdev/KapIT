@@ -61,7 +61,7 @@ export default function ChooseAccountTypePage({ pendingSignup, onBack, onRegiste
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-[#a3b18a] dark:border-[#353c44] bg-white dark:bg-[#121416]">
-        <div className="mx-auto flex w-full max-w-[min(100%,1800px)] items-center justify-between px-3 py-4 sm:px-5 lg:px-6 xl:px-7 2xl:px-9">
+        <div className="mx-auto flex w-full max-w-[min(100%,1700px)] items-center justify-between px-6 py-4 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
           <button onClick={onBack} className="flex items-center gap-2 text-[#344e41] dark:text-[#d0d7dd] hover:text-[#3a5a40] dark:hover:text-white">
             <ArrowLeft className="w-5 h-5" />
             <span className="flex items-center gap-3">
@@ -130,5 +130,4 @@ export default function ChooseAccountTypePage({ pendingSignup, onBack, onRegiste
     </div>
   );
 }
-
 

@@ -418,7 +418,7 @@ export default function AuthPage({
     <div className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="border-b border-[#a3b18a] dark:border-[#353c44] bg-white dark:bg-[#121416]">
-        <div className="mx-auto flex w-full max-w-[min(100%,1800px)] items-center justify-between px-3 py-4 sm:px-5 lg:px-6 xl:px-7 2xl:px-9">
+        <div className="mx-auto flex w-full max-w-[min(100%,1700px)] items-center justify-between px-6 py-4 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
           <button onClick={onBack} className="flex items-center gap-2 text-[#344e41] dark:text-[#d0d7dd] hover:text-[#3a5a40] dark:hover:text-white">
             <KapITLogo className="h-9 w-9 rounded-lg object-contain bg-white" />
             <span className="text-2xl font-bold text-[#3a5a40] dark:text-white">kapIT</span>

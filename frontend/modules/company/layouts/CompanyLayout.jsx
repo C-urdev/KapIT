@@ -4,7 +4,6 @@ import CompanyHeader from '@companyComponents/CompanyHeader';
 import CompanyMobileMenuDrawer from '@companyComponents/layout/mobile/CompanyMobileMenuDrawer';
 import { LayoutDashboard, Briefcase, MessageCircle } from 'lucide-react';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
-import CompanyPremiumPopup from '@companyPages/CompanyPremiumPopupPage';
 import { getUnreadNotificationCount } from '@sharedServices/notificationsService';
 
 const TITLES = {
@@ -33,7 +32,6 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [mobileNavVisible, setMobileNavVisible] = useState(false);
   const [mobileNavActive, setMobileNavActive] = useState(false);
-  const [premiumOpen, setPremiumOpen] = useState(false);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const title = useMemo(() => TITLES[pathname] || 'Company', [pathname]);
@@ -45,8 +43,7 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
 
   useEffect(() => {
     if (pathname === COMPANY_PATHS.premium) {
-      setPremiumOpen(true);
-      navigate(COMPANY_PATHS.dashboard);
+      navigate('/pricing');
     }
   }, [pathname]);
 
@@ -119,7 +116,7 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
           user={user}
           onHelp={onHelp}
           onLogout={onLogout}
-          onOpenPricing={() => setPremiumOpen(true)}
+          onOpenPricing={() => navigate('/pricing')}
           onToggleSidebarCollapsed={() => setSidebarCollapsed((value) => !value)}
           unreadNotificationCount={unreadNotificationCount}
         />
@@ -149,8 +146,6 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
           {children}
         </main>
       </div>
-
-      <CompanyPremiumPopup isOpen={premiumOpen} onClose={() => setPremiumOpen(false)} />
 
       {!isPaymentPage ? (
         <CompanyMobileMenuDrawer
