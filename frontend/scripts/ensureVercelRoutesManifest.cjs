@@ -7,6 +7,10 @@ const target = path.join(nextDir, 'routes-manifest-deterministic.json');
 const deploymentBuild =
   process.env.CI === 'true' || Boolean(process.env.VERCEL) || Boolean(process.env.DEPLOY_ID);
 const repoRootManifestSyncList = [
+  'BUILD_ID',
+  'export-marker.json',
+  'images-manifest.json',
+  'prerender-manifest.json',
   'routes-manifest.json',
   'routes-manifest-deterministic.json',
   'app-path-routes-manifest.json',
@@ -47,6 +51,32 @@ const syncTopLevelServerFiles = (rootNextDir) => {
   }
 };
 
+const mirrorDirectory = (fromDir, toDir, skipNames = new Set()) => {
+  if (!fs.existsSync(fromDir)) {
+    return;
+  }
+
+  fs.mkdirSync(toDir, { recursive: true });
+  const entries = fs.readdirSync(fromDir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    if (skipNames.has(entry.name)) {
+      continue;
+    }
+
+    const from = path.join(fromDir, entry.name);
+    const to = path.join(toDir, entry.name);
+
+    if (entry.isDirectory()) {
+      mirrorDirectory(from, to, skipNames);
+      continue;
+    }
+
+    fs.mkdirSync(path.dirname(to), { recursive: true });
+    fs.copyFileSync(from, to);
+  }
+};
+
 if (!fs.existsSync(source)) {
   console.warn(`[vercel-manifest-fix] Source missing: ${source}`);
   process.exit(0);
@@ -66,6 +96,8 @@ if (deploymentBuild) {
 
   for (const root of dedupedCandidates) {
     const rootNextDir = path.join(root, '.next');
+    const sourceNextDir = path.resolve(nextDir);
+    const absoluteRootNextDir = path.resolve(rootNextDir);
 
     try {
       fs.mkdirSync(rootNextDir, { recursive: true });
@@ -78,6 +110,10 @@ if (deploymentBuild) {
       }
 
       syncTopLevelServerFiles(rootNextDir);
+      if (absoluteRootNextDir !== sourceNextDir) {
+        mirrorDirectory(nextDir, rootNextDir, new Set(['cache', 'dev', 'diagnostics', 'trace', 'trace-build', 'turbopack']));
+        console.log(`[vercel-manifest-fix] Mirrored .next tree to ${rootNextDir}`);
+      }
     } catch (error) {
       console.warn(`[vercel-manifest-fix] Could not sync .next artifacts to ${rootNextDir}: ${error.message}`);
     }
