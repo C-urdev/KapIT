@@ -25,6 +25,7 @@ const {
 const { serializeUser } = require('../utils/authUserSerializer');
 const { clearLoginRateLimit } = require('../middleware/security');
 const { assertLocalAuthBypassAllowed } = require('../config/localBypass');
+const { getOrCreateCompanyForUserId } = require('../services/companyService');
 const isDev = process.env.NODE_ENV !== 'production';
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
 const PASSWORD_HASHER = process.env.PASSWORD_HASHER || 'bcrypt';
@@ -328,6 +329,9 @@ const register = async (req, res) => {
     );
 
     const user = result.rows[0];
+    if (derived.accountType === 'company') {
+      await getOrCreateCompanyForUserId(client, user.id);
+    }
 
     const session = await attachSessionCookies(res, user, req);
 
