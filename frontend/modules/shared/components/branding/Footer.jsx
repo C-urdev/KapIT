@@ -183,11 +183,8 @@ export default function Footer() {
         </div>
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[clamp(11rem,24vw,19rem)] overflow-hidden" aria-hidden="true">
-          <div className="absolute bottom-[-2.2rem] left-1/2 flex w-[min(100%,1700px)] -translate-x-1/2 items-end justify-center gap-8 px-6 sm:px-10">
-            <span className="inline-flex h-[clamp(9.2rem,22vw,17rem)] w-[clamp(9.2rem,22vw,17rem)] shrink-0 items-center justify-center rounded-[2.9rem] border border-[#607c66]/22 text-[clamp(3.6rem,10vw,7.8rem)] font-black leading-none text-transparent [-webkit-text-stroke:2px_rgba(78,106,85,0.24)] dark:border-[#2b333d]/45 dark:[-webkit-text-stroke:2px_rgba(43,51,61,0.65)]">
-              K
-            </span>
-            <p className="whitespace-nowrap text-[clamp(6.3rem,18.2vw,15.6rem)] font-black leading-[0.88] tracking-[-0.02em] text-transparent [-webkit-text-stroke:2px_rgba(78,106,85,0.24)] dark:[-webkit-text-stroke:2px_rgba(43,51,61,0.65)]">
+          <div className="absolute bottom-[-2.2rem] left-1/2 flex w-[min(100%,1700px)] -translate-x-1/2 items-center justify-center px-6 sm:px-10">
+            <p className="whitespace-nowrap text-[clamp(6.3rem,18.2vw,15.6rem)] font-black leading-[0.88] tracking-[-0.02em] text-transparent [-webkit-text-stroke:2.8px_rgba(78,106,85,0.72)] dark:text-transparent dark:[-webkit-text-stroke:2px_rgba(43,51,61,0.65)]">
               KapIT
             </p>
           </div>

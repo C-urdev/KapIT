@@ -267,7 +267,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
   return (
     <div className="min-h-screen flex flex-col bg-[#edf3ef] dark:bg-gradient-to-b dark:from-[#121416] dark:via-[#1a1d20] dark:to-[#22272b]">
       <div ref={topRef} />
-      <header className="sticky top-0 z-40 overflow-visible border-b border-black/5 bg-white/78 dark:border-[#2f353c] dark:bg-[#121416]/90 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 overflow-visible border-b border-black/10 bg-white/96 shadow-[0_12px_28px_rgba(16,42,27,0.08)] supports-[backdrop-filter]:bg-white/78 dark:border-[#2f353c] dark:bg-[#121416]/88 backdrop-blur-xl backdrop-saturate-160 backdrop-brightness-110">
         <div className="relative w-full max-w-[min(100%,1700px)] mx-auto px-6 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 py-4 flex flex-wrap lg:flex-nowrap justify-between items-center gap-3">
           <button
             type="button"
