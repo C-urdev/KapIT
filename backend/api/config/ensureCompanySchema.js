@@ -130,6 +130,7 @@ const ensureCompanySchema = async () => {
       );
     `);
 
+    await client.query("ALTER TABLE companies ADD COLUMN IF NOT EXISTS user_id UUID;");
     await client.query("ALTER TABLE companies ADD COLUMN IF NOT EXISTS short_description VARCHAR(220);");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS status VARCHAR(40) NOT NULL DEFAULT 'open';");
     await client.query("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS closed_reason VARCHAR(80);");
@@ -185,6 +186,64 @@ const ensureCompanySchema = async () => {
     await client.query('CREATE INDEX IF NOT EXISTS idx_saved_jobs_job_created ON saved_jobs(job_id, created_at DESC);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_job_match_scores_job_updated ON job_match_scores(job_id, updated_at DESC);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_applicant_ai_scores_job_updated ON applicant_ai_scores(job_id, updated_at DESC);');
+
+    await client.query(`
+      UPDATE companies c
+      SET user_id = u.id
+      FROM users u
+      WHERE c.user_id IS NULL
+        AND (u.user_type = 'company' OR u.account_type = 'company')
+        AND LOWER(TRIM(BOTH FROM COALESCE(c.name, ''))) = LOWER(
+          TRIM(BOTH FROM COALESCE(NULLIF(u.company_name, ''), NULLIF(u.username, ''), 'Company'))
+        )
+        AND NOT EXISTS (
+          SELECT 1
+          FROM companies existing
+          WHERE existing.user_id = u.id
+        );
+    `);
+
+    await client.query(`
+      INSERT INTO companies (id, user_id, name, logo, description, location, website)
+      SELECT
+        gen_random_uuid(),
+        u.id,
+        COALESCE(NULLIF(TRIM(BOTH FROM u.company_name), ''), NULLIF(TRIM(BOTH FROM u.username), ''), 'Company'),
+        NULLIF(TRIM(BOTH FROM u.profile_image), ''),
+        NULLIF(TRIM(BOTH FROM u.bio), ''),
+        NULLIF(TRIM(BOTH FROM u.address), ''),
+        NULLIF(TRIM(BOTH FROM u.website), '')
+      FROM users u
+      WHERE (u.user_type = 'company' OR u.account_type = 'company')
+        AND NOT EXISTS (
+          SELECT 1
+          FROM companies c
+          WHERE c.user_id = u.id
+        );
+    `);
+
+    await client.query(`
+      UPDATE companies c
+      SET name = COALESCE(NULLIF(TRIM(BOTH FROM c.name), ''), NULLIF(TRIM(BOTH FROM u.company_name), ''), NULLIF(TRIM(BOTH FROM u.username), ''), 'Company'),
+          logo = COALESCE(c.logo, NULLIF(TRIM(BOTH FROM u.profile_image), '')),
+          description = COALESCE(c.description, NULLIF(TRIM(BOTH FROM u.bio), '')),
+          location = COALESCE(c.location, NULLIF(TRIM(BOTH FROM u.address), '')),
+          website = COALESCE(c.website, NULLIF(TRIM(BOTH FROM u.website), '')),
+          updated_at = CASE
+            WHEN (
+              c.name IS DISTINCT FROM COALESCE(NULLIF(TRIM(BOTH FROM c.name), ''), NULLIF(TRIM(BOTH FROM u.company_name), ''), NULLIF(TRIM(BOTH FROM u.username), ''), 'Company')
+              OR c.logo IS DISTINCT FROM COALESCE(c.logo, NULLIF(TRIM(BOTH FROM u.profile_image), ''))
+              OR c.description IS DISTINCT FROM COALESCE(c.description, NULLIF(TRIM(BOTH FROM u.bio), ''))
+              OR c.location IS DISTINCT FROM COALESCE(c.location, NULLIF(TRIM(BOTH FROM u.address), ''))
+              OR c.website IS DISTINCT FROM COALESCE(c.website, NULLIF(TRIM(BOTH FROM u.website), ''))
+            )
+            THEN CURRENT_TIMESTAMP
+            ELSE c.updated_at
+          END
+      FROM users u
+      WHERE c.user_id = u.id
+        AND (u.user_type = 'company' OR u.account_type = 'company');
+    `);
 
     await client.query('COMMIT');
   } catch (error) {
