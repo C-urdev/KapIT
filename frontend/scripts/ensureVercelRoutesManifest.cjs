@@ -136,6 +136,28 @@ const syncTracedNodeModulesFiles = (rootNextDir) => {
   }
 };
 
+const syncRootNodeModules = (root) => {
+  const sourceNodeModulesDir = path.resolve('node_modules');
+  const targetNodeModulesDir = path.join(root, 'node_modules');
+  const absoluteTargetNodeModulesDir = path.resolve(targetNodeModulesDir);
+
+  if (!fs.existsSync(sourceNodeModulesDir) || absoluteTargetNodeModulesDir === sourceNodeModulesDir) {
+    return;
+  }
+
+  if (typeof fs.cpSync === 'function') {
+    fs.cpSync(sourceNodeModulesDir, targetNodeModulesDir, {
+      recursive: true,
+      force: true,
+      dereference: true,
+    });
+  } else {
+    mirrorDirectory(sourceNodeModulesDir, targetNodeModulesDir);
+  }
+
+  console.log(`[vercel-manifest-fix] Mirrored node_modules to ${targetNodeModulesDir}`);
+};
+
 if (!fs.existsSync(source)) {
   console.warn(`[vercel-manifest-fix] Source missing: ${source}`);
   process.exit(0);
@@ -173,6 +195,7 @@ if (deploymentBuild) {
         mirrorDirectory(nextDir, rootNextDir, new Set(['cache', 'dev', 'diagnostics', 'trace', 'trace-build', 'turbopack']));
         console.log(`[vercel-manifest-fix] Mirrored .next tree to ${rootNextDir}`);
         syncTracedNodeModulesFiles(rootNextDir);
+        syncRootNodeModules(root);
       }
 
       syncNextRuntimePackage(root);
