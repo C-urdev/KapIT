@@ -77,6 +77,65 @@ const mirrorDirectory = (fromDir, toDir, skipNames = new Set()) => {
   }
 };
 
+const syncNextRuntimePackage = (root) => {
+  const sourceNextPackageDir = path.resolve('node_modules', 'next');
+  const rootNextPackageDir = path.join(root, 'node_modules', 'next');
+  const absoluteRootNextPackageDir = path.resolve(rootNextPackageDir);
+
+  if (!fs.existsSync(sourceNextPackageDir) || absoluteRootNextPackageDir === sourceNextPackageDir) {
+    return;
+  }
+
+  // Vercel post-build can resolve Next runtime files from repo root.
+  // Mirror Next package runtime assets so root lookups do not fail.
+  const sourceDistDir = path.join(sourceNextPackageDir, 'dist');
+  const targetDistDir = path.join(rootNextPackageDir, 'dist');
+  mirrorDirectory(sourceDistDir, targetDistDir);
+  copyIfExists(path.join(sourceNextPackageDir, 'package.json'), path.join(rootNextPackageDir, 'package.json'));
+  console.log(`[vercel-manifest-fix] Mirrored next runtime package to ${rootNextPackageDir}`);
+};
+
+const syncTracedNodeModulesFiles = (rootNextDir) => {
+  const traceFiles = ['next-server.js.nft.json', 'next-minimal-server.js.nft.json'];
+  const copiedPaths = new Set();
+
+  for (const traceFile of traceFiles) {
+    const tracePath = path.join(nextDir, traceFile);
+    if (!fs.existsSync(tracePath)) {
+      continue;
+    }
+
+    let tracePayload;
+    try {
+      tracePayload = JSON.parse(fs.readFileSync(tracePath, 'utf8'));
+    } catch (error) {
+      console.warn(`[vercel-manifest-fix] Could not parse ${tracePath}: ${error.message}`);
+      continue;
+    }
+
+    const files = Array.isArray(tracePayload?.files) ? tracePayload.files : [];
+    for (const relativeFile of files) {
+      if (typeof relativeFile !== 'string' || !relativeFile.startsWith('../node_modules/')) {
+        continue;
+      }
+
+      const sourcePath = path.resolve(nextDir, relativeFile);
+      const targetPath = path.resolve(rootNextDir, relativeFile);
+      if (sourcePath === targetPath || copiedPaths.has(targetPath)) {
+        continue;
+      }
+
+      if (copyIfExists(sourcePath, targetPath)) {
+        copiedPaths.add(targetPath);
+      }
+    }
+  }
+
+  if (copiedPaths.size > 0) {
+    console.log(`[vercel-manifest-fix] Synced ${copiedPaths.size} traced node_modules runtime files to repo root`);
+  }
+};
+
 if (!fs.existsSync(source)) {
   console.warn(`[vercel-manifest-fix] Source missing: ${source}`);
   process.exit(0);
@@ -113,7 +172,10 @@ if (deploymentBuild) {
       if (absoluteRootNextDir !== sourceNextDir) {
         mirrorDirectory(nextDir, rootNextDir, new Set(['cache', 'dev', 'diagnostics', 'trace', 'trace-build', 'turbopack']));
         console.log(`[vercel-manifest-fix] Mirrored .next tree to ${rootNextDir}`);
+        syncTracedNodeModulesFiles(rootNextDir);
       }
+
+      syncNextRuntimePackage(root);
     } catch (error) {
       console.warn(`[vercel-manifest-fix] Could not sync .next artifacts to ${rootNextDir}: ${error.message}`);
     }
