@@ -5,5 +5,7 @@ description = "Allow explicit test placeholders and docs examples."
 paths = [
   '''^\.env\.example$''',
   '''^server/tests/.*\.test\.cjs$''',
+  '''^backend/api/tests/.*\.test\.cjs$''',
+  '''^backend/api/tests/testEnv\.cjs$''',
   '''^SECURITY_ROTATION\.md$'''
 ]

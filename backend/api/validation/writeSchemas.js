@@ -18,6 +18,15 @@ const accountType = z.enum(['developer', 'company']);
 const userType = z.enum(['employee', 'company']);
 const provider = z.enum(['paypal']);
 const anyRecord = z.record(z.string(), z.any());
+const authProfilePatchBody = anyRecord.superRefine((value, ctx) => {
+  if (value && Object.prototype.hasOwnProperty.call(value, 'isPremium')) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['isPremium'],
+      message: 'isPremium cannot be updated from this endpoint.',
+    });
+  }
+});
 
 const isAllowedImageUrl = (value) => {
   const candidate = String(value || '').trim();
@@ -159,7 +168,7 @@ const writeSchemas = {
   authSaveJob: schema(z.object({ jobId: z.coerce.number().int().positive() }).strict()),
   authRemoveSavedJob: schema(z.object({}).strict(), z.object({ jobId: positiveIntParam })),
   authApplyJob: schema(z.object({}).strict(), z.object({ id: positiveIntParam })),
-  authProfilePatch: schema(anyRecord),
+  authProfilePatch: schema(authProfilePatchBody),
   authTermsConsent: schema(z.object({ agreed: z.boolean() }).strict()),
   userPremiumCheckoutSession: schema(z.object({ provider }).strict()),
   userPremiumLocalBypass: schema(z.object({ provider }).strict()),
@@ -182,7 +191,7 @@ const writeSchemas = {
         planId: z.string().min(1).max(50),
         draft: draftSchema,
         jobId: optionalPositiveInt.nullable(),
-        idempotencyKey: idempotencyKey.optional(),
+        idempotencyKey,
       })
       .strict()
   ),

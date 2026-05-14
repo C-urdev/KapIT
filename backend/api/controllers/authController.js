@@ -851,9 +851,21 @@ const updateMyProfile = async (req, res) => {
 
     const current = currentResult.rows[0];
     const updates = req.body || {};
+    if (Object.prototype.hasOwnProperty.call(updates, 'isPremium')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Forbidden profile field.',
+        details: [
+          {
+            path: 'isPremium',
+            code: 'field_not_writable',
+            message: 'isPremium can only be changed by verified subscription flows.',
+          },
+        ],
+      });
+    }
 
     const fieldMap = {
-      isPremium: 'is_premium',
       username: 'username',
       bio: 'bio',
       socials: 'socials',

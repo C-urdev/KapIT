@@ -7,13 +7,31 @@ let environmentFilesLoaded = false;
 
 const readEnv = (key) => String(process.env[key] || '').trim();
 
+const isProduction = () => readEnv('NODE_ENV').toLowerCase() === 'production';
+
+const getEnvironmentFiles = () => {
+  const backendRoot = path.resolve(__dirname, '..', '..');
+  const repoRoot = path.resolve(__dirname, '..', '..', '..');
+  return {
+    backendEnv: path.resolve(backendRoot, '.env'),
+    backendEnvLocal: path.resolve(backendRoot, '.env.local'),
+    repoEnv: path.resolve(repoRoot, '.env'),
+    repoEnvLocal: path.resolve(repoRoot, '.env.local'),
+  };
+};
+
 const loadEnvironmentFiles = () => {
   if (environmentFilesLoaded) {
     return;
   }
 
-  dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
-  dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env.local'), override: true });
+  const files = getEnvironmentFiles();
+  dotenv.config({ path: files.backendEnv });
+  dotenv.config({ path: files.repoEnv });
+
+  const allowLocalOverride = !isProduction();
+  dotenv.config({ path: files.backendEnvLocal, override: allowLocalOverride });
+  dotenv.config({ path: files.repoEnvLocal, override: allowLocalOverride });
   environmentFilesLoaded = true;
 };
 
@@ -187,6 +205,7 @@ const initEnvironment = () => {
 };
 
 module.exports = {
+  getEnvironmentFiles,
   loadEnvironmentFiles,
   initEnvironment,
 };

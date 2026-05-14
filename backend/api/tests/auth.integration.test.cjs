@@ -3,10 +3,10 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const jwt = require('jsonwebtoken');
 const request = require('supertest');
+const { ensureBaseTestEnv, getTestPasswords } = require('./testEnv.cjs');
 
-process.env.JWT_SECRET ||= 'test-jwt-secret-at-least-32-characters';
-process.env.JWT_REFRESH_SECRET ||= 'test-refresh-secret-at-least-32-chars';
-process.env.DATABASE_URL ||= 'postgres://test:test@localhost:5432/test';
+ensureBaseTestEnv();
+const { validPassword, invalidPassword } = getTestPasswords();
 
 const serverRoot = path.resolve(__dirname, '..');
 
@@ -166,7 +166,7 @@ test('auth integration: register + login success, generic login failure, and mis
   const registerPayload = {
     username: 'qa_user_001',
     email: 'mock-qa_user_001@example.com',
-    password: 'StrongPass123',
+    password: validPassword,
     accountType: 'developer',
   };
 
@@ -182,14 +182,14 @@ test('auth integration: register + login success, generic login failure, and mis
 
   const wrongPassword = await request(app)
     .post('/api/auth/login')
-    .send({ email: registerPayload.email, password: 'WrongPass123' });
+    .send({ email: registerPayload.email, password: invalidPassword });
   assert.equal(wrongPassword.status, 401);
   assert.equal(wrongPassword.body.success, false);
   assert.equal(wrongPassword.body.error, 'Invalid email or password');
 
   const unknownAccount = await request(app)
     .post('/api/auth/login')
-    .send({ email: 'missing-user@example.com', password: 'WrongPass123' });
+    .send({ email: 'missing-user@example.com', password: invalidPassword });
   assert.equal(unknownAccount.status, 401);
   assert.equal(unknownAccount.body.success, false);
   assert.equal(unknownAccount.body.error, 'Invalid email or password');

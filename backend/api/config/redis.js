@@ -32,7 +32,7 @@ const logRedisUnavailable = (error) => {
   lastUnavailableLogAt = current;
   const message = error?.message || String(error || 'unknown error');
   console.warn(
-    `Redis unavailable (${message}). Rate limiting will run in fail-open mode for ${Math.ceil(cooldownMs / 1000)}s.`
+    `Redis unavailable (${message}). Rate limiting will use in-memory fallback for ${Math.ceil(cooldownMs / 1000)}s.`
   );
 };
 
@@ -71,12 +71,33 @@ const withTimeout = (promise, timeoutMs) =>
       });
   });
 
+const logRedisStartupStatus = async () => {
+  const redisUrl = getRedisUrl();
+  if (!redisUrl) {
+    console.warn('Redis startup: REDIS_URL is missing. Rate limiting uses in-memory fallback and payment checkout idempotency is disabled.');
+    return { hasRedisUrl: false, connected: false };
+  }
+
+  try {
+    const redis = await getRedisClient();
+    if (redis) {
+      console.info('Redis startup: REDIS_URL is set and Redis is connected.');
+      return { hasRedisUrl: true, connected: true };
+    }
+  } catch (error) {
+    markRedisUnavailable(error);
+  }
+
+  console.warn('Redis startup: REDIS_URL is set but Redis is unavailable. Rate limiting uses in-memory fallback and payment checkout is temporarily blocked.');
+  return { hasRedisUrl: true, connected: false };
+};
+
 const getRedisClient = async () => {
   const redisUrl = getRedisUrl();
   if (!redisUrl) {
     if (!warnedMissingUrl) {
       warnedMissingUrl = true;
-      const message = 'REDIS_URL is not configured. Rate limiting will run in fail-open mode.';
+      const message = 'REDIS_URL is not configured. Rate limiting will use in-memory fallback.';
       const env = String(process.env.NODE_ENV || '').toLowerCase();
       if (env === 'production') {
         console.warn(message);
@@ -92,17 +113,22 @@ const getRedisClient = async () => {
   }
 
   if (!client) {
-    client = createClient({
-      url: redisUrl,
-      socket: {
-        connectTimeout: getConnectTimeoutMs(),
-        reconnectStrategy: () => false,
-      },
-      disableOfflineQueue: true,
-    });
-    client.on('error', (error) => {
-      logRedisUnavailable(error);
-    });
+    try {
+      client = createClient({
+        url: redisUrl,
+        socket: {
+          connectTimeout: getConnectTimeoutMs(),
+          reconnectStrategy: () => false,
+        },
+        disableOfflineQueue: true,
+      });
+      client.on('error', (error) => {
+        logRedisUnavailable(error);
+      });
+    } catch (error) {
+      markRedisUnavailable(error);
+      return null;
+    }
   }
 
   if (!client.isOpen) {
@@ -143,4 +169,5 @@ const closeRedisClient = async () => {
 module.exports = {
   getRedisClient,
   closeRedisClient,
+  logRedisStartupStatus,
 };

@@ -51,7 +51,7 @@ import {
   savePost,
   toggleSharePost,
 } from '@sharedServices/postService';
-import { getJobsFeed, getMyApplications, getPublicProfile, getSavedJobs } from '@sharedServices/authService';
+import { getCurrentUser, getJobsFeed, getMyApplications, getPublicProfile, getSavedJobs } from '@sharedServices/authService';
 import { getUnreadNotificationCount } from '@sharedServices/notificationsService';
 import { ArrowLeft, BadgeCheck, Building2, Lightbulb, Sparkles, UserCircle } from 'lucide-react';
 import { getApplicationsForUser } from '@userFeatures/activity/userActivityStorage';
@@ -572,11 +572,11 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   }, []);
 
   useEffect(() => {
-    const syncPremiumState = async (payload) => {
+    const syncPremiumState = async () => {
       setPremiumPopupOpen(false);
-      const nextPremium = payload?.updates?.isPremium;
-      if (typeof nextPremium === 'boolean') {
-        await onUpdateUser?.({ isPremium: nextPremium });
+      const current = await getCurrentUser();
+      if (current?.user) {
+        await onUpdateUser?.(current.user);
       }
     };
 
