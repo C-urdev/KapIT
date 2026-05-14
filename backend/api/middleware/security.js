@@ -1,17 +1,82 @@
+const crypto = require('crypto');
 const { getRedisClient } = require('../config/redis');
 const helmet = require('helmet');
 const { logger } = require('../config/logger');
+const { getAllowedOrigins, normalizeOrigin } = require('../config/origins');
 
 const WINDOW_MS = 15 * 60 * 1000;
-const MAX_LOGIN_ATTEMPTS = Number(process.env.LOGIN_RATE_LIMIT_MAX || 10);
+const AUTH_ATTEMPT_WINDOW_MS = Number(process.env.AUTH_ATTEMPT_RATE_LIMIT_WINDOW_MS || WINDOW_MS);
+const AUTH_ATTEMPT_MAX = Number(process.env.AUTH_ATTEMPT_RATE_LIMIT_MAX || 5);
+const MAX_LOGIN_ATTEMPTS = Number(process.env.LOGIN_RATE_LIMIT_MAX || AUTH_ATTEMPT_MAX);
+const GLOBAL_API_WINDOW_MS = Number(process.env.API_RATE_LIMIT_WINDOW_MS || WINDOW_MS);
+const GLOBAL_API_RATE_LIMIT_MAX = Number(process.env.API_RATE_LIMIT_MAX || 600);
 const isProduction = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
 const devRateLimiterFailureKeys = new Set();
-
-// Rate limiting strategy: fail-open.
-// Availability is prioritized when Redis is degraded/unreachable so auth/API traffic
-// does not become a single-point outage. Monitor Redis health and alert on failures.
+const localRateLimitBuckets = new Map();
+const limiterDegradedModeLogState = new Map();
+const LIMITER_DEGRADED_LOG_COOLDOWN_MS = Number(process.env.RATE_LIMITER_DEGRADED_LOG_COOLDOWN_MS || 60000);
+const LOCAL_RATE_LIMIT_MAX_BUCKETS = Number(process.env.RATE_LIMITER_LOCAL_MAX_BUCKETS || 20000);
+const REFRESH_COOKIE_NAME = process.env.REFRESH_TOKEN_COOKIE_NAME || 'kapit_refresh_token';
+const OAUTH_STATE_COOKIE_NAME = process.env.OAUTH_STATE_COOKIE_NAME || 'kapit_oauth_state';
+const SOCIAL_SIGNUP_COOKIE_NAME = process.env.SOCIAL_SIGNUP_COOKIE_NAME || 'kapit_social_signup';
 
 const normalizeKey = (value) => String(value || '').trim().toLowerCase();
+const normalizeRoutePath = (value) => String(value || '').trim().toLowerCase().replace(/\/+/g, '/');
+const fingerprintValue = (value) => {
+  const normalized = String(value || '').trim();
+  if (!normalized) {
+    return '';
+  }
+
+  return crypto.createHash('sha256').update(normalized, 'utf8').digest('hex').slice(0, 24);
+};
+const getRouteAwareLimiterKeyPrefix = (req) => {
+  const method = String(req.method || 'GET').toUpperCase();
+  const basePath = normalizeRoutePath(req.baseUrl || '');
+  const routePath = normalizeRoutePath(req.route?.path || req.path || '');
+  return `${method}:${basePath}${routePath}`;
+};
+const getBearerToken = (req) => {
+  const authHeader = String(req.get('authorization') || '').trim();
+  if (!authHeader.toLowerCase().startsWith('bearer ')) {
+    return '';
+  }
+  return authHeader.slice('Bearer '.length).trim();
+};
+const buildAuthAttemptIdentity = (req) => {
+  const userId = normalizeKey(req.user?.id);
+  if (userId) {
+    return `user:${userId}`;
+  }
+
+  const email = normalizeKey(req.body?.email);
+  if (email) {
+    return `email:${email}`;
+  }
+
+  const refreshTokenFingerprint = fingerprintValue(req.cookies?.[REFRESH_COOKIE_NAME]);
+  if (refreshTokenFingerprint) {
+    return `refresh:${refreshTokenFingerprint}`;
+  }
+
+  const bearerTokenFingerprint = fingerprintValue(getBearerToken(req));
+  if (bearerTokenFingerprint) {
+    return `bearer:${bearerTokenFingerprint}`;
+  }
+
+  const oauthStateFingerprint = fingerprintValue(req.body?.state || req.query?.state || req.cookies?.[OAUTH_STATE_COOKIE_NAME]);
+  if (oauthStateFingerprint) {
+    return `oauth:${oauthStateFingerprint}`;
+  }
+
+  const socialSessionFingerprint = fingerprintValue(req.body?.socialSignupToken || req.cookies?.[SOCIAL_SIGNUP_COOKIE_NAME]);
+  if (socialSessionFingerprint) {
+    return `social:${socialSessionFingerprint}`;
+  }
+
+  const ip = normalizeKey(req.ip || 'anonymous');
+  return `ip:${ip || 'anonymous'}`;
+};
 
 const getLoginRateLimitKey = (req) => {
   const email = normalizeKey(req.body?.email);
@@ -21,7 +86,15 @@ const getPasswordResetRequestKey = (req) => {
   const email = normalizeKey(req.body?.email);
   return `${req.ip}:${email || 'anonymous'}`;
 };
-const getPasswordResetSubmitKey = (req) => `${req.ip}:reset-submit`;
+const getPasswordResetSubmitKey = (req) => {
+  const tokenFingerprint = fingerprintValue(req.body?.token || req.body?.resetToken || req.body?.code);
+  return `${normalizeKey(req.ip)}:reset-submit:${tokenFingerprint || 'anonymous'}`;
+};
+const getAuthAttemptKey = (req) => {
+  const routePrefix = getRouteAwareLimiterKeyPrefix(req);
+  const identity = buildAuthAttemptIdentity(req);
+  return `${routePrefix}:${identity}`;
+};
 
 const getClientIdentity = (req) => normalizeKey(req.user?.id || req.ip || 'anonymous');
 const isNonActionableRequest = (req) => ['HEAD', 'OPTIONS'].includes(String(req.method || '').toUpperCase());
@@ -68,28 +141,112 @@ const setRateLimitHeaders = (res, { max, remaining, resetAt }) => {
 
 const getLimiterBucket = ({ storeName, key }) => `rl:${storeName}:${key}`;
 
-const touchRateLimitBucket = async ({ storeName, key, windowMs }) => {
-  const redis = await getRedisClient();
-  if (!redis) {
-    return null;
+const splitCsv = (raw) =>
+  String(raw || '')
+    .split(',')
+    .map((item) => normalizeOrigin(item))
+    .filter(Boolean);
+
+const isHttpsOrigin = (origin) => /^https:\/\//i.test(origin);
+const isLocalHttpOrigin = (origin) => /^http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/i.test(origin);
+
+const buildConnectSrcDirective = () => {
+  const explicit = splitCsv(process.env.CSP_CONNECT_SRC_ORIGINS || process.env.CSP_CONNECT_SRC_HTTPS_ORIGINS);
+  const corsOrigins = getAllowedOrigins().map(normalizeOrigin);
+  const values = new Set(["'self'"]);
+
+  for (const origin of [...explicit, ...corsOrigins]) {
+    if (isHttpsOrigin(origin) || (!isProduction && isLocalHttpOrigin(origin))) {
+      values.add(origin);
+    }
+  }
+
+  return Array.from(values);
+};
+
+const pruneExpiredLocalBuckets = (now = Date.now()) => {
+  for (const [bucket, state] of localRateLimitBuckets.entries()) {
+    if (!state || state.resetAt <= now) {
+      localRateLimitBuckets.delete(bucket);
+    }
+  }
+};
+
+const touchLocalRateLimitBucket = ({ storeName, key, windowMs }) => {
+  const now = Date.now();
+  if (localRateLimitBuckets.size >= LOCAL_RATE_LIMIT_MAX_BUCKETS) {
+    pruneExpiredLocalBuckets(now);
+  }
+  if (localRateLimitBuckets.size >= LOCAL_RATE_LIMIT_MAX_BUCKETS) {
+    const oldest = localRateLimitBuckets.keys().next().value;
+    if (oldest) {
+      localRateLimitBuckets.delete(oldest);
+    }
   }
 
   const bucket = getLimiterBucket({ storeName, key });
-  const count = await redis.incr(bucket);
-  if (count === 1) {
-    await redis.pExpire(bucket, windowMs);
+  const existing = localRateLimitBuckets.get(bucket);
+  if (!existing || existing.resetAt <= now) {
+    const resetAt = now + windowMs;
+    const nextState = { count: 1, resetAt };
+    localRateLimitBuckets.set(bucket, nextState);
+    return nextState;
   }
 
-  let ttlMs = await redis.pTTL(bucket);
-  if (ttlMs < 0) {
-    await redis.pExpire(bucket, windowMs);
-    ttlMs = windowMs;
-  }
-
-  return {
-    count,
-    resetAt: Date.now() + ttlMs,
+  const nextState = {
+    count: Number(existing.count || 0) + 1,
+    resetAt: existing.resetAt,
   };
+  localRateLimitBuckets.set(bucket, nextState);
+  return nextState;
+};
+
+const logLimiterDegradedMode = (storeName, error) => {
+  const now = Date.now();
+  const lastLogAt = Number(limiterDegradedModeLogState.get(storeName) || 0);
+  if (now - lastLogAt < LIMITER_DEGRADED_LOG_COOLDOWN_MS) {
+    return;
+  }
+  limiterDegradedModeLogState.set(storeName, now);
+
+  logger.warn(
+    {
+      limiter: storeName,
+      mode: 'in-memory-fallback',
+      reason: error?.code ? String(error.code) : 'redis_unavailable',
+    },
+    'Rate limiter store degraded; using in-memory fallback.'
+  );
+};
+
+const touchRateLimitBucket = async ({ storeName, key, windowMs }) => {
+  try {
+    const redis = await getRedisClient();
+    if (!redis) {
+      logLimiterDegradedMode(storeName);
+      return touchLocalRateLimitBucket({ storeName, key, windowMs });
+    }
+
+    const bucket = getLimiterBucket({ storeName, key });
+    const count = await redis.incr(bucket);
+    if (count === 1) {
+      await redis.pExpire(bucket, windowMs);
+    }
+
+    let ttlMs = await redis.pTTL(bucket);
+    if (ttlMs < 0) {
+      await redis.pExpire(bucket, windowMs);
+      ttlMs = windowMs;
+    }
+
+    return {
+      count,
+      resetAt: Date.now() + ttlMs,
+    };
+  } catch (error) {
+    logLimiterDegradedMode(storeName, error);
+    return touchLocalRateLimitBucket({ storeName, key, windowMs });
+  }
 };
 
 const createRateLimiter = ({
@@ -109,11 +266,6 @@ const createRateLimiter = ({
 
     touchRateLimitBucket({ storeName, key, windowMs })
       .then((result) => {
-        if (!result) {
-          // Redis unavailable: fail open to preserve API reliability.
-          return next();
-        }
-
         setRateLimitHeaders(res, {
           max,
           remaining: max - result.count,
@@ -143,7 +295,7 @@ const securityHeaders = helmet({
       imgSrc: ["'self'", 'data:', 'https:'],
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
-      connectSrc: ["'self'", 'https:', 'http:'],
+      connectSrc: buildConnectSrcDirective(),
       fontSrc: ["'self'", 'data:', 'https:'],
       frameAncestors: ["'none'"],
       baseUri: ["'self'"],
@@ -166,7 +318,7 @@ const securityHeaders = helmet({
 
 const loginRateLimiter = (req, res, next) => {
   const key = getLoginRateLimitKey(req);
-  touchRateLimitBucket({ storeName: 'login-attempts', key, windowMs: WINDOW_MS })
+  touchRateLimitBucket({ storeName: 'login-attempts', key, windowMs: AUTH_ATTEMPT_WINDOW_MS })
     .then((result) => {
       if (!result) {
         return next();
@@ -195,6 +347,7 @@ const loginRateLimiter = (req, res, next) => {
 
 const clearLoginRateLimit = (req) => {
   const key = getLoginRateLimitKey(req);
+  localRateLimitBuckets.delete(getLimiterBucket({ storeName: 'login-attempts', key }));
   getRedisClient()
     .then((redis) => {
       if (!redis) {
@@ -213,6 +366,23 @@ const authApiRateLimiter = createRateLimiter({
   max: Number(process.env.AUTH_API_RATE_LIMIT_MAX || 120),
   message: 'Too many authentication requests. Please try again later.',
   skip: shouldSkipAuthApiRateLimit,
+});
+
+const apiRateLimiter = createRateLimiter({
+  storeName: 'api-all',
+  windowMs: GLOBAL_API_WINDOW_MS,
+  max: GLOBAL_API_RATE_LIMIT_MAX,
+  message: 'Too many API requests. Please try again later.',
+  skip: isNonActionableRequest,
+});
+
+const authAttemptRateLimiter = createRateLimiter({
+  storeName: 'auth-attempts',
+  windowMs: AUTH_ATTEMPT_WINDOW_MS,
+  max: AUTH_ATTEMPT_MAX,
+  message: 'Too many authentication attempts. Please try again later.',
+  keyGenerator: getAuthAttemptKey,
+  skip: isNonActionableRequest,
 });
 
 const publicApiRateLimiter = createRateLimiter({
@@ -273,8 +443,8 @@ const developerApiRateLimiter = createRateLimiter({
 
 const forgotPasswordRateLimiter = createRateLimiter({
   storeName: 'forgot-password',
-  windowMs: 60 * 60 * 1000,
-  max: Number(process.env.FORGOT_PASSWORD_RATE_LIMIT_MAX || 3),
+  windowMs: Number(process.env.FORGOT_PASSWORD_RATE_LIMIT_WINDOW_MS || AUTH_ATTEMPT_WINDOW_MS),
+  max: Number(process.env.FORGOT_PASSWORD_RATE_LIMIT_MAX || AUTH_ATTEMPT_MAX),
   message: 'Too many password reset requests. Please try again later.',
   keyGenerator: getPasswordResetRequestKey,
   skip: isNonActionableRequest,
@@ -282,16 +452,23 @@ const forgotPasswordRateLimiter = createRateLimiter({
 
 const resetPasswordRateLimiter = createRateLimiter({
   storeName: 'reset-password',
-  windowMs: 60 * 60 * 1000,
-  max: Number(process.env.RESET_PASSWORD_RATE_LIMIT_MAX || 3),
+  windowMs: Number(process.env.RESET_PASSWORD_RATE_LIMIT_WINDOW_MS || AUTH_ATTEMPT_WINDOW_MS),
+  max: Number(process.env.RESET_PASSWORD_RATE_LIMIT_MAX || AUTH_ATTEMPT_MAX),
   message: 'Too many password reset attempts. Please try again later.',
   keyGenerator: getPasswordResetSubmitKey,
   skip: isNonActionableRequest,
 });
 
+const __resetRateLimitFallbackForTests = () => {
+  localRateLimitBuckets.clear();
+  limiterDegradedModeLogState.clear();
+};
+
 module.exports = {
   securityHeaders,
+  apiRateLimiter,
   authApiRateLimiter,
+  authAttemptRateLimiter,
   publicApiRateLimiter,
   loginRateLimiter,
   messagesReadRateLimiter,
@@ -303,4 +480,5 @@ module.exports = {
   forgotPasswordRateLimiter,
   resetPasswordRateLimiter,
   clearLoginRateLimit,
+  __resetRateLimitFallbackForTests,
 };

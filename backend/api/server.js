@@ -3,7 +3,7 @@ initEnvironment();
 
 const { createApp, ensureSchemaReady } = require('./app');
 const pool = require('./config/database');
-const { closeRedisClient } = require('./config/redis');
+const { closeRedisClient, logRedisStartupStatus } = require('./config/redis');
 const { installConsoleBridge } = require('./config/logger');
 const { startPasswordResetCleanupJob } = require('./services/authService');
 
@@ -41,6 +41,7 @@ const onListen = () => {
 };
 
 const server = HOST ? app.listen(PORT, HOST, onListen) : app.listen(PORT, onListen);
+void logRedisStartupStatus();
 
 const shutdown = async (signal) => {
   if (isShuttingDown) {

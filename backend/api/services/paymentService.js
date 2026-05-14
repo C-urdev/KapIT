@@ -85,6 +85,24 @@ const normalizeIdempotencyKey = (raw) => String(raw || '').trim();
 const buildPaymentIdempotencyRedisKey = (companyUserId, idempotencyKey) =>
   `payment:idempotency:${companyUserId}:${idempotencyKey}`;
 
+const parseIdempotencyCacheValue = async ({ redis, key, rawValue }) => {
+  if (!rawValue) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(rawValue);
+  } catch (error) {
+    logger.warn('Invalid payment idempotency cache payload detected. Clearing stale Redis key.');
+    try {
+      await redis.del(key);
+    } catch (cleanupError) {
+      logger.warn('Failed to clear invalid payment idempotency cache key.');
+    }
+    return null;
+  }
+};
+
 const createPaymentError = (message, retryable = false) => {
   const error = new Error(message);
   error.retryable = retryable;
@@ -1003,34 +1021,18 @@ const startJobPostCheckoutIdempotent = async ({
 }) => {
   const normalizedKey = normalizeIdempotencyKey(idempotencyKey);
   if (!normalizedKey) {
-    return startJobPostCheckout({
-      client,
-      req,
-      companyUserId,
-      provider,
-      planId,
-      draft,
-      jobId,
-    });
+    throw new Error('Idempotency key is required. Send x-idempotency-key for checkout session creation.');
   }
 
   const redis = await getRedisClient();
   if (!redis) {
-    return startJobPostCheckout({
-      client,
-      req,
-      companyUserId,
-      provider,
-      planId,
-      draft,
-      jobId,
-    });
+    throw new Error('Checkout is temporarily unavailable because Redis idempotency storage is not ready. Please retry shortly.');
   }
 
   const redisKey = buildPaymentIdempotencyRedisKey(companyUserId, normalizedKey);
   const cached = await redis.get(redisKey);
   if (cached) {
-    const parsed = JSON.parse(cached);
+    const parsed = await parseIdempotencyCacheValue({ redis, key: redisKey, rawValue: cached });
     if (parsed?.paymentId && parsed?.checkoutUrl && parsed?.plan) {
       return {
         payment: { id: parsed.paymentId },
@@ -1046,7 +1048,7 @@ const startJobPostCheckoutIdempotent = async ({
   if (!acquired) {
     const pendingCached = await redis.get(redisKey);
     if (pendingCached) {
-      const parsed = JSON.parse(pendingCached);
+      const parsed = await parseIdempotencyCacheValue({ redis, key: redisKey, rawValue: pendingCached });
       if (parsed?.paymentId && parsed?.checkoutUrl && parsed?.plan) {
         return {
           payment: { id: parsed.paymentId },

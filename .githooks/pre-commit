@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+
+node scripts/security-guard.cjs
+status=$?
+
+if [ "$status" -ne 0 ]; then
+  echo "Pre-commit security checks failed."
+  exit "$status"
+fi
+
+exit 0

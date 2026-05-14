@@ -16,6 +16,23 @@ frontend/next.dev.err.log
 server.dev.log
 server.dev.err.log
 
+# Security: never commit live database exports/backups
+database/reports/*.sql
+database/backups/
+database/snapshots/
+database/exports/
+*.sql.gz
+*.sql.zip
+*.sql.bz2
+*.dump
+*.psql
+*.pgdump
+*token-export*.json
+*session-export*.json
+*oauth-export*.json
+*prod-snapshot*.sql
+*staging-snapshot*.sql
+
 # Local prompt/change logs (do not commit)
 docs/prompt-history.md
 skills-lock.json

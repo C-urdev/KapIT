@@ -2,14 +2,13 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const request = require('supertest');
+const { ensureBaseTestEnv, getTestEnvValue } = require('./testEnv.cjs');
 
-process.env.JWT_SECRET ||= 'test-jwt-secret-at-least-32-characters';
-process.env.JWT_REFRESH_SECRET ||= 'test-refresh-secret-at-least-32-chars';
-process.env.DATABASE_URL ||= 'postgres://test:test@localhost:5432/test';
-process.env.PAYPAL_CLIENT_ID ||= 'test-client-id';
-process.env.PAYPAL_CLIENT_SECRET ||= 'test-client-secret';
-process.env.PAYPAL_WEBHOOK_ID ||= 'test-webhook-id';
-process.env.PAYMENT_API_RETRY_MAX ||= '1';
+ensureBaseTestEnv();
+getTestEnvValue('PAYPAL_CLIENT_ID', 'test-client-id');
+getTestEnvValue('PAYPAL_CLIENT_SECRET', 'test-client-secret');
+getTestEnvValue('PAYPAL_WEBHOOK_ID', 'test-webhook-id');
+getTestEnvValue('PAYMENT_API_RETRY_MAX', '1');
 
 const serverRoot = path.resolve(__dirname, '..');
 

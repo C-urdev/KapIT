@@ -6,7 +6,6 @@ import { ToastProvider } from '@sharedComponents/ui/ToastProvider';
 import SessionGate from './SessionGate';
 
 const PROFILE_PATCH_FIELDS = new Set([
-  'isPremium',
   'username',
   'bio',
   'socials',
@@ -47,13 +46,6 @@ export default function UserDashboardClient() {
                 } else {
                   localOnlyUpdates[key] = value;
                 }
-              }
-
-              if (
-                Object.keys(persistedUpdates).length === 1 &&
-                Object.prototype.hasOwnProperty.call(persistedUpdates, 'isPremium')
-              ) {
-                return updateUser({ isPremium: Boolean(persistedUpdates.isPremium), ...localOnlyUpdates });
               }
 
               const hasPersistedUpdates = Object.keys(persistedUpdates).length > 0;
