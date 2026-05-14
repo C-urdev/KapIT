@@ -105,10 +105,17 @@ const matchJobsBySkills = async ({ skills, experience }) =>
     experience: String(experience || '').trim().toLowerCase(),
   });
 
+const getChatbotReply = async ({ message, lastIntent }) =>
+  postToFastApi('/api/chatbot/message', {
+    message: String(message || '').trim(),
+    last_intent: String(lastIntent || '').trim().toLowerCase() || undefined,
+  });
+
 module.exports = {
   isAiConfigured,
   matchJobsForCandidate,
   rankCandidatesForJob,
   analyzeResumeProfile,
   matchJobsBySkills,
+  getChatbotReply,
 };
