@@ -2,26 +2,45 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Bot, Send, Volume2, VolumeX, Paperclip, Ellipsis, SquarePen, History, X } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Bot, Send, Volume2, VolumeX, Paperclip, Ellipsis, SquarePen, X } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
-import { resolveChatbotReply } from '@shared/utils/chatbotMatcher';
+import { CHATBOT_DEFAULT_SUGGESTIONS, CHATBOT_WELCOME_MESSAGE } from '@shared/data/chatbotFaq';
+import { getChatbotErrorReply, requestChatbotMessage } from '@sharedServices/chatbotService';
 import { playNotificationSound, safeGetStorage, safeSetStorage } from './chatbotSafety';
 
 const STORAGE_KEY = 'kapit-chatbot-minimized';
 const SOUND_STORAGE_KEY = 'kapit-chatbot-sound';
-const RECENT_STORAGE_KEY = 'kapit-chatbot-recent';
-const INITIAL_PROMPTS = [
-  'How do I apply for a job?',
-  'How do I create a new account?',
-  'How do I reset a forgotten password?',
-  'What can company or employer accounts do?',
-  'How can I upload my resume?',
-  'Where can I view plans and payment details?',
-];
+const CHAT_STATE_STORAGE_KEY = 'kapit-chatbot-state-v1';
+const INITIAL_PROMPTS = CHATBOT_DEFAULT_SUGGESTIONS.map((item) => item.prompt);
 
-const createBotMessage = (text) => ({ id: `${Date.now()}-${Math.random()}`, role: 'bot', text });
+const createBotMessage = (text, extras = {}) => ({ id: `${Date.now()}-${Math.random()}`, role: 'bot', text, ...extras });
 const createUserMessage = (text) => ({ id: `${Date.now()}-${Math.random()}`, role: 'user', text });
+
+const sanitizeChatActions = (actions) =>
+  Array.isArray(actions)
+    ? actions
+        .map((action) => ({
+          type: String(action?.type || '').trim().toLowerCase(),
+          label: String(action?.label || '').trim(),
+          href: String(action?.href || '').trim(),
+        }))
+        .filter((action) => action.type === 'navigate' && action.label && action.href.startsWith('/'))
+    : [];
+
+const sanitizeStoredMessages = (rawMessages) =>
+  Array.isArray(rawMessages)
+    ? rawMessages
+        .map((message) => ({
+          id: String(message?.id || `${Date.now()}-${Math.random()}`),
+          role: message?.role === 'user' ? 'user' : 'bot',
+          text: String(message?.text || '').trim(),
+          intentId: String(message?.intentId || '').trim(),
+          confidence: Number.isFinite(Number(message?.confidence)) ? Number(message.confidence) : 0,
+          actions: sanitizeChatActions(message?.actions),
+        }))
+        .filter((message) => Boolean(message.text))
+    : [];
 
 const getStoredSessionUser = () => {
   if (typeof window === 'undefined') return null;
@@ -37,6 +56,7 @@ export default function FaqChatbot() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const pathname = usePathname();
+  const router = useRouter();
 
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -45,9 +65,9 @@ export default function FaqChatbot() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const [showPolicyNotice, setShowPolicyNotice] = useState(true);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isRecentOpen, setIsRecentOpen] = useState(false);
-  const [recentChats, setRecentChats] = useState([]);
+  const [suggestedPrompts, setSuggestedPrompts] = useState(CHATBOT_DEFAULT_SUGGESTIONS.slice(0, 5));
 
   const scrollRef = useRef(null);
   const pendingReplyTimeoutRef = useRef(null);
@@ -57,15 +77,21 @@ export default function FaqChatbot() {
     if (typeof window === 'undefined') return;
     const saved = safeGetStorage(STORAGE_KEY, null);
     const soundPref = safeGetStorage(SOUND_STORAGE_KEY, null);
-    const savedRecent = safeGetStorage(RECENT_STORAGE_KEY, null);
+    const savedChatState = safeGetStorage(CHAT_STATE_STORAGE_KEY, null);
     setIsMinimized(saved === '1');
     setSoundEnabled(soundPref !== '0');
-    if (savedRecent) {
+    if (savedChatState) {
       try {
-        const parsed = JSON.parse(savedRecent);
-        if (Array.isArray(parsed)) setRecentChats(parsed);
+        const parsed = JSON.parse(savedChatState);
+        const restoredMessages = sanitizeStoredMessages(parsed?.messages);
+        if (restoredMessages.length > 0) {
+          setMessages(restoredMessages);
+          setHasUserInteracted(true);
+          setShowPolicyNotice(false);
+          setSuggestedPrompts([]);
+        }
       } catch {
-        setRecentChats([]);
+        // ignore malformed saved chatbot state
       }
     }
     lastKnownSessionUserRef.current = getStoredSessionUser();
@@ -81,12 +107,19 @@ export default function FaqChatbot() {
         window.clearTimeout(pendingReplyTimeoutRef.current);
         pendingReplyTimeoutRef.current = null;
       }
+      try {
+        window.localStorage.removeItem(CHAT_STATE_STORAGE_KEY);
+      } catch {
+        // ignore storage clear failures
+      }
       setMessages([]);
       setInputValue('');
       setIsTyping(false);
       setShowPolicyNotice(true);
+      setHasUserInteracted(false);
       setIsOpen(false);
       setIsMinimized(false);
+      setSuggestedPrompts(CHATBOT_DEFAULT_SUGGESTIONS.slice(0, 5));
     }
 
     lastKnownSessionUserRef.current = currentUser;
@@ -97,6 +130,32 @@ export default function FaqChatbot() {
     if (!el) return;
     el.scrollTop = el.scrollHeight;
   }, [messages, isTyping]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      if (messages.length === 0) {
+        window.localStorage.removeItem(CHAT_STATE_STORAGE_KEY);
+        return;
+      }
+
+      window.localStorage.setItem(
+        CHAT_STATE_STORAGE_KEY,
+        JSON.stringify({
+          messages: messages.map((message) => ({
+            id: message.id,
+            role: message.role,
+            text: message.text,
+            intentId: message.intentId || '',
+            confidence: Number.isFinite(Number(message.confidence)) ? Number(message.confidence) : 0,
+            actions: sanitizeChatActions(message.actions),
+          })),
+        })
+      );
+    } catch {
+      // ignore storage write failures
+    }
+  }, [messages]);
 
   useEffect(() => {
     return () => {
@@ -122,48 +181,73 @@ export default function FaqChatbot() {
     (rawText) => {
       const trimmed = String(rawText || '').trim();
       if (!trimmed || isTyping) return;
+      const lastActionableBotIntent =
+        [...messages].reverse().find(
+          (item) => item?.role === 'bot' && item?.intentId && Array.isArray(item?.actions) && item.actions.length > 0
+        )?.intentId || '';
 
       setMessages((prev) => [...prev, createUserMessage(trimmed)]);
       setInputValue('');
       setIsTyping(true);
+      setHasUserInteracted(true);
+      setShowPolicyNotice(false);
+      setSuggestedPrompts([]);
 
       if (pendingReplyTimeoutRef.current) {
         window.clearTimeout(pendingReplyTimeoutRef.current);
       }
 
-      const botReply = resolveChatbotReply(trimmed);
-      pendingReplyTimeoutRef.current = window.setTimeout(() => {
-        setMessages((prev) => [...prev, createBotMessage(botReply)]);
-        setIsTyping(false);
-        playBotSound();
-        pendingReplyTimeoutRef.current = null;
-      }, 650);
+      const startedAt = Date.now();
+      const typingDelay = Math.min(1300, 420 + Math.round(trimmed.length * 10));
+
+      (async () => {
+        let replyPayload;
+        try {
+          replyPayload = await requestChatbotMessage(trimmed, { lastIntent: lastActionableBotIntent });
+        } catch {
+          replyPayload = {
+            reply: getChatbotErrorReply(),
+            intent: 'fallback',
+            confidence: 0,
+            actions: [],
+          };
+        }
+
+        const elapsed = Date.now() - startedAt;
+        const remainingDelay = Math.max(0, typingDelay - elapsed);
+        pendingReplyTimeoutRef.current = window.setTimeout(() => {
+          setMessages((prev) => [
+            ...prev,
+            createBotMessage(replyPayload.reply, {
+              intentId: replyPayload.intent,
+              confidence: replyPayload.confidence,
+              actions: Array.isArray(replyPayload.actions) ? replyPayload.actions : [],
+            }),
+          ]);
+          setSuggestedPrompts([]);
+          setIsTyping(false);
+          playBotSound();
+          pendingReplyTimeoutRef.current = null;
+        }, remainingDelay);
+      })();
     },
-    [isTyping, playBotSound]
+    [isTyping, messages, playBotSound]
   );
 
-  const saveRecentChat = useCallback(() => {
-    const summary = messages
-      .slice(-6)
-      .map((message) => `${message.role === 'user' ? 'You' : 'Bot'}: ${message.text}`)
-      .join(' | ')
-      .trim();
-    if (!summary) return;
-
-    const nextRecent = [{ id: `${Date.now()}`, summary }, ...recentChats].slice(0, 8);
-    setRecentChats(nextRecent);
-    safeSetStorage(RECENT_STORAGE_KEY, JSON.stringify(nextRecent));
-  }, [messages, recentChats]);
-
   const startNewChat = useCallback(() => {
-    saveRecentChat();
+    try {
+      window.localStorage.removeItem(CHAT_STATE_STORAGE_KEY);
+    } catch {
+      // ignore storage clear failures
+    }
     setMessages([]);
     setInputValue('');
     setIsTyping(false);
     setShowPolicyNotice(true);
-    setIsRecentOpen(false);
+    setHasUserInteracted(false);
     setIsMenuOpen(false);
-  }, [saveRecentChat]);
+    setSuggestedPrompts(CHATBOT_DEFAULT_SUGGESTIONS.slice(0, 5));
+  }, []);
 
   return (
     <div className="fixed bottom-16 right-4 z-[70] sm:bottom-20 sm:right-5">
@@ -205,7 +289,6 @@ export default function FaqChatbot() {
                   type="button"
                   onClick={() => {
                     setIsMenuOpen(false);
-                    setIsRecentOpen(false);
                     setIsOpen(false);
                   }}
                   className={`rounded-md p-1.5 transition ${isDark ? 'text-white/75 hover:bg-white/10 hover:text-white' : 'text-[#102a1b]/70 hover:bg-black/5 hover:text-[#102a1b]'}`}
@@ -229,27 +312,6 @@ export default function FaqChatbot() {
                   <SquarePen size={15} />
                   Start a new chat
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setIsRecentOpen((prev) => !prev)}
-                  className={`flex w-full items-center gap-2 px-4 py-3 text-left text-sm transition ${isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'}`}
-                >
-                  <History size={15} />
-                  View recent chats
-                </button>
-                {isRecentOpen ? (
-                  <div className={`max-h-40 overflow-y-auto border-t px-3 py-2 text-xs ${isDark ? 'border-white/10 text-white/80' : 'border-black/10 text-[#102a1b]/80'}`}>
-                    {recentChats.length === 0 ? (
-                      <p className="px-1 py-1">No recent chats yet.</p>
-                    ) : (
-                      recentChats.map((chat) => (
-                        <p key={chat.id} className="line-clamp-2 px-1 py-1">
-                          {chat.summary}
-                        </p>
-                      ))
-                    )}
-                  </div>
-                ) : null}
               </div>
             ) : null}
           </div>
@@ -258,10 +320,10 @@ export default function FaqChatbot() {
             <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto pr-1">
               <div className="space-y-2 pb-1">
                 <div className={`max-w-[92%] rounded-2xl px-4 py-2.5 text-sm ${isDark ? 'bg-white/10' : 'bg-[#ebe6da] text-[#344e41]'}`}>
-                  Hey! Want to deploy a conversational AI agent?
+                  {CHATBOT_WELCOME_MESSAGE}
                 </div>
                 <div className={`max-w-[92%] rounded-2xl px-4 py-2.5 text-sm ${isDark ? 'bg-white/10' : 'bg-[#ebe6da] text-[#344e41]'}`}>
-                  Let me help you figure out if KapIT is the right fit.
+                  Ask anything, even short or informal messages. I will guide you step by step.
                 </div>
               </div>
 
@@ -275,6 +337,28 @@ export default function FaqChatbot() {
                         }`}
                       >
                         {message.text}
+                        {message.role === 'bot' && Array.isArray(message.actions) && message.actions.length > 0 ? (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {message.actions.map((action) => (
+                              <button
+                                key={`${message.id}-${action.href}-${action.label}`}
+                                type="button"
+                                onClick={() => {
+                                  setShowPolicyNotice(false);
+                                  setHasUserInteracted(true);
+                                  router.push(action.href);
+                                }}
+                                className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                                  isDark
+                                    ? 'border-white/20 bg-white/10 text-white hover:bg-white/15'
+                                    : 'border-[#bcc6b1] bg-white text-[#2f4739] hover:bg-[#f3f6ef]'
+                                }`}
+                              >
+                                {action.label}
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   ))}
@@ -294,15 +378,15 @@ export default function FaqChatbot() {
           </div>
 
           <div className={`shrink-0 px-3 pb-3 pt-2 ${isDark ? 'bg-[#1a1d20]' : 'bg-[#f7f6f1]'}`}>
-            {messages.length === 0 ? (
+            {suggestedPrompts.length > 0 && !hasUserInteracted && messages.length === 0 ? (
               <div className="mb-3">
-                <div className="flex flex-wrap items-center justify-center gap-2 px-1">
-                  {INITIAL_PROMPTS.map((prompt) => (
+                <div className="flex flex-wrap items-center justify-center gap-2 px-1 py-1">
+                  {(messages.length === 0 ? INITIAL_PROMPTS : suggestedPrompts.map((item) => item.prompt || item.label)).map((prompt) => (
                     <button
                       key={prompt}
                       type="button"
                       onClick={() => sendMessage(prompt)}
-                      className="rounded-full border border-[#cfd5c8] bg-[#f8f7f5] px-4 py-2 text-xs text-[#1f2a1f] transition hover:bg-white dark:border-white/15 dark:bg-white/10 dark:text-white/90 dark:hover:bg-white/15"
+                      className="rounded-full border border-[#cfd5c8] bg-[#f8f7f5] px-3 py-1.5 text-xs text-[#1f2a1f] transition hover:bg-white dark:border-white/15 dark:bg-white/10 dark:text-white/90 dark:hover:bg-white/15"
                     >
                       {prompt}
                     </button>
@@ -314,7 +398,7 @@ export default function FaqChatbot() {
                 </div>
               </div>
             ) : null}
-            {showPolicyNotice ? (
+            {showPolicyNotice && !hasUserInteracted && messages.length === 0 ? (
               <>
                 <div className={`mb-2 h-px ${isDark ? 'bg-white/10' : 'bg-[#c9d4ba]'}`} />
                 <div className={`mb-2 flex items-center justify-between px-1 text-[11px] ${isDark ? 'text-white/55' : 'text-[#102a1b]/65'}`}>
@@ -369,6 +453,9 @@ export default function FaqChatbot() {
                 <Send size={15} />
               </button>
             </form>
+            {isTyping ? (
+              <p className={`px-2 pt-2 text-[11px] ${isDark ? 'text-white/50' : 'text-[#102a1b]/55'}`}>KapIT Support Agent is typing...</p>
+            ) : null}
           </div>
         </div>
       ) : null}

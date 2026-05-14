@@ -219,6 +219,14 @@ const writeSchemas = {
   developerProfileUpdate: schema(anyRecord),
   developerResumeUpload: schema(z.object({}).passthrough()),
   developerResumeAnalysis: schema(z.object({}).strict()),
+  chatbotMessage: schema(
+    z
+      .object({
+        message: z.coerce.string().trim().min(1).max(320),
+        lastIntent: z.coerce.string().trim().min(1).max(40).optional(),
+      })
+      .strict()
+  ),
   matchJobs: schema(
     z
       .object({

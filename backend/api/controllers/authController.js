@@ -133,7 +133,22 @@ const isJobVisibleForPlan = (job, plan) => {
   return (Date.now() - postedAtMs) >= FREE_JOB_FEED_DELAY_MS;
 };
 
-const upsertJobMatchScore = async (client, { userId, jobId, match, profileSignature, jobSignature }) => {
+const createJobMatchScoreMetadata = ({ match, profileSignature, jobSignature }) => ({
+  matchedSkills: match?.matched_skills || [],
+  missingSkills: match?.missing_skills || [],
+  strengths: match?.strengths || [],
+  concerns: match?.concerns || [],
+  keywordOverlap: match?.keyword_overlap || [],
+  profileSignature: String(profileSignature || ''),
+  jobSignature: String(jobSignature || ''),
+  scoringVersion: 'v2',
+});
+
+const upsertJobMatchScores = async (client, { userId, rows }) => {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return;
+  }
+
   await client.query(
     `INSERT INTO job_match_scores (
        user_id,
@@ -143,7 +158,19 @@ const upsertJobMatchScore = async (client, { userId, jobId, match, profileSignat
        metadata,
        updated_at
      )
-     VALUES ($1, $2, $3, $4, $5::jsonb, CURRENT_TIMESTAMP)
+     SELECT
+       $1::uuid,
+       payload.job_id,
+       payload.match_percentage,
+       payload.ats_score,
+       payload.metadata,
+       CURRENT_TIMESTAMP
+     FROM jsonb_to_recordset($2::jsonb) AS payload(
+       job_id bigint,
+       match_percentage integer,
+       ats_score integer,
+       metadata jsonb
+     )
      ON CONFLICT (user_id, job_id) DO UPDATE SET
        match_percentage = EXCLUDED.match_percentage,
        ats_score = EXCLUDED.ats_score,
@@ -151,19 +178,7 @@ const upsertJobMatchScore = async (client, { userId, jobId, match, profileSignat
        updated_at = CURRENT_TIMESTAMP`,
     [
       userId,
-      jobId,
-      Number(match?.match_percentage || 0),
-      Number(match?.ats_score || 0),
-      JSON.stringify({
-        matchedSkills: match?.matched_skills || [],
-        missingSkills: match?.missing_skills || [],
-        strengths: match?.strengths || [],
-        concerns: match?.concerns || [],
-        keywordOverlap: match?.keyword_overlap || [],
-        profileSignature: String(profileSignature || ''),
-        jobSignature: String(jobSignature || ''),
-        scoringVersion: 'v2',
-      }),
+      JSON.stringify(rows),
     ]
   );
 };
@@ -1302,34 +1317,43 @@ const getJobsFeed = async (req, res) => {
         }).catch(() => null);
 
         const matchMap = new Map((aiResult?.matches || []).map((item) => [Number(item.job_id), item]));
-        jobs = await Promise.all(
-          jobs.map(async (job) => {
-            const match = matchMap.get(Number(job.id));
-            if (!match) {
-              return job;
-            }
+        const scoreRows = [];
+        jobs = jobs.map((job) => {
+          const match = matchMap.get(Number(job.id));
+          if (!match) {
+            return job;
+          }
 
-            await upsertJobMatchScore(client, {
-              userId: req.user.id,
-              jobId: job.id,
+          const matchPercentage = Number(match.match_percentage || 0);
+          const atsScore = Number(match.ats_score || 0);
+          scoreRows.push({
+            job_id: Number(job.id),
+            match_percentage: matchPercentage,
+            ats_score: atsScore,
+            metadata: createJobMatchScoreMetadata({
               match,
               profileSignature,
               jobSignature: createJobMatchSignature(job),
-            }).catch(() => null);
+            }),
+          });
 
-            return {
-              ...job,
-              matchPercentage: Number(match.match_percentage || 0),
-              atsScore: Number(match.ats_score || 0),
-              matchDetails: {
-                matchedSkills: match.matched_skills || [],
-                missingSkills: match.missing_skills || [],
-                strengths: match.strengths || [],
-                concerns: match.concerns || [],
-              },
-            };
-          })
-        );
+          return {
+            ...job,
+            matchPercentage,
+            atsScore,
+            matchDetails: {
+              matchedSkills: match.matched_skills || [],
+              missingSkills: match.missing_skills || [],
+              strengths: match.strengths || [],
+              concerns: match.concerns || [],
+            },
+          };
+        });
+
+        await upsertJobMatchScores(client, {
+          userId: req.user.id,
+          rows: scoreRows,
+        }).catch(() => null);
       }
     }
 
