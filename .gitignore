@@ -42,3 +42,18 @@ CLAUDE.md
 SECURITY_ROTATION.md
 
 .agents/gemini-skills/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.hypothesis/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
