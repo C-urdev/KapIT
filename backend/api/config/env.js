@@ -104,6 +104,8 @@ const validateBooleanString = (key, errors) => {
   }
 };
 
+const hasAnyValue = (keys) => keys.some((key) => Boolean(readEnv(key)));
+
 const requireAtLeastOne = (keys, errors) => {
   const hasValue = keys.some((key) => Boolean(readEnv(key)));
   if (!hasValue) {
@@ -131,6 +133,7 @@ const validateEnvironment = () => {
   validateBooleanString('NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS', errors);
   validateBooleanString('NEXT_PUBLIC_ENABLE_LOCAL_PAYMENT_BYPASS', errors);
   validateBooleanString('ALLOW_KAPIT_NETLIFY_PREVIEW', errors);
+  validateBooleanString('AUTH_LIMITER_FAIL_CLOSED_FORCE', errors);
 
   if (readEnv('JWT_EXPIRE') && !readEnv('JWT_ACCESS_EXPIRE')) {
     errors.push('JWT_EXPIRE is deprecated. Use JWT_ACCESS_EXPIRE and JWT_REFRESH_EXPIRE_DAYS.');
@@ -150,6 +153,16 @@ const validateEnvironment = () => {
     validateUrl('NEXT_PUBLIC_EXPRESS_API_URL_PRODUCTION', errors);
     validateUrl('FASTAPI_URL_PRODUCTION', errors);
     validateUrl('NEXT_PUBLIC_FASTAPI_URL_PRODUCTION', errors);
+    const fastApiConfiguredInProduction = hasAnyValue([
+      'FASTAPI_URL_PRODUCTION',
+      'NEXT_PUBLIC_FASTAPI_URL_PRODUCTION',
+      'FASTAPI_URL',
+      'NEXT_PUBLIC_FASTAPI_URL',
+    ]);
+    if (fastApiConfiguredInProduction) {
+      requireValue('FASTAPI_INTERNAL_SERVICE_TOKEN', errors);
+      validateSecretQuality('FASTAPI_INTERNAL_SERVICE_TOKEN', errors);
+    }
 
     const hasGoogleConfig = Boolean(readEnv('GOOGLE_CLIENT_ID') || readEnv('NEXT_PUBLIC_GOOGLE_CLIENT_ID'));
     if (hasGoogleConfig) {
@@ -186,6 +199,10 @@ const validateEnvironment = () => {
 
     if (readEnv('NEXT_PUBLIC_ENABLE_LOCAL_PAYMENT_BYPASS').toLowerCase() === 'true') {
       errors.push('NEXT_PUBLIC_ENABLE_LOCAL_PAYMENT_BYPASS must be false in production.');
+    }
+
+    if (readEnv('DB_SSL_REJECT_UNAUTHORIZED').toLowerCase() !== 'true') {
+      errors.push('DB_SSL_REJECT_UNAUTHORIZED must be set to "true" in production.');
     }
   }
 

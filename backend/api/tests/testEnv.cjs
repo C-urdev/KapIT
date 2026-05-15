@@ -18,6 +18,7 @@ const ensureBaseTestEnv = () => {
   getOrSet('JWT_SECRET', () => randomSecret('test-jwt'));
   getOrSet('JWT_REFRESH_SECRET', () => randomSecret('test-refresh'));
   getOrSet('DATABASE_URL', 'postgres://test:test@localhost:5432/test');
+  getOrSet('FASTAPI_INTERNAL_SERVICE_TOKEN', () => randomSecret('test-fastapi-token'));
 };
 
 const getTestEnvValue = (name, fallbackValue) => getOrSet(name, fallbackValue);

@@ -1,4 +1,8 @@
+import os
+
 from fastapi.testclient import TestClient
+
+os.environ.setdefault('FASTAPI_INTERNAL_SERVICE_TOKEN', 'test-fastapi-token')
 
 from main import app
 
@@ -29,6 +33,7 @@ def test_match_jobs_route_returns_sorted_matches_from_job_rows(monkeypatch):
             'skills': ['react', 'javascript'],
             'experience': 'junior',
         },
+        headers={'x-internal-service-token': os.environ['FASTAPI_INTERNAL_SERVICE_TOKEN']},
     )
 
     assert response.status_code == 200
@@ -39,3 +44,15 @@ def test_match_jobs_route_returns_sorted_matches_from_job_rows(monkeypatch):
     assert payload[0]['match'] >= payload[1]['match']
     assert 'matched_skills' in payload[0]
     assert 'missing_skills' in payload[0]
+
+
+def test_match_jobs_route_rejects_missing_internal_token():
+    client = TestClient(app)
+    response = client.post(
+        '/match-jobs',
+        json={
+            'skills': ['react'],
+            'experience': 'junior',
+        },
+    )
+    assert response.status_code == 401

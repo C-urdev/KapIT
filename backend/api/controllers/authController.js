@@ -49,6 +49,18 @@ const buildDevErrorMeta = (error) => (
       }
     : {}
 );
+const PRIVILEGED_EMAIL_VIEW_ROLES = new Set(['admin', 'superadmin', 'support', 'security']);
+
+const canViewUserEmail = ({ viewer, targetUserId }) => {
+  const viewerId = String(viewer?.id || '').trim();
+  const normalizedTargetId = String(targetUserId || '').trim();
+  if (viewerId && normalizedTargetId && viewerId === normalizedTargetId) {
+    return true;
+  }
+
+  const role = String(viewer?.role || viewer?.userType || viewer?.accountType || '').trim().toLowerCase();
+  return PRIVILEGED_EMAIL_VIEW_ROLES.has(role);
+};
 
 const normalizeAccountType = (raw) => {
   const value = String(raw || '').trim().toLowerCase();
@@ -738,7 +750,7 @@ const getPublicProfile = async (req, res) => {
       profile: {
         id: user.id,
         username: user.username,
-        email: user.email,
+        email: canViewUserEmail({ viewer: req.user, targetUserId: user.id }) ? user.email : '',
         type: user.user_type,
         isPremium: user.is_premium,
         profileCompleted: Boolean(user.profile_completed),
@@ -818,7 +830,7 @@ const searchUsers = async (req, res) => {
     const results = result.rows.map((row) => ({
       id: row.id,
       username: row.username,
-      email: row.email,
+      email: canViewUserEmail({ viewer: req.user, targetUserId: row.id }) ? row.email : '',
       fullName: row.name || '',
       type: row.user_type,
       companyName: row.company_name || '',

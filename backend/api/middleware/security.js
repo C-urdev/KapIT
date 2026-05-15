@@ -14,11 +14,16 @@ const isProduction = String(process.env.NODE_ENV || '').toLowerCase() === 'produ
 const devRateLimiterFailureKeys = new Set();
 const localRateLimitBuckets = new Map();
 const limiterDegradedModeLogState = new Map();
+const limiterDegradedStartedAt = new Map();
 const LIMITER_DEGRADED_LOG_COOLDOWN_MS = Number(process.env.RATE_LIMITER_DEGRADED_LOG_COOLDOWN_MS || 60000);
 const LOCAL_RATE_LIMIT_MAX_BUCKETS = Number(process.env.RATE_LIMITER_LOCAL_MAX_BUCKETS || 20000);
+const AUTH_LIMITER_FAIL_CLOSED_AFTER_MS = Math.max(0, Number(process.env.AUTH_LIMITER_FAIL_CLOSED_AFTER_MS || 0));
+const RATE_LIMITER_ALERT_WEBHOOK_URL = String(process.env.RATE_LIMITER_ALERT_WEBHOOK_URL || '').trim();
+const RATE_LIMITER_ALERT_TIMEOUT_MS = Math.max(250, Number(process.env.RATE_LIMITER_ALERT_TIMEOUT_MS || 2000));
 const REFRESH_COOKIE_NAME = process.env.REFRESH_TOKEN_COOKIE_NAME || 'kapit_refresh_token';
 const OAUTH_STATE_COOKIE_NAME = process.env.OAUTH_STATE_COOKIE_NAME || 'kapit_oauth_state';
 const SOCIAL_SIGNUP_COOKIE_NAME = process.env.SOCIAL_SIGNUP_COOKIE_NAME || 'kapit_social_signup';
+const highRiskAuthLimiterStores = new Set(['login-attempts', 'auth-attempts', 'forgot-password', 'reset-password']);
 
 const normalizeKey = (value) => String(value || '').trim().toLowerCase();
 const normalizeRoutePath = (value) => String(value || '').trim().toLowerCase().replace(/\/+/g, '/');
@@ -201,7 +206,48 @@ const touchLocalRateLimitBucket = ({ storeName, key, windowMs }) => {
   return nextState;
 };
 
+const shouldFailClosedForStore = (storeName) => {
+  const forceFailClosed = String(process.env.AUTH_LIMITER_FAIL_CLOSED_FORCE || '').trim().toLowerCase() === 'true';
+  if ((!isProduction && !forceFailClosed) || AUTH_LIMITER_FAIL_CLOSED_AFTER_MS <= 0) {
+    return false;
+  }
+  if (!highRiskAuthLimiterStores.has(String(storeName || '').trim())) {
+    return false;
+  }
+
+  const degradedSince = Number(limiterDegradedStartedAt.get(storeName) || 0);
+  if (!degradedSince) {
+    return false;
+  }
+
+  return (Date.now() - degradedSince) >= AUTH_LIMITER_FAIL_CLOSED_AFTER_MS;
+};
+
+const emitRateLimiterAlert = (payload) => {
+  if (!RATE_LIMITER_ALERT_WEBHOOK_URL || typeof fetch !== 'function') {
+    return;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), RATE_LIMITER_ALERT_TIMEOUT_MS);
+  timeout.unref?.();
+
+  fetch(RATE_LIMITER_ALERT_WEBHOOK_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+    signal: controller.signal,
+  }).catch(() => null).finally(() => {
+    clearTimeout(timeout);
+  });
+};
+
 const logLimiterDegradedMode = (storeName, error) => {
+  if (!limiterDegradedStartedAt.has(storeName)) {
+    limiterDegradedStartedAt.set(storeName, Date.now());
+  }
   const now = Date.now();
   const lastLogAt = Number(limiterDegradedModeLogState.get(storeName) || 0);
   if (now - lastLogAt < LIMITER_DEGRADED_LOG_COOLDOWN_MS) {
@@ -217,6 +263,15 @@ const logLimiterDegradedMode = (storeName, error) => {
     },
     'Rate limiter store degraded; using in-memory fallback.'
   );
+  emitRateLimiterAlert({
+    type: 'rate_limiter_degraded',
+    limiter: storeName,
+    mode: 'in-memory-fallback',
+    reason: error?.code ? String(error.code) : 'redis_unavailable',
+    degradedSince: limiterDegradedStartedAt.get(storeName),
+    failClosedAfterMs: AUTH_LIMITER_FAIL_CLOSED_AFTER_MS,
+    at: new Date().toISOString(),
+  });
 };
 
 const touchRateLimitBucket = async ({ storeName, key, windowMs }) => {
@@ -224,8 +279,16 @@ const touchRateLimitBucket = async ({ storeName, key, windowMs }) => {
     const redis = await getRedisClient();
     if (!redis) {
       logLimiterDegradedMode(storeName);
+      if (shouldFailClosedForStore(storeName)) {
+        return {
+          failClosed: true,
+          resetAt: Date.now() + windowMs,
+          count: 0,
+        };
+      }
       return touchLocalRateLimitBucket({ storeName, key, windowMs });
     }
+    limiterDegradedStartedAt.delete(storeName);
 
     const bucket = getLimiterBucket({ storeName, key });
     const count = await redis.incr(bucket);
@@ -245,6 +308,13 @@ const touchRateLimitBucket = async ({ storeName, key, windowMs }) => {
     };
   } catch (error) {
     logLimiterDegradedMode(storeName, error);
+    if (shouldFailClosedForStore(storeName)) {
+      return {
+        failClosed: true,
+        resetAt: Date.now() + windowMs,
+        count: 0,
+      };
+    }
     return touchLocalRateLimitBucket({ storeName, key, windowMs });
   }
 };
@@ -266,6 +336,13 @@ const createRateLimiter = ({
 
     touchRateLimitBucket({ storeName, key, windowMs })
       .then((result) => {
+        if (result?.failClosed) {
+          return res.status(503).json({
+            success: false,
+            error: 'Authentication is temporarily unavailable. Please retry shortly.',
+          });
+        }
+
         setRateLimitHeaders(res, {
           max,
           remaining: max - result.count,
@@ -320,6 +397,13 @@ const loginRateLimiter = (req, res, next) => {
   const key = getLoginRateLimitKey(req);
   touchRateLimitBucket({ storeName: 'login-attempts', key, windowMs: AUTH_ATTEMPT_WINDOW_MS })
     .then((result) => {
+      if (result?.failClosed) {
+        return res.status(503).json({
+          success: false,
+          error: 'Authentication is temporarily unavailable. Please retry shortly.',
+        });
+      }
+
       if (!result) {
         return next();
       }
@@ -462,6 +546,7 @@ const resetPasswordRateLimiter = createRateLimiter({
 const __resetRateLimitFallbackForTests = () => {
   localRateLimitBuckets.clear();
   limiterDegradedModeLogState.clear();
+  limiterDegradedStartedAt.clear();
 };
 
 module.exports = {
