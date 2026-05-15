@@ -33,6 +33,7 @@ const INDUSTRY_OPTIONS = [
 const OTHER_COMPANY_TYPE_OPTION = 'Other';
 const COMPANY_TYPE_OPTIONS = [...INDUSTRY_OPTIONS, OTHER_COMPANY_TYPE_OPTION];
 const COMPANY_SIZE_OPTIONS = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'];
+const DEBUG_PROFILE_SYNC = process.env.NEXT_PUBLIC_DEBUG_PROFILE_SYNC === 'true';
 
 const parseLocation = (rawLocation, provinceOptions, provinceCodeByLabel, getCitiesForProvince) => {
   const locationText = String(rawLocation || '').trim();
@@ -89,6 +90,14 @@ const readFileAsDataUrl = (file) =>
     reader.onerror = () => reject(new Error('Failed to read file'));
     reader.readAsDataURL(file);
   });
+
+const logProfileSync = (label, payload) => {
+  if (!DEBUG_PROFILE_SYNC || typeof window === 'undefined') {
+    return;
+  }
+  void label;
+  void payload;
+};
 
 function Header({ title, onBack }) {
   return (
@@ -176,6 +185,32 @@ export function CompanyInfoSettingsPage({ user, onBack, onUpdated }) {
 
   const cityOptions = useMemo(() => locationData.getCitiesForProvince(form.provinceCode), [form.provinceCode, locationData]);
 
+  const applyOnboardingProfileToForm = (onboarding, userSnapshot) => {
+    const fromOnboarding = (key, fallback = '') => (
+      onboarding && Object.prototype.hasOwnProperty.call(onboarding, key)
+        ? onboarding[key]
+        : fallback
+    );
+    const initialIndustry = String(fromOnboarding('industry', userSnapshot?.industry || '') || '').trim();
+    const isCustomIndustry = Boolean(initialIndustry) && !INDUSTRY_OPTIONS.includes(initialIndustry);
+
+    setForm((prev) => ({
+      ...prev,
+      companyName: fromOnboarding('companyName', userSnapshot?.companyName || userSnapshot?.username || ''),
+      logoUrl: fromOnboarding('logoUrl', userSnapshot?.profileImage || ''),
+      industry: isCustomIndustry ? OTHER_COMPANY_TYPE_OPTION : initialIndustry,
+      customIndustry: isCustomIndustry ? initialIndustry : '',
+      companySize: fromOnboarding('companySize', userSnapshot?.companySize || ''),
+      website: fromOnboarding('website', userSnapshot?.website || ''),
+      description: fromOnboarding('description', userSnapshot?.bio || ''),
+      location: fromOnboarding('location', userSnapshot?.address || ''),
+      contactEmail: fromOnboarding('contactEmail', userSnapshot?.email || ''),
+      phoneNumber: fromOnboarding('phoneNumber', userSnapshot?.phone || ''),
+      provinceCode: '',
+      city: '',
+    }));
+  };
+
   useEffect(() => {
     let cancelled = false;
 
@@ -185,23 +220,9 @@ export function CompanyInfoSettingsPage({ user, onBack, onUpdated }) {
       try {
         const data = await companyAPI.getProfile();
         const onboarding = data?.company?.onboardingProfile || {};
-        const initialIndustry = String(onboarding?.industry || user?.industry || '').trim();
-        const isCustomIndustry = Boolean(initialIndustry) && !INDUSTRY_OPTIONS.includes(initialIndustry);
+        logProfileSync('settings-fetch-profile-response', onboarding);
         if (cancelled) return;
-
-        setForm((prev) => ({
-          ...prev,
-          companyName: onboarding?.companyName || user?.companyName || user?.username || '',
-          logoUrl: onboarding?.logoUrl || user?.profileImage || '',
-          industry: isCustomIndustry ? OTHER_COMPANY_TYPE_OPTION : initialIndustry,
-          customIndustry: isCustomIndustry ? initialIndustry : '',
-          companySize: onboarding?.companySize || user?.companySize || '',
-          website: onboarding?.website || user?.website || '',
-          description: onboarding?.description || user?.bio || '',
-          location: onboarding?.location || user?.address || '',
-          contactEmail: onboarding?.contactEmail || user?.email || '',
-          phoneNumber: onboarding?.phoneNumber || user?.phone || '',
-        }));
+        applyOnboardingProfileToForm(onboarding, user);
       } catch (loadError) {
         if (!cancelled) {
           setError(loadError?.message || 'Unable to load company settings.');
@@ -306,7 +327,17 @@ export function CompanyInfoSettingsPage({ user, onBack, onUpdated }) {
         contactEmail: String(form.contactEmail || '').trim(),
         phoneNumber: String(form.phoneNumber || '').trim(),
       };
+      logProfileSync('settings-save-payload', payload);
       const response = await companyAPI.saveOnboardingProfile(payload);
+      logProfileSync('settings-save-response', response);
+
+      const refreshed = await companyAPI.getProfile();
+      const refreshedOnboarding = refreshed?.company?.onboardingProfile || null;
+      if (refreshedOnboarding) {
+        applyOnboardingProfileToForm(refreshedOnboarding, user);
+        logProfileSync('settings-form-after-save-refetch', refreshedOnboarding);
+      }
+
       onUpdated?.(response?.company, {
         name: payload.companyName,
         logo: payload.logoUrl,
