@@ -14,6 +14,58 @@ const { withJobAvailability, closeExpiredJobs, normalizeDeadlineInput } = requir
 const { isAiConfigured, rankCandidatesForJob } = require('../services/aiService');
 const { sendApplicationStatusEmail } = require('../services/emailService');
 const { normalizeSocialsText } = require('../utils/socials');
+const PROFILE_SYNC_DEBUG = process.env.DEBUG_PROFILE_SYNC === 'true';
+const PROFILE_SYNC_REDACTED_KEYS = new Set([
+  'email',
+  'contactEmail',
+  'phone',
+  'phoneNumber',
+  'fullName',
+  'name',
+  'description',
+  'bio',
+  'socials',
+  'resume',
+  'resumeUrl',
+  'logoUrl',
+  'logo_url',
+  'profileImage',
+  'profile_photo_url',
+  'github',
+  'github_link',
+  'portfolioWebsite',
+  'portfolio_link',
+  'linkedin',
+  'linkedin_link',
+  'otherLinks',
+  'other_links',
+  'body',
+]);
+
+const logProfileSync = (label, payload) => {
+  if (!PROFILE_SYNC_DEBUG) {
+    return;
+  }
+  const sanitize = (value, depth = 0) => {
+    if (value == null) return value;
+    if (depth > 3) return '[truncated]';
+    if (Array.isArray(value)) {
+      return value.slice(0, 20).map((item) => sanitize(item, depth + 1));
+    }
+    if (typeof value === 'object') {
+      return Object.entries(value).reduce((acc, [key, entryValue]) => {
+        if (PROFILE_SYNC_REDACTED_KEYS.has(key)) {
+          acc[key] = '[redacted]';
+          return acc;
+        }
+        acc[key] = sanitize(entryValue, depth + 1);
+        return acc;
+      }, {});
+    }
+    return value;
+  };
+  logger.info({ label, payload: sanitize(payload) }, 'company-profile-sync');
+};
 
 const serializeUser = (user) => ({
   id: user.id,
@@ -129,26 +181,32 @@ const getCompanyProfile = async (req, res) => {
     const profile = profileResult.rows[0] || null;
     const account = userResult.rows[0] || {};
     const latestProject = latestProjectResult.rows[0] || null;
+    const onboardingProfile = {
+      companyName: profile?.company_name || company.name || '',
+      industry: profile?.industry || '',
+      companySize: profile?.company_size || '',
+      website: profile?.website || company.website || '',
+      description: profile?.description || company.description || '',
+      location: profile?.location || company.location || '',
+      logoUrl: profile?.logo_url || company.logo || '',
+      contactEmail: account.email || '',
+      phoneNumber: account.phone || '',
+      servicesNeeded: String(account.hiring_for || '')
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean),
+    };
+
+    logProfileSync('settings-fetch-profile-response', {
+      userId: req.user.id,
+      onboardingProfile,
+    });
 
     return res.json({
       success: true,
       company: {
         ...company,
-        onboardingProfile: {
-          companyName: profile?.company_name || company.name || '',
-          industry: profile?.industry || '',
-          companySize: profile?.company_size || '',
-          website: profile?.website || company.website || '',
-          description: profile?.description || company.description || '',
-          location: profile?.location || company.location || '',
-          logoUrl: profile?.logo_url || company.logo || '',
-          contactEmail: account.email || '',
-          phoneNumber: account.phone || '',
-          servicesNeeded: String(account.hiring_for || '')
-            .split(',')
-            .map((item) => item.trim())
-            .filter(Boolean),
-        },
+        onboardingProfile,
         latestProject: latestProject
           ? {
               title: latestProject.title || '',
@@ -986,14 +1044,21 @@ const rankApplicantsForJob = async (req, res) => {
     const applicantsResult = await client.query(
       `SELECT a.id AS application_id,
               a.user_id,
+              u.account_type,
               u.username,
               u.email,
               u.desired_job,
+              u.education,
               u.address,
+              COALESCE(dp.full_name, u.name, u.username) AS full_name,
+              COALESCE(dp.preferred_it_role, u.desired_job, dp.job_title, '') AS preferred_role,
+              COALESCE(dp.job_title, '') AS job_title,
               COALESCE(dp.bio, u.bio, '') AS bio,
               COALESCE(dp.resume_url, '') AS resume_url,
               COALESCE(dp.skills, ARRAY[]::text[]) AS skills,
-              COALESCE(dp.experience_years, 0) AS experience_years
+              COALESCE(dp.experience_years, 0) AS experience_years,
+              COALESCE(dp.certifications, '') AS certifications,
+              COALESCE(dp.work_preference, '') AS work_preference
        FROM applications a
        JOIN users u ON u.id = a.user_id
        LEFT JOIN developer_profiles dp ON dp.user_id = u.id
@@ -1006,13 +1071,19 @@ const rankApplicantsForJob = async (req, res) => {
       job: jobResult.rows[0],
       candidates: applicantsResult.rows.map((row) => ({
         id: row.user_id,
+        accountType: row.account_type || '',
+        fullName: row.full_name,
         username: row.username,
-        desiredJob: row.desired_job,
+        desiredJob: row.preferred_role || row.desired_job,
+        jobTitle: row.job_title,
         bio: row.bio,
-        resume: row.resume_url,
+        resumeText: [row.bio, row.education, row.certifications].filter(Boolean).join('\n'),
         address: row.address,
         skills: row.skills,
         yearsOfExperience: row.experience_years,
+        education: row.education,
+        certifications: row.certifications,
+        workPreference: row.work_preference,
       })),
     });
 
@@ -1132,6 +1203,8 @@ const updateCompanyProfile = async (req, res) => {
 
     const company = await getOrCreateCompanyForUserId(client, req.user.id);
     const { name, logo, shortDescription, description, location, website, relatedCompanies } = req.body || {};
+    const requestedIndustry = String(req.body?.industry || '').trim();
+    const requestedCompanySize = String(req.body?.companySize || '').trim();
 
     const nextName = String(name || '').trim();
     if (!nextName) {
@@ -1171,6 +1244,8 @@ const updateCompanyProfile = async (req, res) => {
       );
     }
 
+    const profileDescription = shortDescription ? String(shortDescription) : description ? String(description) : null;
+
     // Mirror key fields into users table for public profile compatibility.
     await client.query(
       `UPDATE users
@@ -1178,15 +1253,65 @@ const updateCompanyProfile = async (req, res) => {
            profile_image = COALESCE($2, profile_image),
            bio = COALESCE($3, bio),
            address = COALESCE($4, address),
-           website = COALESCE($5, website)
-       WHERE id = $6`,
+           website = COALESCE($5, website),
+           industry = COALESCE(NULLIF($6, ''), industry),
+           company_size = COALESCE(NULLIF($7, ''), company_size)
+       WHERE id = $8`,
       [
         nextName,
         logo ? String(logo) : null,
-        shortDescription ? String(shortDescription) : description ? String(description) : null,
+        profileDescription,
         location ? String(location) : null,
         website ? String(website) : null,
+        requestedIndustry,
+        requestedCompanySize,
         req.user.id,
+      ]
+    );
+
+    const existingProfileResult = await client.query(
+      `SELECT industry, company_size
+       FROM company_profiles
+       WHERE user_id = $1
+       LIMIT 1`,
+      [req.user.id]
+    );
+    const existingProfile = existingProfileResult.rows[0] || {};
+    const nextIndustry = requestedIndustry || String(existingProfile.industry || '').trim() || null;
+    const nextCompanySize = requestedCompanySize || String(existingProfile.company_size || '').trim() || null;
+
+    // Keep onboarding/settings source-of-truth fields synchronized.
+    await client.query(
+      `INSERT INTO company_profiles (
+         user_id,
+         company_name,
+         industry,
+         company_size,
+         website,
+         description,
+         location,
+         logo_url,
+         updated_at
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
+       ON CONFLICT (user_id) DO UPDATE SET
+         company_name = EXCLUDED.company_name,
+         industry = EXCLUDED.industry,
+         company_size = EXCLUDED.company_size,
+         website = EXCLUDED.website,
+         description = EXCLUDED.description,
+         location = EXCLUDED.location,
+         logo_url = EXCLUDED.logo_url,
+         updated_at = CURRENT_TIMESTAMP`,
+      [
+        req.user.id,
+        nextName,
+        nextIndustry,
+        nextCompanySize,
+        website ? String(website) : null,
+        profileDescription,
+        location ? String(location) : null,
+        logo ? String(logo) : null,
       ]
     );
 
@@ -1227,6 +1352,10 @@ const updateCompanyOnboardingProfile = async (req, res) => {
     }
 
     const body = req.body || {};
+    logProfileSync('settings-save-request-body', {
+      userId: req.user.id,
+      body,
+    });
     const companyName = String(body.companyName || '').trim();
     const industry = String(body.industry || '').trim();
     const companySize = String(body.companySize || '').trim();
@@ -1255,8 +1384,12 @@ const updateCompanyOnboardingProfile = async (req, res) => {
        RETURNING *`,
       [companyName, logoUrl, description || null, location || null, website || null, company.id]
     );
+    logProfileSync('settings-save-companies-update-result', {
+      rowCount: companyResult.rowCount,
+      company: companyResult.rows[0] || null,
+    });
 
-    await client.query(
+    const profileUpsertResult = await client.query(
       `INSERT INTO company_profiles (
          user_id,
          company_name,
@@ -1277,13 +1410,18 @@ const updateCompanyOnboardingProfile = async (req, res) => {
          description = EXCLUDED.description,
          location = EXCLUDED.location,
          logo_url = EXCLUDED.logo_url,
-         updated_at = CURRENT_TIMESTAMP`,
+         updated_at = CURRENT_TIMESTAMP
+       RETURNING user_id, company_name, industry, company_size, website, description, location, logo_url, updated_at`,
       [req.user.id, companyName, industry, companySize, website || null, description || null, location || null, logoUrl || null]
     );
+    logProfileSync('settings-save-company-profiles-upsert-result', {
+      rowCount: profileUpsertResult.rowCount,
+      profile: profileUpsertResult.rows[0] || null,
+    });
 
     const servicesNeeded = Array.isArray(body.servicesNeeded) ? body.servicesNeeded.map((s) => String(s).trim()).filter(Boolean).slice(0, 20) : [];
 
-    await client.query(
+    const usersUpdateResult = await client.query(
       `UPDATE users
        SET company_name = $1,
            industry = $2,
@@ -1310,6 +1448,9 @@ const updateCompanyOnboardingProfile = async (req, res) => {
         req.user.id,
       ]
     );
+    logProfileSync('settings-save-users-update-result', {
+      rowCount: usersUpdateResult.rowCount,
+    });
 
     const projectTitle = String(body.projectTitle || '').trim();
     const projectDescription = String(body.projectDescription || '').trim();
@@ -1330,6 +1471,11 @@ const updateCompanyOnboardingProfile = async (req, res) => {
     const nextUserResult = await client.query('SELECT * FROM users WHERE id = $1', [req.user.id]);
 
     await client.query('COMMIT');
+    logProfileSync('settings-save-response', {
+      userId: req.user.id,
+      user: serializeUser(nextUserResult.rows[0]),
+      company: companyResult.rows[0] || null,
+    });
     return res.json({
       success: true,
       user: serializeUser(nextUserResult.rows[0]),
