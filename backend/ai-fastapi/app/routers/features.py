@@ -22,6 +22,13 @@ class CandidatePayload(BaseModel):
     location: str | None = ''
     preferred_type: str | None = ''
     experience_years: int | None = None
+    account_type: str | None = ''
+    certifications: str | None = ''
+    education: str | None = ''
+    projects: list[str] = Field(default_factory=list)
+    preferred_categories: list[str] = Field(default_factory=list)
+    tech_stack: list[str] = Field(default_factory=list)
+    profile_completeness: int | None = None
 
 
 class JobPayload(BaseModel):
@@ -31,6 +38,14 @@ class JobPayload(BaseModel):
     location: str = ''
     type: str = ''
     skills: list[str] = Field(default_factory=list)
+    technologies: list[str] = Field(default_factory=list)
+    keywords: list[str] = Field(default_factory=list)
+    certifications: list[str] = Field(default_factory=list)
+    seniority: str = ''
+    required_years: int | None = None
+    industry: str = ''
+    category: str = ''
+    tags: list[str] = Field(default_factory=list)
 
 
 class MatchJobsRequest(BaseModel):

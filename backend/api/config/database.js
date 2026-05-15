@@ -5,11 +5,26 @@ loadEnvironmentFiles();
 
 const isSupabaseHost = (host) =>
   typeof host === 'string' && /(?:^|\.)supabase\.(?:co|com)$/i.test(host.trim());
+const isSupabasePoolerHost = (host) =>
+  typeof host === 'string' && /(?:^|\.)pooler\.supabase\.(?:co|com)$/i.test(host.trim());
 const shouldLogStartup = process.env.QUIET_STARTUP !== 'true';
 const isDevelopment = process.env.NODE_ENV === 'development';
-const max = Number(process.env.DB_POOL_MAX || 20);
+
+const toPositiveInt = (value, fallback) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  const normalized = Math.floor(parsed);
+  return normalized > 0 ? normalized : fallback;
+};
+
+const requestedMax = toPositiveInt(process.env.DB_POOL_MAX, 20);
 const idleTimeoutMillis = Number(process.env.DB_IDLE_TIMEOUT_MS || 30000);
 const connectionTimeoutMillis = Number(process.env.DB_CONNECTION_TIMEOUT_MS || 10000);
+
+const SUPABASE_SESSION_PORT = toPositiveInt(process.env.DB_SUPABASE_SESSION_PORT, 5432);
+const SUPABASE_SESSION_POOL_MAX = toPositiveInt(process.env.DB_SUPABASE_SESSION_POOL_MAX, 8);
 
 const getHostFromDatabaseUrl = () => {
   const raw = String(process.env.DATABASE_URL || '').trim();
@@ -55,9 +70,30 @@ const resolveSslConfig = (host) => {
   return false;
 };
 
+const resolvePoolMax = ({ host, port }) => {
+  if (isSupabasePoolerHost(host) && Number(port) === SUPABASE_SESSION_PORT) {
+    const safeMax = Math.min(requestedMax, SUPABASE_SESSION_POOL_MAX);
+    if (safeMax < requestedMax && shouldLogStartup) {
+      console.warn(
+        `DB pool max capped from ${requestedMax} to ${safeMax} for Supabase session mode (${host}:${port}).`
+      );
+    }
+    return safeMax;
+  }
+  return requestedMax;
+};
+
 const createPoolConfig = () => {
   if (process.env.DATABASE_URL) {
     const host = getHostFromDatabaseUrl();
+    let port = NaN;
+    try {
+      const parsed = new URL(process.env.DATABASE_URL);
+      port = Number(parsed.port || 5432);
+    } catch {
+      port = NaN;
+    }
+    const max = resolvePoolMax({ host, port });
     return {
       connectionString: process.env.DATABASE_URL,
       ssl: resolveSslConfig(host),
@@ -68,6 +104,8 @@ const createPoolConfig = () => {
   }
 
   const host = process.env.DB_HOST;
+  const port = Number(process.env.DB_PORT || 5432);
+  const max = resolvePoolMax({ host, port });
 
   return {
     host,

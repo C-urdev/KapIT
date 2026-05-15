@@ -38,7 +38,16 @@ function renderCompanyRoute(pathname, user, updateUser, onBackFromHelp, onMessag
       <CompanyInfoSettingsPage
         user={user}
         onBack={() => navigate(COMPANY_PATHS.settings)}
-        onUpdated={(company, form) => updateUser({ companyName: form?.name, profileImage: form?.logo, bio: form?.shortDescription, address: form?.location, website: form?.website })}
+        onUpdated={(company, form) => updateUser({
+          companyName: form?.name,
+          profileImage: form?.logo,
+          bio: form?.shortDescription,
+          address: form?.location,
+          website: form?.website,
+          industry: form?.industry,
+          companySize: form?.companySize,
+          phone: form?.phone,
+        })}
       />
     );
   }

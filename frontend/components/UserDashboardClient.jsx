@@ -35,7 +35,8 @@ export default function UserDashboardClient() {
             userType={user?.type}
             onOpenHelp={null}
             onLogout={handleLogout}
-            onUpdateUser={async (updates) => {
+            onUpdateUser={async (updates, options = {}) => {
+              const persistProfile = options?.persist !== false;
               const nextUpdates = updates && typeof updates === 'object' ? updates : {};
               const persistedUpdates = {};
               const localOnlyUpdates = {};
@@ -49,8 +50,8 @@ export default function UserDashboardClient() {
               }
 
               const hasPersistedUpdates = Object.keys(persistedUpdates).length > 0;
-              if (!hasPersistedUpdates) {
-                return updateUser(localOnlyUpdates);
+              if (!persistProfile || !hasPersistedUpdates) {
+                return updateUser(nextUpdates);
               }
 
               const data = await updateMyProfile(persistedUpdates);

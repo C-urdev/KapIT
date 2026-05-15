@@ -210,3 +210,20 @@ test('PATCH /api/auth/profile still allows normal profile updates and keeps prem
   assert.equal(String(poolMock.__users[0].bio || ''), 'updated biography');
   assert.equal(Boolean(poolMock.__users[0].is_premium), false);
 });
+
+test('PATCH /api/auth/profile accepts empty age and stores null instead of throwing', async () => {
+  const { app, poolMock } = loadAppForProfileSecurity();
+  const userId = poolMock.__users[0].id;
+  const token = createDeveloperToken(userId);
+
+  poolMock.__users[0].age = 27;
+
+  const response = await request(app)
+    .patch('/api/auth/profile')
+    .set('Authorization', `Bearer ${token}`)
+    .send({ age: '' });
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.success, true);
+  assert.equal(poolMock.__users[0].age, null);
+});

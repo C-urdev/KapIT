@@ -286,6 +286,7 @@ const bootstrap = async () => {
 
   if (healthyServerRunning && REUSE_EXISTING_BACKEND) {
     serverReadyLogged = true;
+    console.warn('REUSE_EXISTING_BACKEND=true: reusing an already-running backend process (code changes may not be picked up until restart).');
     if (!quietStartup) {
       console.log(`API ready at http://${SERVER_HOST}:${SERVER_PORT}`);
     }

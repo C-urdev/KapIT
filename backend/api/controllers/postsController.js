@@ -310,7 +310,7 @@ const listFeedPosts = async (req, res) => {
         : {}),
     });
   } catch (error) {
-    logger.error('List feed posts error:', error);
+    logger.error({ err: error }, 'List feed posts error');
     return res.status(500).json({
       success: false,
       message: 'Failed to load feed posts.',
@@ -349,7 +349,7 @@ const listMyPosts = async (req, res) => {
       posts: result.rows.map(toPostDto),
     });
   } catch (error) {
-    logger.error('List my posts error:', error);
+    logger.error({ err: error }, 'List my posts error');
     return res.status(500).json({
       success: false,
       message: 'Failed to load your posts.',

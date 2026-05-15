@@ -1,9 +1,34 @@
 import os
+from urllib.parse import urlparse
 from typing import Any
 
 import asyncpg
 
 _pool: asyncpg.Pool | None = None
+
+
+def _to_positive_int(value: str | int | None, fallback: int) -> int:
+    try:
+        parsed = int(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return fallback
+    return parsed if parsed > 0 else fallback
+
+
+def _resolve_pool_limits(database_url: str) -> tuple[int, int]:
+    requested_max = _to_positive_int(os.getenv('FASTAPI_DB_POOL_MAX'), 5)
+    min_size = min(_to_positive_int(os.getenv('FASTAPI_DB_POOL_MIN'), 1), requested_max)
+
+    parsed = urlparse(database_url)
+    host = str(parsed.hostname or '').strip().lower()
+    port = parsed.port or 5432
+    session_port = _to_positive_int(os.getenv('DB_SUPABASE_SESSION_PORT'), 5432)
+    session_cap = _to_positive_int(os.getenv('FASTAPI_DB_SUPABASE_SESSION_POOL_MAX'), 2)
+    if host.endswith('.pooler.supabase.com') and port == session_port:
+        requested_max = min(requested_max, session_cap)
+        min_size = min(min_size, requested_max)
+
+    return max(1, min_size), max(1, requested_max)
 
 
 async def get_pool() -> asyncpg.Pool:
@@ -15,7 +40,8 @@ async def get_pool() -> asyncpg.Pool:
     if not database_url:
         raise RuntimeError('DATABASE_URL is not configured for AI service.')
 
-    _pool = await asyncpg.create_pool(database_url, min_size=1, max_size=5)
+    min_size, max_size = _resolve_pool_limits(database_url)
+    _pool = await asyncpg.create_pool(database_url, min_size=min_size, max_size=max_size)
     return _pool
 
 

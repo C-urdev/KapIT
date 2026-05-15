@@ -230,8 +230,16 @@ const writeSchemas = {
   matchJobs: schema(
     z
       .object({
-        skills: z.array(z.string().min(1).max(60)).min(1).max(50),
+        skills: z.array(z.string().min(1).max(60)).max(50).optional().default([]),
         experience: z.enum(['intern', 'junior', 'mid', 'senior']).default('junior'),
+        desiredRole: z.coerce.string().trim().min(1).max(160).optional(),
+        summary: z.coerce.string().trim().max(2500).optional(),
+        resumeText: z.coerce.string().trim().max(12000).optional(),
+        education: z.coerce.string().trim().max(600).optional(),
+        certifications: z.coerce.string().trim().max(600).optional(),
+        projects: z.array(z.coerce.string().trim().min(1).max(240)).max(30).optional(),
+        preferredCategories: z.array(z.coerce.string().trim().min(1).max(80)).max(20).optional(),
+        techStack: z.array(z.coerce.string().trim().min(1).max(80)).max(40).optional(),
       })
       .strict()
   ),
