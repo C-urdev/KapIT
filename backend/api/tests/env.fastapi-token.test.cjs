@@ -2,7 +2,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const baseEnv = {
-  NODE_ENV: 'development',
+  NODE_ENV: 'test',
+  SKIP_ENV_FILE_LOAD: 'true',
   JWT_SECRET: 'dev-jwt-secret-abcdefghijklmnopqrstuvwxyz-1234',
   JWT_REFRESH_SECRET: 'dev-refresh-secret-abcdefghijklmnopqrstuvwxyz-1234',
   DATABASE_URL: 'postgresql://dev_user:dev_pass@localhost:5432/dev',

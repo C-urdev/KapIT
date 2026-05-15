@@ -24,12 +24,16 @@ const loadEnvironmentFiles = () => {
   if (environmentFilesLoaded) {
     return;
   }
+  if (readEnv('SKIP_ENV_FILE_LOAD').toLowerCase() === 'true') {
+    environmentFilesLoaded = true;
+    return;
+  }
 
   const files = getEnvironmentFiles();
   dotenv.config({ path: files.backendEnv });
   dotenv.config({ path: files.repoEnv });
 
-  const allowLocalOverride = !isProduction();
+  const allowLocalOverride = !isProduction() && readEnv('NODE_ENV').toLowerCase() !== 'test';
   dotenv.config({ path: files.backendEnvLocal, override: allowLocalOverride });
   dotenv.config({ path: files.repoEnvLocal, override: allowLocalOverride });
   environmentFilesLoaded = true;
