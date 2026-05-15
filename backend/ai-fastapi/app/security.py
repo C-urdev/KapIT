@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import logging
 import os
 import time
 from dataclasses import dataclass
@@ -10,6 +11,7 @@ from fastapi.responses import JSONResponse
 
 
 HEADER_NAME = 'x-internal-service-token'
+AUTHORIZATION_HEADER_NAME = 'authorization'
 WINDOW_SECONDS = 60
 
 
@@ -65,6 +67,22 @@ def _get_internal_token() -> str:
     ).strip()
 
 
+def _is_production() -> bool:
+    env = str(os.getenv('NODE_ENV') or os.getenv('FASTAPI_ENV') or '').strip().lower()
+    return env == 'production'
+
+
+def validate_internal_security_configuration() -> None:
+    if _get_internal_token():
+        return
+
+    message = 'FASTAPI internal auth token is missing. Set FASTAPI_INTERNAL_SERVICE_TOKEN.'
+    if _is_production():
+        raise RuntimeError(message)
+
+    logging.getLogger('uvicorn.error').warning('%s Protected AI routes will return 503 until configured.', message)
+
+
 def _get_route_limits() -> dict[str, int]:
     return {
         '/ai/analyze-resume': max(1, int(os.getenv('FASTAPI_RATE_LIMIT_ANALYZE_RESUME_PER_MIN', '120'))),
@@ -98,6 +116,18 @@ def _build_bucket_key(request: Request) -> str:
     return f'{path}:{client_ip}:{token_fingerprint}'
 
 
+def _extract_provided_token(request: Request) -> str:
+    explicit_header_token = str(request.headers.get(HEADER_NAME) or '').strip()
+    if explicit_header_token:
+        return explicit_header_token
+
+    authorization = str(request.headers.get(AUTHORIZATION_HEADER_NAME) or '').strip()
+    if authorization.lower().startswith('bearer '):
+        return authorization[7:].strip()
+
+    return ''
+
+
 async def enforce_internal_security(request: Request, call_next):
     path = request.url.path
     route_limits = _get_route_limits()
@@ -106,7 +136,7 @@ async def enforce_internal_security(request: Request, call_next):
         return await call_next(request)
 
     expected_token = _get_internal_token()
-    provided_token = str(request.headers.get(HEADER_NAME) or '').strip()
+    provided_token = _extract_provided_token(request)
 
     if not expected_token:
         return JSONResponse(

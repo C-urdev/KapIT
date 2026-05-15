@@ -60,6 +60,26 @@ def test_chatbot_message_route_rejects_missing_internal_token():
     assert response.status_code == 401
 
 
+def test_chatbot_message_route_rejects_invalid_internal_token():
+    client = TestClient(app)
+    response = client.post(
+        '/api/chatbot/message',
+        json={'message': 'hello'},
+        headers={'x-internal-service-token': 'invalid-token'},
+    )
+    assert response.status_code == 401
+
+
+def test_chatbot_message_route_accepts_bearer_internal_token():
+    client = TestClient(app)
+    response = client.post(
+        '/api/chatbot/message',
+        json={'message': 'hello'},
+        headers={'authorization': f"Bearer {os.environ['FASTAPI_INTERNAL_SERVICE_TOKEN']}"},
+    )
+    assert response.status_code == 200
+
+
 def test_chatbot_message_route_enforces_rate_limit(monkeypatch):
     monkeypatch.setenv('FASTAPI_INTERNAL_SERVICE_TOKEN', 'rate-limit-token')
     monkeypatch.setenv('FASTAPI_RATE_LIMIT_CHATBOT_PER_MIN', '1')

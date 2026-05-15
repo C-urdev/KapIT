@@ -56,3 +56,42 @@ def test_match_jobs_route_rejects_missing_internal_token():
         },
     )
     assert response.status_code == 401
+
+
+def test_match_jobs_route_rejects_invalid_internal_token():
+    client = TestClient(app)
+    response = client.post(
+        '/match-jobs',
+        json={
+            'skills': ['react'],
+            'experience': 'junior',
+        },
+        headers={'x-internal-service-token': 'invalid-token'},
+    )
+    assert response.status_code == 401
+
+
+def test_match_jobs_route_accepts_bearer_internal_token(monkeypatch):
+    async def fake_fetch_open_jobs(limit: int = 120):
+        return [
+            {
+                'id': 101,
+                'title': 'Frontend Developer',
+                'description': 'React and JavaScript role for UI delivery.',
+                'skills': ['react', 'javascript', 'css'],
+            },
+        ]
+
+    monkeypatch.setattr('app.routers.match_jobs.fetch_open_jobs', fake_fetch_open_jobs)
+
+    client = TestClient(app)
+    response = client.post(
+        '/match-jobs',
+        json={
+            'skills': ['react'],
+            'experience': 'junior',
+        },
+        headers={'authorization': f"Bearer {os.environ['FASTAPI_INTERNAL_SERVICE_TOKEN']}"},
+    )
+
+    assert response.status_code == 200

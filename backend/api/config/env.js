@@ -116,10 +116,19 @@ const requireAtLeastOne = (keys, errors) => {
 const validateEnvironment = () => {
   const errors = [];
   const isProduction = readEnv('NODE_ENV').toLowerCase() === 'production';
+  const fastApiConfigured = hasAnyValue([
+    'FASTAPI_URL_PRODUCTION',
+    'NEXT_PUBLIC_FASTAPI_URL_PRODUCTION',
+    'FASTAPI_URL',
+    'NEXT_PUBLIC_FASTAPI_URL',
+  ]);
 
   requireValue('JWT_SECRET', errors);
   requireValue('JWT_REFRESH_SECRET', errors);
   requireDatabaseConfig(errors);
+  if (fastApiConfigured) {
+    requireAtLeastOne(['FASTAPI_INTERNAL_SERVICE_TOKEN', 'INTERNAL_SERVICE_TOKEN'], errors);
+  }
   const payPalClientId = getPayPalClientId();
   const payPalClientSecret = getPayPalClientSecret();
   if ((payPalClientId && !payPalClientSecret) || (!payPalClientId && payPalClientSecret)) {
@@ -153,15 +162,15 @@ const validateEnvironment = () => {
     validateUrl('NEXT_PUBLIC_EXPRESS_API_URL_PRODUCTION', errors);
     validateUrl('FASTAPI_URL_PRODUCTION', errors);
     validateUrl('NEXT_PUBLIC_FASTAPI_URL_PRODUCTION', errors);
-    const fastApiConfiguredInProduction = hasAnyValue([
-      'FASTAPI_URL_PRODUCTION',
-      'NEXT_PUBLIC_FASTAPI_URL_PRODUCTION',
-      'FASTAPI_URL',
-      'NEXT_PUBLIC_FASTAPI_URL',
-    ]);
-    if (fastApiConfiguredInProduction) {
-      requireValue('FASTAPI_INTERNAL_SERVICE_TOKEN', errors);
-      validateSecretQuality('FASTAPI_INTERNAL_SERVICE_TOKEN', errors);
+    if (fastApiConfigured) {
+      const fastApiInternalToken = readEnv('FASTAPI_INTERNAL_SERVICE_TOKEN');
+      const legacyInternalToken = readEnv('INTERNAL_SERVICE_TOKEN');
+      if (fastApiInternalToken) {
+        validateSecretQuality('FASTAPI_INTERNAL_SERVICE_TOKEN', errors);
+      }
+      if (!fastApiInternalToken && legacyInternalToken) {
+        validateSecretQuality('INTERNAL_SERVICE_TOKEN', errors);
+      }
     }
 
     const hasGoogleConfig = Boolean(readEnv('GOOGLE_CLIENT_ID') || readEnv('NEXT_PUBLIC_GOOGLE_CLIENT_ID'));

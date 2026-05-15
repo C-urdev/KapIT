@@ -1,7 +1,4 @@
 const DEFAULT_TIMEOUT_MS = Number(process.env.FASTAPI_TIMEOUT_MS || 12000);
-const FASTAPI_INTERNAL_SERVICE_TOKEN = String(
-  process.env.FASTAPI_INTERNAL_SERVICE_TOKEN || process.env.INTERNAL_SERVICE_TOKEN || ''
-).trim();
 
 const normalizeBaseUrl = () =>
   String(process.env.FASTAPI_URL || process.env.NEXT_PUBLIC_FASTAPI_URL || '')
@@ -9,6 +6,9 @@ const normalizeBaseUrl = () =>
     .replace(/\/$/, '');
 
 const isAiConfigured = () => Boolean(normalizeBaseUrl());
+
+const resolveInternalServiceToken = () =>
+  String(process.env.FASTAPI_INTERNAL_SERVICE_TOKEN || process.env.INTERNAL_SERVICE_TOKEN || '').trim();
 
 const safeJson = async (response) => {
   try {
@@ -20,12 +20,14 @@ const safeJson = async (response) => {
 
 const postToFastApi = async (path, payload) => {
   const baseUrl = normalizeBaseUrl();
+  const internalServiceToken = resolveInternalServiceToken();
+
   if (!baseUrl) {
     const error = new Error('FASTAPI_URL is not configured.');
     error.code = 'FASTAPI_NOT_CONFIGURED';
     throw error;
   }
-  if (!FASTAPI_INTERNAL_SERVICE_TOKEN) {
+  if (!internalServiceToken) {
     const error = new Error('FASTAPI_INTERNAL_SERVICE_TOKEN is not configured.');
     error.code = 'FASTAPI_AUTH_NOT_CONFIGURED';
     throw error;
@@ -39,7 +41,8 @@ const postToFastApi = async (path, payload) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Internal-Service-Token': FASTAPI_INTERNAL_SERVICE_TOKEN,
+        Authorization: `Bearer ${internalServiceToken}`,
+        'X-Internal-Service-Token': internalServiceToken,
       },
       body: JSON.stringify(payload || {}),
       signal: controller.signal,
