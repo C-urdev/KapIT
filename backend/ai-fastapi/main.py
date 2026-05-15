@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import chatbot, health, features, match_jobs
-from app.security import enforce_internal_security
+from app.security import enforce_internal_security, validate_internal_security_configuration
 
 
 def _resolve_allowed_origins() -> list[str]:
@@ -19,6 +19,7 @@ def _resolve_allowed_origins() -> list[str]:
     ]
 
 app = FastAPI(title='KapIT AI Service', version='0.1.0')
+validate_internal_security_configuration()
 
 app.add_middleware(
     CORSMiddleware,
