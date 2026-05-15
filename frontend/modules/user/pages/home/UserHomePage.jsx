@@ -576,7 +576,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
       setPremiumPopupOpen(false);
       const current = await getCurrentUser();
       if (current?.user) {
-        await onUpdateUser?.(current.user);
+        await onUpdateUser?.(current.user, { persist: false });
       }
     };
 
@@ -1147,7 +1147,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
             user={user}
             mode="account"
             onClose={() => updateActiveNav('settings')}
-            onSave={onUpdateUser}
+            onSave={(nextUser) => onUpdateUser?.(nextUser, { persist: false })}
           />
         )}
         {activeNav === 'settings-career' && (
@@ -1157,7 +1157,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
             user={user}
             mode="career"
             onClose={() => updateActiveNav('settings')}
-            onSave={onUpdateUser}
+            onSave={(nextUser) => onUpdateUser?.(nextUser, { persist: false })}
           />
         )}
         {activeNav === 'settings-notifications' && (

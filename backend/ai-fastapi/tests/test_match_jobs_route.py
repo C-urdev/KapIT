@@ -95,3 +95,51 @@ def test_match_jobs_route_accepts_bearer_internal_token(monkeypatch):
     )
 
     assert response.status_code == 200
+
+
+def test_match_jobs_route_personalizes_scores_by_candidate(monkeypatch):
+    async def fake_fetch_open_jobs(limit: int = 120):
+        return [
+            {
+                'id': 501,
+                'title': 'Frontend Developer',
+                'description': 'Build React and Next.js UI',
+                'skills': ['react', 'next.js', 'typescript'],
+            },
+        ]
+
+    monkeypatch.setattr('app.routers.match_jobs.fetch_open_jobs', fake_fetch_open_jobs)
+    client = TestClient(app)
+
+    web_response = client.post(
+        '/match-jobs',
+        json={
+            'skills': [],
+            'experience': 'mid',
+            'candidate': {
+                'desired_role': 'Web Application Developer',
+                'skills': ['react', 'next.js'],
+                'summary': 'Frontend developer focused on web apps',
+            },
+        },
+        headers={'x-internal-service-token': os.environ['FASTAPI_INTERNAL_SERVICE_TOKEN']},
+    )
+    security_response = client.post(
+        '/match-jobs',
+        json={
+            'skills': [],
+            'experience': 'mid',
+            'candidate': {
+                'desired_role': 'Cybersecurity Analyst',
+                'skills': ['siem', 'soc'],
+                'summary': 'Security operations',
+            },
+        },
+        headers={'x-internal-service-token': os.environ['FASTAPI_INTERNAL_SERVICE_TOKEN']},
+    )
+
+    assert web_response.status_code == 200
+    assert security_response.status_code == 200
+    web_score = web_response.json()[0]['match']
+    security_score = security_response.json()[0]['match']
+    assert web_score > security_score

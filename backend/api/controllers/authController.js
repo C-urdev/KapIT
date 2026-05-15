@@ -11,6 +11,7 @@ const { appendSearchScopeFilterClause } = require('../services/accountSearchServ
 const { logger } = require('../config/logger');
 const { normalizeSocialsText } = require('../utils/socials');
 const {
+  CURRENT_MATCH_SCORING_VERSION,
   createProfileMatchSignature,
   createJobMatchSignature,
   isMatchCacheValid,
@@ -151,9 +152,16 @@ const createJobMatchScoreMetadata = ({ match, profileSignature, jobSignature }) 
   strengths: match?.strengths || [],
   concerns: match?.concerns || [],
   keywordOverlap: match?.keyword_overlap || [],
+  fitLabel: String(match?.fit_label || ''),
+  confidenceScore: Number(match?.confidence_score || 0),
+  confidenceLabel: String(match?.confidence_label || ''),
+  roleRelevance: Number(match?.role_relevance || 0),
+  reasoningSummary: String(match?.reasoning_summary || ''),
+  matchSource: String(match?.source || 'ai'),
+  insufficientData: Boolean(match?.insufficient_data),
   profileSignature: String(profileSignature || ''),
   jobSignature: String(jobSignature || ''),
-  scoringVersion: 'v2',
+  scoringVersion: CURRENT_MATCH_SCORING_VERSION,
 });
 
 const upsertJobMatchScores = async (client, { userId, rows }) => {
@@ -229,11 +237,20 @@ const loadCachedJobMatchScores = async (client, { userId, jobs, profileSignature
     map.set(Number(row.job_id), {
       matchPercentage: Number(row.match_percentage || 0),
       atsScore: Number(row.ats_score || 0),
+      matchConfidenceScore: Number(metadata.confidenceScore || 0),
+      matchConfidenceLabel: String(metadata.confidenceLabel || ''),
+      matchFitLabel: String(metadata.fitLabel || ''),
+      matchSource: String(metadata.matchSource || 'ai'),
+      matchReasoningSummary: String(metadata.reasoningSummary || ''),
+      matchRoleRelevance: Number(metadata.roleRelevance || 0),
+      matchInsufficientData: Boolean(metadata.insufficientData),
       matchDetails: {
         matchedSkills: Array.isArray(metadata.matchedSkills) ? metadata.matchedSkills : [],
         missingSkills: Array.isArray(metadata.missingSkills) ? metadata.missingSkills : [],
         strengths: Array.isArray(metadata.strengths) ? metadata.strengths : [],
         concerns: Array.isArray(metadata.concerns) ? metadata.concerns : [],
+        roleRelevance: Number(metadata.roleRelevance || 0),
+        keywordOverlap: Array.isArray(metadata.keywordOverlap) ? metadata.keywordOverlap : [],
       },
     });
   }
@@ -598,7 +615,7 @@ const getCurrentUser = async (req, res) => {
       user: serializeUser(user),
     });
   } catch (error) {
-    logger.error('Get user error:', error);
+    logger.error({ err: error }, 'Get user error');
     res.status(500).json({ 
       success: false, 
       message: 'Server error',
@@ -937,10 +954,28 @@ const updateMyProfile = async (req, res) => {
     const sets = columns.map((col, idx) => `${col} = $${idx + 1}`).join(', ');
     const values = columns.map((col) => sanitized[col]);
 
-    if (sanitized.age != null && sanitized.age !== '') {
-      const age = Number(sanitized.age);
-      sanitized.age = Number.isFinite(age) ? Math.trunc(age) : null;
-      values[columns.indexOf('age')] = sanitized.age;
+    const ageIndex = columns.indexOf('age');
+    if (ageIndex >= 0) {
+      const rawAge = sanitized.age;
+      if (rawAge == null || rawAge === '') {
+        sanitized.age = null;
+      } else {
+        const age = Number(rawAge);
+        if (!Number.isFinite(age)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Age must be a valid number',
+          });
+        }
+        if (age < 0 || age > 120) {
+          return res.status(400).json({
+            success: false,
+            message: 'Age must be between 0 and 120',
+          });
+        }
+        sanitized.age = Math.trunc(age);
+      }
+      values[ageIndex] = sanitized.age;
     }
 
     const birthdayIndex = columns.indexOf('birthday');
@@ -1270,11 +1305,16 @@ const getJobsFeed = async (req, res) => {
         `SELECT dp.user_id,
                 COALESCE(dp.full_name, u.name, u.username) AS full_name,
                 COALESCE(dp.preferred_it_role, u.desired_job, dp.job_title) AS preferred_role,
+                COALESCE(dp.job_title, '') AS job_title,
                 COALESCE(dp.bio, u.bio, '') AS bio,
                 COALESCE(dp.resume_url, '') AS resume_url,
                 COALESCE(dp.skills, ARRAY[]::text[]) AS skills,
                 COALESCE(dp.location, u.address, '') AS location,
-                COALESCE(dp.experience_years, 0) AS experience_years
+                COALESCE(dp.experience_years, 0) AS experience_years,
+                COALESCE(dp.education, u.education, '') AS education,
+                COALESCE(dp.certifications, '') AS certifications,
+                COALESCE(dp.school_university, '') AS school_university,
+                COALESCE(dp.work_preference, '') AS work_preference
          FROM users u
          LEFT JOIN developer_profiles dp ON dp.user_id = u.id
          WHERE u.id = $1
@@ -1296,34 +1336,53 @@ const getJobsFeed = async (req, res) => {
         profileSignature,
       }).catch(() => new Map());
 
-      jobs = jobs.map((job) => {
-        const cached = cachedMatchMap.get(Number(job.id));
-        if (!cached) {
-          return job;
-        }
+        jobs = jobs.map((job) => {
+          const cached = cachedMatchMap.get(Number(job.id));
+          if (!cached) {
+            return job;
+          }
 
-        return {
-          ...job,
-          matchPercentage: cached.matchPercentage,
-          atsScore: cached.atsScore,
-          matchDetails: cached.matchDetails,
-        };
-      });
-    }
+          return {
+            ...job,
+            matchPercentage: cached.matchPercentage,
+            atsScore: cached.atsScore,
+            matchConfidenceScore: cached.matchConfidenceScore,
+            matchConfidenceLabel: cached.matchConfidenceLabel,
+            matchFitLabel: cached.matchFitLabel,
+            matchSource: cached.matchSource,
+            matchReasoningSummary: cached.matchReasoningSummary,
+            matchInsufficientData: cached.matchInsufficientData,
+            matchDetails: cached.matchDetails,
+          };
+        });
+      }
 
     if (isAiConfigured()) {
       const jobsNeedingScores = jobs.filter((job) => !cachedMatchMap.has(Number(job.id)));
       if (profile && jobsNeedingScores.length) {
+        const resumeText = [
+          String(profile.bio || '').trim(),
+          String(profile.education || '').trim(),
+          String(profile.certifications || '').trim(),
+          String(profile.school_university || '').trim(),
+        ]
+          .filter(Boolean)
+          .join('\n');
+
         const aiResult = await matchJobsForCandidateWithBudget({
           candidate: {
             id: req.user.id,
             fullName: profile.full_name,
             preferredRole: profile.preferred_role,
+            jobTitle: profile.job_title,
             bio: profile.bio,
-            resume: profile.resume_url,
+            resumeText,
             skills: profile.skills,
             location: profile.location,
+            workPreference: profile.work_preference,
             yearsOfExperience: profile.experience_years,
+            education: profile.education,
+            certifications: profile.certifications,
           },
           jobs: jobsNeedingScores,
         }).catch(() => null);
@@ -1336,7 +1395,7 @@ const getJobsFeed = async (req, res) => {
             return job;
           }
 
-          const matchPercentage = Number(match.match_percentage || 0);
+          const matchPercentage = Number(match.fit_score ?? match.match_percentage ?? 0);
           const atsScore = Number(match.ats_score || 0);
           scoreRows.push({
             job_id: Number(job.id),
@@ -1353,11 +1412,19 @@ const getJobsFeed = async (req, res) => {
             ...job,
             matchPercentage,
             atsScore,
+            matchConfidenceScore: Number(match.confidence_score || 0),
+            matchConfidenceLabel: String(match.confidence_label || ''),
+            matchFitLabel: String(match.fit_label || ''),
+            matchSource: String(match.source || 'ai'),
+            matchReasoningSummary: String(match.reasoning_summary || ''),
+            matchInsufficientData: Boolean(match.insufficient_data),
             matchDetails: {
               matchedSkills: match.matched_skills || [],
               missingSkills: match.missing_skills || [],
               strengths: match.strengths || [],
               concerns: match.concerns || [],
+              roleRelevance: Number(match.role_relevance || 0),
+              keywordOverlap: match.keyword_overlap || [],
             },
           };
         });
@@ -1378,7 +1445,7 @@ const getJobsFeed = async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Get jobs feed error:', error);
+    logger.error({ err: error }, 'Get jobs feed error');
     return res.json({
       success: true,
       jobs: [],
@@ -1568,7 +1635,7 @@ const getMyApplications = async (req, res) => {
 
     return res.json({ success: true, applications });
   } catch (error) {
-    logger.error('Get my applications error:', error);
+    logger.error({ err: error }, 'Get my applications error');
     return res.status(500).json({
       success: false,
       message: 'Server error while fetching your applications',
