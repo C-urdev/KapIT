@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import chatbot, health, features, match_jobs
+from app.security import enforce_internal_security
 
 
 def _resolve_allowed_origins() -> list[str]:
@@ -26,6 +27,7 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*'],
 )
+app.middleware('http')(enforce_internal_security)
 
 app.include_router(health.router)
 app.include_router(features.router, prefix='/ai', tags=['ai'])

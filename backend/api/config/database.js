@@ -30,13 +30,7 @@ const resolveRejectUnauthorized = (host) => {
     return true;
   }
   if (explicit === 'false') {
-    return false;
-  }
-
-  if (isSupabaseHost(host)) {
-    // Supabase pooler certificates commonly fail strict verification in app hosts
-    // unless a matching CA bundle is provided.
-    return false;
+    return !isDevelopment;
   }
 
   return true;

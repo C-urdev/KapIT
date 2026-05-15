@@ -17,6 +17,8 @@ const PAYMENT_API_TIMEOUT_MS = Math.max(1000, Number(process.env.PAYMENT_API_TIM
 const PAYMENT_API_RETRY_MAX = Math.max(1, Number(process.env.PAYMENT_API_RETRY_MAX || 3));
 const PAYMENT_API_RETRY_BASE_MS = Math.max(50, Number(process.env.PAYMENT_API_RETRY_BASE_MS || 300));
 const PAYMENT_IDEMPOTENCY_TTL_SECONDS = Math.max(60, Number(process.env.PAYMENT_IDEMPOTENCY_TTL_SECONDS || 86400));
+const PAYPAL_WEBHOOK_MAX_AGE_MS = Math.max(1000, Number(process.env.PAYPAL_WEBHOOK_MAX_AGE_MS || 5 * 60 * 1000));
+const PAYPAL_WEBHOOK_EVENT_TTL_SECONDS = Math.max(60, Number(process.env.PAYPAL_WEBHOOK_EVENT_TTL_SECONDS || 24 * 60 * 60));
 const USER_PREMIUM_PLAN = Object.freeze({
   id: 'premium-monthly',
   label: 'Premium',
@@ -25,6 +27,15 @@ const USER_PREMIUM_PLAN = Object.freeze({
   durationDays: 30,
   description: 'Premium applicant subscription',
 });
+const localWebhookReplayBuckets = new Map();
+
+const pruneExpiredWebhookReplayBuckets = (now = Date.now()) => {
+  for (const [key, value] of localWebhookReplayBuckets.entries()) {
+    if (!value || Number(value.expiresAt || 0) <= now) {
+      localWebhookReplayBuckets.delete(key);
+    }
+  }
+};
 
 const getPaymentProviderAvailability = () => {
   const payPalEnabled = hasPayPalConfig();
@@ -328,6 +339,127 @@ const readPayPalWebhookHeaders = (headers = {}) => {
   return values;
 };
 
+const assertPayPalTransmissionTimeFresh = (transmissionTime) => {
+  const parsed = Date.parse(String(transmissionTime || '').trim());
+  if (!Number.isFinite(parsed)) {
+    throw createHttpError(400, 'Invalid PayPal transmission timestamp.');
+  }
+
+  const ageMs = Math.abs(Date.now() - parsed);
+  if (ageMs > PAYPAL_WEBHOOK_MAX_AGE_MS) {
+    throw createHttpError(401, 'Stale PayPal webhook transmission timestamp.');
+  }
+};
+
+const buildPayPalWebhookReplayKey = (eventId) => `paypal:webhook:event:${String(eventId || '').trim()}`;
+
+const reservePayPalWebhookEvent = async (eventId) => {
+  const normalizedEventId = String(eventId || '').trim();
+  if (!normalizedEventId) {
+    throw createHttpError(400, 'Missing PayPal webhook event id.');
+  }
+
+  const key = buildPayPalWebhookReplayKey(normalizedEventId);
+  const redis = await getRedisClient();
+  if (redis) {
+    const acquired = await redis.set(
+      key,
+      JSON.stringify({
+        state: 'processing',
+        eventId: normalizedEventId,
+        updatedAt: new Date().toISOString(),
+      }),
+      { NX: true, EX: PAYPAL_WEBHOOK_EVENT_TTL_SECONDS }
+    );
+
+    if (!acquired) {
+      return {
+        duplicate: true,
+        reservation: null,
+      };
+    }
+
+    return {
+      duplicate: false,
+      reservation: {
+        store: 'redis',
+        key,
+      },
+    };
+  }
+
+  const now = Date.now();
+  pruneExpiredWebhookReplayBuckets(now);
+  const existing = localWebhookReplayBuckets.get(key);
+  if (existing && Number(existing.expiresAt || 0) > now) {
+    return {
+      duplicate: true,
+      reservation: null,
+    };
+  }
+
+  localWebhookReplayBuckets.set(key, {
+    state: 'processing',
+    expiresAt: now + (PAYPAL_WEBHOOK_EVENT_TTL_SECONDS * 1000),
+  });
+
+  return {
+    duplicate: false,
+    reservation: {
+      store: 'local',
+      key,
+    },
+  };
+};
+
+const markPayPalWebhookEventProcessed = async (reservation) => {
+  if (!reservation?.key) {
+    return;
+  }
+
+  if (reservation.store === 'redis') {
+    const redis = await getRedisClient();
+    if (!redis) {
+      return;
+    }
+    await redis.set(
+      reservation.key,
+      JSON.stringify({
+        state: 'processed',
+        updatedAt: new Date().toISOString(),
+      }),
+      { EX: PAYPAL_WEBHOOK_EVENT_TTL_SECONDS }
+    );
+    return;
+  }
+
+  const existing = localWebhookReplayBuckets.get(reservation.key);
+  if (!existing) {
+    return;
+  }
+  localWebhookReplayBuckets.set(reservation.key, {
+    state: 'processed',
+    expiresAt: Date.now() + (PAYPAL_WEBHOOK_EVENT_TTL_SECONDS * 1000),
+  });
+};
+
+const releasePayPalWebhookEventReservation = async (reservation) => {
+  if (!reservation?.key) {
+    return;
+  }
+
+  if (reservation.store === 'redis') {
+    const redis = await getRedisClient();
+    if (!redis) {
+      return;
+    }
+    await redis.del(reservation.key);
+    return;
+  }
+
+  localWebhookReplayBuckets.delete(reservation.key);
+};
+
 const verifyPayPalWebhookSignature = async ({ headers, webhookEvent }) => {
   const webhookId = getPayPalWebhookId();
   if (!webhookId) {
@@ -339,6 +471,7 @@ const verifyPayPalWebhookSignature = async ({ headers, webhookEvent }) => {
   }
 
   const parsedHeaders = readPayPalWebhookHeaders(headers);
+  assertPayPalTransmissionTimeFresh(parsedHeaders.transmissionTime);
   const accessToken = await getPayPalAccessToken();
   const response = await withRetry(
     () => fetchWithTimeout(`${getPayPalBaseUrl()}/v1/notifications/verify-webhook-signature`, {
@@ -1267,6 +1400,9 @@ module.exports = {
   completeLocalBypassUserPremiumPayment,
   capturePayPalOrder,
   verifyPayPalWebhookSignature,
+  reservePayPalWebhookEvent,
+  markPayPalWebhookEventProcessed,
+  releasePayPalWebhookEventReservation,
   reconcilePayPalWebhookEvent,
   finalizeVerifiedPayment,
   finalizeVerifiedUserPremiumPayment,

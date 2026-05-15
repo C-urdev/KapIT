@@ -1,4 +1,7 @@
 const DEFAULT_TIMEOUT_MS = Number(process.env.FASTAPI_TIMEOUT_MS || 12000);
+const FASTAPI_INTERNAL_SERVICE_TOKEN = String(
+  process.env.FASTAPI_INTERNAL_SERVICE_TOKEN || process.env.INTERNAL_SERVICE_TOKEN || ''
+).trim();
 
 const normalizeBaseUrl = () =>
   String(process.env.FASTAPI_URL || process.env.NEXT_PUBLIC_FASTAPI_URL || '')
@@ -22,6 +25,11 @@ const postToFastApi = async (path, payload) => {
     error.code = 'FASTAPI_NOT_CONFIGURED';
     throw error;
   }
+  if (!FASTAPI_INTERNAL_SERVICE_TOKEN) {
+    const error = new Error('FASTAPI_INTERNAL_SERVICE_TOKEN is not configured.');
+    error.code = 'FASTAPI_AUTH_NOT_CONFIGURED';
+    throw error;
+  }
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
@@ -31,6 +39,7 @@ const postToFastApi = async (path, payload) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-Internal-Service-Token': FASTAPI_INTERNAL_SERVICE_TOKEN,
       },
       body: JSON.stringify(payload || {}),
       signal: controller.signal,
