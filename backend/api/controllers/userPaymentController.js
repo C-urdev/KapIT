@@ -1,4 +1,4 @@
-const pool = require('../config/database');
+﻿const pool = require('../config/database');
 const { ensureBaseUserSchemaReady } = require('../config/runtimeSchema');
 const { logger } = require('../config/logger');
 const { serializeUser } = require('../utils/authUserSerializer');

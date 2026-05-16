@@ -69,6 +69,11 @@
   .field {
     @apply w-full rounded-xl border border-[#a3b18a] dark:border-[#444d57] bg-white dark:bg-[#1a1d20] px-4 py-3 text-[#344e41] dark:text-white placeholder:text-[#3a5a40] dark:placeholder:text-[#adb5be] outline-none focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74] transition-colors;
   }
+
+  .profile-onboarding input.field:not([readonly]):not([disabled]):not(:placeholder-shown),
+  .profile-onboarding textarea.field:not([readonly]):not([disabled]):not(:placeholder-shown) {
+    @apply bg-[#eef6ee] border-[#7aa27d] text-[#1f3a2a] dark:bg-[#1f2b23] dark:border-[#5f8a68] dark:text-[#e7f4ea];
+  }
 }
 
 .orbit-scroll {

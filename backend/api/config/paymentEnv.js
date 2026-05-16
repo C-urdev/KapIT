@@ -1,4 +1,4 @@
-const PLACEHOLDER_VALUE_PATTERN = /^(<[^>]+>|your-|replace-|change-this|changeme|example|placeholder)/i;
+﻿const PLACEHOLDER_VALUE_PATTERN = /^(<[^>]+>|your-|replace-|change-this|changeme|example|placeholder)/i;
 
 const PAYMENT_ENV_KEYS = Object.freeze({
   payPalClientId: ['PAYPAL_CLIENT_ID', 'PAYPAL_CLIENTID', 'PAYPAL_ID'],

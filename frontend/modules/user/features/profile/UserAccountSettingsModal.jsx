@@ -8,9 +8,12 @@ import { developerAPI } from '@userFeatures/developer/userDeveloperAPI';
 
 const JOB_TITLE_OPTIONS = {
   'Software Engineer': ['Application Developer', 'Software Engineer', 'Software Developer', 'Programmer Analyst'],
+  'Software Developer': ['Application Developer', 'Desktop Application Developer', 'Systems Software Developer', 'Software Programmer'],
+  'Application Developer': ['Web Application Developer', 'Mobile Application Developer', 'Enterprise Application Developer', 'API Developer'],
   'Frontend Developer': ['React Developer', 'Vue Developer', 'Angular Developer', 'UI Developer'],
   'Backend Developer': ['Node.js Backend Developer', 'Java Backend Developer', 'PHP Backend Developer', 'Python Backend Developer'],
   'Full Stack Developer': ['MERN Stack Developer', 'MEAN Stack Developer', 'JavaScript Full Stack Developer', 'Web Application Developer'],
+  'Web Developer': ['Front-End Web Developer', 'Back-End Web Developer', 'Full-Stack Web Developer', 'WordPress Developer'],
   'Mobile Developer': ['Android Developer', 'iOS Developer', 'React Native Developer', 'Flutter Developer'],
   'Game Developer': ['Gameplay Programmer', 'Game Engine Developer', 'Unity Developer', 'Unreal Developer'],
   'Embedded Systems Engineer': ['Firmware Engineer', 'IoT Developer', 'Embedded Software Engineer', 'Robotics Software Engineer'],
@@ -30,6 +33,8 @@ const JOB_TITLE_OPTIONS = {
   'Data Analyst': ['Business Intelligence Analyst', 'Reporting Analyst', 'Product Analyst', 'Data Visualization Analyst'],
   'Data Scientist': ['Machine Learning Scientist', 'Applied Data Scientist', 'AI Research Engineer', 'Quantitative Analyst'],
   'Machine Learning Engineer': ['AI Engineer', 'NLP Engineer', 'Computer Vision Engineer', 'MLOps Engineer'],
+  'AI Engineer': ['Generative AI Engineer', 'LLM Engineer', 'Prompt Engineer', 'Applied AI Engineer'],
+  'MLOps Engineer': ['ML Platform Engineer', 'Model Deployment Engineer', 'ML Infrastructure Engineer', 'AI Operations Engineer'],
   'Cybersecurity Specialist': ['Security Analyst', 'SOC Analyst', 'Security Engineer', 'Penetration Tester'],
   'Security Engineer': ['Application Security Engineer', 'Cloud Security Engineer', 'Network Security Engineer', 'Identity and Access Engineer'],
   'Network Engineer': ['Network Administrator', 'Network Operations Engineer', 'Infrastructure Engineer', 'Network Security Engineer'],
@@ -39,10 +44,13 @@ const JOB_TITLE_OPTIONS = {
   'ERP/CRM Developer': ['SAP Developer', 'Salesforce Developer', 'Dynamics 365 Developer', 'Oracle ERP Developer'],
   'Blockchain Developer': ['Smart Contract Developer', 'Web3 Developer', 'Blockchain Engineer', 'DApp Developer'],
   'AR/VR Developer': ['XR Developer', 'AR Engineer', 'VR Engineer', 'Spatial Computing Developer'],
+  'Tech Lead': ['Frontend Tech Lead', 'Backend Tech Lead', 'Full Stack Tech Lead', 'Software Development Lead'],
+  'Engineering Manager': ['Software Engineering Manager', 'Development Manager', 'Platform Engineering Manager', 'Technical Manager'],
   'IT Consultant': ['Technology Consultant', 'Digital Transformation Consultant', 'Solution Consultant', 'Implementation Consultant'],
 };
-
-const JOB_TITLES = Object.keys(JOB_TITLE_OPTIONS);
+const OTHER_JOB_TITLE_OPTION = 'Other';
+const BASE_JOB_TITLES = Object.keys(JOB_TITLE_OPTIONS);
+const JOB_TITLES = [...BASE_JOB_TITLES, OTHER_JOB_TITLE_OPTION];
 const VOCATIONAL_EDUCATION_OPTION = 'Vocational / Technical Graduate';
 const OTHER_EDUCATION_OPTION = 'Other educational attainment';
 const OTHER_SCHOOL_OPTION = 'Other / School not listed';
@@ -209,6 +217,7 @@ const deriveFormFromProfile = ({ user, profile }) => {
   const isSavedCustomEducation = Boolean(savedEducation) && !isSavedVocational && !EDUCATIONAL_ATTAINMENT_OPTIONS.includes(savedEducation);
   const savedSchool = String(source.school_university || user?.school || '');
   const isSavedCustomSchool = savedSchool && !SCHOOL_OPTIONS.includes(savedSchool);
+  const savedJobTitle = String(source.job_title || user?.jobTitle || '');
 
   return {
     ...EMPTY_FORM,
@@ -217,7 +226,7 @@ const deriveFormFromProfile = ({ user, profile }) => {
     location: String(resolvedLocation),
     phoneNumber: String(resolvedPhoneNumber),
     email: String(resolvedEmail),
-    jobTitle: source.job_title || user?.jobTitle || '',
+    jobTitle: savedJobTitle,
     yearsOfExperience: source.experience_years == null ? '' : String(source.experience_years),
     skills: Array.isArray(source.skills) ? source.skills : Array.isArray(user?.skills) ? user.skills : [],
     preferredRole: source.preferred_it_role || user?.preferredRole || user?.desiredJob || '',
@@ -251,7 +260,17 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
   const [developerProfile, setDeveloperProfile] = useState(cachedDeveloperProfile);
   const [formData, setFormData] = useState(EMPTY_FORM);
 
-  const preferredRoleOptions = useMemo(() => JOB_TITLE_OPTIONS[formData.jobTitle] || [], [formData.jobTitle]);
+  const resolvedJobTitle = String(formData.jobTitle || '').trim();
+  const preferredRoleOptions = useMemo(() => {
+    const mappedOptions = JOB_TITLE_OPTIONS[resolvedJobTitle];
+    if (Array.isArray(mappedOptions) && mappedOptions.length) {
+      return mappedOptions;
+    }
+    if (resolvedJobTitle) {
+      return [resolvedJobTitle];
+    }
+    return [];
+  }, [resolvedJobTitle]);
   const cityOptions = useMemo(() => locationData.getCitiesForProvince(formData.provinceCode), [formData.provinceCode, locationData]);
   const requiresVocationalCourse = formData.educationAttainment === VOCATIONAL_EDUCATION_OPTION;
   const requiresCustomEducation = formData.educationAttainment === OTHER_EDUCATION_OPTION;
@@ -364,7 +383,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
   }, [locationData]);
 
   useEffect(() => {
-    if (!formData.jobTitle) {
+    if (!resolvedJobTitle) {
       if (formData.preferredRole) {
         setFormData((prev) => ({ ...prev, preferredRole: '' }));
       }
@@ -374,7 +393,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
     if (preferredRoleOptions.length && !preferredRoleOptions.includes(formData.preferredRole)) {
       setFormData((prev) => ({ ...prev, preferredRole: preferredRoleOptions[0] }));
     }
-  }, [formData.jobTitle, formData.preferredRole, preferredRoleOptions]);
+  }, [formData.preferredRole, preferredRoleOptions, resolvedJobTitle]);
 
   useEffect(() => {
     if (!locationData.provinceOptions.length) {
@@ -436,7 +455,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
       location: formData.location,
       phoneNumber: lockedPhoneNumber || String(formData.phoneNumber || '').trim(),
       email: lockedEmail || String(formData.email || '').trim(),
-      jobTitle: formData.jobTitle,
+      jobTitle: resolvedJobTitle,
       yearsOfExperience: formData.yearsOfExperience,
       skills: formData.skills,
       preferredRole: formData.preferredRole,
@@ -543,10 +562,10 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-3 py-2 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#eef6ee] dark:border-[#444d57] dark:bg-[#22272b] dark:text-white dark:hover:bg-[#353c44]"
+              aria-label="Go back"
+              className="inline-flex h-14 w-14 items-center justify-center rounded-xl border border-[#9caf97] bg-[#d9ddcf] text-[#344e41] transition-colors hover:bg-[#dde2d4] hover:border-[#8ea488] dark:border-[#5e8b67] dark:bg-transparent dark:text-white dark:hover:bg-[#353c44]"
             >
-              <ArrowLeft className="h-4 w-4" />
-              Back
+              <ArrowLeft className="h-5 w-5" />
             </button>
             <h1 className="mt-3 text-[28px] font-bold text-[#1c2b1f] dark:text-white">{headingTitle}</h1>
           </div>
@@ -623,6 +642,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   options={JOB_TITLES}
                   placeholder="Select a job title"
                   searchPlaceholder="Search job titles"
+                  allowCustomValue
                   className="field"
                 />
               </Field>
@@ -634,9 +654,9 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   value={formData.preferredRole}
                   onChange={(preferredRole) => setFormData((p) => ({ ...p, preferredRole }))}
                   options={preferredRoleOptions}
-                  placeholder={formData.jobTitle ? 'Select a preferred IT role' : 'Select a job title first'}
+                  placeholder={resolvedJobTitle ? 'Select a preferred IT role' : 'Select a job title first'}
                   searchPlaceholder="Search roles"
-                  disabled={!formData.jobTitle}
+                  disabled={!resolvedJobTitle}
                   className="field"
                 />
               </Field>

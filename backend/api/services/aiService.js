@@ -111,6 +111,11 @@ const buildCandidateProfilePayload = (profile) => ({
   profile_completeness: Number.isFinite(Number(profile?.profileCompleteness))
     ? Number(profile.profileCompleteness)
     : null,
+  profile_completed: typeof profile?.profileCompleted === 'boolean'
+    ? profile.profileCompleted
+    : typeof profile?.profile_completed === 'boolean'
+      ? profile.profile_completed
+      : null,
 });
 
 const buildJobPayload = (job) => ({

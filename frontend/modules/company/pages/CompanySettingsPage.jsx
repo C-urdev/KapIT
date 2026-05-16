@@ -79,10 +79,10 @@ export default function CompanySettingsPage() {
         <button
           type="button"
           onClick={() => navigate(COMPANY_PATHS.dashboard)}
-          className="mt-1 inline-flex min-h-[42px] shrink-0 items-center gap-2 rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-3 py-2 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#eef6ee] dark:border-[#444d57] dark:bg-[#22272b] dark:text-white dark:hover:bg-[#353c44]"
+          aria-label="Go back"
+          className="mt-1 inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-[#9caf97] bg-[#d9ddcf] text-[#344e41] transition-colors hover:bg-[#dde2d4] hover:border-[#8ea488] dark:border-[#5e8b67] dark:bg-transparent dark:text-white dark:hover:bg-[#353c44]"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Back
+          <ArrowLeft className="h-5 w-5" />
         </button>
 
         <div className="min-w-0 flex-1 overflow-hidden rounded-2xl border border-[#a8bc94] bg-white shadow-sm shadow-black/5 dark:border-[#3a434d] dark:bg-[#1f2429]">

@@ -103,6 +103,7 @@ const normalizeMatch = (row) => ({
   strengths: Array.isArray(row?.strengths) ? row.strengths : [],
   concerns: Array.isArray(row?.concerns) ? row.concerns : [],
   keyword_overlap: Array.isArray(row?.keyword_overlap) ? row.keyword_overlap : [],
+  data_gaps: Array.isArray(row?.data_gaps) ? row.data_gaps : [],
 });
 
 const fetchJobMatches = async ({ userId, skills, experience, candidate }) => {

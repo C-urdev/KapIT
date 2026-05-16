@@ -574,6 +574,33 @@ def _compute_profile_completeness(candidate: dict) -> int:
     return round((sum(1 for ok in checks if ok) / len(checks)) * 100)
 
 
+def _collect_profile_data_gaps(
+    *,
+    candidate: dict,
+    candidate_skill_count: int,
+    summary_token_count: int,
+    resume_token_count: int,
+) -> list[str]:
+    gaps: list[str] = []
+    if not normalize_skill(candidate.get("desired_role", "")):
+        gaps.append("Add your desired role")
+    if candidate_skill_count < 2:
+        gaps.append("Add at least 2 relevant skills")
+    if summary_token_count < 10:
+        gaps.append("Add a profile summary (at least 10 words)")
+    if resume_token_count < 12:
+        gaps.append("Add resume details (at least 12 words)")
+    if candidate.get("experience_years") is None:
+        gaps.append("Add your years of experience")
+    if not normalize_skill(candidate.get("education", "")):
+        gaps.append("Add your education background")
+    if not normalize_skill(candidate.get("certifications", "")):
+        gaps.append("Add certifications or training")
+    if not _as_text_list(candidate.get("projects")):
+        gaps.append("Add at least one project")
+    return gaps
+
+
 def compute_match(candidate: dict, job: dict) -> dict:
     candidate_text = _build_candidate_text(candidate)
     job_text = _build_job_text(job)
@@ -618,6 +645,12 @@ def compute_match(candidate: dict, job: dict) -> dict:
     })
     summary_token_count = len(tokenize(candidate.get("summary", "")))
     resume_token_count = len(tokenize(candidate.get("resume_text", "")))
+    data_gaps = _collect_profile_data_gaps(
+        candidate=candidate,
+        candidate_skill_count=candidate_skill_count,
+        summary_token_count=summary_token_count,
+        resume_token_count=resume_token_count,
+    )
     profile_evidence_signal = min(
         100,
         round(
@@ -634,12 +667,22 @@ def compute_match(candidate: dict, job: dict) -> dict:
         (min(100, round(((experience_signal + context_signal + responsibility_signal + specialization_signal) / 4) * 100)), 0.10),
     ])
     confidence_score = max(8, min(99, data_strength))
+    profile_completed = bool(candidate.get("profile_completed"))
+    if profile_completed and skill_score < 45:
+        # Completed profiles should still receive a usable baseline when role alignment
+        # is clearly related, even if explicit skills are sparse.
+        if role_relevance >= 62:
+            fit_score = max(fit_score, 50)
+        elif role_relevance >= 50:
+            fit_score = max(fit_score, 44)
+        elif role_relevance >= 42:
+            fit_score = max(fit_score, 38)
     low_profile_evidence = (
         candidate_skill_count < 2
         and summary_token_count < 8
         and resume_token_count < 12
     )
-    insufficient_data = (
+    insufficient_data = (not profile_completed) and (
         confidence_score < 35
         or (profile_completeness < 45 and low_profile_evidence and not matched_skills)
         or (profile_completeness < 30 and not matched_skills and role_score < 35)
@@ -666,7 +709,11 @@ def compute_match(candidate: dict, job: dict) -> dict:
     if role_relevance < 40 and normalize_skill(candidate.get("desired_role", "")):
         concerns.append("Role alignment is limited compared with your preferred role")
     if profile_completeness < 45:
-        concerns.append("Profile data is incomplete, so confidence is lower")
+        concerns.append(
+            "Profile data is incomplete, so confidence is lower"
+            if not profile_completed
+            else "Additional profile details can improve confidence"
+        )
 
     if insufficient_data:
         reasoning_summary = "Insufficient profile or job details for a reliable percentage. Complete your profile to improve accuracy."
@@ -707,6 +754,7 @@ def compute_match(candidate: dict, job: dict) -> dict:
         "keyword_overlap": keyword_overlap[:12],
         "reasoning_summary": reasoning_summary,
         "insufficient_data": insufficient_data,
+        "data_gaps": data_gaps,
         "score_breakdown": {
             "dimensions": {
                 "role_relevance": role_score,
