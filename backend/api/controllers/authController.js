@@ -152,6 +152,7 @@ const createJobMatchScoreMetadata = ({ match, profileSignature, jobSignature }) 
   strengths: match?.strengths || [],
   concerns: match?.concerns || [],
   keywordOverlap: match?.keyword_overlap || [],
+  dataGaps: match?.data_gaps || [],
   fitLabel: String(match?.fit_label || ''),
   confidenceScore: Number(match?.confidence_score || 0),
   confidenceLabel: String(match?.confidence_label || ''),
@@ -251,6 +252,7 @@ const loadCachedJobMatchScores = async (client, { userId, jobs, profileSignature
         concerns: Array.isArray(metadata.concerns) ? metadata.concerns : [],
         roleRelevance: Number(metadata.roleRelevance || 0),
         keywordOverlap: Array.isArray(metadata.keywordOverlap) ? metadata.keywordOverlap : [],
+        dataGaps: Array.isArray(metadata.dataGaps) ? metadata.dataGaps : [],
       },
     });
   }
@@ -1303,6 +1305,7 @@ const getJobsFeed = async (req, res) => {
     if (isAiConfigured()) {
       const profileResult = await client.query(
         `SELECT dp.user_id,
+                u.profile_completed,
                 COALESCE(dp.full_name, u.name, u.username) AS full_name,
                 COALESCE(dp.preferred_it_role, u.desired_job, dp.job_title) AS preferred_role,
                 COALESCE(dp.job_title, '') AS job_title,
@@ -1372,6 +1375,7 @@ const getJobsFeed = async (req, res) => {
         const aiResult = await matchJobsForCandidateWithBudget({
           candidate: {
             id: req.user.id,
+            profileCompleted: Boolean(profile.profile_completed),
             fullName: profile.full_name,
             preferredRole: profile.preferred_role,
             jobTitle: profile.job_title,
@@ -1425,6 +1429,7 @@ const getJobsFeed = async (req, res) => {
               concerns: match.concerns || [],
               roleRelevance: Number(match.role_relevance || 0),
               keywordOverlap: match.keyword_overlap || [],
+              dataGaps: match.data_gaps || [],
             },
           };
         });

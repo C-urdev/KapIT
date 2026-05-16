@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const CURRENT_MATCH_SCORING_VERSION = 'v8';
+const CURRENT_MATCH_SCORING_VERSION = 'v10';
 
 const normalizeMatchText = (value) => String(value || '').trim().toLowerCase();
 

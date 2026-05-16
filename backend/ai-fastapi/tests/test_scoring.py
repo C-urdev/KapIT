@@ -95,6 +95,51 @@ def test_insufficient_data_returns_neutral_fit_label():
     assert result["confidence_label"] == "Low"
 
 
+def test_profile_completed_keeps_fit_label_even_with_sparse_optional_data():
+    candidate = {
+        "id": "u-2b",
+        "name": "Known",
+        "profile_completed": True,
+        "desired_role": "",
+        "summary": "",
+        "skills": [],
+        "resume_text": "",
+        "experience_years": None,
+    }
+    job = _job(12, "Product Manager", "Coordinate product roadmap with analytics", ["roadmap", "analytics"])
+    result = compute_match(candidate, job)
+
+    assert result["insufficient_data"] is False
+    assert result["fit_label"] != "Insufficient Data"
+    assert result["confidence_label"] == "Low"
+
+
+def test_profile_completed_related_role_gets_reasonable_floor_even_with_sparse_skills():
+    candidate = {
+        "id": "u-floor-1",
+        "name": "Web Candidate",
+        "profile_completed": True,
+        "desired_role": "Web Application Developer",
+        "summary": "",
+        "resume_text": "",
+        "skills": [],
+        "experience_years": 0,
+        "education": "BS Information Technology",
+        "certifications": "",
+        "location": "Remote",
+    }
+    job = _job(
+        13,
+        "Frontend Developer",
+        "Build and improve UI using HTML, CSS, JavaScript, React, and Next.js.",
+        ["HTML", "CSS", "JavaScript", "React", "Next.js"],
+    )
+
+    result = compute_match(candidate, job)
+    assert result["fit_score"] >= 38
+    assert result["role_relevance"] >= 42
+
+
 def test_related_web_roles_still_score_higher_than_unrelated_with_sparse_profiles():
     candidate = {
         "id": "u-rjay",

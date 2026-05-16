@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Building2, ChevronDown, MapPin, Search, SlidersHorizontal, X } from 'lucide-react';
+import { Building2, ChevronDown, ChevronLeft, ChevronRight, MapPin, Search, SlidersHorizontal, X } from 'lucide-react';
 import { getJobsFeed, getSavedJobs } from '@sharedServices/authService';
 import { formatJobStatus, statusBadgeClass } from '@companyFeatures/companyUtils';
 import { useToast } from '@sharedComponents/ui/ToastProvider';
@@ -79,12 +79,6 @@ const MAX_DRAG_OFFSET_PX = 120;
 const isInteractiveTarget = (target) => (
   Boolean(target?.closest?.('button, a, input, select, textarea, [role="button"]'))
 );
-const resolveConfidenceLabel = (score) => {
-  if (score >= 70) return 'High';
-  if (score >= 45) return 'Medium';
-  return 'Low';
-};
-
 const applyStateToJob = (job, savedJobIds, jobCardStateById) => {
   const jobId = resolveJobId(job?.id);
   if (!jobId) {
@@ -587,49 +581,72 @@ export default function UserJobsPage({
             </p>
           </div>
 
-          <div
-            tabIndex={0}
-            onKeyDown={(event) => {
-              if (event.key === 'ArrowLeft') {
-                event.preventDefault();
-                animateSwipeTo(-1);
-              }
-              if (event.key === 'ArrowRight') {
-                event.preventDefault();
-                animateSwipeTo(1);
-              }
-            }}
-            onTouchStart={handleSwipeStart}
-            onTouchMove={handleSwipeMove}
-            onTouchEnd={handleSwipeEnd}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={() => {
-              pointerStartXRef.current = null;
-              mouseDraggingRef.current = false;
-              touchDraggingRef.current = false;
-              setIsDraggingCard(false);
-              resetCardPosition();
-            }}
-            className={`mx-auto w-full max-w-[700px] outline-none focus-visible:ring-2 focus-visible:ring-[#588157] rounded-2xl select-none ${isDraggingCard ? 'cursor-grabbing' : 'cursor-grab'}`}
-            aria-label="Swipe left or right to browse jobs"
-          >
-            <div
-              style={{
-                transform: `translateX(${animOffsetX + dragDeltaX}px)`,
-                opacity: animOpacity,
-                transitionProperty: 'transform, opacity',
-                transitionDuration: `${animDurationMs}ms`,
-                transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
-              }}
+          <div className="mx-auto flex w-full max-w-[980px] items-center justify-center gap-3 md:gap-6 lg:gap-10">
+            <button
+              type="button"
+              onClick={() => animateSwipeTo(-1)}
+              disabled={jobs.length <= 1}
+              aria-label="Previous job"
+              className="hidden md:inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#a3b18a] bg-[#f8fbf6] text-[#344e41] transition-colors hover:bg-[#eef6ee] disabled:cursor-not-allowed disabled:opacity-45 dark:border-[#444d57] dark:bg-[#22272b] dark:text-[#eceff2] dark:hover:bg-[#353c44]"
             >
-              <SquareJobCard
-                job={currentJob}
-                onViewCompany={handleOpenCompany}
-                onMoreInfo={handleOpenDetail}
-              />
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+
+            <div
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === 'ArrowLeft') {
+                  event.preventDefault();
+                  animateSwipeTo(-1);
+                }
+                if (event.key === 'ArrowRight') {
+                  event.preventDefault();
+                  animateSwipeTo(1);
+                }
+              }}
+              onTouchStart={handleSwipeStart}
+              onTouchMove={handleSwipeMove}
+              onTouchEnd={handleSwipeEnd}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={() => {
+                pointerStartXRef.current = null;
+                mouseDraggingRef.current = false;
+                touchDraggingRef.current = false;
+                setIsDraggingCard(false);
+                resetCardPosition();
+              }}
+              className={`w-full max-w-[700px] outline-none focus-visible:ring-2 focus-visible:ring-[#588157] rounded-2xl select-none ${isDraggingCard ? 'cursor-grabbing' : 'cursor-grab'}`}
+              aria-label="Swipe left or right to browse jobs"
+            >
+              <div
+                style={{
+                  transform: `translateX(${animOffsetX + dragDeltaX}px)`,
+                  opacity: animOpacity,
+                  transitionProperty: 'transform, opacity',
+                  transitionDuration: `${animDurationMs}ms`,
+                  transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
+                }}
+              >
+                <SquareJobCard
+                  job={currentJob}
+                  profileCompleted={Boolean(user?.profileCompleted)}
+                  onViewCompany={handleOpenCompany}
+                  onMoreInfo={handleOpenDetail}
+                />
+              </div>
             </div>
+
+            <button
+              type="button"
+              onClick={() => animateSwipeTo(1)}
+              disabled={jobs.length <= 1}
+              aria-label="Next job"
+              className="hidden md:inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#a3b18a] bg-[#f8fbf6] text-[#344e41] transition-colors hover:bg-[#eef6ee] disabled:cursor-not-allowed disabled:opacity-45 dark:border-[#444d57] dark:bg-[#22272b] dark:text-[#eceff2] dark:hover:bg-[#353c44]"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
           </div>
         </section>
       )}
@@ -661,7 +678,7 @@ export default function UserJobsPage({
   );
 }
 
-function SquareJobCard({ job, onViewCompany, onMoreInfo }) {
+function SquareJobCard({ job, profileCompleted = false, onViewCompany, onMoreInfo }) {
   if (!job) {
     return null;
   }
@@ -672,26 +689,27 @@ function SquareJobCard({ job, onViewCompany, onMoreInfo }) {
   const matchPercentage = hasServerMatchPercentage
     ? Math.max(0, Math.min(100, Math.round(rawMatchPercentage)))
     : null;
-  const rawConfidenceScore = Number(job?.matchConfidenceScore);
-  const confidenceScore = Number.isFinite(rawConfidenceScore)
-    ? Math.max(0, Math.min(100, Math.round(rawConfidenceScore)))
-    : 0;
-  const confidenceLabel = String(job?.matchConfidenceLabel || '').trim() || resolveConfidenceLabel(confidenceScore);
-  const matchSource = String(job?.matchSource || (hasServerMatchPercentage ? 'ai' : 'estimated')).trim().toLowerCase();
-  const fitPrefix = matchSource === 'ai' ? 'AI fit' : 'Estimated fit';
-  const hasInsufficientData = Boolean(job?.matchInsufficientData);
-  const hasHiddenConfidenceScore = confidenceScore < 28;
-  const showNeutralFit = !hasServerMatchPercentage || hasInsufficientData || hasHiddenConfidenceScore;
-  const neutralFitTitle = hasInsufficientData
-    ? 'Insufficient profile data'
-    : !hasServerMatchPercentage
-      ? 'Analyzing compatibility'
-      : `${fitPrefix} withheld`;
-  const neutralFitMessage = hasInsufficientData
-    ? 'Complete your profile for better match scoring.'
-    : !hasServerMatchPercentage
-      ? 'We are still calculating your match details.'
-      : 'Complete your profile to improve match confidence.';
+  const fitPrefix = 'You fit this job';
+  const isProfileCompleted = Boolean(profileCompleted);
+  const rawDataGaps = Array.isArray(job?.matchDetails?.dataGaps) ? job.matchDetails.dataGaps : [];
+  const fallbackDataGaps = !isProfileCompleted && rawDataGaps.length === 0
+    ? [
+      'Add at least 2 relevant skills',
+      'Add a profile summary (at least 10 words)',
+      'Add resume details (at least 12 words)',
+    ]
+    : [];
+  const resolvedDataGaps = rawDataGaps.length ? rawDataGaps : fallbackDataGaps;
+  const visibleDataGaps = resolvedDataGaps
+    .map((item) => String(item || '').trim())
+    .filter(Boolean);
+  const showNeutralFit = !hasServerMatchPercentage || !isProfileCompleted;
+  const neutralFitTitle = !isProfileCompleted
+    ? 'Complete profile to unlock fit %'
+    : 'Analyzing compatibility';
+  const neutralFitMessage = !isProfileCompleted
+    ? 'Finish your Developer complete profile to view job fit percentage.'
+    : 'We are still calculating your match details.';
 
   return (
     <article className="aspect-square w-full rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] p-5 shadow-sm transition-colors dark:border-[#353c44] dark:bg-[#22272b] sm:p-7">
@@ -731,6 +749,20 @@ function SquareJobCard({ job, onViewCompany, onMoreInfo }) {
                 <p className="mt-1 text-[10px] leading-tight text-[#56725e] dark:text-[#b8c5b8]">
                   {neutralFitMessage}
                 </p>
+                {!isProfileCompleted && visibleDataGaps.length ? (
+                  <div className="mt-1.5">
+                    <p className="text-[10px] font-semibold leading-tight text-[#3a5a40] dark:text-[#dce8de]">
+                      Missing info:
+                    </p>
+                    <ul className="mt-0.5 space-y-0.5 text-[10px] leading-tight text-[#56725e] dark:text-[#b8c5b8]">
+                      {visibleDataGaps.map((gap) => (
+                        <li key={gap} className="break-words">
+                          - {gap}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
               </div>
             ) : (
               <div className="flex items-center gap-2.5">
@@ -749,9 +781,6 @@ function SquareJobCard({ job, onViewCompany, onMoreInfo }) {
                 <div>
                   <p className="text-[11px] font-semibold leading-tight text-[#3a5a40] dark:text-[#e9f3ea]">
                     {fitPrefix} {matchPercentage}%
-                  </p>
-                  <p className="mt-1 text-[10px] font-medium leading-tight text-[#56725e] dark:text-[#b8c5b8]">
-                    Confidence: {confidenceLabel}
                   </p>
                 </div>
               </div>

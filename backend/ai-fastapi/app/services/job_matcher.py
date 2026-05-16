@@ -102,6 +102,7 @@ def build_job_matches(
             "strengths": score.get("strengths") or [],
             "concerns": score.get("concerns") or [],
             "keyword_overlap": score.get("keyword_overlap") or [],
+            "data_gaps": score.get("data_gaps") or [],
             "source": "ai",
             "insufficient_data": bool(score.get("insufficient_data")),
         })
