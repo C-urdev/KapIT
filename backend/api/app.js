@@ -14,7 +14,7 @@ const developerRoutes = require('./routes/developerRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const matchRoutes = require('./routes/matchRoutes');
 const { warmRuntimeSchemas } = require('./config/runtimeSchema');
-const { normalizeOrigin, isKapitPreviewOrigin, getAllowedOrigins } = require('./config/origins');
+const { normalizeOrigin, isKapitPreviewOrigin, isLoopbackOrigin, getAllowedOrigins } = require('./config/origins');
 const pool = require('./config/database');
 const {
   securityHeaders,
@@ -56,6 +56,7 @@ const getGlobalQuerySanitizerLimits = () => ({
 const createApp = () => {
   const app = express();
   const allowedOrigins = getAllowedOrigins();
+  const isProduction = String(process.env.NODE_ENV || '').trim().toLowerCase() === 'production';
   const successDataEnvelopeEnabled =
     String(process.env.SUCCESS_RESPONSE_DATA_ENVELOPE || '').toLowerCase() === 'true';
 
@@ -70,6 +71,10 @@ const createApp = () => {
         // Same-origin browser requests, server-to-server requests, and some
         // platform function invocations may omit the Origin header entirely.
         if (!normalizedOrigin) {
+          return callback(null, true);
+        }
+
+        if (!isProduction && isLoopbackOrigin(normalizedOrigin)) {
           return callback(null, true);
         }
 

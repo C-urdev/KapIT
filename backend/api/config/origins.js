@@ -10,6 +10,15 @@ const splitOrigins = (value) =>
     .map(normalizeOrigin)
     .filter(Boolean);
 
+const isLoopbackOrigin = (value) => {
+  try {
+    const parsed = new URL(normalizeOrigin(value));
+    return ['localhost', '127.0.0.1', '[::1]'].includes(String(parsed.hostname || '').toLowerCase());
+  } catch (_error) {
+    return false;
+  }
+};
+
 const getAllowedOrigins = () =>
   {
     const isProduction = String(process.env.NODE_ENV || '').trim().toLowerCase() === 'production';
@@ -35,5 +44,6 @@ const getAllowedOrigins = () =>
 module.exports = {
   normalizeOrigin,
   isKapitPreviewOrigin,
+  isLoopbackOrigin,
   getAllowedOrigins,
 };
