@@ -11,6 +11,7 @@ const { appendSearchScopeFilterClause } = require('../services/accountSearchServ
 const { logger } = require('../config/logger');
 const { normalizeSocialsText } = require('../utils/socials');
 const {
+  CURRENT_MATCH_SCORING_VERSION,
   createProfileMatchSignature,
   createJobMatchSignature,
   isMatchCacheValid,
@@ -25,6 +26,7 @@ const {
 const { serializeUser } = require('../utils/authUserSerializer');
 const { clearLoginRateLimit } = require('../middleware/security');
 const { assertLocalAuthBypassAllowed } = require('../config/localBypass');
+const { getOrCreateCompanyForUserId } = require('../services/companyService');
 const isDev = process.env.NODE_ENV !== 'production';
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
 const PASSWORD_HASHER = process.env.PASSWORD_HASHER || 'bcrypt';
@@ -48,6 +50,18 @@ const buildDevErrorMeta = (error) => (
       }
     : {}
 );
+const PRIVILEGED_EMAIL_VIEW_ROLES = new Set(['admin', 'superadmin', 'support', 'security']);
+
+const canViewUserEmail = ({ viewer, targetUserId }) => {
+  const viewerId = String(viewer?.id || '').trim();
+  const normalizedTargetId = String(targetUserId || '').trim();
+  if (viewerId && normalizedTargetId && viewerId === normalizedTargetId) {
+    return true;
+  }
+
+  const role = String(viewer?.role || viewer?.userType || viewer?.accountType || '').trim().toLowerCase();
+  return PRIVILEGED_EMAIL_VIEW_ROLES.has(role);
+};
 
 const normalizeAccountType = (raw) => {
   const value = String(raw || '').trim().toLowerCase();
@@ -132,7 +146,30 @@ const isJobVisibleForPlan = (job, plan) => {
   return (Date.now() - postedAtMs) >= FREE_JOB_FEED_DELAY_MS;
 };
 
-const upsertJobMatchScore = async (client, { userId, jobId, match, profileSignature, jobSignature }) => {
+const createJobMatchScoreMetadata = ({ match, profileSignature, jobSignature }) => ({
+  matchedSkills: match?.matched_skills || [],
+  missingSkills: match?.missing_skills || [],
+  strengths: match?.strengths || [],
+  concerns: match?.concerns || [],
+  keywordOverlap: match?.keyword_overlap || [],
+  dataGaps: match?.data_gaps || [],
+  fitLabel: String(match?.fit_label || ''),
+  confidenceScore: Number(match?.confidence_score || 0),
+  confidenceLabel: String(match?.confidence_label || ''),
+  roleRelevance: Number(match?.role_relevance || 0),
+  reasoningSummary: String(match?.reasoning_summary || ''),
+  matchSource: String(match?.source || 'ai'),
+  insufficientData: Boolean(match?.insufficient_data),
+  profileSignature: String(profileSignature || ''),
+  jobSignature: String(jobSignature || ''),
+  scoringVersion: CURRENT_MATCH_SCORING_VERSION,
+});
+
+const upsertJobMatchScores = async (client, { userId, rows }) => {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return;
+  }
+
   await client.query(
     `INSERT INTO job_match_scores (
        user_id,
@@ -142,7 +179,19 @@ const upsertJobMatchScore = async (client, { userId, jobId, match, profileSignat
        metadata,
        updated_at
      )
-     VALUES ($1, $2, $3, $4, $5::jsonb, CURRENT_TIMESTAMP)
+     SELECT
+       $1::uuid,
+       payload.job_id,
+       payload.match_percentage,
+       payload.ats_score,
+       payload.metadata,
+       CURRENT_TIMESTAMP
+     FROM jsonb_to_recordset($2::jsonb) AS payload(
+       job_id bigint,
+       match_percentage integer,
+       ats_score integer,
+       metadata jsonb
+     )
      ON CONFLICT (user_id, job_id) DO UPDATE SET
        match_percentage = EXCLUDED.match_percentage,
        ats_score = EXCLUDED.ats_score,
@@ -150,19 +199,7 @@ const upsertJobMatchScore = async (client, { userId, jobId, match, profileSignat
        updated_at = CURRENT_TIMESTAMP`,
     [
       userId,
-      jobId,
-      Number(match?.match_percentage || 0),
-      Number(match?.ats_score || 0),
-      JSON.stringify({
-        matchedSkills: match?.matched_skills || [],
-        missingSkills: match?.missing_skills || [],
-        strengths: match?.strengths || [],
-        concerns: match?.concerns || [],
-        keywordOverlap: match?.keyword_overlap || [],
-        profileSignature: String(profileSignature || ''),
-        jobSignature: String(jobSignature || ''),
-        scoringVersion: 'v2',
-      }),
+      JSON.stringify(rows),
     ]
   );
 };
@@ -201,11 +238,21 @@ const loadCachedJobMatchScores = async (client, { userId, jobs, profileSignature
     map.set(Number(row.job_id), {
       matchPercentage: Number(row.match_percentage || 0),
       atsScore: Number(row.ats_score || 0),
+      matchConfidenceScore: Number(metadata.confidenceScore || 0),
+      matchConfidenceLabel: String(metadata.confidenceLabel || ''),
+      matchFitLabel: String(metadata.fitLabel || ''),
+      matchSource: String(metadata.matchSource || 'ai'),
+      matchReasoningSummary: String(metadata.reasoningSummary || ''),
+      matchRoleRelevance: Number(metadata.roleRelevance || 0),
+      matchInsufficientData: Boolean(metadata.insufficientData),
       matchDetails: {
         matchedSkills: Array.isArray(metadata.matchedSkills) ? metadata.matchedSkills : [],
         missingSkills: Array.isArray(metadata.missingSkills) ? metadata.missingSkills : [],
         strengths: Array.isArray(metadata.strengths) ? metadata.strengths : [],
         concerns: Array.isArray(metadata.concerns) ? metadata.concerns : [],
+        roleRelevance: Number(metadata.roleRelevance || 0),
+        keywordOverlap: Array.isArray(metadata.keywordOverlap) ? metadata.keywordOverlap : [],
+        dataGaps: Array.isArray(metadata.dataGaps) ? metadata.dataGaps : [],
       },
     });
   }
@@ -328,6 +375,9 @@ const register = async (req, res) => {
     );
 
     const user = result.rows[0];
+    if (derived.accountType === 'company') {
+      await getOrCreateCompanyForUserId(client, user.id);
+    }
 
     const session = await attachSessionCookies(res, user, req);
 
@@ -567,7 +617,7 @@ const getCurrentUser = async (req, res) => {
       user: serializeUser(user),
     });
   } catch (error) {
-    logger.error('Get user error:', error);
+    logger.error({ err: error }, 'Get user error');
     res.status(500).json({ 
       success: false, 
       message: 'Server error',
@@ -719,7 +769,7 @@ const getPublicProfile = async (req, res) => {
       profile: {
         id: user.id,
         username: user.username,
-        email: user.email,
+        email: canViewUserEmail({ viewer: req.user, targetUserId: user.id }) ? user.email : '',
         type: user.user_type,
         isPremium: user.is_premium,
         profileCompleted: Boolean(user.profile_completed),
@@ -799,7 +849,7 @@ const searchUsers = async (req, res) => {
     const results = result.rows.map((row) => ({
       id: row.id,
       username: row.username,
-      email: row.email,
+      email: canViewUserEmail({ viewer: req.user, targetUserId: row.id }) ? row.email : '',
       fullName: row.name || '',
       type: row.user_type,
       companyName: row.company_name || '',
@@ -847,9 +897,21 @@ const updateMyProfile = async (req, res) => {
 
     const current = currentResult.rows[0];
     const updates = req.body || {};
+    if (Object.prototype.hasOwnProperty.call(updates, 'isPremium')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Forbidden profile field.',
+        details: [
+          {
+            path: 'isPremium',
+            code: 'field_not_writable',
+            message: 'isPremium can only be changed by verified subscription flows.',
+          },
+        ],
+      });
+    }
 
     const fieldMap = {
-      isPremium: 'is_premium',
       username: 'username',
       bio: 'bio',
       socials: 'socials',
@@ -894,10 +956,28 @@ const updateMyProfile = async (req, res) => {
     const sets = columns.map((col, idx) => `${col} = $${idx + 1}`).join(', ');
     const values = columns.map((col) => sanitized[col]);
 
-    if (sanitized.age != null && sanitized.age !== '') {
-      const age = Number(sanitized.age);
-      sanitized.age = Number.isFinite(age) ? Math.trunc(age) : null;
-      values[columns.indexOf('age')] = sanitized.age;
+    const ageIndex = columns.indexOf('age');
+    if (ageIndex >= 0) {
+      const rawAge = sanitized.age;
+      if (rawAge == null || rawAge === '') {
+        sanitized.age = null;
+      } else {
+        const age = Number(rawAge);
+        if (!Number.isFinite(age)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Age must be a valid number',
+          });
+        }
+        if (age < 0 || age > 120) {
+          return res.status(400).json({
+            success: false,
+            message: 'Age must be between 0 and 120',
+          });
+        }
+        sanitized.age = Math.trunc(age);
+      }
+      values[ageIndex] = sanitized.age;
     }
 
     const birthdayIndex = columns.indexOf('birthday');
@@ -1225,13 +1305,19 @@ const getJobsFeed = async (req, res) => {
     if (isAiConfigured()) {
       const profileResult = await client.query(
         `SELECT dp.user_id,
+                u.profile_completed,
                 COALESCE(dp.full_name, u.name, u.username) AS full_name,
                 COALESCE(dp.preferred_it_role, u.desired_job, dp.job_title) AS preferred_role,
+                COALESCE(dp.job_title, '') AS job_title,
                 COALESCE(dp.bio, u.bio, '') AS bio,
                 COALESCE(dp.resume_url, '') AS resume_url,
                 COALESCE(dp.skills, ARRAY[]::text[]) AS skills,
                 COALESCE(dp.location, u.address, '') AS location,
-                COALESCE(dp.experience_years, 0) AS experience_years
+                COALESCE(dp.experience_years, 0) AS experience_years,
+                COALESCE(dp.education, u.education, '') AS education,
+                COALESCE(dp.certifications, '') AS certifications,
+                COALESCE(dp.school_university, '') AS school_university,
+                COALESCE(dp.work_preference, '') AS work_preference
          FROM users u
          LEFT JOIN developer_profiles dp ON dp.user_id = u.id
          WHERE u.id = $1
@@ -1253,67 +1339,105 @@ const getJobsFeed = async (req, res) => {
         profileSignature,
       }).catch(() => new Map());
 
-      jobs = jobs.map((job) => {
-        const cached = cachedMatchMap.get(Number(job.id));
-        if (!cached) {
-          return job;
-        }
+        jobs = jobs.map((job) => {
+          const cached = cachedMatchMap.get(Number(job.id));
+          if (!cached) {
+            return job;
+          }
 
-        return {
-          ...job,
-          matchPercentage: cached.matchPercentage,
-          atsScore: cached.atsScore,
-          matchDetails: cached.matchDetails,
-        };
-      });
-    }
+          return {
+            ...job,
+            matchPercentage: cached.matchPercentage,
+            atsScore: cached.atsScore,
+            matchConfidenceScore: cached.matchConfidenceScore,
+            matchConfidenceLabel: cached.matchConfidenceLabel,
+            matchFitLabel: cached.matchFitLabel,
+            matchSource: cached.matchSource,
+            matchReasoningSummary: cached.matchReasoningSummary,
+            matchInsufficientData: cached.matchInsufficientData,
+            matchDetails: cached.matchDetails,
+          };
+        });
+      }
 
     if (isAiConfigured()) {
       const jobsNeedingScores = jobs.filter((job) => !cachedMatchMap.has(Number(job.id)));
       if (profile && jobsNeedingScores.length) {
+        const resumeText = [
+          String(profile.bio || '').trim(),
+          String(profile.education || '').trim(),
+          String(profile.certifications || '').trim(),
+          String(profile.school_university || '').trim(),
+        ]
+          .filter(Boolean)
+          .join('\n');
+
         const aiResult = await matchJobsForCandidateWithBudget({
           candidate: {
             id: req.user.id,
+            profileCompleted: Boolean(profile.profile_completed),
             fullName: profile.full_name,
             preferredRole: profile.preferred_role,
+            jobTitle: profile.job_title,
             bio: profile.bio,
-            resume: profile.resume_url,
+            resumeText,
             skills: profile.skills,
             location: profile.location,
+            workPreference: profile.work_preference,
             yearsOfExperience: profile.experience_years,
+            education: profile.education,
+            certifications: profile.certifications,
           },
           jobs: jobsNeedingScores,
         }).catch(() => null);
 
         const matchMap = new Map((aiResult?.matches || []).map((item) => [Number(item.job_id), item]));
-        jobs = await Promise.all(
-          jobs.map(async (job) => {
-            const match = matchMap.get(Number(job.id));
-            if (!match) {
-              return job;
-            }
+        const scoreRows = [];
+        jobs = jobs.map((job) => {
+          const match = matchMap.get(Number(job.id));
+          if (!match) {
+            return job;
+          }
 
-            await upsertJobMatchScore(client, {
-              userId: req.user.id,
-              jobId: job.id,
+          const matchPercentage = Number(match.fit_score ?? match.match_percentage ?? 0);
+          const atsScore = Number(match.ats_score || 0);
+          scoreRows.push({
+            job_id: Number(job.id),
+            match_percentage: matchPercentage,
+            ats_score: atsScore,
+            metadata: createJobMatchScoreMetadata({
               match,
               profileSignature,
               jobSignature: createJobMatchSignature(job),
-            }).catch(() => null);
+            }),
+          });
 
-            return {
-              ...job,
-              matchPercentage: Number(match.match_percentage || 0),
-              atsScore: Number(match.ats_score || 0),
-              matchDetails: {
-                matchedSkills: match.matched_skills || [],
-                missingSkills: match.missing_skills || [],
-                strengths: match.strengths || [],
-                concerns: match.concerns || [],
-              },
-            };
-          })
-        );
+          return {
+            ...job,
+            matchPercentage,
+            atsScore,
+            matchConfidenceScore: Number(match.confidence_score || 0),
+            matchConfidenceLabel: String(match.confidence_label || ''),
+            matchFitLabel: String(match.fit_label || ''),
+            matchSource: String(match.source || 'ai'),
+            matchReasoningSummary: String(match.reasoning_summary || ''),
+            matchInsufficientData: Boolean(match.insufficient_data),
+            matchDetails: {
+              matchedSkills: match.matched_skills || [],
+              missingSkills: match.missing_skills || [],
+              strengths: match.strengths || [],
+              concerns: match.concerns || [],
+              roleRelevance: Number(match.role_relevance || 0),
+              keywordOverlap: match.keyword_overlap || [],
+              dataGaps: match.data_gaps || [],
+            },
+          };
+        });
+
+        await upsertJobMatchScores(client, {
+          userId: req.user.id,
+          rows: scoreRows,
+        }).catch(() => null);
       }
     }
 
@@ -1326,7 +1450,7 @@ const getJobsFeed = async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Get jobs feed error:', error);
+    logger.error({ err: error }, 'Get jobs feed error');
     return res.json({
       success: true,
       jobs: [],
@@ -1516,7 +1640,7 @@ const getMyApplications = async (req, res) => {
 
     return res.json({ success: true, applications });
   } catch (error) {
-    logger.error('Get my applications error:', error);
+    logger.error({ err: error }, 'Get my applications error');
     return res.status(500).json({
       success: false,
       message: 'Server error while fetching your applications',

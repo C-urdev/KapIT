@@ -23,7 +23,12 @@ const markEndpointFailed = (key) => {
   endpointCooldowns.set(key, Date.now() + SERVER_COOLDOWN_MS);
 };
 
-const request = async (path, { method = 'GET', body, fallbackData } = {}) => {
+const request = async (path, {
+  method = 'GET',
+  body,
+  fallbackData,
+  headers,
+} = {}) => {
   const cooldownKey = getCooldownKey(path, method);
   if (fallbackData !== undefined && isEndpointCoolingDown(cooldownKey)) {
     return fallbackData;
@@ -33,6 +38,7 @@ const request = async (path, { method = 'GET', body, fallbackData } = {}) => {
     const response = await apiRequest(`${API_BASE}${path}`, {
       method,
       body: body == null ? undefined : JSON.stringify(body),
+      headers,
     });
     return unwrapEnvelope(response);
   } catch (error) {
@@ -48,7 +54,11 @@ export const companyAPI = {
   createDraftJob: (jobInput) => request('/jobs/draft', { method: 'POST', body: jobInput }),
   getPaymentPlans: () => request('/payments/plans'),
   getPaymentProviders: () => request('/payments/providers'),
-  createPaymentCheckoutSession: (input) => request('/payments/checkout-session', { method: 'POST', body: input }),
+  createPaymentCheckoutSession: (input, options = {}) => request('/payments/checkout-session', {
+    method: 'POST',
+    body: input,
+    headers: options.headers,
+  }),
   completeLocalBypassCheckout: (input) => request('/payments/localhost-bypass', { method: 'POST', body: input }),
   capturePayPalCheckout: (input) => request('/payments/paypal/capture', { method: 'POST', body: input }),
   cancelPaymentCheckout: (paymentId) => request(`/payments/${paymentId}/cancel`, { method: 'POST' }),

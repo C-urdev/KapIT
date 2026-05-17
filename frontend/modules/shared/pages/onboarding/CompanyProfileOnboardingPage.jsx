@@ -240,13 +240,26 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
         contactEmail: form.contactEmail,
         phoneNumber: form.phoneNumber,
       });
+    } catch (error) {
+      const status = Number(error?.status || 0);
+      const message = String(error?.message || '').trim();
+      if (status === 400) {
+        setSubmitAttempted(true);
+        toast.warning(message || 'Please fill in the required fields.');
+        return;
+      }
+      if (status === 401) {
+        toast.error('Your session expired. Please log in again.');
+        return;
+      }
+      toast.error(message || 'Unable to save your company profile right now. Please try again.');
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f2] text-[#344e41] dark:bg-[#121416] dark:text-slate-200">
+    <div className="profile-onboarding min-h-screen bg-[#f5f5f2] text-[#344e41] dark:bg-[#121416] dark:text-slate-200">
       <header className="sticky top-0 z-30 border-b border-[#a3b18a] bg-white dark:border-[#353c44] dark:bg-[#121416]">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
           <button
@@ -307,15 +320,14 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
                   />
                 </Field>
                 <Field label="Company Type" required invalid={submitAttempted && missing.industry}>
-                  <div className={submitAttempted && missing.industry ? 'rounded-xl ring-2 ring-red-500/80' : ''}>
-                    <SearchableSelect
-                      value={form.industry}
-                      onChange={(industry) => setForm((p) => ({ ...p, industry }))}
-                      options={COMPANY_TYPE_OPTIONS}
-                      placeholder="Select company type"
-                      searchPlaceholder="Search company types"
-                    />
-                  </div>
+                  <SearchableSelect
+                    value={form.industry}
+                    onChange={(industry) => setForm((p) => ({ ...p, industry }))}
+                    options={COMPANY_TYPE_OPTIONS}
+                    placeholder="Select company type"
+                    searchPlaceholder="Search company types"
+                    className={`field ${submitAttempted && missing.industry ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
+                  />
                 </Field>
                 {form.industry === OTHER_COMPANY_TYPE_OPTION ? (
                   <Field label="Other Company Type" required invalid={submitAttempted && missing.industry}>
@@ -328,15 +340,14 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
                   </Field>
                 ) : null}
                 <Field label="Company Size" required invalid={submitAttempted && missing.companySize}>
-                  <div className={submitAttempted && missing.companySize ? 'rounded-xl ring-2 ring-red-500/80' : ''}>
-                    <SearchableSelect
-                      value={form.companySize}
-                      onChange={(companySize) => setForm((p) => ({ ...p, companySize }))}
-                      options={COMPANY_SIZE_OPTIONS}
-                      placeholder="Select company size"
-                      searchPlaceholder="Search company size"
-                    />
-                  </div>
+                  <SearchableSelect
+                    value={form.companySize}
+                    onChange={(companySize) => setForm((p) => ({ ...p, companySize }))}
+                    options={COMPANY_SIZE_OPTIONS}
+                    placeholder="Select company size"
+                    searchPlaceholder="Search company size"
+                    className={`field ${submitAttempted && missing.companySize ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
+                  />
                 </Field>
               </div>
             </Section>
@@ -369,27 +380,25 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
                 {isPhilippines ? (
                   <>
                     <Field label="Province" required invalid={submitAttempted && missing.provinceCode}>
-                      <div className={submitAttempted && missing.provinceCode ? 'rounded-xl ring-2 ring-red-500/80' : ''}>
-                        <SearchableSelect
-                          value={form.provinceCode}
-                          onChange={(provinceCode) => setForm((p) => ({ ...p, provinceCode }))}
-                          options={locationData.provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
-                          placeholder="Select a province"
-                          searchPlaceholder="Search provinces"
-                        />
-                      </div>
+                      <SearchableSelect
+                        value={form.provinceCode}
+                        onChange={(provinceCode) => setForm((p) => ({ ...p, provinceCode }))}
+                        options={locationData.provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
+                        placeholder="Select a province"
+                        searchPlaceholder="Search provinces"
+                        className={`field ${submitAttempted && missing.provinceCode ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
+                      />
                     </Field>
                     <Field label="City / Municipality" required invalid={submitAttempted && missing.city}>
-                      <div className={submitAttempted && missing.city ? 'rounded-xl ring-2 ring-red-500/80' : ''}>
-                        <SearchableSelect
-                          value={form.city}
-                          onChange={(city) => setForm((p) => ({ ...p, city }))}
-                          options={cityOptions.map((city) => ({ value: city.name, label: city.name }))}
-                          placeholder={form.provinceCode ? 'Select a city or municipality' : 'Select a province first'}
-                          searchPlaceholder="Search cities"
-                          disabled={!form.provinceCode}
-                        />
-                      </div>
+                      <SearchableSelect
+                        value={form.city}
+                        onChange={(city) => setForm((p) => ({ ...p, city }))}
+                        options={cityOptions.map((city) => ({ value: city.name, label: city.name }))}
+                        placeholder={form.provinceCode ? 'Select a city or municipality' : 'Select a province first'}
+                        searchPlaceholder="Search cities"
+                        disabled={!form.provinceCode}
+                        className={`field ${submitAttempted && missing.city ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
+                      />
                     </Field>
                   </>
                 ) : (

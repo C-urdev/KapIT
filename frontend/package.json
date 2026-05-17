@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "node ../scripts/run-web.js dev",
     "build": "node ../scripts/run-web.js build",
-    "build:vercel": "next build",
+    "build:vercel": "next build && node scripts/ensureVercelRoutesManifest.cjs",
     "start": "node ../scripts/run-web.js start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
   },
@@ -12,18 +12,24 @@
     "@react-oauth/google": "^0.13.5",
     "cropperjs": "^1.6.2",
     "lucide-react": "^1.8.0",
-    "next": "^16.2.4",
+    "next": "^16.2.6",
     "phil-reg-prov-mun-brgy": "^1.1.0",
-    "react": "^19.2.5",
+    "react": "^19.2.6",
     "react-cropper": "^2.3.3",
-    "react-dom": "^19.2.5",
+    "react-dom": "^19.2.6",
     "react-easy-crop": "^5.5.7"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.20",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.6",
-    "postcss": "^8.4.49",
+    "postcss": "8.5.14",
     "tailwindcss": "^3.4.17"
+  },
+  "overrides": {
+    "postcss": "8.5.14",
+    "next": {
+      "postcss": "8.5.14"
+    }
   }
 }

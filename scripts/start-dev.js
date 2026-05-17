@@ -23,6 +23,7 @@ const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const isWindows = process.platform === 'win32';
 const quietStartup = process.env.QUIET_STARTUP !== 'false';
 const hideNextNetworkLine = process.env.HIDE_NEXT_NETWORK_LINE !== 'false';
+const FASTAPI_URL = String(process.env.FASTAPI_URL || process.env.NEXT_PUBLIC_FASTAPI_URL || '').trim();
 
 const buildChildEnv = () => ({
   ...process.env,
@@ -55,6 +56,20 @@ const runNpmScript = (prefixDir, scriptName) => {
 
 const runBackendServer = () => {
   return runNpmScript('backend', BACKEND_WATCH_ENABLED ? 'watch' : 'start');
+};
+
+const shouldStartLocalFastApi = () => {
+  if (!FASTAPI_URL) {
+    return false;
+  }
+
+  try {
+    const url = new URL(FASTAPI_URL);
+    const host = String(url.hostname || '').toLowerCase();
+    return host === '127.0.0.1' || host === 'localhost';
+  } catch {
+    return false;
+  }
 };
 
 const runPowerShell = (command) =>
@@ -194,6 +209,7 @@ let frontendStarted = false;
 let serverReadyLogged = false;
 let serverProcess = null;
 let frontendProcess = null;
+let fastApiProcess = null;
 
 const shutdown = (code = 0) => {
   if (shuttingDown) {
@@ -204,6 +220,10 @@ const shutdown = (code = 0) => {
 
   if (frontendProcess && !frontendProcess.killed) {
     frontendProcess.kill();
+  }
+
+  if (fastApiProcess && !fastApiProcess.killed) {
+    fastApiProcess.kill();
   }
 
   if (serverProcess && !serverProcess.killed) {
@@ -223,6 +243,20 @@ const startFrontend = () => {
 
   frontendProcess.on('exit', (code) => {
     shutdown(code ?? 0);
+  });
+};
+
+const startFastApi = () => {
+  if (shuttingDown || fastApiProcess || !shouldStartLocalFastApi()) {
+    return;
+  }
+
+  fastApiProcess = runNpmScript('backend', 'fastapi:dev');
+  fastApiProcess.on('exit', (code) => {
+    fastApiProcess = null;
+    if (!shuttingDown && Number(code) !== 0) {
+      console.warn('FastAPI dev process exited. Chatbot replies may fail until FastAPI is restarted.');
+    }
   });
 };
 
@@ -252,6 +286,7 @@ const bootstrap = async () => {
 
   if (healthyServerRunning && REUSE_EXISTING_BACKEND) {
     serverReadyLogged = true;
+    console.warn('REUSE_EXISTING_BACKEND=true: reusing an already-running backend process (code changes may not be picked up until restart).');
     if (!quietStartup) {
       console.log(`API ready at http://${SERVER_HOST}:${SERVER_PORT}`);
     }
@@ -286,6 +321,7 @@ const bootstrap = async () => {
   }
 
   serverProcess = runBackendServer();
+  startFastApi();
   startFrontend();
   serverProcess.on('exit', async (code) => {
     shutdown(code ?? 0);

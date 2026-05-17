@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const {
+  CURRENT_MATCH_SCORING_VERSION,
   createProfileMatchSignature,
   createJobMatchSignature,
   isMatchCacheValid,
@@ -38,10 +39,10 @@ test('job signature changes when job data changes', () => {
 test('cache validity requires matching profile and job signatures', () => {
   const profileSignature = createProfileMatchSignature({ preferred_role: 'Full Stack', skills: ['React'] });
   const jobSignature = createJobMatchSignature({ title: 'Web Developer', skills: ['React'] });
-  const metadata = { profileSignature, jobSignature };
+  const metadata = { profileSignature, jobSignature, scoringVersion: CURRENT_MATCH_SCORING_VERSION };
 
   assert.equal(isMatchCacheValid({ metadata, profileSignature, jobSignature }), true);
   assert.equal(isMatchCacheValid({ metadata, profileSignature: 'different', jobSignature }), false);
   assert.equal(isMatchCacheValid({ metadata, profileSignature, jobSignature: 'different' }), false);
+  assert.equal(isMatchCacheValid({ metadata: { profileSignature, jobSignature, scoringVersion: 'v2' }, profileSignature, jobSignature }), false);
 });
-

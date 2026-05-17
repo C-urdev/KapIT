@@ -60,6 +60,7 @@ const fastApiBase = resolveApiBase({
   devFallback: 'http://127.0.0.1:8000',
   requiredInProduction: false,
 });
+const internalFastApiToken = String(process.env.FASTAPI_INTERNAL_SERVICE_TOKEN || '').trim();
 
 export async function expressFetch(path, options = {}) {
   const response = await fetch(`${expressApiBase}${path}`, {
@@ -82,10 +83,16 @@ export async function fastApiFetch(path, options = {}) {
     throw new Error('FastAPI base URL is not configured.');
   }
 
+  const authHeaders = {};
+  if (typeof window === 'undefined' && internalFastApiToken) {
+    authHeaders['X-Internal-Service-Token'] = internalFastApiToken;
+  }
+
   const response = await fetch(`${fastApiBase}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders,
       ...(options.headers || {}),
     },
   });

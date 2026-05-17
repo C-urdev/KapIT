@@ -3,10 +3,9 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const jwt = require('jsonwebtoken');
 const request = require('supertest');
+const { ensureBaseTestEnv } = require('./testEnv.cjs');
 
-process.env.JWT_SECRET ||= 'test-jwt-secret-at-least-32-characters';
-process.env.JWT_REFRESH_SECRET ||= 'test-refresh-secret-at-least-32-chars';
-process.env.DATABASE_URL ||= 'postgres://test:test@localhost:5432/test';
+ensureBaseTestEnv();
 
 const serverRoot = path.resolve(__dirname, '..');
 
@@ -226,6 +225,20 @@ const buildCheckoutBody = (idempotencyKey) => ({
   },
   jobId: null,
   idempotencyKey,
+});
+
+test('payment E2E: checkout rejects missing idempotency key', async () => {
+  const { app } = loadAppForPaymentE2E();
+  const bearer = `Bearer ${makeCompanyToken()}`;
+
+  const response = await request(app)
+    .post('/api/company/payments/checkout-session')
+    .set('Authorization', bearer)
+    .send(buildCheckoutBody(undefined));
+
+  assert.equal(response.status, 400);
+  assert.equal(response.body.success, false);
+  assert.equal(String(response.body.error || '').toLowerCase(), 'validation error');
 });
 
 test('payment E2E: checkout idempotency and PayPal capture retry safety', async () => {

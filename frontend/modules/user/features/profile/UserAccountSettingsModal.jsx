@@ -2,14 +2,18 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Briefcase, Save, UserCircle, X } from 'lucide-react';
 import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
 import SkillTags from '@userComponents/developer/UserSkillTags';
+import ResumeUploader from '@userComponents/developer/UserResumeUploader';
 import { cleanPlaceName, loadProvinceCityData } from '@sharedUtils/philippinesLocations';
 import { developerAPI } from '@userFeatures/developer/userDeveloperAPI';
 
 const JOB_TITLE_OPTIONS = {
   'Software Engineer': ['Application Developer', 'Software Engineer', 'Software Developer', 'Programmer Analyst'],
+  'Software Developer': ['Application Developer', 'Desktop Application Developer', 'Systems Software Developer', 'Software Programmer'],
+  'Application Developer': ['Web Application Developer', 'Mobile Application Developer', 'Enterprise Application Developer', 'API Developer'],
   'Frontend Developer': ['React Developer', 'Vue Developer', 'Angular Developer', 'UI Developer'],
   'Backend Developer': ['Node.js Backend Developer', 'Java Backend Developer', 'PHP Backend Developer', 'Python Backend Developer'],
   'Full Stack Developer': ['MERN Stack Developer', 'MEAN Stack Developer', 'JavaScript Full Stack Developer', 'Web Application Developer'],
+  'Web Developer': ['Front-End Web Developer', 'Back-End Web Developer', 'Full-Stack Web Developer', 'WordPress Developer'],
   'Mobile Developer': ['Android Developer', 'iOS Developer', 'React Native Developer', 'Flutter Developer'],
   'Game Developer': ['Gameplay Programmer', 'Game Engine Developer', 'Unity Developer', 'Unreal Developer'],
   'Embedded Systems Engineer': ['Firmware Engineer', 'IoT Developer', 'Embedded Software Engineer', 'Robotics Software Engineer'],
@@ -29,6 +33,8 @@ const JOB_TITLE_OPTIONS = {
   'Data Analyst': ['Business Intelligence Analyst', 'Reporting Analyst', 'Product Analyst', 'Data Visualization Analyst'],
   'Data Scientist': ['Machine Learning Scientist', 'Applied Data Scientist', 'AI Research Engineer', 'Quantitative Analyst'],
   'Machine Learning Engineer': ['AI Engineer', 'NLP Engineer', 'Computer Vision Engineer', 'MLOps Engineer'],
+  'AI Engineer': ['Generative AI Engineer', 'LLM Engineer', 'Prompt Engineer', 'Applied AI Engineer'],
+  'MLOps Engineer': ['ML Platform Engineer', 'Model Deployment Engineer', 'ML Infrastructure Engineer', 'AI Operations Engineer'],
   'Cybersecurity Specialist': ['Security Analyst', 'SOC Analyst', 'Security Engineer', 'Penetration Tester'],
   'Security Engineer': ['Application Security Engineer', 'Cloud Security Engineer', 'Network Security Engineer', 'Identity and Access Engineer'],
   'Network Engineer': ['Network Administrator', 'Network Operations Engineer', 'Infrastructure Engineer', 'Network Security Engineer'],
@@ -38,10 +44,13 @@ const JOB_TITLE_OPTIONS = {
   'ERP/CRM Developer': ['SAP Developer', 'Salesforce Developer', 'Dynamics 365 Developer', 'Oracle ERP Developer'],
   'Blockchain Developer': ['Smart Contract Developer', 'Web3 Developer', 'Blockchain Engineer', 'DApp Developer'],
   'AR/VR Developer': ['XR Developer', 'AR Engineer', 'VR Engineer', 'Spatial Computing Developer'],
+  'Tech Lead': ['Frontend Tech Lead', 'Backend Tech Lead', 'Full Stack Tech Lead', 'Software Development Lead'],
+  'Engineering Manager': ['Software Engineering Manager', 'Development Manager', 'Platform Engineering Manager', 'Technical Manager'],
   'IT Consultant': ['Technology Consultant', 'Digital Transformation Consultant', 'Solution Consultant', 'Implementation Consultant'],
 };
-
-const JOB_TITLES = Object.keys(JOB_TITLE_OPTIONS);
+const OTHER_JOB_TITLE_OPTION = 'Other';
+const BASE_JOB_TITLES = Object.keys(JOB_TITLE_OPTIONS);
+const JOB_TITLES = [...BASE_JOB_TITLES, OTHER_JOB_TITLE_OPTION];
 const VOCATIONAL_EDUCATION_OPTION = 'Vocational / Technical Graduate';
 const OTHER_EDUCATION_OPTION = 'Other educational attainment';
 const OTHER_SCHOOL_OPTION = 'Other / School not listed';
@@ -128,6 +137,7 @@ const EMPTY_FORM = {
   resume: '',
 };
 const PROFILE_CACHE_KEY = 'kapit_user_developer_profile';
+const DEBUG_PROFILE_SYNC = process.env.NEXT_PUBLIC_DEBUG_PROFILE_SYNC === 'true';
 
 const parseLocation = (rawLocation, provinceOptions, provinceCodeByLabel, getCitiesForProvince) => {
   const normalized = String(rawLocation || '')
@@ -187,23 +197,36 @@ const writeProfileCache = (profile) => {
   }
 };
 
+const logProfileSync = (label, payload) => {
+  if (!DEBUG_PROFILE_SYNC || typeof window === 'undefined') {
+    return;
+  }
+  void label;
+  void payload;
+};
+
 const deriveFormFromProfile = ({ user, profile }) => {
   const source = profile || {};
+  const resolvedFullName = source.full_name || user?.fullName || user?.name || '';
+  const resolvedLocation = source.location || user?.location || user?.address || '';
+  const resolvedPhoneNumber = source.phone_number || user?.phoneNumber || user?.phone || '';
+  const resolvedEmail = source.email || user?.email || '';
   const savedEducation = String(source.education || user?.education || '');
   const isSavedVocational = savedEducation.toLowerCase().startsWith(VOCATIONAL_EDUCATION_OPTION.toLowerCase());
   const savedVocationalCourse = isSavedVocational ? savedEducation.slice(VOCATIONAL_EDUCATION_OPTION.length).replace(/^\s*[-:]\s*/, '').trim() : '';
   const isSavedCustomEducation = Boolean(savedEducation) && !isSavedVocational && !EDUCATIONAL_ATTAINMENT_OPTIONS.includes(savedEducation);
   const savedSchool = String(source.school_university || user?.school || '');
   const isSavedCustomSchool = savedSchool && !SCHOOL_OPTIONS.includes(savedSchool);
+  const savedJobTitle = String(source.job_title || user?.jobTitle || '');
 
   return {
     ...EMPTY_FORM,
     profileImage: source.profile_photo_url || user?.profileImage || '',
-    fullName: source.full_name || user?.fullName || user?.name || '',
-    location: String(source.location || user?.location || user?.address || ''),
-    phoneNumber: source.phone_number || user?.phoneNumber || user?.phone || '',
-    email: source.email || user?.email || '',
-    jobTitle: source.job_title || user?.jobTitle || '',
+    fullName: String(resolvedFullName),
+    location: String(resolvedLocation),
+    phoneNumber: String(resolvedPhoneNumber),
+    email: String(resolvedEmail),
+    jobTitle: savedJobTitle,
     yearsOfExperience: source.experience_years == null ? '' : String(source.experience_years),
     skills: Array.isArray(source.skills) ? source.skills : Array.isArray(user?.skills) ? user.skills : [],
     preferredRole: source.preferred_it_role || user?.preferredRole || user?.desiredJob || '',
@@ -237,7 +260,17 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
   const [developerProfile, setDeveloperProfile] = useState(cachedDeveloperProfile);
   const [formData, setFormData] = useState(EMPTY_FORM);
 
-  const preferredRoleOptions = useMemo(() => JOB_TITLE_OPTIONS[formData.jobTitle] || [], [formData.jobTitle]);
+  const resolvedJobTitle = String(formData.jobTitle || '').trim();
+  const preferredRoleOptions = useMemo(() => {
+    const mappedOptions = JOB_TITLE_OPTIONS[resolvedJobTitle];
+    if (Array.isArray(mappedOptions) && mappedOptions.length) {
+      return mappedOptions;
+    }
+    if (resolvedJobTitle) {
+      return [resolvedJobTitle];
+    }
+    return [];
+  }, [resolvedJobTitle]);
   const cityOptions = useMemo(() => locationData.getCitiesForProvince(formData.provinceCode), [formData.provinceCode, locationData]);
   const requiresVocationalCourse = formData.educationAttainment === VOCATIONAL_EDUCATION_OPTION;
   const requiresCustomEducation = formData.educationAttainment === OTHER_EDUCATION_OPTION;
@@ -248,13 +281,19 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
   const headingSubtitle =
     mode === 'career'
       ? 'Update your role, skills, education, socials, and work preference.'
-      : 'Update your name, location, and contact details.';
+      : 'Review your account location and contact details.';
 
   useEffect(() => {
     if (!isOpen) return;
     setError('');
-    setFormData(deriveFormFromProfile({ user, profile: developerProfile }));
-  }, [isOpen, user, mode]);
+    const nextForm = deriveFormFromProfile({ user, profile: developerProfile });
+    setFormData(nextForm);
+    logProfileSync('settings-form-init', {
+      mode,
+      profileLoaded: Boolean(developerProfile),
+      form: nextForm,
+    });
+  }, [isOpen, user, mode, developerProfile]);
 
   useEffect(() => {
     let cancelled = false;
@@ -268,16 +307,32 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
 
       try {
         const data = await developerAPI.getMyProfile();
-        const nextProfile = data?.profile || null;
-        writeProfileCache(nextProfile);
+        const responseProfile = data?.profile;
+        const hasServerProfile = Boolean(responseProfile && typeof responseProfile === 'object');
+        const nextProfile = hasServerProfile
+          ? responseProfile
+          : (developerProfile || cachedDeveloperProfile || null);
+        logProfileSync('settings-fetch-profile-response', {
+          profile: hasServerProfile ? responseProfile : null,
+          warning: data?.warning || '',
+          usingFallback: !hasServerProfile,
+        });
+        if (hasServerProfile) {
+          writeProfileCache(nextProfile);
+        }
         if (cancelled) return;
         setDeveloperProfile(nextProfile);
-        setFormData(deriveFormFromProfile({ user, profile: nextProfile }));
+        const nextForm = deriveFormFromProfile({ user, profile: nextProfile });
+        setFormData(nextForm);
+        logProfileSync('settings-form-after-fetch', nextForm);
       } catch {
         if (cancelled) return;
         const fallback = cachedDeveloperProfile || null;
+        logProfileSync('settings-fetch-profile-fallback', fallback);
         setDeveloperProfile(fallback);
-        setFormData(deriveFormFromProfile({ user, profile: fallback }));
+        const nextForm = deriveFormFromProfile({ user, profile: fallback });
+        setFormData(nextForm);
+        logProfileSync('settings-form-after-fallback', nextForm);
       } finally {
         if (!cancelled) {
           setProfileLoading(false);
@@ -290,7 +345,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
     return () => {
       cancelled = true;
     };
-  }, [isOpen, user?.type]);
+  }, [isOpen, user?.type, user?.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -328,7 +383,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
   }, [locationData]);
 
   useEffect(() => {
-    if (!formData.jobTitle) {
+    if (!resolvedJobTitle) {
       if (formData.preferredRole) {
         setFormData((prev) => ({ ...prev, preferredRole: '' }));
       }
@@ -338,12 +393,21 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
     if (preferredRoleOptions.length && !preferredRoleOptions.includes(formData.preferredRole)) {
       setFormData((prev) => ({ ...prev, preferredRole: preferredRoleOptions[0] }));
     }
-  }, [formData.jobTitle, formData.preferredRole, preferredRoleOptions]);
+  }, [formData.preferredRole, preferredRoleOptions, resolvedJobTitle]);
 
   useEffect(() => {
+    if (!locationData.provinceOptions.length) {
+      return;
+    }
+
     setFormData((prev) => {
+      if (!prev.provinceCode) {
+        return prev;
+      }
+
       const nextCities = locationData.getCitiesForProvince(prev.provinceCode);
-      const hasCity = nextCities.some((option) => option.name === prev.city);
+      const normalizedPrevCity = cleanPlaceName(prev.city || '').toLowerCase();
+      const hasCity = nextCities.some((option) => cleanPlaceName(option.name || '').toLowerCase() === normalizedPrevCity);
       const nextCity = hasCity ? prev.city : '';
       return {
         ...prev,
@@ -354,11 +418,22 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
   }, [formData.provinceCode, locationData]);
 
   useEffect(() => {
+    if (!locationData.provinceOptions.length) {
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
-      location: formatLocation(prev.city, prev.provinceCode, locationData.provinceLabelByCode),
+      ...(prev.provinceCode
+        ? { location: formatLocation(prev.city, prev.provinceCode, locationData.provinceLabelByCode) }
+        : {}),
     }));
   }, [formData.city, locationData]);
+
+  const isIdentityLocked = true;
+  const lockedFullName = String(user?.fullName || user?.name || formData.fullName || '').trim();
+  const lockedPhoneNumber = String(user?.phoneNumber || user?.phone || formData.phoneNumber || '').trim();
+  const lockedEmail = String(user?.email || formData.email || '').trim();
 
   if (!isOpen) return null;
 
@@ -375,12 +450,12 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
 
     const payload = {
       profileImage: formData.profileImage,
-      fullName: formData.fullName,
-      username: String(formData.fullName || '').trim(),
+      fullName: lockedFullName || String(formData.fullName || '').trim(),
+      username: String((lockedFullName || formData.fullName || '').trim()),
       location: formData.location,
-      phoneNumber: formData.phoneNumber,
-      email: formData.email,
-      jobTitle: formData.jobTitle,
+      phoneNumber: lockedPhoneNumber || String(formData.phoneNumber || '').trim(),
+      email: lockedEmail || String(formData.email || '').trim(),
+      jobTitle: resolvedJobTitle,
       yearsOfExperience: formData.yearsOfExperience,
       skills: formData.skills,
       preferredRole: formData.preferredRole,
@@ -397,10 +472,25 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
     };
 
     try {
+      logProfileSync('settings-save-payload', payload);
       const response = await developerAPI.saveProfile(payload);
+      logProfileSync('settings-save-response', response);
+      let persistedProfile = response?.profile && typeof response.profile === 'object' ? response.profile : null;
+      if (!persistedProfile) {
+        try {
+          const refreshed = await developerAPI.getMyProfile();
+          persistedProfile = refreshed?.profile && typeof refreshed.profile === 'object' ? refreshed.profile : null;
+          logProfileSync('settings-save-profile-refetch', {
+            profile: persistedProfile,
+            warning: refreshed?.warning || '',
+          });
+        } catch {
+          logProfileSync('settings-save-profile-refetch-failed', null);
+        }
+      }
       const nextUser = {
         ...(response?.user || {}),
-        profileImage: payload.profileImage,
+        profileImage: response?.user?.profileImage || payload.profileImage,
         fullName: payload.fullName,
         name: payload.fullName,
         username: payload.username,
@@ -427,6 +517,34 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
         resume: payload.resume,
         profileCompleted: true,
       };
+      const nextDeveloperProfile = {
+        ...(developerProfile || {}),
+        ...(persistedProfile || {}),
+        full_name: payload.fullName,
+        username: payload.username,
+        location: payload.location,
+        phone_number: payload.phoneNumber,
+        email: payload.email,
+        job_title: payload.jobTitle,
+        experience_years: payload.yearsOfExperience === '' ? null : Number(payload.yearsOfExperience),
+        skills: Array.isArray(payload.skills) ? payload.skills : [],
+        preferred_it_role: payload.preferredRole,
+        education: educationAttainment,
+        bio: payload.aboutMe,
+        github_link: payload.github || null,
+        portfolio_link: payload.portfolioWebsite || null,
+        linkedin_link: payload.linkedin || null,
+        other_links: payload.otherLinks || null,
+        work_preference: payload.workPreference || null,
+        certifications: payload.certifications || null,
+        school_university: school || null,
+        resume_url: payload.resume || null,
+        profile_photo_url: persistedProfile?.profile_photo_url || payload.profileImage || null,
+      };
+      setDeveloperProfile(nextDeveloperProfile);
+      writeProfileCache(nextDeveloperProfile);
+      setFormData(deriveFormFromProfile({ user: nextUser, profile: nextDeveloperProfile }));
+      logProfileSync('settings-form-after-save', nextDeveloperProfile);
       onSave?.(nextUser);
       onClose?.();
     } catch (saveError) {
@@ -444,10 +562,10 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-3 py-2 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#eef6ee] dark:border-[#444d57] dark:bg-[#22272b] dark:text-white dark:hover:bg-[#353c44]"
+              aria-label="Go back"
+              className="inline-flex h-14 w-14 items-center justify-center rounded-xl border border-[#9caf97] bg-[#d9ddcf] text-[#344e41] transition-colors hover:bg-[#dde2d4] hover:border-[#8ea488] dark:border-[#5e8b67] dark:bg-transparent dark:text-white dark:hover:bg-[#353c44]"
             >
-              <ArrowLeft className="h-4 w-4" />
-              Back
+              <ArrowLeft className="h-5 w-5" />
             </button>
             <h1 className="mt-3 text-[28px] font-bold text-[#1c2b1f] dark:text-white">{headingTitle}</h1>
           </div>
@@ -471,7 +589,12 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
           <SettingsCard title="Account" icon={UserCircle} plain={asPage}>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Field label="Full Name">
-                <input value={formData.fullName} onChange={(e) => setFormData((p) => ({ ...p, fullName: e.target.value }))} className="field" />
+                <input
+                  value={formData.fullName}
+                  onChange={(e) => setFormData((p) => ({ ...p, fullName: e.target.value }))}
+                  readOnly={isIdentityLocked}
+                  className={`field ${isIdentityLocked ? 'bg-[#edf3e8] dark:bg-[#2f343b]' : ''}`}
+                />
               </Field>
               <Field label="Province">
                 <SearchableSelect
@@ -495,7 +618,12 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                 />
               </Field>
               <Field label="Phone Number">
-                <input value={formData.phoneNumber} onChange={(e) => setFormData((p) => ({ ...p, phoneNumber: e.target.value }))} className="field" />
+                <input
+                  value={formData.phoneNumber}
+                  onChange={(e) => setFormData((p) => ({ ...p, phoneNumber: e.target.value }))}
+                  readOnly={isIdentityLocked}
+                  className={`field ${isIdentityLocked ? 'bg-[#edf3e8] dark:bg-[#2f343b]' : ''}`}
+                />
               </Field>
               <Field label="Email">
                 <input value={formData.email} readOnly className="field bg-[#edf3e8] dark:bg-[#2f343b]" />
@@ -514,6 +642,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   options={JOB_TITLES}
                   placeholder="Select a job title"
                   searchPlaceholder="Search job titles"
+                  allowCustomValue
                   className="field"
                 />
               </Field>
@@ -525,9 +654,9 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   value={formData.preferredRole}
                   onChange={(preferredRole) => setFormData((p) => ({ ...p, preferredRole }))}
                   options={preferredRoleOptions}
-                  placeholder={formData.jobTitle ? 'Select a preferred IT role' : 'Select a job title first'}
+                  placeholder={resolvedJobTitle ? 'Select a preferred IT role' : 'Select a job title first'}
                   searchPlaceholder="Search roles"
-                  disabled={!formData.jobTitle}
+                  disabled={!resolvedJobTitle}
                   className="field"
                 />
               </Field>
@@ -629,6 +758,28 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   </button>
                 );
               })}
+            </div>
+          </SettingsCard>
+          ) : null}
+
+          {showCareerSections ? (
+          <SettingsCard title="About and Resume" icon={UserCircle} plain={asPage}>
+            <div className="grid grid-cols-1 gap-4">
+              <Field label="About Me">
+                <textarea
+                  value={formData.aboutMe}
+                  onChange={(e) => setFormData((p) => ({ ...p, aboutMe: e.target.value }))}
+                  className="field min-h-24"
+                  placeholder="Tell employers about your experience and strengths."
+                />
+              </Field>
+              <Field label="Resume">
+                <ResumeUploader
+                  value={formData.resume}
+                  onChange={(resume) => setFormData((p) => ({ ...p, resume }))}
+                  onUpload={(file) => developerAPI.uploadResume(file)}
+                />
+              </Field>
             </div>
           </SettingsCard>
           ) : null}

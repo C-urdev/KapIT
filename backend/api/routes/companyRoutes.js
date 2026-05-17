@@ -25,6 +25,7 @@ const {
   completeLocalBypassCheckout,
 } = require('../controllers/companyPaymentController');
 const { validateRequest } = require('../middleware/validateRequest');
+const { hydrateIdempotencyKeyFromHeader } = require('../middleware/idempotencyKey');
 const { writeSchemas } = require('../validation/writeSchemas');
 const { isLocalPaymentBypassEnabled } = require('../config/localBypass');
 
@@ -43,7 +44,13 @@ router.get('/profile', getCompanyProfile);
 router.post('/jobs/draft', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyDraftJob), createDraftJob);
 router.get('/payments/plans', listJobPostingPlans);
 router.get('/payments/providers', listPaymentProviders);
-router.post('/payments/checkout-session', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyCheckoutSession), createCheckoutSession);
+router.post(
+  '/payments/checkout-session',
+  requireCsrfForCookieAuth,
+  hydrateIdempotencyKeyFromHeader,
+  validateRequest(writeSchemas.companyCheckoutSession),
+  createCheckoutSession
+);
 if (isLocalPaymentBypassEnabled()) {
   router.post('/payments/localhost-bypass', requireCsrfForCookieAuth, validateRequest(writeSchemas.companyLocalBypass), completeLocalBypassCheckout);
 }

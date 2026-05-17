@@ -6,7 +6,6 @@ import { ToastProvider } from '@sharedComponents/ui/ToastProvider';
 import SessionGate from './SessionGate';
 
 const PROFILE_PATCH_FIELDS = new Set([
-  'isPremium',
   'username',
   'bio',
   'socials',
@@ -36,7 +35,8 @@ export default function UserDashboardClient() {
             userType={user?.type}
             onOpenHelp={null}
             onLogout={handleLogout}
-            onUpdateUser={async (updates) => {
+            onUpdateUser={async (updates, options = {}) => {
+              const persistProfile = options?.persist !== false;
               const nextUpdates = updates && typeof updates === 'object' ? updates : {};
               const persistedUpdates = {};
               const localOnlyUpdates = {};
@@ -49,16 +49,9 @@ export default function UserDashboardClient() {
                 }
               }
 
-              if (
-                Object.keys(persistedUpdates).length === 1 &&
-                Object.prototype.hasOwnProperty.call(persistedUpdates, 'isPremium')
-              ) {
-                return updateUser({ isPremium: Boolean(persistedUpdates.isPremium), ...localOnlyUpdates });
-              }
-
               const hasPersistedUpdates = Object.keys(persistedUpdates).length > 0;
-              if (!hasPersistedUpdates) {
-                return updateUser(localOnlyUpdates);
+              if (!persistProfile || !hasPersistedUpdates) {
+                return updateUser(nextUpdates);
               }
 
               const data = await updateMyProfile(persistedUpdates);

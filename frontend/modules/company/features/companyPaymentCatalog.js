@@ -1,4 +1,4 @@
-import { BadgeDollarSign } from 'lucide-react';
+﻿import { BadgeDollarSign } from 'lucide-react';
 
 export const PLAN_FEATURES = [
   'Verified payment before publishing',

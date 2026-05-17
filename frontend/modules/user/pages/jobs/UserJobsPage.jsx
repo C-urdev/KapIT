@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Building2, ChevronDown, MapPin, Search, SlidersHorizontal, X } from 'lucide-react';
+import { Building2, ChevronDown, ChevronLeft, ChevronRight, MapPin, Search, SlidersHorizontal, X } from 'lucide-react';
 import { getJobsFeed, getSavedJobs } from '@sharedServices/authService';
 import { formatJobStatus, statusBadgeClass } from '@companyFeatures/companyUtils';
 import { useToast } from '@sharedComponents/ui/ToastProvider';
@@ -79,92 +79,6 @@ const MAX_DRAG_OFFSET_PX = 120;
 const isInteractiveTarget = (target) => (
   Boolean(target?.closest?.('button, a, input, select, textarea, [role="button"]'))
 );
-const toWordTokens = (value) => (
-  String(value || '')
-    .toLowerCase()
-    .split(/[^a-z0-9+#.]+/g)
-    .map((part) => part.trim())
-    .filter((part) => part.length >= 2)
-);
-const pushTokens = (bucket, value) => {
-  toWordTokens(value).forEach((token) => bucket.add(token));
-};
-const buildUserTokenSet = (user) => {
-  const tokens = new Set();
-  if (!user || typeof user !== 'object') {
-    return tokens;
-  }
-
-  [
-    user?.desiredJob,
-    user?.desired_job,
-    user?.jobTitle,
-    user?.preferredRole,
-    user?.bio,
-    user?.headline,
-    user?.skills,
-    user?.stack,
-  ].forEach((field) => {
-    if (Array.isArray(field)) {
-      field.forEach((item) => pushTokens(tokens, item));
-      return;
-    }
-    pushTokens(tokens, field);
-  });
-
-  return tokens;
-};
-const estimateMatchPercentage = (job, user) => {
-  const userTokens = buildUserTokenSet(user);
-  const jobTokens = new Set();
-
-  [
-    job?.title,
-    job?.description,
-    job?.type,
-    job?.experienceLevel,
-    job?.location,
-    Array.isArray(job?.skills) ? job.skills : [],
-  ].forEach((field) => {
-    if (Array.isArray(field)) {
-      field.forEach((item) => pushTokens(jobTokens, item));
-      return;
-    }
-    pushTokens(jobTokens, field);
-  });
-
-  if (!jobTokens.size) {
-    return 18;
-  }
-
-  if (!userTokens.size) {
-    return 22;
-  }
-
-  let overlapCount = 0;
-  userTokens.forEach((token) => {
-    if (jobTokens.has(token)) {
-      overlapCount += 1;
-    }
-  });
-
-  const overlapRatio = overlapCount / Math.max(1, Math.min(userTokens.size, 24));
-  const desiredRoleTokens = new Set(toWordTokens(user?.preferredRole || user?.desiredJob || user?.desired_job || user?.jobTitle));
-  const titleTokens = new Set(toWordTokens(job?.title));
-  let roleOverlap = 0;
-  desiredRoleTokens.forEach((token) => {
-    if (titleTokens.has(token)) {
-      roleOverlap += 1;
-    }
-  });
-  const roleBonus = desiredRoleTokens.size
-    ? Math.min(18, Math.round((roleOverlap / desiredRoleTokens.size) * 18))
-    : 0;
-
-  const score = 22 + (overlapRatio * 56) + roleBonus;
-  return Math.max(10, Math.min(96, Math.round(score)));
-};
-
 const applyStateToJob = (job, savedJobIds, jobCardStateById) => {
   const jobId = resolveJobId(job?.id);
   if (!jobId) {
@@ -667,50 +581,72 @@ export default function UserJobsPage({
             </p>
           </div>
 
-          <div
-            tabIndex={0}
-            onKeyDown={(event) => {
-              if (event.key === 'ArrowLeft') {
-                event.preventDefault();
-                animateSwipeTo(-1);
-              }
-              if (event.key === 'ArrowRight') {
-                event.preventDefault();
-                animateSwipeTo(1);
-              }
-            }}
-            onTouchStart={handleSwipeStart}
-            onTouchMove={handleSwipeMove}
-            onTouchEnd={handleSwipeEnd}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={() => {
-              pointerStartXRef.current = null;
-              mouseDraggingRef.current = false;
-              touchDraggingRef.current = false;
-              setIsDraggingCard(false);
-              resetCardPosition();
-            }}
-            className={`mx-auto w-full max-w-[700px] outline-none focus-visible:ring-2 focus-visible:ring-[#588157] rounded-2xl select-none ${isDraggingCard ? 'cursor-grabbing' : 'cursor-grab'}`}
-            aria-label="Swipe left or right to browse jobs"
-          >
-            <div
-              style={{
-                transform: `translateX(${animOffsetX + dragDeltaX}px)`,
-                opacity: animOpacity,
-                transitionProperty: 'transform, opacity',
-                transitionDuration: `${animDurationMs}ms`,
-                transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
-              }}
+          <div className="mx-auto flex w-full max-w-[980px] items-center justify-center gap-3 md:gap-6 lg:gap-10">
+            <button
+              type="button"
+              onClick={() => animateSwipeTo(-1)}
+              disabled={jobs.length <= 1}
+              aria-label="Previous job"
+              className="hidden md:inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#a3b18a] bg-[#f8fbf6] text-[#344e41] transition-colors hover:bg-[#eef6ee] disabled:cursor-not-allowed disabled:opacity-45 dark:border-[#444d57] dark:bg-[#22272b] dark:text-[#eceff2] dark:hover:bg-[#353c44]"
             >
-              <SquareJobCard
-                job={currentJob}
-                user={user}
-                onViewCompany={handleOpenCompany}
-                onMoreInfo={handleOpenDetail}
-              />
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+
+            <div
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === 'ArrowLeft') {
+                  event.preventDefault();
+                  animateSwipeTo(-1);
+                }
+                if (event.key === 'ArrowRight') {
+                  event.preventDefault();
+                  animateSwipeTo(1);
+                }
+              }}
+              onTouchStart={handleSwipeStart}
+              onTouchMove={handleSwipeMove}
+              onTouchEnd={handleSwipeEnd}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={() => {
+                pointerStartXRef.current = null;
+                mouseDraggingRef.current = false;
+                touchDraggingRef.current = false;
+                setIsDraggingCard(false);
+                resetCardPosition();
+              }}
+              className={`w-full max-w-[700px] outline-none focus-visible:ring-2 focus-visible:ring-[#588157] rounded-2xl select-none ${isDraggingCard ? 'cursor-grabbing' : 'cursor-grab'}`}
+              aria-label="Swipe left or right to browse jobs"
+            >
+              <div
+                style={{
+                  transform: `translateX(${animOffsetX + dragDeltaX}px)`,
+                  opacity: animOpacity,
+                  transitionProperty: 'transform, opacity',
+                  transitionDuration: `${animDurationMs}ms`,
+                  transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
+                }}
+              >
+                <SquareJobCard
+                  job={currentJob}
+                  profileCompleted={Boolean(user?.profileCompleted)}
+                  onViewCompany={handleOpenCompany}
+                  onMoreInfo={handleOpenDetail}
+                />
+              </div>
             </div>
+
+            <button
+              type="button"
+              onClick={() => animateSwipeTo(1)}
+              disabled={jobs.length <= 1}
+              aria-label="Next job"
+              className="hidden md:inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#a3b18a] bg-[#f8fbf6] text-[#344e41] transition-colors hover:bg-[#eef6ee] disabled:cursor-not-allowed disabled:opacity-45 dark:border-[#444d57] dark:bg-[#22272b] dark:text-[#eceff2] dark:hover:bg-[#353c44]"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
           </div>
         </section>
       )}
@@ -742,19 +678,38 @@ export default function UserJobsPage({
   );
 }
 
-function SquareJobCard({ job, user, onViewCompany, onMoreInfo }) {
+function SquareJobCard({ job, profileCompleted = false, onViewCompany, onMoreInfo }) {
   if (!job) {
     return null;
   }
 
   const status = String(job?.status || 'open').toLowerCase();
   const rawMatchPercentage = Number(job?.matchPercentage);
-  const hasServerMatchPercentage = Number.isFinite(rawMatchPercentage);
-  const matchPercentage = Number.isFinite(rawMatchPercentage)
+  const hasServerMatchPercentage = Number.isFinite(rawMatchPercentage) && rawMatchPercentage >= 0;
+  const matchPercentage = hasServerMatchPercentage
     ? Math.max(0, Math.min(100, Math.round(rawMatchPercentage)))
-    : estimateMatchPercentage(job, user);
-  const hasMatchPercentage = Number.isFinite(matchPercentage);
-  const fitLabel = hasServerMatchPercentage ? 'AI fit' : 'Estimated fit';
+    : null;
+  const fitPrefix = 'You fit this job';
+  const isProfileCompleted = Boolean(profileCompleted);
+  const rawDataGaps = Array.isArray(job?.matchDetails?.dataGaps) ? job.matchDetails.dataGaps : [];
+  const fallbackDataGaps = !isProfileCompleted && rawDataGaps.length === 0
+    ? [
+      'Add at least 2 relevant skills',
+      'Add a profile summary (at least 10 words)',
+      'Add resume details (at least 12 words)',
+    ]
+    : [];
+  const resolvedDataGaps = rawDataGaps.length ? rawDataGaps : fallbackDataGaps;
+  const visibleDataGaps = resolvedDataGaps
+    .map((item) => String(item || '').trim())
+    .filter(Boolean);
+  const showNeutralFit = !hasServerMatchPercentage || !isProfileCompleted;
+  const neutralFitTitle = !isProfileCompleted
+    ? 'Complete profile to unlock fit %'
+    : 'Analyzing compatibility';
+  const neutralFitMessage = !isProfileCompleted
+    ? 'Finish your Developer complete profile to view job fit percentage.'
+    : 'We are still calculating your match details.';
 
   return (
     <article className="aspect-square w-full rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] p-5 shadow-sm transition-colors dark:border-[#353c44] dark:bg-[#22272b] sm:p-7">
@@ -785,27 +740,52 @@ function SquareJobCard({ job, user, onViewCompany, onMoreInfo }) {
             </div>
           </div>
 
-          {hasMatchPercentage ? (
-            <div className="shrink-0 rounded-xl border border-[#c8d5b9] bg-[#eef6ee] px-2.5 py-2 dark:border-[#4b5a4e] dark:bg-[#2a2f35]">
+          <div className="shrink-0 rounded-xl border border-[#c8d5b9] bg-[#eef6ee] px-2.5 py-2 dark:border-[#4b5a4e] dark:bg-[#2a2f35]">
+            {showNeutralFit ? (
+              <div className="w-[172px]">
+                <p className="text-[11px] font-semibold leading-tight text-[#3a5a40] dark:text-[#e9f3ea]">
+                  {neutralFitTitle}
+                </p>
+                <p className="mt-1 text-[10px] leading-tight text-[#56725e] dark:text-[#b8c5b8]">
+                  {neutralFitMessage}
+                </p>
+                {!isProfileCompleted && visibleDataGaps.length ? (
+                  <div className="mt-1.5">
+                    <p className="text-[10px] font-semibold leading-tight text-[#3a5a40] dark:text-[#dce8de]">
+                      Missing info:
+                    </p>
+                    <ul className="mt-0.5 space-y-0.5 text-[10px] leading-tight text-[#56725e] dark:text-[#b8c5b8]">
+                      {visibleDataGaps.map((gap) => (
+                        <li key={gap} className="break-words">
+                          - {gap}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            ) : (
               <div className="flex items-center gap-2.5">
                 <div
                   className="relative grid h-11 w-11 place-items-center rounded-full"
                   style={{
                     background: `conic-gradient(#3a5a40 ${matchPercentage}%, #d7e2ce ${matchPercentage}% 100%)`,
                   }}
-                  aria-label={`${matchPercentage}% ${fitLabel.toLowerCase()}`}
-                  title={fitLabel}
+                  aria-label={`${matchPercentage}% ${fitPrefix.toLowerCase()}`}
+                  title={fitPrefix}
                 >
                   <div className="grid h-[39px] w-[39px] place-items-center rounded-full bg-[#f8fbf6] text-[10px] font-bold leading-none text-[#3a5a40] dark:bg-[#22272b] dark:text-[#e9f3ea]">
                     <span>{matchPercentage}%</span>
                   </div>
                 </div>
-                <p className="text-[11px] font-semibold leading-tight text-[#3a5a40] dark:text-[#e9f3ea]">
-                  You fit this job {matchPercentage}%
-                </p>
+                <div>
+                  <p className="text-[11px] font-semibold leading-tight text-[#3a5a40] dark:text-[#e9f3ea]">
+                    {fitPrefix} {matchPercentage}%
+                  </p>
+                </div>
               </div>
-            </div>
-          ) : null}
+            )}
+          </div>
         </div>
 
         <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-[#344e41] dark:text-[#d0d7dd]">

@@ -1,28 +1,19 @@
 from __future__ import annotations
 
-import re
+from typing import Any
 
+from app.services.scoring import compute_match
 
-TOKEN_PATTERN = re.compile(r"[A-Za-z0-9\+\#\.\-]{2,}")
-EXPERIENCE_KEYWORDS = {
-    'intern': {'intern', 'entry', 'entry-level', 'trainee', 'fresh'},
-    'junior': {'junior', 'associate', 'entry', 'entry-level'},
-    'mid': {'mid', 'intermediate', 'experienced'},
-    'senior': {'senior', 'lead', 'principal', 'staff'},
-}
-STOP_WORDS = {
-    'with', 'from', 'this', 'that', 'your', 'have', 'will', 'must', 'able',
-    'into', 'role', 'team', 'work', 'year', 'years', 'using', 'experience',
-    'developer', 'engineer', 'company', 'skills', 'skill', 'remote', 'onsite',
+EXPERIENCE_YEARS_BY_LEVEL = {
+    "intern": 0,
+    "junior": 2,
+    "mid": 4,
+    "senior": 7,
 }
 
 
 def normalize_skill(value: str) -> str:
-    return re.sub(r"\s+", " ", str(value or "").strip().lower())
-
-
-def tokenize(text: str) -> list[str]:
-    return [token.lower() for token in TOKEN_PATTERN.findall(str(text or ""))]
+    return " ".join(str(value or "").strip().lower().split())
 
 
 def normalize_skills(skills: list[str] | None) -> list[str]:
@@ -32,56 +23,88 @@ def normalize_skills(skills: list[str] | None) -> list[str]:
     return sorted(set(normalized))
 
 
-def optional_keywords_for_job(job: dict, required_skills: set[str], limit: int = 12) -> set[str]:
-    text = f"{job.get('title', '')} {job.get('description', '')}"
-    keywords: list[str] = []
-    for token in tokenize(text):
-        if token in STOP_WORDS or len(token) < 3:
-            continue
-        if token in required_skills:
-            continue
-        if token not in keywords:
-            keywords.append(token)
-        if len(keywords) >= limit:
-            break
-    return set(keywords)
+def _normalize_experience_level(experience: str | None) -> str:
+    normalized = normalize_skill(experience or "")
+    if normalized in EXPERIENCE_YEARS_BY_LEVEL:
+        return normalized
+    return "junior"
 
 
-def experience_bonus(experience: str, job: dict) -> int:
-    normalized_experience = str(experience or '').strip().lower()
-    if normalized_experience not in EXPERIENCE_KEYWORDS:
-        return 0
-
-    text = f"{job.get('title', '')} {job.get('description', '')}".lower()
-    if any(keyword in text for keyword in EXPERIENCE_KEYWORDS[normalized_experience]):
-        return 5
-    return 2
+def _coerce_candidate_profile(candidate_profile: dict[str, Any] | None) -> dict[str, Any]:
+    return candidate_profile if isinstance(candidate_profile, dict) else {}
 
 
-def compute_match_for_job(candidate_skills: set[str], experience: str, job: dict) -> dict:
-    required = set(normalize_skills(job.get('skills') or []))
-    optional = optional_keywords_for_job(job, required)
+def _build_candidate_payload(
+    *,
+    skills: list[str],
+    experience: str,
+    candidate_profile: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    normalized_profile = _coerce_candidate_profile(candidate_profile)
+    normalized_skills = normalize_skills(skills)
+    profile_skills = normalize_skills(normalized_profile.get("skills") if isinstance(normalized_profile.get("skills"), list) else [])
+    merged_skills = sorted(set(normalized_skills).union(profile_skills))[:80]
 
-    matched_required = sorted(required.intersection(candidate_skills))
-    matched_optional = sorted(optional.intersection(candidate_skills))
-    missing_required = sorted(required.difference(candidate_skills))
-
-    required_score = 0 if not required else round((len(matched_required) / len(required)) * 75)
-    optional_score = 0 if not optional else round((len(matched_optional) / len(optional)) * 20)
-    bonus = experience_bonus(experience, job)
-    match_score = max(0, min(100, required_score + optional_score + bonus))
+    level = _normalize_experience_level(experience)
+    fallback_years = EXPERIENCE_YEARS_BY_LEVEL.get(level, 2)
+    experience_years_raw = normalized_profile.get("experience_years")
+    try:
+        experience_years = int(float(experience_years_raw)) if experience_years_raw is not None else fallback_years
+    except (TypeError, ValueError):
+        experience_years = fallback_years
 
     return {
-        'id': int(job.get('id')) if job.get('id') is not None else None,
-        'title': str(job.get('title') or 'Untitled job'),
-        'match': match_score,
-        'matched_skills': matched_required,
-        'missing_skills': missing_required,
+        "id": normalized_profile.get("id") or "",
+        "name": normalized_profile.get("name") or normalized_profile.get("username") or "",
+        "desired_role": normalized_profile.get("desired_role") or normalized_profile.get("preferred_role") or "",
+        "summary": normalized_profile.get("summary") or "",
+        "resume_text": normalized_profile.get("resume_text") or "",
+        "skills": merged_skills,
+        "location": normalized_profile.get("location") or "",
+        "preferred_type": normalized_profile.get("preferred_type") or "",
+        "experience_years": experience_years,
+        "account_type": normalized_profile.get("account_type") or "",
+        "education": normalized_profile.get("education") or "",
+        "certifications": normalized_profile.get("certifications") or "",
+        "projects": normalized_profile.get("projects") or [],
+        "preferred_categories": normalized_profile.get("preferred_categories") or [],
+        "tech_stack": normalized_profile.get("tech_stack") or [],
     }
 
 
-def build_job_matches(skills: list[str], experience: str, jobs: list[dict]) -> list[dict]:
-    candidate_skills = set(normalize_skills(skills))
-    matches = [compute_match_for_job(candidate_skills, experience, job) for job in jobs]
-    matches.sort(key=lambda item: item['match'], reverse=True)
+def build_job_matches(
+    skills: list[str],
+    experience: str,
+    jobs: list[dict],
+    candidate_profile: dict[str, Any] | None = None,
+) -> list[dict]:
+    candidate_payload = _build_candidate_payload(
+        skills=skills,
+        experience=experience,
+        candidate_profile=candidate_profile,
+    )
+    matches = []
+    for job in jobs:
+        score = compute_match(candidate_payload, job)
+        fit = int(score.get("fit_score") or score.get("match_percentage") or 0)
+        matches.append({
+            "id": int(job.get("id")) if job.get("id") is not None else None,
+            "title": str(job.get("title") or "Untitled job"),
+            "match": fit,
+            "fit_score": fit,
+            "fit_label": score.get("fit_label") or "Partial Match",
+            "confidence_score": int(score.get("confidence_score") or 0),
+            "confidence_label": score.get("confidence_label") or "Low",
+            "role_relevance": int(score.get("role_relevance") or 0),
+            "reasoning_summary": score.get("reasoning_summary") or "",
+            "matched_skills": score.get("matched_skills") or [],
+            "missing_skills": score.get("missing_skills") or [],
+            "strengths": score.get("strengths") or [],
+            "concerns": score.get("concerns") or [],
+            "keyword_overlap": score.get("keyword_overlap") or [],
+            "data_gaps": score.get("data_gaps") or [],
+            "source": "ai",
+            "insufficient_data": bool(score.get("insufficient_data")),
+        })
+    matches.sort(key=lambda item: item["match"], reverse=True)
     return matches
