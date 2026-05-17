@@ -8,6 +8,7 @@ const { attachSessionCookies } = require('../services/authSessionService');
 const { serializeUser } = require('../utils/authUserSerializer');
 const { generateUsername } = require('../utils/usernameGenerator');
 const { assertLocalAuthBypassAllowed } = require('../config/localBypass');
+const { getOrCreateCompanyForUserId } = require('../services/companyService');
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -498,6 +499,9 @@ const completeSocialSignup = async (req, res) => {
     );
 
     const user = created.rows[0];
+    if (accountType === 'company') {
+      await getOrCreateCompanyForUserId(pgClient, user.id);
+    }
     const outcome = await issueSessionForUser({ user, req, res });
     clearSocialSignupSession(res);
     return res.status(outcome.statusCode).json(outcome);

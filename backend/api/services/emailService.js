@@ -146,6 +146,9 @@ const sendUserPremiumPaymentEmail = async ({
   fullName,
   planLabel,
   amount,
+  actualPaidAmount,
+  originalPlanAmount,
+  isDemoPayment = false,
   durationLabel,
   paidAt,
   provider,
@@ -156,20 +159,28 @@ const sendUserPremiumPaymentEmail = async ({
 
   const safePlan = String(planLabel || 'Premium').trim() || 'Premium';
   const safeDuration = String(durationLabel || 'subscription').trim() || 'subscription';
-  const subject = `KapIT receipt: ${safePlan} (${formatPhp(amount)})`;
+  const chargedAmount = Number(actualPaidAmount != null ? actualPaidAmount : amount || 0);
+  const planAmount = Number(originalPlanAmount != null ? originalPlanAmount : amount || 0);
+  const subjectPrefix = isDemoPayment ? 'KapIT DEMO receipt' : 'KapIT receipt';
+  const subject = `${subjectPrefix}: ${safePlan} (${formatPhp(chargedAmount)})`;
   const greeting = String(fullName || '').trim() || 'there';
   const safeProvider = String(provider || '').trim().toUpperCase() || 'PAYMENT';
   const paidText = paidAt ? new Date(paidAt).toLocaleString('en-PH') : new Date().toLocaleString('en-PH');
+  const demoLine = isDemoPayment
+    ? `Demo note: This was a demo payment charge (${formatPhp(chargedAmount)}). Original plan amount is ${formatPhp(planAmount)}.`
+    : null;
 
   const text = [
     `Hi ${greeting},`,
     '',
-    `Your KapIT premium purchase was successful.`,
+    `Your KapIT premium purchase was successful.${isDemoPayment ? ' [DEMO PAYMENT]' : ''}`,
     `Plan: ${safePlan}`,
     `Duration: ${safeDuration}`,
-    `Amount: ${formatPhp(amount)}`,
+    `Charged amount: ${formatPhp(chargedAmount)}`,
+    ...(isDemoPayment ? [`Original plan amount: ${formatPhp(planAmount)}`] : []),
     `Provider: ${safeProvider}`,
     `Paid at: ${paidText}`,
+    ...(demoLine ? ['', demoLine] : []),
     '',
     `Thank you for upgrading to KapIT Premium.`,
   ].join('\n');
@@ -177,11 +188,13 @@ const sendUserPremiumPaymentEmail = async ({
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f2937;max-width:560px;margin:0 auto;">
       <h2 style="color:#3a5a40;">Premium purchase confirmed</h2>
+      ${isDemoPayment ? '<p style="color:#92400e;background:#fff7ed;border:1px solid #fed7aa;padding:8px 10px;border-radius:8px;"><strong>DEMO PAYMENT</strong>: This payment was processed in demo pricing mode.</p>' : ''}
       <p>Hi ${escapeHtml(greeting)}, your payment was completed successfully.</p>
       <table style="width:100%;border-collapse:collapse;border:1px solid #dbe7d3;border-radius:8px;overflow:hidden;">
         <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Plan</td><td style="padding:10px;border-bottom:1px solid #e5ece0;"><strong>${escapeHtml(safePlan)}</strong></td></tr>
         <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Duration</td><td style="padding:10px;border-bottom:1px solid #e5ece0;">${escapeHtml(safeDuration)}</td></tr>
-        <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Amount</td><td style="padding:10px;border-bottom:1px solid #e5ece0;"><strong>${escapeHtml(formatPhp(amount))}</strong></td></tr>
+        <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Charged amount</td><td style="padding:10px;border-bottom:1px solid #e5ece0;"><strong>${escapeHtml(formatPhp(chargedAmount))}</strong></td></tr>
+        ${isDemoPayment ? `<tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Original plan amount</td><td style="padding:10px;border-bottom:1px solid #e5ece0;">${escapeHtml(formatPhp(planAmount))}</td></tr>` : ''}
         <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Provider</td><td style="padding:10px;border-bottom:1px solid #e5ece0;">${escapeHtml(safeProvider)}</td></tr>
         <tr><td style="padding:10px;">Paid at</td><td style="padding:10px;">${escapeHtml(paidText)}</td></tr>
       </table>
@@ -198,6 +211,9 @@ const sendCompanyJobPostPaymentEmail = async ({
   jobTitle,
   planLabel,
   amount,
+  actualPaidAmount,
+  originalPlanAmount,
+  isDemoPayment = false,
   durationLabel,
   paidAt,
   provider,
@@ -210,18 +226,22 @@ const sendCompanyJobPostPaymentEmail = async ({
   const safeTitle = String(jobTitle || '').trim() || 'Untitled job';
   const safePlan = String(planLabel || 'Job posting').trim() || 'Job posting';
   const safeDuration = String(durationLabel || 'listing').trim() || 'listing';
+  const chargedAmount = Number(actualPaidAmount != null ? actualPaidAmount : amount || 0);
+  const planAmount = Number(originalPlanAmount != null ? originalPlanAmount : amount || 0);
   const safeProvider = String(provider || '').trim().toUpperCase() || 'PAYMENT';
   const paidText = paidAt ? new Date(paidAt).toLocaleString('en-PH') : new Date().toLocaleString('en-PH');
-  const subject = `KapIT receipt: ${safePlan} for "${safeTitle}"`;
+  const subjectPrefix = isDemoPayment ? 'KapIT DEMO receipt' : 'KapIT receipt';
+  const subject = `${subjectPrefix}: ${safePlan} for "${safeTitle}"`;
 
   const text = [
     `Hello ${safeCompany},`,
     '',
-    `Your job post payment was successful.`,
+    `Your job post payment was successful.${isDemoPayment ? ' [DEMO PAYMENT]' : ''}`,
     `Job: ${safeTitle}`,
     `Plan: ${safePlan}`,
     `Duration: ${safeDuration}`,
-    `Amount: ${formatPhp(amount)}`,
+    `Charged amount: ${formatPhp(chargedAmount)}`,
+    ...(isDemoPayment ? [`Original plan amount: ${formatPhp(planAmount)}`] : []),
     `Provider: ${safeProvider}`,
     `Paid at: ${paidText}`,
   ].join('\n');
@@ -229,12 +249,14 @@ const sendCompanyJobPostPaymentEmail = async ({
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f2937;max-width:560px;margin:0 auto;">
       <h2 style="color:#3a5a40;">Job post payment confirmed</h2>
+      ${isDemoPayment ? '<p style="color:#92400e;background:#fff7ed;border:1px solid #fed7aa;padding:8px 10px;border-radius:8px;"><strong>DEMO PAYMENT</strong>: This payment was processed in demo pricing mode.</p>' : ''}
       <p>Hello ${escapeHtml(safeCompany)}, your payment was completed.</p>
       <table style="width:100%;border-collapse:collapse;border:1px solid #dbe7d3;border-radius:8px;overflow:hidden;">
         <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Job</td><td style="padding:10px;border-bottom:1px solid #e5ece0;"><strong>${escapeHtml(safeTitle)}</strong></td></tr>
         <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Plan</td><td style="padding:10px;border-bottom:1px solid #e5ece0;">${escapeHtml(safePlan)}</td></tr>
         <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Duration</td><td style="padding:10px;border-bottom:1px solid #e5ece0;">${escapeHtml(safeDuration)}</td></tr>
-        <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Amount</td><td style="padding:10px;border-bottom:1px solid #e5ece0;"><strong>${escapeHtml(formatPhp(amount))}</strong></td></tr>
+        <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Charged amount</td><td style="padding:10px;border-bottom:1px solid #e5ece0;"><strong>${escapeHtml(formatPhp(chargedAmount))}</strong></td></tr>
+        ${isDemoPayment ? `<tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Original plan amount</td><td style="padding:10px;border-bottom:1px solid #e5ece0;">${escapeHtml(formatPhp(planAmount))}</td></tr>` : ''}
         <tr><td style="padding:10px;border-bottom:1px solid #e5ece0;">Provider</td><td style="padding:10px;border-bottom:1px solid #e5ece0;">${escapeHtml(safeProvider)}</td></tr>
         <tr><td style="padding:10px;">Paid at</td><td style="padding:10px;">${escapeHtml(paidText)}</td></tr>
       </table>

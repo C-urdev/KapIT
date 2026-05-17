@@ -12,10 +12,10 @@ export default function HelpPage({ onBack }) {
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex w-fit shrink-0 items-center gap-2 px-1 py-1 text-sm font-semibold text-[#344e41] hover:text-[#3a5a40] dark:text-white dark:hover:text-[#d0d7dd] transition-colors"
+              aria-label="Go back"
+              className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-[#9caf97] bg-[#d9ddcf] text-[#344e41] transition-colors hover:bg-[#dde2d4] hover:border-[#8ea488] dark:border-[#5e8b67] dark:bg-transparent dark:text-white dark:hover:bg-[#353c44]"
             >
-              <ArrowLeft className="h-4 w-4 shrink-0" />
-              <span className="truncate">Back</span>
+              <ArrowLeft className="h-5 w-5 shrink-0" />
             </button>
 
             <div className="min-w-0 flex-1 text-right">
@@ -86,6 +86,5 @@ function InfoCard({ icon: Icon, title, text }) {
     </div>
   );
 }
-
 
 

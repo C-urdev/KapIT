@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/start-dev.js",
+    "prepare": "node scripts/install-githooks.cjs",
     "server": "npm --prefix backend run start",
     "server:watch": "npm --prefix backend run watch",
     "start": "node scripts/start-dev.js",
@@ -14,7 +15,8 @@
     "backend:start": "npm --prefix backend run start",
     "backend:watch": "npm --prefix backend run watch",
     "migrate:posts:reassign-owner": "npm --prefix backend run migrate:posts:reassign-owner",
-    "security:secrets": "gitleaks detect --source . --config .gitleaks.toml --redact",
+    "security:guard": "node scripts/security-guard.cjs",
+    "security:secrets": "node scripts/security-guard.cjs --all",
     "audit": "npm audit --prefix backend --audit-level=high && npm audit --prefix frontend --audit-level=high",
     "audit:ci": "npm audit --prefix backend --audit-level=high --omit=dev && npm audit --prefix frontend --audit-level=high --omit=dev",
     "build": "npm --prefix frontend run build",
@@ -23,7 +25,9 @@
     "next:dev": "npm --prefix frontend run dev",
     "next:build": "npm --prefix frontend run build",
     "lint": "npm --prefix frontend run lint",
-    "fastapi:dev": "npm --prefix backend run fastapi:dev"
+    "fastapi:dev": "npm --prefix backend run fastapi:dev",
+    "db:migrate:dry": "node scripts/apply-db-migrations.cjs --dry-run",
+    "db:migrate:staging": "node scripts/apply-db-migrations.cjs --env=STAGING_DATABASE_URL"
   },
   "dependencies": {
     "dotenv": "^16.3.1"

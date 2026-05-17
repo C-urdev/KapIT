@@ -2,14 +2,13 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const request = require('supertest');
+const { ensureBaseTestEnv, getTestEnvValue } = require('./testEnv.cjs');
 
-process.env.JWT_SECRET ||= 'test-jwt-secret-at-least-32-characters';
-process.env.JWT_REFRESH_SECRET ||= 'test-refresh-secret-at-least-32-chars';
-process.env.DATABASE_URL ||= 'postgres://test:test@localhost:5432/test';
-process.env.PAYPAL_CLIENT_ID ||= 'test-client-id';
-process.env.PAYPAL_CLIENT_SECRET ||= 'test-client-secret';
-process.env.PAYPAL_WEBHOOK_ID ||= 'test-webhook-id';
-process.env.PAYMENT_API_RETRY_MAX ||= '1';
+ensureBaseTestEnv();
+getTestEnvValue('PAYPAL_CLIENT_ID', 'test-client-id');
+getTestEnvValue('PAYPAL_CLIENT_SECRET', 'test-client-secret');
+getTestEnvValue('PAYPAL_WEBHOOK_ID', 'test-webhook-id');
+getTestEnvValue('PAYMENT_API_RETRY_MAX', '1');
 
 const serverRoot = path.resolve(__dirname, '..');
 
@@ -44,6 +43,26 @@ test('verifyPayPalWebhookSignature validates required headers and paypal verific
     }
   );
 
+  await assert.rejects(
+    () => verifyPayPalWebhookSignature({
+      headers: {
+        'paypal-transmission-id': 'tx-stale',
+        'paypal-transmission-time': new Date(Date.now() - (10 * 60 * 1000)).toISOString(),
+        'paypal-transmission-sig': 'sig-stale',
+        'paypal-cert-url': 'https://api-m.sandbox.paypal.com/certs/cert.pem',
+        'paypal-auth-algo': 'SHA256withRSA',
+      },
+      webhookEvent: {
+        id: 'EVT-STALE-1',
+        event_type: 'PAYMENT.CAPTURE.COMPLETED',
+      },
+    }),
+    (error) => {
+      assert.equal(error.statusCode, 401);
+      return true;
+    }
+  );
+
   const originalFetch = global.fetch;
   global.fetch = async (url) => {
     if (String(url).includes('/v1/oauth2/token')) {
@@ -69,6 +88,7 @@ test('verifyPayPalWebhookSignature validates required headers and paypal verific
           'paypal-auth-algo': 'SHA256withRSA',
         },
         webhookEvent: {
+          id: 'EVT-BAD-SIG-1',
           event_type: 'PAYMENT.CAPTURE.COMPLETED',
           resource: { id: 'CAPTURE-1' },
         },
@@ -86,6 +106,7 @@ test('verifyPayPalWebhookSignature validates required headers and paypal verific
 test('POST /api/payments/paypal/webhook accepts public requests and handles verification outcomes', async () => {
   clearServerModuleCache();
   const events = [];
+  const reservations = new Set();
 
   mockServerModule('config/database.js', {
     connect: async () => ({
@@ -100,6 +121,19 @@ test('POST /api/payments/paypal/webhook accepts public requests and handles veri
     ensureHiringSchemaReady: async () => {},
   });
   mockServerModule('services/paymentService.js', {
+    reservePayPalWebhookEvent: async (eventId) => {
+      if (reservations.has(eventId)) {
+        return { duplicate: true, reservation: null };
+      }
+      reservations.add(eventId);
+      return { duplicate: false, reservation: { store: 'local', key: String(eventId) } };
+    },
+    markPayPalWebhookEventProcessed: async () => {},
+    releasePayPalWebhookEventReservation: async (reservation) => {
+      if (reservation?.key) {
+        reservations.delete(String(reservation.key));
+      }
+    },
     verifyPayPalWebhookSignature: async ({ webhookEvent }) => {
       if (String(webhookEvent?.event_type || '').includes('BAD_SIG')) {
         const error = new Error('Invalid PayPal webhook signature.');
@@ -123,14 +157,23 @@ test('POST /api/payments/paypal/webhook accepts public requests and handles veri
 
   const invalid = await request(app)
     .post('/api/payments/paypal/webhook')
-    .send({ event_type: 'PAYMENT.CAPTURE.BAD_SIG', resource: { id: 'C1' } });
+    .send({ id: 'EVT-BAD-SIG-1', event_type: 'PAYMENT.CAPTURE.BAD_SIG', resource: { id: 'C1' } });
 
   assert.equal(invalid.status, 401);
   assert.equal(invalid.body.success, false);
 
+  const wrongContentType = await request(app)
+    .post('/api/payments/paypal/webhook')
+    .set('Content-Type', 'text/plain')
+    .send('not-json');
+
+  assert.equal(wrongContentType.status, 415);
+  assert.equal(wrongContentType.body.success, false);
+
   const valid = await request(app)
     .post('/api/payments/paypal/webhook')
     .send({
+      id: 'EVT-VALID-1',
       event_type: 'PAYMENT.CAPTURE.COMPLETED',
       resource: { id: 'C2' },
     });
@@ -140,4 +183,15 @@ test('POST /api/payments/paypal/webhook accepts public requests and handles veri
   assert.equal(valid.body.handled, true);
   assert.equal(valid.body.changed, true);
   assert.deepEqual(events, ['PAYMENT.CAPTURE.COMPLETED']);
+
+  const duplicate = await request(app)
+    .post('/api/payments/paypal/webhook')
+    .send({
+      id: 'EVT-VALID-1',
+      event_type: 'PAYMENT.CAPTURE.COMPLETED',
+      resource: { id: 'C2' },
+    });
+
+  assert.equal(duplicate.status, 409);
+  assert.equal(duplicate.body.success, false);
 });

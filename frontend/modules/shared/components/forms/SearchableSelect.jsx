@@ -21,6 +21,7 @@ export default function SearchableSelect({
   emptyMessage = 'No matching options found.',
   className = 'field',
   searchInTrigger = true,
+  allowCustomValue = false,
 }) {
   const normalizedOptions = useMemo(() => normalizeOptions(options), [options]);
   const [open, setOpen] = useState(false);
@@ -28,8 +29,9 @@ export default function SearchableSelect({
   const rootRef = useRef(null);
   const searchRef = useRef(null);
   const triggerSearchRef = useRef(null);
+  const hasSelection = Boolean(String(value || '').trim());
 
-  const selectedOption = normalizedOptions.find((option) => option.value === value) || null;
+  const selectedOption = normalizedOptions.find((option) => option.value === value) || (value ? { value: String(value), label: String(value) } : null);
   const filteredOptions = useMemo(() => {
     const keyword = query.trim().toLowerCase();
     if (!keyword) return normalizedOptions;
@@ -39,7 +41,6 @@ export default function SearchableSelect({
         option.value.toLowerCase().includes(keyword)
     );
   }, [normalizedOptions, query]);
-
   useEffect(() => {
     if (!open) {
       setQuery('');
@@ -71,21 +72,31 @@ export default function SearchableSelect({
   return (
     <div ref={rootRef} className="relative">
       {searchInTrigger ? (
-        <div className={`${className} flex w-full items-center gap-3 disabled:cursor-not-allowed disabled:opacity-60`}>
+        <div className={`${className} flex w-full items-center gap-3 disabled:cursor-not-allowed disabled:opacity-60 ${hasSelection ? 'bg-[#eef6ee] border-[#7aa27d] dark:bg-[#1f2b23] dark:border-[#5f8a68]' : ''}`}>
           <Search className="h-4 w-4 shrink-0 text-[#6b7280] dark:text-[#adb5be]" />
           <input
             ref={triggerSearchRef}
             type="text"
-            value={open ? query : ''}
+            value={open ? query : (selectedOption?.label || '')}
             onFocus={() => !disabled && setOpen(true)}
+            onKeyDown={(event) => {
+              if (!allowCustomValue || disabled) return;
+              if (event.key !== 'Enter') return;
+              const nextValue = query.trim();
+              if (!nextValue) return;
+              event.preventDefault();
+              onChange?.(nextValue);
+              setOpen(false);
+              setQuery('');
+            }}
             onChange={(event) => {
               if (disabled) return;
               setOpen(true);
               setQuery(event.target.value);
             }}
-            placeholder={selectedOption?.label || placeholder}
+            placeholder={placeholder}
             disabled={disabled}
-            className="min-w-0 flex-1 bg-transparent text-left text-[#344e41] outline-none placeholder:text-[#6b7280] dark:text-white dark:placeholder:text-[#adb5be]"
+            className={`min-w-0 flex-1 bg-transparent text-left outline-none placeholder:text-[#6b7280] dark:placeholder:text-[#adb5be] ${hasSelection ? 'text-[#1f3a2a] dark:text-[#e7f4ea]' : 'text-[#344e41] dark:text-white'}`}
           />
           <button
             type="button"
@@ -102,9 +113,9 @@ export default function SearchableSelect({
           type="button"
           disabled={disabled}
           onClick={() => setOpen((prev) => !prev)}
-          className={`${className} flex w-full items-center justify-between gap-3 text-left disabled:cursor-not-allowed disabled:opacity-60`}
+          className={`${className} flex w-full items-center justify-between gap-3 text-left disabled:cursor-not-allowed disabled:opacity-60 ${hasSelection ? 'bg-[#eef6ee] border-[#7aa27d] dark:bg-[#1f2b23] dark:border-[#5f8a68]' : ''}`}
         >
-          <span className={selectedOption ? '' : 'text-[#6b7280] dark:text-[#adb5be]'}>
+          <span className={selectedOption ? 'text-[#1f3a2a] dark:text-[#e7f4ea]' : 'text-[#6b7280] dark:text-[#adb5be]'}>
             {selectedOption?.label || placeholder}
           </span>
           <span className="inline-flex items-center gap-2 text-[#6b7280] dark:text-[#adb5be]">

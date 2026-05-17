@@ -1,0 +1,1 @@
+# Chatbot static data package

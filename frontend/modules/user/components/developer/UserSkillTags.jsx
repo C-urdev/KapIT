@@ -9,7 +9,7 @@ const normalizeTag = (value) =>
     .replace(/\s+/g, ' ')
     .slice(0, 40);
 
-export default function SkillTags({ value, onChange, placeholder = 'Type a skill and press Enter' }) {
+export default function SkillTags({ value, onChange, placeholder = 'Type a skill and press Enter', className = 'field' }) {
   const tags = useMemo(() => (Array.isArray(value) ? value.filter(Boolean) : []), [value]);
   const [input, setInput] = useState('');
   const [selectedSkill, setSelectedSkill] = useState('');
@@ -86,7 +86,7 @@ export default function SkillTags({ value, onChange, placeholder = 'Type a skill
               setSelectedSkill('');
             }}
             placeholder={placeholder}
-            className="field"
+            className={className}
             autoFocus
           />
         ) : (
@@ -101,6 +101,7 @@ export default function SkillTags({ value, onChange, placeholder = 'Type a skill
             options={selectableSkills}
             placeholder="Select an IT skill"
             searchPlaceholder="Search IT skills"
+            className={className}
           />
         )}
       </div>

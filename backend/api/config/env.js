@@ -1,19 +1,42 @@
 const dotenv = require('dotenv');
 const path = require('path');
 const { hasPayPalConfig, getPayPalClientId, getPayPalClientSecret } = require('./paymentEnv');
+const { logDemoPricingStartupGuard } = require('./paymentDemoPricing');
 
 let initialized = false;
 let environmentFilesLoaded = false;
 
 const readEnv = (key) => String(process.env[key] || '').trim();
 
+const isProduction = () => readEnv('NODE_ENV').toLowerCase() === 'production';
+
+const getEnvironmentFiles = () => {
+  const backendRoot = path.resolve(__dirname, '..', '..');
+  const repoRoot = path.resolve(__dirname, '..', '..', '..');
+  return {
+    backendEnv: path.resolve(backendRoot, '.env'),
+    backendEnvLocal: path.resolve(backendRoot, '.env.local'),
+    repoEnv: path.resolve(repoRoot, '.env'),
+    repoEnvLocal: path.resolve(repoRoot, '.env.local'),
+  };
+};
+
 const loadEnvironmentFiles = () => {
   if (environmentFilesLoaded) {
     return;
   }
+  if (readEnv('SKIP_ENV_FILE_LOAD').toLowerCase() === 'true') {
+    environmentFilesLoaded = true;
+    return;
+  }
 
-  dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
-  dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env.local'), override: true });
+  const files = getEnvironmentFiles();
+  dotenv.config({ path: files.backendEnv });
+  dotenv.config({ path: files.repoEnv });
+
+  const allowLocalOverride = !isProduction() && readEnv('NODE_ENV').toLowerCase() !== 'test';
+  dotenv.config({ path: files.backendEnvLocal, override: allowLocalOverride });
+  dotenv.config({ path: files.repoEnvLocal, override: allowLocalOverride });
   environmentFilesLoaded = true;
 };
 
@@ -86,6 +109,8 @@ const validateBooleanString = (key, errors) => {
   }
 };
 
+const hasAnyValue = (keys) => keys.some((key) => Boolean(readEnv(key)));
+
 const requireAtLeastOne = (keys, errors) => {
   const hasValue = keys.some((key) => Boolean(readEnv(key)));
   if (!hasValue) {
@@ -96,10 +121,19 @@ const requireAtLeastOne = (keys, errors) => {
 const validateEnvironment = () => {
   const errors = [];
   const isProduction = readEnv('NODE_ENV').toLowerCase() === 'production';
+  const fastApiConfigured = hasAnyValue([
+    'FASTAPI_URL_PRODUCTION',
+    'NEXT_PUBLIC_FASTAPI_URL_PRODUCTION',
+    'FASTAPI_URL',
+    'NEXT_PUBLIC_FASTAPI_URL',
+  ]);
 
   requireValue('JWT_SECRET', errors);
   requireValue('JWT_REFRESH_SECRET', errors);
   requireDatabaseConfig(errors);
+  if (fastApiConfigured) {
+    requireAtLeastOne(['FASTAPI_INTERNAL_SERVICE_TOKEN', 'INTERNAL_SERVICE_TOKEN'], errors);
+  }
   const payPalClientId = getPayPalClientId();
   const payPalClientSecret = getPayPalClientSecret();
   if ((payPalClientId && !payPalClientSecret) || (!payPalClientId && payPalClientSecret)) {
@@ -113,6 +147,7 @@ const validateEnvironment = () => {
   validateBooleanString('NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS', errors);
   validateBooleanString('NEXT_PUBLIC_ENABLE_LOCAL_PAYMENT_BYPASS', errors);
   validateBooleanString('ALLOW_KAPIT_NETLIFY_PREVIEW', errors);
+  validateBooleanString('AUTH_LIMITER_FAIL_CLOSED_FORCE', errors);
 
   if (readEnv('JWT_EXPIRE') && !readEnv('JWT_ACCESS_EXPIRE')) {
     errors.push('JWT_EXPIRE is deprecated. Use JWT_ACCESS_EXPIRE and JWT_REFRESH_EXPIRE_DAYS.');
@@ -132,6 +167,16 @@ const validateEnvironment = () => {
     validateUrl('NEXT_PUBLIC_EXPRESS_API_URL_PRODUCTION', errors);
     validateUrl('FASTAPI_URL_PRODUCTION', errors);
     validateUrl('NEXT_PUBLIC_FASTAPI_URL_PRODUCTION', errors);
+    if (fastApiConfigured) {
+      const fastApiInternalToken = readEnv('FASTAPI_INTERNAL_SERVICE_TOKEN');
+      const legacyInternalToken = readEnv('INTERNAL_SERVICE_TOKEN');
+      if (fastApiInternalToken) {
+        validateSecretQuality('FASTAPI_INTERNAL_SERVICE_TOKEN', errors);
+      }
+      if (!fastApiInternalToken && legacyInternalToken) {
+        validateSecretQuality('INTERNAL_SERVICE_TOKEN', errors);
+      }
+    }
 
     const hasGoogleConfig = Boolean(readEnv('GOOGLE_CLIENT_ID') || readEnv('NEXT_PUBLIC_GOOGLE_CLIENT_ID'));
     if (hasGoogleConfig) {
@@ -169,6 +214,10 @@ const validateEnvironment = () => {
     if (readEnv('NEXT_PUBLIC_ENABLE_LOCAL_PAYMENT_BYPASS').toLowerCase() === 'true') {
       errors.push('NEXT_PUBLIC_ENABLE_LOCAL_PAYMENT_BYPASS must be false in production.');
     }
+
+    if (readEnv('DB_SSL_REJECT_UNAUTHORIZED').toLowerCase() !== 'true') {
+      errors.push('DB_SSL_REJECT_UNAUTHORIZED must be set to "true" in production.');
+    }
   }
 
   if (errors.length) {
@@ -183,10 +232,12 @@ const initEnvironment = () => {
 
   loadEnvironmentFiles();
   validateEnvironment();
+  logDemoPricingStartupGuard();
   initialized = true;
 };
 
 module.exports = {
+  getEnvironmentFiles,
   loadEnvironmentFiles,
   initEnvironment,
 };

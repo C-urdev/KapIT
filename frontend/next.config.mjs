@@ -1,6 +1,9 @@
 import path from 'path';
 
 const isProduction = process.env.NODE_ENV === 'production';
+const enablePublicFastApiRewrites = (
+  String(process.env.ENABLE_PUBLIC_FASTAPI_REWRITES || '').trim().toLowerCase() === 'true'
+) || !isProduction;
 const isDeploymentBuild = process.env.CI === 'true'
   || process.env.NETLIFY === 'true'
   || Boolean(process.env.DEPLOY_ID)
@@ -86,7 +89,7 @@ const nextConfig = {
       },
     ];
 
-    if (fastApiBase) {
+    if (fastApiBase && enablePublicFastApiRewrites) {
       rules.push({
         source: '/ai/:path*',
         destination: `${fastApiBase}/:path*`,

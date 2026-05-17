@@ -58,13 +58,18 @@ const {
   removeSavedPost,
 } = require('../controllers/postsController');
 const { verifyToken, requireCsrfForCookieAuth } = require('../middleware/auth');
-const { loginRateLimiter, forgotPasswordRateLimiter, resetPasswordRateLimiter } = require('../middleware/security');
+const {
+  loginRateLimiter,
+  authAttemptRateLimiter,
+  forgotPasswordRateLimiter,
+  resetPasswordRateLimiter,
+} = require('../middleware/security');
 const { validateRequest } = require('../middleware/validateRequest');
 const { writeSchemas } = require('../validation/writeSchemas');
 const { isLocalAuthBypassEnabled, isLocalPaymentBypassEnabled } = require('../config/localBypass');
 
 // Public routes
-router.post('/register', validateRequest(writeSchemas.authRegister), register);
+router.post('/register', authAttemptRateLimiter, validateRequest(writeSchemas.authRegister), register);
 router.post('/login', loginRateLimiter, validateRequest(writeSchemas.authLogin), login);
 router.post('/forgot-password', forgotPasswordRateLimiter, validateRequest(writeSchemas.authForgotPassword), forgotPassword);
 router.post('/reset-password', resetPasswordRateLimiter, validateRequest(writeSchemas.authResetPassword), resetPassword);
@@ -72,22 +77,37 @@ router.post('/forgot-password-otp', forgotPasswordRateLimiter, validateRequest(w
 router.post('/verify-otp', forgotPasswordRateLimiter, validateRequest(writeSchemas.authVerifyOtp), verifyOtpHandler);
 router.post('/reset-password-otp', resetPasswordRateLimiter, validateRequest(writeSchemas.authResetPasswordOtp), resetPasswordOtp);
 
-router.post('/send-registration-otp', validateRequest(writeSchemas.authSendOtp), sendRegistrationOtpCode);
-router.post('/verify-registration-otp', validateRequest(writeSchemas.authVerifyOtp), verifyRegistrationOtpCode);
+router.post('/send-registration-otp', authAttemptRateLimiter, validateRequest(writeSchemas.authSendOtp), sendRegistrationOtpCode);
+router.post('/verify-registration-otp', authAttemptRateLimiter, validateRequest(writeSchemas.authVerifyOtp), verifyRegistrationOtpCode);
 if (isLocalAuthBypassEnabled()) {
-  router.post('/verify-otp/localhost-bypass', validateRequest(writeSchemas.authLocalPasswordResetBypass), localPasswordResetBypass);
-  router.post('/registration/localhost-bypass', validateRequest(writeSchemas.authLocalRegistrationBypass), localRegistrationBypass);
+  router.post(
+    '/verify-otp/localhost-bypass',
+    authAttemptRateLimiter,
+    validateRequest(writeSchemas.authLocalPasswordResetBypass),
+    localPasswordResetBypass
+  );
+  router.post(
+    '/registration/localhost-bypass',
+    authAttemptRateLimiter,
+    validateRequest(writeSchemas.authLocalRegistrationBypass),
+    localRegistrationBypass
+  );
 }
 
-router.post('/refresh', validateRequest(writeSchemas.authRefresh), refreshSession);
-router.post('/logout', requireCsrfForCookieAuth, validateRequest(writeSchemas.authLogout), logout);
+router.post('/refresh', authAttemptRateLimiter, validateRequest(writeSchemas.authRefresh), refreshSession);
+router.post('/logout', authAttemptRateLimiter, requireCsrfForCookieAuth, validateRequest(writeSchemas.authLogout), logout);
 
 // OAuth routes
-router.post('/oauth/state', loginRateLimiter, validateRequest(writeSchemas.authOAuthStateCreate), createOAuthStateSession);
-router.post('/google', loginRateLimiter, validateRequest(writeSchemas.authGoogleLogin), googleLogin);
-router.post('/github', loginRateLimiter, validateRequest(writeSchemas.authGithubLogin), githubLogin);
-router.get('/social-signup/session', getSocialSignupSession);
-router.post('/social/complete-signup', loginRateLimiter, validateRequest(writeSchemas.authSocialCompleteSignup), completeSocialSignup);
+router.post('/oauth/state', authAttemptRateLimiter, validateRequest(writeSchemas.authOAuthStateCreate), createOAuthStateSession);
+router.post('/google', authAttemptRateLimiter, validateRequest(writeSchemas.authGoogleLogin), googleLogin);
+router.post('/github', authAttemptRateLimiter, validateRequest(writeSchemas.authGithubLogin), githubLogin);
+router.get('/social-signup/session', authAttemptRateLimiter, getSocialSignupSession);
+router.post(
+  '/social/complete-signup',
+  authAttemptRateLimiter,
+  validateRequest(writeSchemas.authSocialCompleteSignup),
+  completeSocialSignup
+);
 
 // Protected routes
 router.get('/me', verifyToken, getCurrentUser);

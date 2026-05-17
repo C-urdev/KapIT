@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { CheckCircle2, ChevronDown, CreditCard, ExternalLink, ShieldCheck, X } from 'lucide-react';
 import { companyAPI } from '@companyFeatures/companyAPI';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
@@ -9,6 +9,15 @@ const STORAGE_KEY = 'company-post-job-draft';
 const PAYMENT_MESSAGE_TYPE = 'company-post-job-payment-success';
 const PAYMENT_CANCEL_MESSAGE_TYPE = 'company-post-job-payment-cancelled';
 const localPaymentBypassEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_PAYMENT_BYPASS === 'true';
+const createPaymentIdempotencyKey = () => {
+  if (typeof window !== 'undefined' && window.crypto?.randomUUID) {
+    return `checkout-${window.crypto.randomUUID()}`;
+  }
+
+  const randomPart = Math.random().toString(36).slice(2, 14);
+  const timestampPart = Date.now().toString(36);
+  return `checkout-${timestampPart}-${randomPart}`;
+};
 
 const sanitizeDraft = (draft) => ({
   jobId: draft?.jobId == null ? null : Number(draft.jobId),
@@ -43,6 +52,7 @@ export default function CompanyPostJobPaymentPage() {
   const [completedCheckout, setCompletedCheckout] = React.useState(null);
   const handledReturnRef = React.useRef(false);
   const paymentCompletedRef = React.useRef(false);
+  const pendingCheckoutIdempotencyKeyRef = React.useRef('');
   const isLocalhostBypassAvailable =
     localPaymentBypassEnabled && ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
 
@@ -170,6 +180,10 @@ export default function CompanyPostJobPaymentPage() {
     handleProviderReturn();
   }, []);
 
+  React.useEffect(() => {
+    pendingCheckoutIdempotencyKeyRef.current = '';
+  }, [selectedPlanId, paymentMethod, draft?.jobId, draft?.title, draft?.description]);
+
   const selectedProvider = PAYMENT_PROVIDERS.find((provider) => provider.id === paymentMethod) || PAYMENT_PROVIDERS[0];
   const selectedProviderState = providerAvailability?.[selectedProvider.id] || { enabled: true, reason: '' };
   const selectedPlan = plans.find((plan) => plan.id === selectedPlanId) || null;
@@ -197,11 +211,20 @@ export default function CompanyPostJobPaymentPage() {
         throw new Error(`${selectedProvider.label} is not available yet. Configure it in the server environment first.`);
       }
 
+      const idempotencyKey =
+        pendingCheckoutIdempotencyKeyRef.current || createPaymentIdempotencyKey();
+      pendingCheckoutIdempotencyKeyRef.current = idempotencyKey;
+
       const data = await companyAPI.createPaymentCheckoutSession({
         provider: paymentMethod,
         planId: selectedPlan.id,
         draft,
         jobId: draft?.jobId || null,
+        idempotencyKey,
+      }, {
+        headers: {
+          'X-Idempotency-Key': idempotencyKey,
+        },
       });
 
       if (!data?.checkoutUrl) {
@@ -209,6 +232,7 @@ export default function CompanyPostJobPaymentPage() {
       }
 
       setCurrentPaymentId(data.paymentId || '');
+      pendingCheckoutIdempotencyKeyRef.current = '';
       window.location.assign(data.checkoutUrl);
     } catch (err) {
       setLoading(false);

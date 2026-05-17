@@ -10,6 +10,30 @@ const {
   storeResumeUpload,
 } = require('../services/resumeStorageService');
 const { normalizeSocialsText } = require('../utils/socials');
+const PROFILE_SYNC_DEBUG = process.env.DEBUG_PROFILE_SYNC === 'true';
+const PROFILE_SYNC_REDACTED_KEYS = new Set([
+  'email',
+  'phone',
+  'phoneNumber',
+  'fullName',
+  'name',
+  'resume',
+  'resumeUrl',
+  'resume_url',
+  'profileImage',
+  'profile_photo_url',
+  'profilePhotoUrl',
+  'github',
+  'github_link',
+  'portfolioWebsite',
+  'portfolio_link',
+  'linkedin',
+  'linkedin_link',
+  'otherLinks',
+  'other_links',
+  'socials',
+  'body',
+]);
 
 const normalizeSkills = (skills) => {
   if (!skills) return [];
@@ -61,6 +85,31 @@ const buildDevErrorMeta = (error) => (
       }
     : {}
 );
+
+const logProfileSync = (label, payload) => {
+  if (!PROFILE_SYNC_DEBUG) {
+    return;
+  }
+  const sanitize = (value, depth = 0) => {
+    if (value == null) return value;
+    if (depth > 3) return '[truncated]';
+    if (Array.isArray(value)) {
+      return value.slice(0, 20).map((item) => sanitize(item, depth + 1));
+    }
+    if (typeof value === 'object') {
+      return Object.entries(value).reduce((acc, [key, entryValue]) => {
+        if (PROFILE_SYNC_REDACTED_KEYS.has(key)) {
+          acc[key] = '[redacted]';
+          return acc;
+        }
+        acc[key] = sanitize(entryValue, depth + 1);
+        return acc;
+      }, {});
+    }
+    return value;
+  };
+  logger.info({ label, payload: sanitize(payload) }, 'developer-profile-sync');
+};
 
 const getResumeAccessState = async (client, { requester, resumeUrl }) => {
   const normalizedResumeUrl = String(resumeUrl || '').trim();
@@ -133,7 +182,40 @@ const getMyDeveloperProfile = async (req, res) => {
     await ensureBaseUserSchemaReady();
     await ensureOnboardingSchemaReady();
     client = await pool.connect();
-    const result = await client.query('SELECT * FROM developer_profiles WHERE user_id = $1', [req.user.id]);
+    const result = await client.query(
+      `SELECT u.id AS user_id,
+              COALESCE(dp.full_name, u.name, u.username, '') AS full_name,
+              COALESCE(dp.username, u.username, '') AS username,
+              COALESCE(dp.location, u.address, '') AS location,
+              COALESCE(dp.phone_number, u.phone, '') AS phone_number,
+              COALESCE(dp.email, u.email, '') AS email,
+              COALESCE(dp.job_title, '') AS job_title,
+              dp.experience_years,
+              COALESCE(dp.skills, ARRAY[]::text[]) AS skills,
+              COALESCE(dp.preferred_it_role, u.desired_job, '') AS preferred_it_role,
+              COALESCE(dp.education, u.education, '') AS education,
+              COALESCE(dp.bio, u.bio, '') AS bio,
+              COALESCE(dp.github_link, '') AS github_link,
+              COALESCE(dp.portfolio_link, '') AS portfolio_link,
+              COALESCE(dp.linkedin_link, '') AS linkedin_link,
+              COALESCE(dp.resume_url, '') AS resume_url,
+              COALESCE(dp.profile_photo_url, u.profile_image, '') AS profile_photo_url,
+              COALESCE(dp.other_links, '') AS other_links,
+              COALESCE(dp.work_preference, '') AS work_preference,
+              COALESCE(dp.certifications, '') AS certifications,
+              COALESCE(dp.school_university, '') AS school_university,
+              COALESCE(dp.created_at, CURRENT_TIMESTAMP) AS created_at,
+              COALESCE(dp.updated_at, CURRENT_TIMESTAMP) AS updated_at
+       FROM users u
+       LEFT JOIN developer_profiles dp ON dp.user_id = u.id
+       WHERE u.id = $1
+       LIMIT 1`,
+      [req.user.id]
+    );
+    logProfileSync('settings-fetch-profile-response', {
+      userId: req.user.id,
+      profile: result.rows[0] || null,
+    });
     return res.json({ success: true, profile: result.rows[0] || null });
   } catch (error) {
     logger.error('Get developer profile error:', error);
@@ -170,11 +252,26 @@ const upsertMyDeveloperProfile = async (req, res) => {
     }
 
     const body = req.body || {};
-    const fullName = String(body.fullName || '').trim();
-    const username = String(body.username || '').trim();
+    logProfileSync('settings-save-request-body', {
+      userId: req.user.id,
+      body,
+    });
+    const requestedFullName = String(body.fullName || '').trim();
+    const requestedUsername = String(body.username || '').trim();
     const location = String(body.location || '').trim();
-    const phoneNumber = String(body.phoneNumber || '').trim();
-    const email = String(body.email || current.email || '').trim();
+    const requestedPhoneNumber = String(body.phoneNumber || '').trim();
+    const requestedEmail = String(body.email || '').trim();
+    const identityLocked = Boolean(
+      String(current.name || '').trim() &&
+      String(current.phone || '').trim() &&
+      String(current.email || '').trim()
+    );
+    const fullName = identityLocked ? String(current.name || requestedFullName || '').trim() : requestedFullName;
+    const username = identityLocked ? String(current.username || requestedUsername || '').trim() : requestedUsername;
+    const phoneNumber = identityLocked ? String(current.phone || requestedPhoneNumber || '').trim() : requestedPhoneNumber;
+    const email = identityLocked
+      ? String(current.email || requestedEmail || '').trim()
+      : String(requestedEmail || current.email || '').trim();
     const jobTitle = String(body.jobTitle || '').trim();
     const preferredRole = String(body.preferredRole || '').trim();
     const educationAttainment = String(body.educationAttainment || '').trim();
@@ -206,7 +303,7 @@ const upsertMyDeveloperProfile = async (req, res) => {
     const resumeUrl = body.resume ? String(body.resume) : '';
     const workPreference = String(body.workPreference || '').trim().toLowerCase();
 
-    await client.query(
+    const userUpdateResult = await client.query(
       `UPDATE users
        SET username = $1,
            name = $2,
@@ -233,8 +330,11 @@ const upsertMyDeveloperProfile = async (req, res) => {
         req.user.id,
       ]
     );
+    logProfileSync('settings-save-users-update-result', {
+      rowCount: userUpdateResult.rowCount,
+    });
 
-    await client.query(
+    const profileUpsertResult = await client.query(
       `INSERT INTO developer_profiles (
          user_id,
          full_name,
@@ -281,7 +381,8 @@ const upsertMyDeveloperProfile = async (req, res) => {
          work_preference = EXCLUDED.work_preference,
          certifications = EXCLUDED.certifications,
          school_university = EXCLUDED.school_university,
-         updated_at = CURRENT_TIMESTAMP`,
+         updated_at = CURRENT_TIMESTAMP
+       RETURNING user_id, full_name, username, location, phone_number, email, job_title, experience_years, skills, preferred_it_role, education, bio, github_link, portfolio_link, linkedin_link, resume_url, profile_photo_url, other_links, work_preference, certifications, school_university, created_at, updated_at`,
       [
         req.user.id,
         fullName,
@@ -306,11 +407,21 @@ const upsertMyDeveloperProfile = async (req, res) => {
         String(body.school || '').trim() || null,
       ]
     );
+    logProfileSync('settings-save-developer-profiles-upsert-result', {
+      rowCount: profileUpsertResult.rowCount,
+      profile: profileUpsertResult.rows[0] || null,
+    });
 
     const userResult = await client.query('SELECT * FROM users WHERE id = $1', [req.user.id]);
+    const savedProfile = profileUpsertResult.rows[0] || null;
     await client.query('COMMIT');
+    logProfileSync('settings-save-response-user', {
+      userId: req.user.id,
+      user: serializeUser(userResult.rows[0]),
+      profile: savedProfile,
+    });
 
-    return res.json({ success: true, user: serializeUser(userResult.rows[0]) });
+    return res.json({ success: true, user: serializeUser(userResult.rows[0]), profile: savedProfile });
   } catch (error) {
     if (client) {
       await client.query('ROLLBACK');
@@ -452,11 +563,14 @@ const analyzeMyResume = async (req, res) => {
       `SELECT u.id,
               COALESCE(dp.full_name, u.name, u.username) AS full_name,
               COALESCE(dp.preferred_it_role, u.desired_job, dp.job_title) AS preferred_role,
+              COALESCE(dp.job_title, '') AS job_title,
               COALESCE(dp.bio, u.bio, '') AS bio,
               COALESCE(dp.resume_url, '') AS resume_url,
               COALESCE(dp.skills, ARRAY[]::text[]) AS skills,
               COALESCE(dp.location, u.address, '') AS location,
-              COALESCE(dp.experience_years, 0) AS experience_years
+              COALESCE(dp.experience_years, 0) AS experience_years,
+              COALESCE(dp.education, u.education, '') AS education,
+              COALESCE(dp.certifications, '') AS certifications
        FROM users u
        LEFT JOIN developer_profiles dp ON dp.user_id = u.id
        WHERE u.id = $1
@@ -473,11 +587,14 @@ const analyzeMyResume = async (req, res) => {
       id: profile.id,
       fullName: profile.full_name,
       preferredRole: profile.preferred_role,
+      jobTitle: profile.job_title,
       bio: profile.bio,
-      resume: profile.resume_url,
+      resumeText: [profile.bio, profile.education, profile.certifications].filter(Boolean).join('\n'),
       skills: profile.skills,
       location: profile.location,
       yearsOfExperience: profile.experience_years,
+      education: profile.education,
+      certifications: profile.certifications,
     });
 
     return res.json({ success: true, analysis: analysis.analysis || analysis });

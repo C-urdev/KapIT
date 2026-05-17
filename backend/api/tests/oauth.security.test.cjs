@@ -2,9 +2,11 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const request = require('supertest');
+const { ensureBaseTestEnv, getTestEnvValue } = require('./testEnv.cjs');
 
 const serverRoot = path.resolve(__dirname, '..');
 const originalEnv = { ...process.env };
+const originalFetch = global.fetch;
 
 const clearServerModuleCache = () => {
   Object.keys(require.cache).forEach((key) => {
@@ -66,6 +68,45 @@ const loadApp = (options = {}) => {
 const createLocalAgent = (app) => request.agent(app);
 const postLocal = (agent, path) => agent.post(path).set('host', 'localhost:5001');
 const getLocal = (agent, path) => agent.get(path).set('host', 'localhost:5001');
+const jsonResponse = (payload) => ({ json: async () => payload });
+
+const getMockGithubEmailForCode = (code) => {
+  const normalizedCode = String(code || '').trim();
+  const slug = normalizedCode.replace(/^mock-github-/, '');
+  if (slug === 'mismatch') {
+    return 'mismatch@example.com';
+  }
+  return `${slug || 'unknown'}@example.com`;
+};
+
+const createGithubFetchMock = () => async (url, options = {}) => {
+  const target = String(url || '');
+
+  if (target === 'https://github.com/login/oauth/access_token') {
+    const rawBody = String(options.body || '{}');
+    const body = JSON.parse(rawBody);
+    return jsonResponse({ access_token: `mock-token-${body.code || 'unknown'}` });
+  }
+
+  if (target === 'https://api.github.com/user') {
+    const token = String(options.headers?.Authorization || '').replace(/^Bearer\s+/i, '');
+    const code = token.replace(/^mock-token-/, '');
+    return jsonResponse({
+      id: `mock-gh-id-${code || 'unknown'}`,
+      login: `mock-gh-${code || 'user'}`,
+      name: 'Mock GitHub User',
+    });
+  }
+
+  if (target === 'https://api.github.com/user/emails') {
+    const token = String(options.headers?.Authorization || '').replace(/^Bearer\s+/i, '');
+    const code = token.replace(/^mock-token-/, '');
+    const email = getMockGithubEmailForCode(code);
+    return jsonResponse([{ email, primary: true, verified: true }]);
+  }
+
+  throw new Error(`Unexpected fetch URL in oauth.security.test.cjs: ${target}`);
+};
 
 const createOAuthState = async ({ agent, provider = 'github', mode = 'signup' }) => {
   const response = await postLocal(agent, '/api/auth/oauth/state').send({ provider, mode, accountTypeHint: 'company' });
@@ -77,17 +118,19 @@ const createOAuthState = async ({ agent, provider = 'github', mode = 'signup' })
 
 test.beforeEach(() => {
   process.env = { ...originalEnv };
-  process.env.JWT_SECRET = 'test-jwt-secret-at-least-32-characters';
-  process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-at-least-32-char-value';
-  process.env.DATABASE_URL = 'postgres://test:test@localhost:5432/test';
+  ensureBaseTestEnv();
   process.env.NODE_ENV = 'development';
   process.env.ENABLE_LOCAL_AUTH_BYPASS = 'true';
   process.env.OAUTH_STATE_TTL_MS = '200';
   process.env.SOCIAL_SIGNUP_TTL_MS = '200';
+  getTestEnvValue('GITHUB_CLIENT_ID', 'mock-github-client-id');
+  getTestEnvValue('GITHUB_CLIENT_SECRET', 'mock-github-client-secret');
+  global.fetch = createGithubFetchMock();
 });
 
 test.afterEach(() => {
   process.env = { ...originalEnv };
+  global.fetch = originalFetch;
   clearServerModuleCache();
 });
 

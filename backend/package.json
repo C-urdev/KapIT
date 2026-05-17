@@ -6,7 +6,7 @@
     "watch": "node --watch api/server.js",
     "test": "node ../scripts/run-tests.js",
     "migrate:posts:reassign-owner": "node api/scripts/reassignPostOwnership.js",
-    "fastapi:dev": "cd ai-fastapi && uvicorn main:app --reload --port 8000"
+    "fastapi:dev": "node scripts/start-fastapi-dev.cjs"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
