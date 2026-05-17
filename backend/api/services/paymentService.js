@@ -10,6 +10,10 @@ const {
   getPayPalClientSecret,
   getPayPalWebhookId,
 } = require('../config/paymentEnv');
+const {
+  formatPhpAmount,
+  resolveDemoPricingForAmount,
+} = require('../config/paymentDemoPricing');
 const { assertLocalPaymentBypassAllowed } = require('../config/localBypass');
 
 const PAYMENT_PROVIDERS = new Set(['paypal']);
@@ -48,7 +52,63 @@ const getPaymentProviderAvailability = () => {
   };
 };
 
-const formatPhpAmount = (amount) => Number(amount || 0).toFixed(2);
+const toMinorPhp = (amount) => Math.round(Number(amount || 0) * 100);
+
+const parseProviderPayload = (value) => {
+  if (!value) {
+    return {};
+  }
+
+  if (typeof value === 'object') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  return {};
+};
+
+const buildExpectedPricingContext = ({ pricing }) => ({
+  expected_provider_amount_php: Number(pricing.providerPayableAmount || 0),
+  expected_provider_amount_value: pricing.paypalValue,
+  real_plan_amount_php: Number(pricing.realAmount || 0),
+  is_demo_pricing_active: Boolean(pricing.isDemoActive),
+  demo_pricing_enabled_flag: Boolean(pricing.demoEnabledFlag),
+  demo_pricing_expires_at: pricing.expiresAt || null,
+  demo_pricing_expired: Boolean(pricing.isExpired),
+  pricing_mode: pricing.effectiveMode,
+});
+
+const mergeProviderPayload = (currentPayload, patch) => {
+  const base = parseProviderPayload(currentPayload);
+  return {
+    ...base,
+    ...patch,
+  };
+};
+
+const getExpectedProviderAmountFromPayment = (payment) => {
+  const payload = parseProviderPayload(payment?.provider_payload);
+  const expected = Number(payload?.payment_pricing?.expected_provider_amount_php);
+  if (Number.isFinite(expected) && expected > 0) {
+    return expected;
+  }
+  return Number(payment?.amount || 0);
+};
+
+const buildProviderReconciliationContext = ({ verification }) => ({
+  actual_provider_amount_php: Number(verification?.amount || 0),
+  actual_provider_amount_value: formatPhpAmount(Number(verification?.amount || 0)),
+  provider_checkout_id: verification?.providerCheckoutId || null,
+  provider_payment_id: verification?.providerPaymentId || null,
+});
 
 const getPayPalBaseUrl = () => (String(process.env.PAYPAL_ENV || 'sandbox').trim().toLowerCase() === 'live'
   ? 'https://api-m.paypal.com'
@@ -524,6 +584,7 @@ const extractCaptureReference = (webhookEvent) => {
     captureId: captureId || null,
     payerEmail,
     amount,
+    amountValue: formatPhpAmount(amount),
     rawPayload: webhookEvent,
   };
 };
@@ -592,12 +653,21 @@ const markCompanyPaymentFailed = async (client, payment, reference) => {
     return { changed: false };
   }
 
+  const mergedProviderPayload = mergeProviderPayload(payment.provider_payload, {
+    payment_reconciliation: {
+      actual_provider_amount_php: Number(reference.amount || 0),
+      actual_provider_amount_value: reference.amountValue || formatPhpAmount(reference.amount || 0),
+      provider_checkout_id: reference.orderId || payment.provider_checkout_id || null,
+      provider_payment_id: reference.captureId || payment.provider_payment_id || null,
+    },
+    paypal_webhook_event: reference.rawPayload,
+  });
   await updatePaymentRecord(client, payment.id, {
     status: 'failed',
     provider_checkout_id: reference.orderId || payment.provider_checkout_id,
     provider_payment_id: reference.captureId || payment.provider_payment_id,
     payer_email: reference.payerEmail || payment.payer_email,
-    provider_payload: JSON.stringify(reference.rawPayload),
+    provider_payload: JSON.stringify(mergedProviderPayload),
   });
   return { changed: true };
 };
@@ -611,12 +681,21 @@ const markUserPremiumPaymentFailed = async (client, payment, reference) => {
     return { changed: false };
   }
 
+  const mergedProviderPayload = mergeProviderPayload(payment.provider_payload, {
+    payment_reconciliation: {
+      actual_provider_amount_php: Number(reference.amount || 0),
+      actual_provider_amount_value: reference.amountValue || formatPhpAmount(reference.amount || 0),
+      provider_checkout_id: reference.orderId || payment.provider_checkout_id || null,
+      provider_payment_id: reference.captureId || payment.provider_payment_id || null,
+    },
+    paypal_webhook_event: reference.rawPayload,
+  });
   await updateUserPremiumPaymentRecord(client, payment.id, {
     status: 'failed',
     provider_checkout_id: reference.orderId || payment.provider_checkout_id,
     provider_payment_id: reference.captureId || payment.provider_payment_id,
     payer_email: reference.payerEmail || payment.payer_email,
-    provider_payload: JSON.stringify(reference.rawPayload),
+    provider_payload: JSON.stringify(mergedProviderPayload),
   });
   return { changed: true };
 };
@@ -627,12 +706,21 @@ const markCompanyPaymentRefunded = async (client, payment, reference) => {
     return { changed: false };
   }
 
+  const mergedProviderPayload = mergeProviderPayload(payment.provider_payload, {
+    payment_reconciliation: {
+      actual_provider_amount_php: Number(reference.amount || 0),
+      actual_provider_amount_value: reference.amountValue || formatPhpAmount(reference.amount || 0),
+      provider_checkout_id: reference.orderId || payment.provider_checkout_id || null,
+      provider_payment_id: reference.captureId || payment.provider_payment_id || null,
+    },
+    paypal_webhook_event: reference.rawPayload,
+  });
   await updatePaymentRecord(client, payment.id, {
     status: 'refunded',
     provider_checkout_id: reference.orderId || payment.provider_checkout_id,
     provider_payment_id: reference.captureId || payment.provider_payment_id,
     payer_email: reference.payerEmail || payment.payer_email,
-    provider_payload: JSON.stringify(reference.rawPayload),
+    provider_payload: JSON.stringify(mergedProviderPayload),
     cancelled_at: new Date(),
   });
 
@@ -663,12 +751,21 @@ const markUserPremiumPaymentRefunded = async (client, payment, reference) => {
     return { changed: false };
   }
 
+  const mergedProviderPayload = mergeProviderPayload(payment.provider_payload, {
+    payment_reconciliation: {
+      actual_provider_amount_php: Number(reference.amount || 0),
+      actual_provider_amount_value: reference.amountValue || formatPhpAmount(reference.amount || 0),
+      provider_checkout_id: reference.orderId || payment.provider_checkout_id || null,
+      provider_payment_id: reference.captureId || payment.provider_payment_id || null,
+    },
+    paypal_webhook_event: reference.rawPayload,
+  });
   await updateUserPremiumPaymentRecord(client, payment.id, {
     status: 'refunded',
     provider_checkout_id: reference.orderId || payment.provider_checkout_id,
     provider_payment_id: reference.captureId || payment.provider_payment_id,
     payer_email: reference.payerEmail || payment.payer_email,
-    provider_payload: JSON.stringify(reference.rawPayload),
+    provider_payload: JSON.stringify(mergedProviderPayload),
     cancelled_at: new Date(),
   });
 
@@ -793,8 +890,17 @@ const reconcilePayPalWebhookEvent = async ({ client, webhookEvent }) => {
   };
 };
 
-const createPayPalOrder = async ({ payment, plan, clientBaseUrl }) => {
+const createPayPalOrder = async ({ payment, plan, clientBaseUrl, pricing }) => {
   const accessToken = await getPayPalAccessToken();
+  if (pricing?.isDemoActive) {
+    logger.warn({
+      paymentId: payment.id,
+      pricingMode: pricing.effectiveMode,
+      realAmountPhp: pricing.realAmount,
+      providerPayableAmountPhp: pricing.providerPayableAmount,
+      expiresAt: pricing.expiresAt,
+    }, 'Demo pricing active for company checkout payment.');
+  }
   const response = await withRetry(
     () => fetchWithTimeout(`${getPayPalBaseUrl()}/v2/checkout/orders`, {
       method: 'POST',
@@ -812,7 +918,7 @@ const createPayPalOrder = async ({ payment, plan, clientBaseUrl }) => {
             description: `KapIT Job Post - ${plan.label}`,
             amount: {
               currency_code: 'PHP',
-              value: formatPhpAmount(plan.price),
+              value: pricing?.paypalValue || formatPhpAmount(plan.price),
             },
           },
         ],
@@ -895,8 +1001,17 @@ const getUserPremiumPaymentRecord = async (client, paymentId, userId, options = 
   return result.rows[0] || null;
 };
 
-const createUserPremiumPayPalOrder = async ({ payment, plan, clientBaseUrl }) => {
+const createUserPremiumPayPalOrder = async ({ payment, plan, clientBaseUrl, pricing }) => {
   const accessToken = await getPayPalAccessToken();
+  if (pricing?.isDemoActive) {
+    logger.warn({
+      paymentId: payment.id,
+      pricingMode: pricing.effectiveMode,
+      realAmountPhp: pricing.realAmount,
+      providerPayableAmountPhp: pricing.providerPayableAmount,
+      expiresAt: pricing.expiresAt,
+    }, 'Demo pricing active for user premium checkout payment.');
+  }
   const response = await withRetry(
     () => fetchWithTimeout(`${getPayPalBaseUrl()}/v2/checkout/orders`, {
       method: 'POST',
@@ -914,7 +1029,7 @@ const createUserPremiumPayPalOrder = async ({ payment, plan, clientBaseUrl }) =>
             description: `KapIT ${plan.label} Subscription`,
             amount: {
               currency_code: 'PHP',
-              value: formatPhpAmount(plan.price),
+              value: pricing?.paypalValue || formatPhpAmount(plan.price),
             },
           },
         ],
@@ -952,6 +1067,7 @@ const createUserPremiumPayPalOrder = async ({ payment, plan, clientBaseUrl }) =>
 const startUserPremiumCheckout = async ({ client, req, userId, provider }) => {
   const normalizedProvider = assertValidProvider(provider);
   const plan = USER_PREMIUM_PLAN;
+  const pricing = resolveDemoPricingForAmount(Number(plan.price || 0));
 
   const payment = await createUserPremiumPaymentRecord(client, {
     userId,
@@ -960,14 +1076,27 @@ const startUserPremiumCheckout = async ({ client, req, userId, provider }) => {
   });
   const clientBaseUrl = getClientBaseUrl(req);
 
-  const checkout = await createUserPremiumPayPalOrder({ payment, plan, clientBaseUrl });
+  const checkout = await createUserPremiumPayPalOrder({
+    payment,
+    plan,
+    clientBaseUrl,
+    pricing,
+  });
 
   const saved = await updateUserPremiumPaymentRecord(client, payment.id, {
     provider_checkout_id: checkout.providerCheckoutId,
+    provider_payload: JSON.stringify(mergeProviderPayload(payment.provider_payload, {
+      payment_pricing: buildExpectedPricingContext({ pricing }),
+    })),
   });
 
   return {
-    payment: saved || payment,
+    payment: saved || {
+      ...payment,
+      provider_payload: mergeProviderPayload(payment.provider_payload, {
+        payment_pricing: buildExpectedPricingContext({ pricing }),
+      }),
+    },
     plan,
     checkoutUrl: checkout.checkoutUrl,
   };
@@ -1028,16 +1157,24 @@ const finalizeVerifiedUserPremiumPayment = async ({ client, userId, payment, ver
     throw new Error(`Payment cannot be finalized from status "${payment.status}".`);
   }
 
-  const providerAmount = Math.round(Number(verification.amount || 0));
-  if (providerAmount !== Number(payment.amount || 0)) {
+  const expectedProviderAmount = getExpectedProviderAmountFromPayment(payment);
+  const providerAmountMinor = toMinorPhp(verification.amount || 0);
+  const expectedProviderAmountMinor = toMinorPhp(expectedProviderAmount || 0);
+  if (providerAmountMinor !== expectedProviderAmountMinor) {
     throw new Error('Verified payment amount does not match the premium plan.');
   }
 
+  const mergedProviderPayload = mergeProviderPayload(payment.provider_payload, {
+    payment_reconciliation: buildProviderReconciliationContext({ verification }),
+  });
   const savedPayment = await updateUserPremiumPaymentRecord(client, payment.id, {
     provider_checkout_id: verification.providerCheckoutId,
     provider_payment_id: verification.providerPaymentId,
     payer_email: verification.payerEmail,
-    provider_payload: JSON.stringify(verification.rawPayload),
+    provider_payload: JSON.stringify({
+      ...mergedProviderPayload,
+      paypal_capture_payload: verification.rawPayload,
+    }),
     status: verification.status,
     paid_at: new Date(),
   });
@@ -1090,6 +1227,7 @@ const completeLocalBypassUserPremiumPayment = async ({ client, userId, provider,
 const startJobPostCheckout = async ({ client, req, companyUserId, provider, planId, draft, jobId = null }) => {
   const normalizedProvider = assertValidProvider(provider);
   const plan = getJobPostPlanById(planId);
+  const pricing = resolveDemoPricingForAmount(Number(plan?.price || 0));
 
   if (!plan) {
     throw new Error('Please select a valid pricing plan.');
@@ -1129,14 +1267,27 @@ const startJobPostCheckout = async ({ client, req, companyUserId, provider, plan
   });
   const clientBaseUrl = getClientBaseUrl(req);
 
-  const checkout = await createPayPalOrder({ payment, plan, clientBaseUrl });
+  const checkout = await createPayPalOrder({
+    payment,
+    plan,
+    clientBaseUrl,
+    pricing,
+  });
 
   const saved = await updatePaymentRecord(client, payment.id, {
     provider_checkout_id: checkout.providerCheckoutId,
+    provider_payload: JSON.stringify(mergeProviderPayload(payment.provider_payload, {
+      payment_pricing: buildExpectedPricingContext({ pricing }),
+    })),
   });
 
   return {
-    payment: saved || payment,
+    payment: saved || {
+      ...payment,
+      provider_payload: mergeProviderPayload(payment.provider_payload, {
+        payment_pricing: buildExpectedPricingContext({ pricing }),
+      }),
+    },
     plan,
     checkoutUrl: checkout.checkoutUrl,
   };
@@ -1360,19 +1511,27 @@ const finalizeVerifiedPayment = async ({ client, companyUserId, payment, verific
     throw new Error('The saved payment plan is no longer available.');
   }
 
-  const providerAmount = Math.round(Number(verification.amount || 0));
-  if (providerAmount !== Number(payment.amount || 0)) {
+  const expectedProviderAmount = getExpectedProviderAmountFromPayment(payment);
+  const providerAmountMinor = toMinorPhp(verification.amount || 0);
+  const expectedProviderAmountMinor = toMinorPhp(expectedProviderAmount || 0);
+  if (providerAmountMinor !== expectedProviderAmountMinor) {
     throw new Error('Verified payment amount does not match the selected plan.');
   }
 
   const job = payment.job_id
     ? await publishDraftJobForCompany(client, payment.job_id, company.id, plan, payment.id)
     : await createPublishedJobForCompany(client, company.id, payment.draft_payload || {}, plan, payment.id);
+  const mergedProviderPayload = mergeProviderPayload(payment.provider_payload, {
+    payment_reconciliation: buildProviderReconciliationContext({ verification }),
+  });
   const savedPayment = await updatePaymentRecord(client, payment.id, {
     provider_checkout_id: verification.providerCheckoutId,
     provider_payment_id: verification.providerPaymentId,
     payer_email: verification.payerEmail,
-    provider_payload: JSON.stringify(verification.rawPayload),
+    provider_payload: JSON.stringify({
+      ...mergedProviderPayload,
+      paypal_capture_payload: verification.rawPayload,
+    }),
     status: verification.status,
     paid_at: new Date(),
     job_id: job.id,

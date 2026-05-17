@@ -16,6 +16,36 @@ const {
 } = require('../services/paymentService');
 const { sendUserPremiumPaymentEmail } = require('../services/emailService');
 
+const parseProviderPayload = (value) => {
+  if (!value) return {};
+  if (typeof value === 'object') return value;
+  if (typeof value !== 'string') return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (error) {
+    return {};
+  }
+};
+
+const getReceiptPricingMeta = (payment, fallbackAmount) => {
+  const payload = parseProviderPayload(payment?.provider_payload);
+  const chargedAmount = Number(
+    payload?.payment_reconciliation?.actual_provider_amount_php
+    ?? payload?.payment_pricing?.expected_provider_amount_php
+    ?? fallbackAmount
+    ?? 0
+  );
+  const originalPlanAmount = Number(payment?.amount ?? fallbackAmount ?? 0);
+  const isDemoPayment = Boolean(payload?.payment_pricing?.is_demo_pricing_active);
+
+  return {
+    actualPaidAmount: chargedAmount,
+    originalPlanAmount,
+    isDemoPayment,
+  };
+};
+
 const listUserPremiumPaymentProviders = async (req, res) => {
   try {
     return res.json({
@@ -126,6 +156,7 @@ const captureUserPremiumPayPalCheckout = async (req, res) => {
       planLabel: result?.payment?.plan_label || USER_PREMIUM_PLAN.label,
       durationLabel: result?.payment?.plan_duration || USER_PREMIUM_PLAN.durationLabel,
       amount: Number(result?.payment?.amount || USER_PREMIUM_PLAN.price || 0),
+      ...getReceiptPricingMeta(result?.payment, USER_PREMIUM_PLAN.price),
       paidAt: result?.payment?.paid_at || new Date().toISOString(),
       provider: result?.payment?.provider || 'paypal',
     }).catch((error) => {
@@ -197,6 +228,7 @@ const completeLocalBypassUserPremiumCheckout = async (req, res) => {
       planLabel: result?.payment?.plan_label || USER_PREMIUM_PLAN.label,
       durationLabel: result?.payment?.plan_duration || USER_PREMIUM_PLAN.durationLabel,
       amount: Number(result?.payment?.amount || USER_PREMIUM_PLAN.price || 0),
+      ...getReceiptPricingMeta(result?.payment, USER_PREMIUM_PLAN.price),
       paidAt: result?.payment?.paid_at || new Date().toISOString(),
       provider: result?.payment?.provider || provider,
     }).catch((error) => {

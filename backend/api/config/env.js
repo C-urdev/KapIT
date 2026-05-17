@@ -1,6 +1,7 @@
 const dotenv = require('dotenv');
 const path = require('path');
 const { hasPayPalConfig, getPayPalClientId, getPayPalClientSecret } = require('./paymentEnv');
+const { logDemoPricingStartupGuard } = require('./paymentDemoPricing');
 
 let initialized = false;
 let environmentFilesLoaded = false;
@@ -231,6 +232,7 @@ const initEnvironment = () => {
 
   loadEnvironmentFiles();
   validateEnvironment();
+  logDemoPricingStartupGuard();
   initialized = true;
 };
 

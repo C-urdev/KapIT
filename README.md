@@ -90,6 +90,13 @@ Use `.env.example` as the single source of truth for environment variables.
 2. Fill required secrets and URLs.
 3. Keep production secrets in your hosting provider settings, not in Git.
 
+### Payments Demo Override (Temporary)
+
+- Use backend env vars only: `PAYMENT_DEMO_PRICING_ENABLED`, `PAYMENT_DEMO_AMOUNT_PHP`, and optional `PAYMENT_DEMO_PRICING_EXPIRES_AT`.
+- This override changes only the PayPal charge amount for demos.
+- Real plan prices, plan IDs, metadata, and entitlements remain unchanged in internal records.
+- Do not edit real plan prices directly for demo runs.
+
 ## ⚙️ How It Works
 
 1. The Next.js frontend (`frontend`) serves pages and client flows.

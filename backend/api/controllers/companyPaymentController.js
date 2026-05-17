@@ -16,6 +16,36 @@ const {
 } = require('../services/paymentService');
 const { sendCompanyJobPostPaymentEmail } = require('../services/emailService');
 
+const parseProviderPayload = (value) => {
+  if (!value) return {};
+  if (typeof value === 'object') return value;
+  if (typeof value !== 'string') return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (error) {
+    return {};
+  }
+};
+
+const getReceiptPricingMeta = (payment, fallbackAmount) => {
+  const payload = parseProviderPayload(payment?.provider_payload);
+  const chargedAmount = Number(
+    payload?.payment_reconciliation?.actual_provider_amount_php
+    ?? payload?.payment_pricing?.expected_provider_amount_php
+    ?? fallbackAmount
+    ?? 0
+  );
+  const originalPlanAmount = Number(payment?.amount ?? fallbackAmount ?? 0);
+  const isDemoPayment = Boolean(payload?.payment_pricing?.is_demo_pricing_active);
+
+  return {
+    actualPaidAmount: chargedAmount,
+    originalPlanAmount,
+    isDemoPayment,
+  };
+};
+
 const listJobPostingPlans = async (req, res) => {
   try {
     return res.json({ success: true, plans: JOB_POST_PLANS });
@@ -144,6 +174,7 @@ const capturePayPalCheckout = async (req, res) => {
       planLabel: result?.payment?.plan_label || payment?.plan_label || 'Job posting',
       durationLabel: result?.payment?.plan_duration || payment?.plan_duration || '',
       amount: Number(result?.payment?.amount || payment?.amount || 0),
+      ...getReceiptPricingMeta(result?.payment || payment, payment?.amount || 0),
       paidAt: result?.payment?.paid_at || new Date().toISOString(),
       provider: result?.payment?.provider || payment?.provider || 'paypal',
     }).catch((error) => {
@@ -226,6 +257,7 @@ const completeLocalBypassCheckout = async (req, res) => {
       planLabel: result?.payment?.plan_label || 'Job posting',
       durationLabel: result?.payment?.plan_duration || '',
       amount: Number(result?.payment?.amount || 0),
+      ...getReceiptPricingMeta(result?.payment, result?.payment?.amount || 0),
       paidAt: result?.payment?.paid_at || new Date().toISOString(),
       provider: result?.payment?.provider || provider,
     }).catch((error) => {
