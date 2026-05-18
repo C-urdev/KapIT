@@ -15,6 +15,8 @@ const withEnv = async (overrides, run) => {
     'FASTAPI_URL',
     'FASTAPI_INTERNAL_SERVICE_TOKEN',
     'INTERNAL_SERVICE_TOKEN',
+    'CHATBOT_PROVIDER',
+    'CHATBOT_MODE',
   ];
   const snapshot = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
 
@@ -39,6 +41,47 @@ const withEnv = async (overrides, run) => {
     delete require.cache[aiServiceModulePath];
   }
 };
+
+test('POST /api/public/chatbot/message uses local mode when CHATBOT_PROVIDER=local', async () => {
+  ensureBaseTestEnv();
+  const originalFetch = global.fetch;
+  let fetchCalls = 0;
+  global.fetch = async () => {
+    fetchCalls += 1;
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ reply: 'should-not-be-used', intent: 'fallback', confidence: 0, actions: [] }),
+    };
+  };
+
+  try {
+    await withEnv(
+      {
+        CHATBOT_PROVIDER: 'local',
+        FASTAPI_URL: 'http://127.0.0.1:8000',
+        FASTAPI_INTERNAL_SERVICE_TOKEN: 'unit-fastapi-token-abcdefghijklmnopqrstuvwxyz',
+      },
+      async () => {
+        const { createApp } = require('../app');
+        const app = createApp();
+        const response = await request(app)
+          .post('/api/public/chatbot/message')
+          .send({ message: 'How do I upload my resume?' });
+
+        assert.equal(response.status, 200);
+        assert.equal(response.body.success, true);
+        assert.equal(response.body.local, true);
+        assert.equal(response.body.intent, 'upload-resume');
+        assert.equal(response.headers['x-chatbot-mode'], 'local');
+      }
+    );
+
+    assert.equal(fetchCalls, 0);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
 
 test('aiService sends internal auth via Bearer and internal header', async () => {
   ensureBaseTestEnv();
@@ -162,7 +205,7 @@ test('POST /api/public/chatbot/message returns chatbot response on valid interna
   }
 });
 
-test('POST /api/public/chatbot/message returns degraded fallback when upstream AI rejects the request', async () => {
+test('POST /api/public/chatbot/message returns degraded local intent fallback when upstream AI rejects the request', async () => {
   ensureBaseTestEnv();
   const originalFetch = global.fetch;
   global.fetch = async () => ({
@@ -187,10 +230,10 @@ test('POST /api/public/chatbot/message returns degraded fallback when upstream A
         assert.equal(response.status, 200);
         assert.equal(response.body.success, true);
         assert.equal(response.body.degraded, true);
-        assert.equal(response.body.intent, 'fallback');
-        assert.equal(response.body.confidence, 0);
+        assert.equal(response.body.intent, 'greeting');
+        assert.equal(response.body.confidence, 0.85);
+        assert.match(String(response.body.reply || ''), /hi|hello|help/i);
         assert.equal(response.headers['x-chatbot-degraded'], '1');
-        assert.match(String(response.body.reply || ''), /something went wrong/i);
       }
     );
   } finally {
