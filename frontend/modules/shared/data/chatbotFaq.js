@@ -62,7 +62,7 @@ export const CHATBOT_INTENTS = [
   {
     id: 'create-account',
     group: 'auth',
-    keywords: ['create account', 'sign up', 'signup', 'register', 'new account'],
+    keywords: ['create account', 'create an account', 'how do i create an account', 'sign up', 'signup', 'register', 'new account'],
     responses: [
       'To create an account, open Register, choose Developer or Company, fill in your details, and submit.',
       'You can sign up from the Register page. After that, complete onboarding so your dashboard is ready to use.',
@@ -80,7 +80,7 @@ export const CHATBOT_INTENTS = [
   {
     id: 'reset-password',
     group: 'auth',
-    keywords: ['forgot password', 'reset password', 'password reset', 'forgot my password'],
+    keywords: ['forgot password', 'reset password', 'reset my password', 'how do i reset my password', 'password reset', 'forgot my password'],
     responses: [
       'Open Forgot Password, enter your email, then use the reset link sent to your inbox.',
       'Use the Forgot Password page, then check your email for a reset link. If it does not arrive, check spam and retry.',
@@ -98,7 +98,7 @@ export const CHATBOT_INTENTS = [
   {
     id: 'apply-job',
     group: 'platform',
-    keywords: ['how to apply', 'apply for job', 'job application', 'submit application'],
+    keywords: ['how to apply', 'how do i apply for a job', 'apply for a job', 'apply for job', 'job application', 'submit application'],
     responses: [
       'Open Jobs, pick a role, review requirements, and click Apply. Complete any required pre-assessment before submission.',
       'To apply, go to Jobs, choose a listing, then submit your application and profile details.',
@@ -116,7 +116,7 @@ export const CHATBOT_INTENTS = [
   {
     id: 'company-features',
     group: 'platform',
-    keywords: ['company features', 'employer account', 'post jobs', 'hire developers', 'company tools'],
+    keywords: ['company features', 'company account', 'company accounts', 'what can company accounts do', 'employer account', 'post jobs', 'hire developers', 'company tools'],
     responses: [
       'Company accounts can build a hiring profile, post jobs, review applicants, and message candidates from one dashboard.',
       'Employer accounts include job posting, applicant management, messaging, and hiring workflow tools.',
