@@ -285,3 +285,21 @@ test('developer profile save allows new users to set identity during onboarding'
   assert.equal(poolMock.__users[1].phone, '09123456789');
   assert.equal(poolMock.__users[1].email, 'new@example.com');
 });
+
+test('developer profile save accepts longer profile image data-url payloads', async () => {
+  const { app, poolMock } = loadApp();
+  const token = createDeveloperToken('dev-new-1');
+  const payload = {
+    ...buildValidPayload(),
+    profileImage: `data:image/png;base64,${'A'.repeat(12000)}`,
+  };
+
+  const response = await request(app)
+    .put('/api/developer/profile')
+    .set('Authorization', `Bearer ${token}`)
+    .send(payload);
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.success, true);
+  assert.equal(poolMock.__users[1].profile_image, payload.profileImage);
+});
