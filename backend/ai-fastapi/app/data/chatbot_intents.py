@@ -119,7 +119,7 @@ INTENT_DEFINITIONS: tuple[IntentDefinition, ...] = (
     IntentDefinition(
         intent_id='account',
         group='account',
-        keywords=('create account', 'sign up', 'signup', 'register', 'new account'),
+        keywords=('create account', 'create an account', 'how do i create an account', 'sign up', 'signup', 'register', 'new account'),
         responses=(
             'To create an account, open Register, choose Developer or Company, then submit your details.',
             'Use the Register page, complete signup, then finish onboarding to unlock your dashboard.',
@@ -128,7 +128,17 @@ INTENT_DEFINITIONS: tuple[IntentDefinition, ...] = (
     IntentDefinition(
         intent_id='auth',
         group='auth',
-        keywords=('login', 'log in', 'sign in', 'forgot password', 'reset password', 'verification issue', 'verification code'),
+        keywords=(
+            'login',
+            'log in',
+            'sign in',
+            'forgot password',
+            'reset password',
+            'reset my password',
+            'how do i reset my password',
+            'verification issue',
+            'verification code',
+        ),
         responses=(
             'For login or verification issues, confirm your credentials, then use password reset if needed.',
             'Use Login for access, or Forgot Password to reset credentials if you cannot sign in.',
@@ -137,7 +147,7 @@ INTENT_DEFINITIONS: tuple[IntentDefinition, ...] = (
     IntentDefinition(
         intent_id='job',
         group='job',
-        keywords=('how to apply', 'apply job', 'job application', 'submit application', 'applications'),
+        keywords=('how to apply', 'how do i apply for a job', 'apply for a job', 'apply job', 'job application', 'submit application', 'applications'),
         responses=(
             'Open Jobs, select a role, review requirements, and submit your application.',
             'To apply, go to Jobs, choose a listing, and complete any required pre-assessment before submitting.',
@@ -155,7 +165,16 @@ INTENT_DEFINITIONS: tuple[IntentDefinition, ...] = (
     IntentDefinition(
         intent_id='company',
         group='company',
-        keywords=('company features', 'employer account', 'post jobs', 'hire developers', 'company dashboard'),
+        keywords=(
+            'company features',
+            'company account',
+            'company accounts',
+            'what can company accounts do',
+            'employer account',
+            'post jobs',
+            'hire developers',
+            'company dashboard',
+        ),
         responses=(
             'Company accounts can manage job posts, applicants, and candidate messaging from one dashboard.',
             'Employer features include hiring profile setup, job posting, applicant review, and messaging tools.',

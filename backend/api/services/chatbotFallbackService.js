@@ -14,15 +14,27 @@ const INTENT_DEFINITIONS = [
   },
   {
     intent: 'apply-job',
-    keywords: ['apply for job', 'how to apply', 'job application', 'apply job'],
+    keywords: ['apply for a job', 'apply for job', 'how do i apply for a job', 'how to apply', 'job application', 'apply job'],
     reply: 'Open Jobs, choose a role, review requirements, and click Apply.',
     actions: [{ type: 'navigate', label: 'Browse jobs', href: '/jobs' }],
   },
   {
+    intent: 'create-account',
+    keywords: ['create account', 'create an account', 'how do i create an account', 'sign up', 'signup', 'register', 'new account'],
+    reply: 'To create an account, open Register, choose Developer or Company, and submit your details.',
+    actions: [{ type: 'navigate', label: 'Create account', href: '/auth/register' }],
+  },
+  {
     intent: 'reset-password',
-    keywords: ['forgot password', 'reset password', 'password reset'],
+    keywords: ['forgot password', 'reset password', 'reset my password', 'how do i reset my password', 'password reset'],
     reply: 'Use Forgot Password, enter your email, then follow the reset link.',
     actions: [{ type: 'navigate', label: 'Reset password', href: '/forgot-password' }],
+  },
+  {
+    intent: 'company-features',
+    keywords: ['company features', 'company account', 'company accounts', 'what can company accounts do', 'employer account', 'post jobs', 'hire developers'],
+    reply: 'Company accounts can create a hiring profile, post jobs, review applicants, and message candidates.',
+    actions: [{ type: 'navigate', label: 'Company dashboard', href: '/company/dashboard' }],
   },
   {
     intent: 'pricing',
@@ -38,9 +50,12 @@ const INTENT_DEFINITIONS = [
   },
 ];
 
+const FILLER_TOKENS = new Set(['a', 'an', 'the', 'how', 'do', 'i', 'my', 'can', 'to', 'for', 'what']);
+
 const normalizeInput = (value) =>
   String(value || '')
     .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
     .trim()
     .replace(/\s+/g, ' ');
 
@@ -49,7 +64,27 @@ const isFollowUpQuestion = (value) => {
   return ['where', 'where?', 'huh', 'huh?', '?', '??'].includes(normalized);
 };
 
-const includesKeyword = (message, keyword) => message.includes(normalizeInput(keyword));
+const includesKeyword = (message, keyword) => {
+  const normalizedKeyword = normalizeInput(keyword);
+  if (!normalizedKeyword) return false;
+
+  if (message.includes(normalizedKeyword)) {
+    return true;
+  }
+
+  const messageTokens = message.split(' ').filter(Boolean);
+  const keywordTokens = normalizedKeyword.split(' ').filter(Boolean);
+  if (!messageTokens.length || !keywordTokens.length) {
+    return false;
+  }
+
+  const filteredMessageTokens = messageTokens.filter((token) => !FILLER_TOKENS.has(token));
+  const filteredKeywordTokens = keywordTokens.filter((token) => !FILLER_TOKENS.has(token));
+  const comparisonMessageTokens = filteredMessageTokens.length > 0 ? filteredMessageTokens : messageTokens;
+  const comparisonKeywordTokens = filteredKeywordTokens.length > 0 ? filteredKeywordTokens : keywordTokens;
+
+  return comparisonKeywordTokens.every((token) => comparisonMessageTokens.includes(token));
+};
 
 const pickFallbackIntentByLastIntent = (lastIntent) => {
   const normalized = normalizeInput(lastIntent);
@@ -94,4 +129,3 @@ module.exports = {
   FALLBACK_REPLY,
   resolveLocalChatbotFallback,
 };
-
