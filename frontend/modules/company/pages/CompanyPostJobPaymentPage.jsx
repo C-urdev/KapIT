@@ -4,6 +4,7 @@ import { companyAPI } from '@companyFeatures/companyAPI';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
 import { JOB_POST_PLANS, PAYMENT_PROVIDERS, PLAN_FEATURES } from '@companyFeatures/companyPaymentCatalog';
 import { clearCompanyPostJobFormDraft } from '@companyFeatures/postJobDraftStorage';
+import { resolveCheckoutUrls } from '@sharedUtils/checkoutUrlResolver';
 
 const STORAGE_KEY = 'company-post-job-draft';
 const PAYMENT_MESSAGE_TYPE = 'company-post-job-payment-success';
@@ -49,6 +50,7 @@ export default function CompanyPostJobPaymentPage() {
   const [verifying, setVerifying] = React.useState(false);
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState('');
+  const [checkoutFallbackUrls, setCheckoutFallbackUrls] = React.useState([]);
   const [completedCheckout, setCompletedCheckout] = React.useState(null);
   const handledReturnRef = React.useRef(false);
   const paymentCompletedRef = React.useRef(false);
@@ -181,6 +183,28 @@ export default function CompanyPostJobPaymentPage() {
   }, []);
 
   React.useEffect(() => {
+    const handleNestedCheckoutMessage = (event) => {
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+
+      const type = String(event?.data?.type || '').trim();
+      if (type !== PAYMENT_MESSAGE_TYPE && type !== PAYMENT_CANCEL_MESSAGE_TYPE) {
+        return;
+      }
+
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage(event.data, window.location.origin);
+      }
+    };
+
+    window.addEventListener('message', handleNestedCheckoutMessage);
+    return () => {
+      window.removeEventListener('message', handleNestedCheckoutMessage);
+    };
+  }, []);
+
+  React.useEffect(() => {
     pendingCheckoutIdempotencyKeyRef.current = '';
   }, [selectedPlanId, paymentMethod, draft?.jobId, draft?.title, draft?.description]);
 
@@ -205,6 +229,7 @@ export default function CompanyPostJobPaymentPage() {
     setLoading(true);
     setError('');
     setSuccess('');
+    setCheckoutFallbackUrls([]);
 
     try {
       if (!selectedProviderState.enabled) {
@@ -227,13 +252,24 @@ export default function CompanyPostJobPaymentPage() {
         },
       });
 
-      if (!data?.checkoutUrl) {
+      const checkoutUrls = resolveCheckoutUrls(data);
+      if (!checkoutUrls.length) {
         throw new Error('The payment provider did not return a checkout URL.');
       }
 
+      const primaryCheckoutUrl = checkoutUrls[0];
       setCurrentPaymentId(data.paymentId || '');
+      setCheckoutFallbackUrls(checkoutUrls.slice(1));
       pendingCheckoutIdempotencyKeyRef.current = '';
-      window.location.assign(data.checkoutUrl);
+
+      const checkoutWindow = window.open(primaryCheckoutUrl, 'kapit-paypal-checkout');
+      if (checkoutWindow && !checkoutWindow.closed) {
+        setLoading(false);
+        setSuccess('PayPal checkout opened in a new tab. Complete payment there, then return here.');
+        return;
+      }
+
+      window.location.assign(primaryCheckoutUrl);
     } catch (err) {
       setLoading(false);
       setError(err?.message || 'Unable to start the payment flow.');
@@ -491,6 +527,19 @@ export default function CompanyPostJobPaymentPage() {
                   {success}
                 </div>
               )}
+              {checkoutFallbackUrls.length ? (
+                <div className="rounded-[22px] border border-[#bfd0af] dark:border-[#4b5560] bg-[#f8fbf6] dark:bg-[#202428] p-4 text-sm text-[#344e41] dark:text-[#eceff2]">
+                  <p>If PayPal does not load, open this alternate secure checkout link:</p>
+                  <a
+                    href={checkoutFallbackUrls[0]}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-flex items-center gap-2 font-semibold text-[#2f6b4f] dark:text-[#9fd7a6] underline underline-offset-2"
+                  >
+                    Open alternate PayPal checkout
+                  </a>
+                </div>
+              ) : null}
 
               <div className="flex flex-col gap-3 border-t border-[#e3ebf3] dark:border-[#444d57] pt-3 sm:flex-row sm:flex-wrap">
                 <button

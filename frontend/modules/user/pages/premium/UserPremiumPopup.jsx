@@ -7,6 +7,7 @@ import {
   cancelUserPremiumCheckout,
   completeUserPremiumLocalBypass,
 } from '@sharedServices/authService';
+import { resolveCheckoutUrls } from '@sharedUtils/checkoutUrlResolver';
 
 const USER_PREMIUM_PAYMENT_PATH = '/premium/payment';
 const USER_PREMIUM_PAYMENT_SUCCESS = 'user-premium-payment-success';
@@ -143,6 +144,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
   const [verifying, setVerifying] = React.useState(false);
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState('');
+  const [checkoutFallbackUrls, setCheckoutFallbackUrls] = React.useState([]);
   const [completedCheckout, setCompletedCheckout] = React.useState(null);
   const handledReturnRef = React.useRef(false);
 
@@ -264,6 +266,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
     setLoading(true);
     setError('');
     setSuccess('');
+    setCheckoutFallbackUrls([]);
 
     try {
       if (!selectedProviderState.enabled) {
@@ -274,12 +277,23 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
         provider: paymentMethod,
       });
 
-      if (!data?.checkoutUrl) {
+      const checkoutUrls = resolveCheckoutUrls(data);
+      if (!checkoutUrls.length) {
         throw new Error('The payment provider did not return a checkout URL.');
       }
 
+      const primaryCheckoutUrl = checkoutUrls[0];
       setCurrentPaymentId(data.paymentId || '');
-      window.location.assign(data.checkoutUrl);
+      setCheckoutFallbackUrls(checkoutUrls.slice(1));
+
+      const checkoutWindow = window.open(primaryCheckoutUrl, 'kapit-paypal-checkout');
+      if (checkoutWindow && !checkoutWindow.closed) {
+        setLoading(false);
+        setSuccess('PayPal checkout opened in a new tab. Complete payment there, then return here.');
+        return;
+      }
+
+      window.location.assign(primaryCheckoutUrl);
     } catch (checkoutError) {
       setLoading(false);
       setError(checkoutError?.message || 'Unable to start the payment flow.');
@@ -470,6 +484,19 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
               {success}
             </div>
           )}
+          {checkoutFallbackUrls.length ? (
+            <div className="rounded-[22px] border border-[#bfd0af] dark:border-[#4b5560] bg-[#f8fbf6] dark:bg-[#202428] p-4 text-sm text-[#344e41] dark:text-[#eceff2]">
+              <p>If PayPal does not load, open this alternate secure checkout link:</p>
+              <a
+                href={checkoutFallbackUrls[0]}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-2 font-semibold text-[#2f6b4f] dark:text-[#9fd7a6] underline underline-offset-2"
+              >
+                Open alternate PayPal checkout
+              </a>
+            </div>
+          ) : null}
 
           <div className="flex flex-col gap-3 border-t border-[#e3ebf3] dark:border-[#444d57] pt-4 sm:flex-row sm:flex-wrap">
             <button
@@ -632,6 +659,27 @@ export default function UserPremiumPopup({ isOpen, onClose, user, onOpenMerchant
 }
 
 export function UserPremiumPaymentWindow({ user, onUpgrade }) {
+  React.useEffect(() => {
+    const handleNestedCheckoutMessage = (event) => {
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+
+      if (event?.data?.type !== USER_PREMIUM_PAYMENT_SUCCESS) {
+        return;
+      }
+
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage(event.data, window.location.origin);
+      }
+    };
+
+    window.addEventListener('message', handleNestedCheckoutMessage);
+    return () => {
+      window.removeEventListener('message', handleNestedCheckoutMessage);
+    };
+  }, []);
+
   const handleClose = () => {
     if (window.opener && !window.opener.closed) {
       window.close();
