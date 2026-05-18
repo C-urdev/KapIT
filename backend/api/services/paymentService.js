@@ -114,6 +114,92 @@ const getPayPalBaseUrl = () => (String(process.env.PAYPAL_ENV || 'sandbox').trim
   ? 'https://api-m.paypal.com'
   : 'https://api-m.sandbox.paypal.com');
 
+const isPayPalLiveMode = () => String(process.env.PAYPAL_ENV || 'sandbox').trim().toLowerCase() === 'live';
+
+const getPayPalCheckoutHosts = () => (
+  isPayPalLiveMode()
+    ? ['www.paypal.com', 'paypal.com']
+    : ['www.sandbox.paypal.com', 'sandbox.paypal.com']
+);
+
+const normalizeCheckoutUrl = (value) => {
+  const candidate = String(value || '').trim();
+  if (!candidate) {
+    return '';
+  }
+  try {
+    const parsed = new URL(candidate);
+    if (parsed.protocol !== 'https:') {
+      return '';
+    }
+    return parsed.toString();
+  } catch {
+    return '';
+  }
+};
+
+const addUniqueUrl = (list, value) => {
+  const normalized = normalizeCheckoutUrl(value);
+  if (!normalized) {
+    return;
+  }
+  if (!list.includes(normalized)) {
+    list.push(normalized);
+  }
+};
+
+const buildPayPalCheckoutNowUrl = (host, orderId) => {
+  const normalizedHost = String(host || '').trim().toLowerCase();
+  const normalizedOrderId = String(orderId || '').trim();
+  if (!normalizedHost || !normalizedOrderId) {
+    return '';
+  }
+  return `https://${normalizedHost}/checkoutnow?token=${encodeURIComponent(normalizedOrderId)}`;
+};
+
+const resolvePayPalCheckoutTargets = (orderPayload) => {
+  const links = Array.isArray(orderPayload?.links) ? orderPayload.links : [];
+  const preferred = [];
+  const fallback = [];
+
+  for (const link of links) {
+    const rel = String(link?.rel || '').trim().toLowerCase();
+    const href = normalizeCheckoutUrl(link?.href);
+    if (!href) {
+      continue;
+    }
+
+    if (rel === 'payer-action') {
+      preferred.push(href);
+      continue;
+    }
+
+    if (rel === 'approve') {
+      fallback.push(href);
+    }
+  }
+
+  const checkoutUrls = [];
+  preferred.forEach((url) => addUniqueUrl(checkoutUrls, url));
+  fallback.forEach((url) => addUniqueUrl(checkoutUrls, url));
+
+  const orderId = String(orderPayload?.id || '').trim();
+  if (orderId) {
+    getPayPalCheckoutHosts().forEach((host) => {
+      addUniqueUrl(checkoutUrls, buildPayPalCheckoutNowUrl(host, orderId));
+    });
+  }
+
+  if (!checkoutUrls.length) {
+    throw new Error('PayPal did not return an approval URL.');
+  }
+
+  return {
+    checkoutUrl: checkoutUrls[0],
+    checkoutUrls,
+  };
+};
+
 const getPayPalCredentials = () => {
   const clientId = getPayPalClientId();
   const clientSecret = getPayPalClientSecret();
@@ -942,13 +1028,11 @@ const createPayPalOrder = async ({ payment, plan, clientBaseUrl, pricing }) => {
     throw new Error(data?.message || 'Failed to create PayPal order.');
   }
 
-  const approvalLink = data.links.find((link) => link.rel === 'approve')?.href;
-  if (!approvalLink) {
-    throw new Error('PayPal did not return an approval URL.');
-  }
+  const checkoutTarget = resolvePayPalCheckoutTargets(data);
 
   return {
-    checkoutUrl: approvalLink,
+    checkoutUrl: checkoutTarget.checkoutUrl,
+    checkoutUrls: checkoutTarget.checkoutUrls,
     providerCheckoutId: data.id,
   };
 };
@@ -1053,13 +1137,11 @@ const createUserPremiumPayPalOrder = async ({ payment, plan, clientBaseUrl, pric
     throw new Error(data?.message || 'Failed to create PayPal order.');
   }
 
-  const approvalLink = data.links.find((link) => link.rel === 'approve')?.href;
-  if (!approvalLink) {
-    throw new Error('PayPal did not return an approval URL.');
-  }
+  const checkoutTarget = resolvePayPalCheckoutTargets(data);
 
   return {
-    checkoutUrl: approvalLink,
+    checkoutUrl: checkoutTarget.checkoutUrl,
+    checkoutUrls: checkoutTarget.checkoutUrls,
     providerCheckoutId: data.id,
   };
 };
@@ -1099,6 +1181,7 @@ const startUserPremiumCheckout = async ({ client, req, userId, provider }) => {
     },
     plan,
     checkoutUrl: checkout.checkoutUrl,
+    checkoutUrls: checkout.checkoutUrls,
   };
 };
 
@@ -1290,6 +1373,7 @@ const startJobPostCheckout = async ({ client, req, companyUserId, provider, plan
     },
     plan,
     checkoutUrl: checkout.checkoutUrl,
+    checkoutUrls: checkout.checkoutUrls,
   };
 };
 
@@ -1318,10 +1402,17 @@ const startJobPostCheckoutIdempotent = async ({
   if (cached) {
     const parsed = await parseIdempotencyCacheValue({ redis, key: redisKey, rawValue: cached });
     if (parsed?.paymentId && parsed?.checkoutUrl && parsed?.plan) {
+      const cachedCheckoutUrls = Array.isArray(parsed.checkoutUrls)
+        ? parsed.checkoutUrls.map(normalizeCheckoutUrl).filter(Boolean)
+        : [];
+      if (!cachedCheckoutUrls.length) {
+        addUniqueUrl(cachedCheckoutUrls, parsed.checkoutUrl);
+      }
       return {
         payment: { id: parsed.paymentId },
         plan: parsed.plan,
         checkoutUrl: parsed.checkoutUrl,
+        checkoutUrls: cachedCheckoutUrls,
         idempotencyKey: normalizedKey,
       };
     }
@@ -1334,10 +1425,17 @@ const startJobPostCheckoutIdempotent = async ({
     if (pendingCached) {
       const parsed = await parseIdempotencyCacheValue({ redis, key: redisKey, rawValue: pendingCached });
       if (parsed?.paymentId && parsed?.checkoutUrl && parsed?.plan) {
+        const cachedCheckoutUrls = Array.isArray(parsed.checkoutUrls)
+          ? parsed.checkoutUrls.map(normalizeCheckoutUrl).filter(Boolean)
+          : [];
+        if (!cachedCheckoutUrls.length) {
+          addUniqueUrl(cachedCheckoutUrls, parsed.checkoutUrl);
+        }
         return {
           payment: { id: parsed.paymentId },
           plan: parsed.plan,
           checkoutUrl: parsed.checkoutUrl,
+          checkoutUrls: cachedCheckoutUrls,
           idempotencyKey: normalizedKey,
         };
       }
@@ -1361,6 +1459,7 @@ const startJobPostCheckoutIdempotent = async ({
       JSON.stringify({
         paymentId: result.payment.id,
         checkoutUrl: result.checkoutUrl,
+        checkoutUrls: Array.isArray(result.checkoutUrls) ? result.checkoutUrls : [result.checkoutUrl],
         plan: result.plan,
         cachedAt: new Date().toISOString(),
       }),
