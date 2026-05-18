@@ -5,6 +5,7 @@ import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
 import { JOB_POST_PLANS, PAYMENT_PROVIDERS, PLAN_FEATURES } from '@companyFeatures/companyPaymentCatalog';
 import { clearCompanyPostJobFormDraft } from '@companyFeatures/postJobDraftStorage';
 import { resolveCheckoutUrls } from '@sharedUtils/checkoutUrlResolver';
+import { getPaymentErrorMessageForUser } from '@sharedUtils/paymentErrorMessages';
 
 const STORAGE_KEY = 'company-post-job-draft';
 const PAYMENT_MESSAGE_TYPE = 'company-post-job-payment-success';
@@ -172,7 +173,12 @@ export default function CompanyPostJobPaymentPage() {
 
         throw new Error('Unknown checkout return state.');
       } catch (err) {
-        setError(err?.message || 'Payment verification failed. Your draft is still saved and unpublished.');
+        setError(
+          getPaymentErrorMessageForUser(
+            err,
+            'Payment verification failed. Your draft is still saved and unpublished.'
+          )
+        );
         cleanupUrl();
       } finally {
         setVerifying(false);
@@ -272,7 +278,7 @@ export default function CompanyPostJobPaymentPage() {
       window.location.assign(primaryCheckoutUrl);
     } catch (err) {
       setLoading(false);
-      setError(err?.message || 'Unable to start the payment flow.');
+      setError(getPaymentErrorMessageForUser(err, 'Unable to start the payment flow.'));
     }
   };
 
@@ -305,7 +311,7 @@ export default function CompanyPostJobPaymentPage() {
       setSuccess('Local sample payment completed and your job was published successfully.');
       notifyOpener(PAYMENT_MESSAGE_TYPE, { job: data?.job || null });
     } catch (err) {
-      setError(err?.message || 'Unable to complete the local sample payment.');
+      setError(getPaymentErrorMessageForUser(err, 'Unable to complete the local sample payment.'));
     } finally {
       setLoading(false);
     }
