@@ -87,7 +87,14 @@ const createUserPremiumCheckoutSession = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
-    logger.error('Create user premium checkout session error:', error);
+    logger.error(
+      {
+        err: error,
+        userId: req.user?.id || null,
+        provider: req.body?.provider || null,
+      },
+      'Create user premium checkout session error.'
+    );
     return res.status(400).json({ success: false, message: error?.message || 'Failed to start checkout.' });
   } finally {
     client?.release();
@@ -168,7 +175,14 @@ const captureUserPremiumPayPalCheckout = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
-    logger.error('Capture user premium PayPal checkout error:', error);
+    logger.error(
+      {
+        err: error,
+        userId: req.user?.id || null,
+        paymentId: req.body?.paymentId || null,
+      },
+      'Capture user premium PayPal checkout error.'
+    );
     return res.status(400).json({ success: false, message: error?.message || 'Failed to capture PayPal payment.' });
   } finally {
     client?.release();
@@ -244,7 +258,14 @@ const completeLocalBypassUserPremiumCheckout = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
-    logger.error('Complete localhost bypass user premium checkout error:', error);
+    logger.error(
+      {
+        err: error,
+        userId: req.user?.id || null,
+        provider: req.body?.provider || null,
+      },
+      'Complete localhost bypass user premium checkout error.'
+    );
     return res.status(400).json({ success: false, message: error?.message || 'Failed to complete localhost bypass payment.' });
   } finally {
     client?.release();
