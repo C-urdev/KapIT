@@ -1,4 +1,9 @@
 const DEFAULT_TIMEOUT_MS = Number(process.env.FASTAPI_TIMEOUT_MS || 12000);
+const CHATBOT_UPSTREAM_COOLDOWN_MS = Math.max(1000, Number(process.env.FASTAPI_CHATBOT_COOLDOWN_MS || 60000));
+const FASTAPI_RETRY_MAX = Math.max(1, Number(process.env.FASTAPI_RETRY_MAX || 3));
+const FASTAPI_RETRY_BASE_MS = Math.max(50, Number(process.env.FASTAPI_RETRY_BASE_MS || 250));
+
+let chatbotUpstreamCooldownUntilMs = 0;
 
 const normalizeBaseUrl = () =>
   String(process.env.FASTAPI_URL || process.env.NEXT_PUBLIC_FASTAPI_URL || '')
@@ -10,12 +15,25 @@ const isAiConfigured = () => Boolean(normalizeBaseUrl());
 const resolveInternalServiceToken = () =>
   String(process.env.FASTAPI_INTERNAL_SERVICE_TOKEN || process.env.INTERNAL_SERVICE_TOKEN || '').trim();
 
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const safeJson = async (response) => {
   try {
     return await response.json();
   } catch {
     return {};
   }
+};
+
+const isRetryableStatus = (statusCode) => Number(statusCode) >= 500 || Number(statusCode) === 429;
+
+const isRetryableNetworkError = (error) => {
+  if (!error) return false;
+  const code = String(error?.code || '').toUpperCase();
+  if (['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT', 'ECONNABORTED', 'EPIPE', 'ENOTFOUND'].includes(code)) {
+    return true;
+  }
+  return false;
 };
 
 const toTrimmedStringList = (value, { max = 60 } = {}) => {
@@ -35,7 +53,7 @@ const toTrimmedStringList = (value, { max = 60 } = {}) => {
   );
 };
 
-const postToFastApi = async (path, payload) => {
+const postToFastApiOnce = async (path, payload) => {
   const baseUrl = normalizeBaseUrl();
   const internalServiceToken = resolveInternalServiceToken();
 
@@ -88,6 +106,28 @@ const postToFastApi = async (path, payload) => {
   } finally {
     clearTimeout(timeout);
   }
+};
+
+const postToFastApi = async (path, payload) => {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= FASTAPI_RETRY_MAX; attempt += 1) {
+    try {
+      return await postToFastApiOnce(path, payload);
+    } catch (error) {
+      lastError = error;
+      const statusCode = Number(error?.statusCode || 0);
+      const retryable = isRetryableStatus(statusCode) || isRetryableNetworkError(error) || error?.code === 'FASTAPI_TIMEOUT';
+      if (!retryable || attempt >= FASTAPI_RETRY_MAX) {
+        throw error;
+      }
+
+      const backoffMs = FASTAPI_RETRY_BASE_MS * (2 ** (attempt - 1));
+      await wait(backoffMs);
+    }
+  }
+
+  throw lastError || new Error(`FastAPI request failed for ${path}.`);
 };
 
 const buildCandidateProfilePayload = (profile) => ({
@@ -160,10 +200,29 @@ const matchJobsBySkills = async ({ skills, experience, candidate }) =>
   });
 
 const getChatbotReply = async ({ message, lastIntent }) =>
-  postToFastApi('/api/chatbot/message', {
-    message: String(message || '').trim(),
-    last_intent: String(lastIntent || '').trim().toLowerCase() || undefined,
-  });
+  (async () => {
+    if (Date.now() < chatbotUpstreamCooldownUntilMs) {
+      const cooldownError = new Error('FastAPI chatbot upstream is temporarily unavailable.');
+      cooldownError.code = 'FASTAPI_CHATBOT_UNAVAILABLE';
+      cooldownError.statusCode = 503;
+      throw cooldownError;
+    }
+
+    try {
+      const data = await postToFastApi('/api/chatbot/message', {
+        message: String(message || '').trim(),
+        last_intent: String(lastIntent || '').trim().toLowerCase() || undefined,
+      });
+      chatbotUpstreamCooldownUntilMs = 0;
+      return data;
+    } catch (error) {
+      const statusCode = Number(error?.statusCode || 0);
+      if (statusCode >= 500 || error?.code === 'FASTAPI_TIMEOUT') {
+        chatbotUpstreamCooldownUntilMs = Date.now() + CHATBOT_UPSTREAM_COOLDOWN_MS;
+      }
+      throw error;
+    }
+  })();
 
 module.exports = {
   isAiConfigured,
