@@ -94,6 +94,7 @@ const createCheckoutSession = async (req, res) => {
       success: true,
       paymentId: data.payment.id,
       checkoutUrl: data.checkoutUrl,
+      checkoutUrls: Array.isArray(data.checkoutUrls) ? data.checkoutUrls : [data.checkoutUrl],
       plan: data.plan,
       idempotencyKey: data.idempotencyKey || idempotencyKey || null,
     });
