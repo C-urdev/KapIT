@@ -162,7 +162,7 @@ test('POST /api/public/chatbot/message returns chatbot response on valid interna
   }
 });
 
-test('POST /api/public/chatbot/message rejects unauthorized upstream AI responses safely', async () => {
+test('POST /api/public/chatbot/message returns degraded fallback when upstream AI rejects the request', async () => {
   ensureBaseTestEnv();
   const originalFetch = global.fetch;
   global.fetch = async () => ({
@@ -184,9 +184,13 @@ test('POST /api/public/chatbot/message rejects unauthorized upstream AI response
           .post('/api/public/chatbot/message')
           .send({ message: 'hello' });
 
-        assert.equal(response.status, 502);
-        assert.equal(response.body.success, false);
-        assert.equal(response.body.error, 'Request failed.');
+        assert.equal(response.status, 200);
+        assert.equal(response.body.success, true);
+        assert.equal(response.body.degraded, true);
+        assert.equal(response.body.intent, 'fallback');
+        assert.equal(response.body.confidence, 0);
+        assert.equal(response.headers['x-chatbot-degraded'], '1');
+        assert.match(String(response.body.reply || ''), /something went wrong/i);
       }
     );
   } finally {
