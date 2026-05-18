@@ -41,6 +41,13 @@ test('resolveChatbotResponse recognizes platform questions', async () => {
   assert.equal(result.intentId, 'upload-resume');
 });
 
+test('resolveChatbotResponse recognizes company account capability questions', async () => {
+  const { resolveChatbotResponse } = await import(matcherModuleUrl);
+  const result = resolveChatbotResponse('What can company accounts do?');
+  assert.equal(result.kind, 'intent');
+  assert.equal(result.intentId, 'company-features');
+});
+
 test('resolveChatbotResponse detects nonsense or random inputs', async () => {
   const { resolveChatbotResponse } = await import(matcherModuleUrl);
   const symbols = resolveChatbotResponse('@@@!!!');
