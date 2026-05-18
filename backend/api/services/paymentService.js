@@ -260,10 +260,77 @@ const parseIdempotencyCacheValue = async ({ redis, key, rawValue }) => {
   }
 };
 
-const createPaymentError = (message, retryable = false) => {
+const createPaymentError = (message, retryableOrOptions = false) => {
+  const options = (retryableOrOptions && typeof retryableOrOptions === 'object')
+    ? retryableOrOptions
+    : { retryable: Boolean(retryableOrOptions) };
   const error = new Error(message);
-  error.retryable = retryable;
+  error.retryable = Boolean(options.retryable);
+  if (Number.isInteger(options.statusCode) && options.statusCode >= 400 && options.statusCode <= 599) {
+    error.statusCode = options.statusCode;
+  }
+  if (options.providerIssue) {
+    error.providerIssue = String(options.providerIssue);
+  }
+  if (options.providerDebugId) {
+    error.providerDebugId = String(options.providerDebugId);
+  }
   return error;
+};
+
+const extractPayPalErrorDetail = (data) => {
+  const details = Array.isArray(data?.details) ? data.details : [];
+  const first = details[0] && typeof details[0] === 'object' ? details[0] : null;
+  const issue = String(first?.issue || '').trim();
+  const description = String(first?.description || '').trim();
+  const message = String(data?.message || '').trim();
+  const debugId = String(data?.debug_id || '').trim();
+  const name = String(data?.name || '').trim();
+
+  return {
+    name,
+    issue,
+    description,
+    message,
+    debugId,
+    detailsCount: details.length,
+  };
+};
+
+const formatPayPalOrderErrorMessage = ({ detail, fallbackMessage }) => {
+  const base = detail.description || detail.message || fallbackMessage;
+  const tags = [];
+  if (detail.issue) {
+    tags.push(`issue=${detail.issue}`);
+  }
+  if (detail.debugId) {
+    tags.push(`debug_id=${detail.debugId}`);
+  }
+  if (!tags.length) {
+    return base;
+  }
+  return `${base} (${tags.join(', ')})`;
+};
+
+const createPayPalOrderCreationError = ({
+  responseStatus,
+  data,
+  fallbackMessage = 'Failed to create PayPal order.',
+}) => {
+  const detail = extractPayPalErrorDetail(data);
+  const message = formatPayPalOrderErrorMessage({
+    detail,
+    fallbackMessage,
+  });
+
+  const retryable = responseStatus >= 500;
+  const statusCode = responseStatus >= 500 ? 503 : 502;
+  return createPaymentError(message, {
+    retryable,
+    statusCode,
+    providerIssue: detail.issue || undefined,
+    providerDebugId: detail.debugId || undefined,
+  });
 };
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -1022,10 +1089,19 @@ const createPayPalOrder = async ({ payment, plan, clientBaseUrl, pricing }) => {
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok || !Array.isArray(data?.links)) {
-    if (response.status >= 500) {
-      throw createPaymentError(data?.message || 'PayPal order creation temporary failure.', true);
-    }
-    throw new Error(data?.message || 'Failed to create PayPal order.');
+    logger.warn(
+      {
+        responseStatus: response.status,
+        paypalError: extractPayPalErrorDetail(data),
+        paymentId: payment.id,
+        context: 'company_job_post_checkout',
+      },
+      'PayPal order creation failed.'
+    );
+    throw createPayPalOrderCreationError({
+      responseStatus: response.status,
+      data,
+    });
   }
 
   const checkoutTarget = resolvePayPalCheckoutTargets(data);
@@ -1131,10 +1207,20 @@ const createUserPremiumPayPalOrder = async ({ payment, plan, clientBaseUrl, pric
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok || !Array.isArray(data?.links)) {
-    if (response.status >= 500) {
-      throw createPaymentError(data?.message || 'PayPal order creation temporary failure.', true);
-    }
-    throw new Error(data?.message || 'Failed to create PayPal order.');
+    logger.warn(
+      {
+        responseStatus: response.status,
+        paypalError: extractPayPalErrorDetail(data),
+        paymentId: payment.id,
+        pricingMode: pricing?.effectiveMode || 'real',
+        context: 'user_premium_checkout',
+      },
+      'PayPal user premium order creation failed.'
+    );
+    throw createPayPalOrderCreationError({
+      responseStatus: response.status,
+      data,
+    });
   }
 
   const checkoutTarget = resolvePayPalCheckoutTargets(data);
