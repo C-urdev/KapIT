@@ -102,16 +102,18 @@ const createCheckoutSession = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
+    const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 400;
     logger.error(
       {
         err: error,
         userId: req.user?.id || null,
         provider: req.body?.provider || null,
         planId: req.body?.planId || null,
+        statusCode,
       },
       'Create checkout session error.'
     );
-    return res.status(400).json({ success: false, message: error?.message || 'Failed to start checkout.' });
+    return res.status(statusCode).json({ success: false, message: error?.message || 'Failed to start checkout.' });
   } finally {
     client?.release();
   }
@@ -194,15 +196,17 @@ const capturePayPalCheckout = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
+    const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 400;
     logger.error(
       {
         err: error,
         userId: req.user?.id || null,
         paymentId: req.body?.paymentId || null,
+        statusCode,
       },
       'Capture PayPal checkout error.'
     );
-    return res.status(400).json({ success: false, message: error?.message || 'Failed to capture PayPal payment.' });
+    return res.status(statusCode).json({ success: false, message: error?.message || 'Failed to capture PayPal payment.' });
   } finally {
     client?.release();
   }
@@ -284,16 +288,18 @@ const completeLocalBypassCheckout = async (req, res) => {
     if (client) {
       await client.query('ROLLBACK');
     }
+    const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 400;
     logger.error(
       {
         err: error,
         userId: req.user?.id || null,
         provider: req.body?.provider || null,
         planId: req.body?.planId || null,
+        statusCode,
       },
       'Complete localhost bypass checkout error.'
     );
-    return res.status(400).json({ success: false, message: error?.message || 'Failed to complete localhost bypass payment.' });
+    return res.status(statusCode).json({ success: false, message: error?.message || 'Failed to complete localhost bypass payment.' });
   } finally {
     client?.release();
   }
