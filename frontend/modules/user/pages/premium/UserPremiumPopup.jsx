@@ -8,6 +8,7 @@ import {
   completeUserPremiumLocalBypass,
 } from '@sharedServices/authService';
 import { resolveCheckoutUrls } from '@sharedUtils/checkoutUrlResolver';
+import { getPaymentErrorMessageForUser } from '@sharedUtils/paymentErrorMessages';
 
 const USER_PREMIUM_PAYMENT_PATH = '/premium/payment';
 const USER_PREMIUM_PAYMENT_SUCCESS = 'user-premium-payment-success';
@@ -252,7 +253,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
 
         throw new Error('Unknown checkout return state.');
       } catch (verificationError) {
-        setError(verificationError?.message || 'Payment verification failed. Please try again.');
+        setError(getPaymentErrorMessageForUser(verificationError, 'Payment verification failed. Please try again.'));
         cleanupUrl();
       } finally {
         setVerifying(false);
@@ -296,7 +297,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
       window.location.assign(primaryCheckoutUrl);
     } catch (checkoutError) {
       setLoading(false);
-      setError(checkoutError?.message || 'Unable to start the payment flow.');
+      setError(getPaymentErrorMessageForUser(checkoutError, 'Unable to start the payment flow.'));
     }
   };
 
@@ -332,7 +333,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
       });
       setSuccess('Local sample payment completed and your premium access is now active.');
     } catch (upgradeError) {
-      setError(upgradeError?.message || 'Unable to complete the local sample payment.');
+      setError(getPaymentErrorMessageForUser(upgradeError, 'Unable to complete the local sample payment.'));
     } finally {
       setLoading(false);
     }

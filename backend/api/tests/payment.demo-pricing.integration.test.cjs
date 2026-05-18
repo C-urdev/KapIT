@@ -304,3 +304,66 @@ test('demo receipts include demo label and both charged and original plan amount
     }
   );
 });
+
+test('user premium checkout surfaces actionable PayPal issue and debug id on 422 create-order failures', async () => {
+  await withEnv(
+    {
+      PAYPAL_CLIENT_ID: 'paypal-client',
+      PAYPAL_CLIENT_SECRET: 'paypal-secret',
+      PAYPAL_ENV: 'sandbox',
+      PAYMENT_DEMO_PRICING_ENABLED: 'true',
+      PAYMENT_DEMO_AMOUNT_PHP: '1.00',
+      PAYMENT_DEMO_PRICING_EXPIRES_AT: '2099-01-01T00:00:00Z',
+    },
+    async () => {
+      const originalFetch = global.fetch;
+      global.fetch = async (_url) => {
+        const url = String(_url || '');
+        if (url.includes('/v1/oauth2/token')) {
+          return { ok: true, json: async () => ({ access_token: 'token-1' }) };
+        }
+        if (url.includes('/v2/checkout/orders')) {
+          return {
+            ok: false,
+            status: 422,
+            json: async () => ({
+              name: 'UNPROCESSABLE_ENTITY',
+              message: 'The requested action could not be performed, semantically incorrect, or failed business validation.',
+              debug_id: 'paypal-debug-422',
+              details: [
+                {
+                  issue: 'PAYEE_ACCOUNT_NOT_VERIFIED',
+                  description: 'Payee account is not verified for this payment.',
+                },
+              ],
+            }),
+          };
+        }
+        throw new Error('Unexpected fetch call');
+      };
+
+      try {
+        const paymentService = require('../services/paymentService');
+        const client = createMockClient();
+        const req = createMockReq();
+
+        await assert.rejects(
+          async () => paymentService.startUserPremiumCheckout({
+            client,
+            req,
+            userId: 'user-1',
+            provider: 'paypal',
+          }),
+          (error) => {
+            assert.equal(error?.statusCode, 502);
+            assert.match(String(error?.message || ''), /PAYEE_ACCOUNT_NOT_VERIFIED/);
+            assert.match(String(error?.message || ''), /debug_id=paypal-debug-422/);
+            return true;
+          }
+        );
+      } finally {
+        global.fetch = originalFetch;
+      }
+    }
+  );
+});
