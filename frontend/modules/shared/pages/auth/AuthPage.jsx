@@ -44,7 +44,7 @@ export default function AuthPage({
   const [termsDecisionError, setTermsDecisionError] = useState('');
   const [showRegisterPrompt, setShowRegisterPrompt] = useState(false);
   const [hasAppliedSocialNoAccountPrompt, setHasAppliedSocialNoAccountPrompt] = useState(false);
-  const isLocalAuthBypassEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS === 'true';
+  const isLocalAuthBypassEnabled = import.meta.env.VITE_ENABLE_LOCAL_AUTH_BYPASS === 'true';
   const passwordStrength = useMemo(() => {
     const password = String(formData.password || '');
     if (!password) return 0;
@@ -241,8 +241,14 @@ export default function AuthPage({
     }
   };
   const getSocialAuthBaseUrl = () => {
-    const configuredSiteUrl = String(process.env.NEXT_PUBLIC_SITE_URL || '').trim();
-    const rawBase = configuredSiteUrl || window.location.origin;
+    const runtimeOrigin = String(window.location.origin || '').trim().replace(/\/+$/, '');
+    const configuredSiteUrl = String(import.meta.env.VITE_SITE_URL || '').trim();
+    // In development, always use the exact host the user is currently on
+    // (localhost vs 127.0.0.1 must match Google redirect allowlist exactly).
+    if (import.meta.env.MODE !== 'production') {
+      return runtimeOrigin || configuredSiteUrl.replace(/\/+$/, '');
+    }
+    const rawBase = configuredSiteUrl || runtimeOrigin;
     return rawBase.replace(/\/+$/, '');
   };
 
@@ -281,12 +287,12 @@ export default function AuthPage({
       return;
     }
 
-    if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && process.env.NODE_ENV !== 'production' && isLocalAuthBypassEnabled && isLoopbackHost()) {
-      const email = prompt(`[Developer Mode - Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID]\n\nEnter any existing or new email to simulate logging in with Google:`);
+    if (!import.meta.env.VITE_GOOGLE_CLIENT_ID && import.meta.env.MODE !== 'production' && isLocalAuthBypassEnabled && isLoopbackHost()) {
+      const email = prompt(`[Developer Mode - Missing VITE_GOOGLE_CLIENT_ID]\n\nEnter any existing or new email to simulate logging in with Google:`);
       if (!email) return;
       return handleDeveloperMock('Google', email);
     }
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if (!clientId) {
       alert("Google Client ID is not configured.");
       return;
@@ -334,9 +340,9 @@ export default function AuthPage({
       return;
     }
 
-    const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
-    if (!clientId && process.env.NODE_ENV !== 'production' && isLocalAuthBypassEnabled && isLoopbackHost()) {
-      const email = prompt(`[Developer Mode - Missing NEXT_PUBLIC_GITHUB_CLIENT_ID]\n\nEnter any email to simulate logging in with GitHub:`);
+    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
+    if (!clientId && import.meta.env.MODE !== 'production' && isLocalAuthBypassEnabled && isLoopbackHost()) {
+      const email = prompt(`[Developer Mode - Missing VITE_GITHUB_CLIENT_ID]\n\nEnter any email to simulate logging in with GitHub:`);
       if (!email) return;
       return handleDeveloperMock('GitHub', email);
     }

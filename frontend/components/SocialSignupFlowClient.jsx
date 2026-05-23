@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@shared/hooks/useAppRouter';
 import { AlertCircle, ArrowLeft, Briefcase, Building2, CheckCircle2, Eye, EyeOff, Loader2, Mail, ShieldCheck } from 'lucide-react';
 import {
   completeSocialSignup,
@@ -91,7 +91,7 @@ export default function SocialSignupFlowClient() {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [isLocalhost, setIsLocalhost] = useState(false);
-  const localAuthBypassEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS === 'true';
+  const localAuthBypassEnabled = import.meta.env.VITE_ENABLE_LOCAL_AUTH_BYPASS === 'true';
 
   const inputRefs = useRef([]);
 

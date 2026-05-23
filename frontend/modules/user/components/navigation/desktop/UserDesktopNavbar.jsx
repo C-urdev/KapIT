@@ -158,14 +158,6 @@ export default function UserDesktopNavbar({
       </div>
 
       <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-2">
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="rounded-lg p-2 transition-colors hover:bg-[#f5f5f2] dark:hover:bg-[#353c44]"
-          aria-label={theme === 'light' ? 'Dark mode' : 'Light mode'}
-        >
-          {theme === 'light' ? <Moon className="h-5 w-5 text-[#344e41]" /> : <Sun className="h-5 w-5 text-white" />}
-        </button>
         <div className="relative" ref={profileMenuRef}>
           <button
             type="button"

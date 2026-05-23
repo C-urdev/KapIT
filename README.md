@@ -1,5 +1,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](License.md)
-![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js)
+![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-Server-339933?logo=node.js&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-API-000000?logo=express)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?logo=postgresql&logoColor=white)
@@ -22,7 +22,8 @@ It includes authentication, onboarding, public/private job flows, applicant mana
 
 ### 🌐 Frontend
 
-- Next.js (App Router + Pages usage in `frontend`)
+- Vite
+- React Router (`frontend/src/App.jsx`)
 - React
 - Tailwind CSS
 - PostCSS
@@ -99,7 +100,7 @@ Use `.env.example` as the single source of truth for environment variables.
 
 ## ⚙️ How It Works
 
-1. The Next.js frontend (`frontend`) serves pages and client flows.
+1. The Vite + React frontend (`frontend`) serves pages and client flows.
 2. Frontend API calls target `/api/*`, which are routed to the Express backend.
 3. Express (`backend/api`) handles auth, profiles, jobs, applications, messaging, notifications, posts, and payment-related flows.
 4. Express persists core data in PostgreSQL and can use Redis if configured.

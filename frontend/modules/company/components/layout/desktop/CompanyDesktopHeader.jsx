@@ -66,16 +66,6 @@ export default function CompanyDesktopHeader({ title, user, sidebarCollapsed, un
               <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-[#588157] dark:bg-[#6f9b74]" />
             ) : null}
           </button>
-
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="p-2 rounded-lg hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors"
-            aria-label="Toggle theme"
-          >
-            {theme === 'light' ? <Moon className="w-5 h-5 text-[#344e41]" /> : <Sun className="w-5 h-5 text-white" />}
-          </button>
-
         </div>
       </div>
     </div>
