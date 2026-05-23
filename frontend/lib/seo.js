@@ -17,7 +17,7 @@ export const SEO_DEFAULT_KEYWORDS = [
 ];
 
 export const getSiteUrl = () => {
-  const configuredUrl = trimTrailingSlash(process.env.NEXT_PUBLIC_SITE_URL);
+  const configuredUrl = trimTrailingSlash(import.meta.env.VITE_SITE_URL);
   if (configuredUrl) {
     return configuredUrl;
   }

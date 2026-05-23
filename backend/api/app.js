@@ -174,6 +174,12 @@ const createApp = () => {
     res.json({ success: true, message: 'Server is running' });
   });
 
+  app.get('/api/version', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    res.json({ version: process.env.VITE_APP_VERSION || Date.now().toString() });
+  });
+
   app.get('/ready', async (req, res) => {
     try {
       await pool.query('SELECT 1');

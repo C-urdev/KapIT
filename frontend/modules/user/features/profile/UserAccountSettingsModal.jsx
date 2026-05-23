@@ -137,7 +137,7 @@ const EMPTY_FORM = {
   resume: '',
 };
 const PROFILE_CACHE_KEY = 'kapit_user_developer_profile';
-const DEBUG_PROFILE_SYNC = process.env.NEXT_PUBLIC_DEBUG_PROFILE_SYNC === 'true';
+const DEBUG_PROFILE_SYNC = import.meta.env.VITE_DEBUG_PROFILE_SYNC === 'true';
 
 const parseLocation = (rawLocation, provinceOptions, provinceCodeByLabel, getCitiesForProvince) => {
   const normalized = String(rawLocation || '')

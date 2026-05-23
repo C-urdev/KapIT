@@ -1,233 +1,92 @@
+// scripts/run-web.js – Vite launcher
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
+// ---------------------------------------------------------------------------
+// 1. Resolve paths & load environment variables
+// ---------------------------------------------------------------------------
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDirectory, '..');
 
-// Load local overrides first, then base .env as fallback values.
-// This keeps explicit shell/env-platform variables as highest priority.
-// Do not hard-fail if dotenv is unavailable in package-scoped installs (e.g. Netlify base=frontend).
 try {
   const dotenvModule = await import('dotenv');
   const dotenv = dotenvModule?.default || dotenvModule;
   dotenv.config({ path: path.resolve(repoRoot, '.env.local') });
   dotenv.config({ path: path.resolve(repoRoot, '.env') });
-} catch (error) {
-  if (String(error?.code || '') !== 'ERR_MODULE_NOT_FOUND') {
-    console.warn(`dotenv load skipped: ${error?.message || String(error)}`);
+} catch (e) {
+  if (String(e?.code ?? '') !== 'ERR_MODULE_NOT_FOUND') {
+    console.warn('dotenv load skipped:', e.message);
   }
 }
 
+// ---------------------------------------------------------------------------
+// 2. Script name (dev | build | start) – default to dev
+// ---------------------------------------------------------------------------
 const scriptName = process.argv[2] || 'dev';
 const appDirectory = path.resolve(repoRoot, 'frontend');
-const nextHost = process.env.NEXTJS_HOST;
-const nextPort = process.env.NEXTJS_PORT || '3000';
-const hideNetworkLine = process.env.HIDE_NEXT_NETWORK_LINE === 'true';
-const quietStartup = process.env.QUIET_STARTUP === 'true';
-const hideRequestLines = scriptName === 'dev' && process.env.HIDE_NEXT_REQUEST_LINES !== 'false';
-const forceCleanNextDev = process.env.FORCE_CLEAN_NEXT_DEV !== 'false';
-const useTurbopack = scriptName === 'dev' && process.env.NEXT_USE_TURBOPACK !== 'false';
-const appRequire = createRequire(path.join(appDirectory, 'package.json'));
-const resolveNextBin = () => {
-  const fallbackPath = path.resolve(appDirectory, 'node_modules', 'next', 'dist', 'bin', 'next');
 
-  try {
-    return appRequire.resolve('next/dist/bin/next');
-  } catch {}
+const frontendHost = process.env.VITE_HOST || '127.0.0.1';
+const frontendPort = process.env.VITE_PORT || '5173';
 
-  try {
-    return createRequire(path.join(repoRoot, 'package.json')).resolve('next/dist/bin/next');
-  } catch {}
+// ---------------------------------------------------------------------------
+// 3. Build command & arguments for Vite
+// ---------------------------------------------------------------------------
+const viteBin = path.resolve(
+  appDirectory,
+  'node_modules',
+  '.bin',
+  process.platform === 'win32' ? 'vite.cmd' : 'vite',
+);
+const command = fs.existsSync(viteBin) ? viteBin : 'vite';
+const viteMode = scriptName === 'build' ? 'build' : 'dev';
+const args = [viteMode];
 
-  if (fs.existsSync(fallbackPath)) {
-    return fallbackPath;
-  }
-
-  return null;
-};
-
-const nextBin = resolveNextBin();
-if (!nextBin) {
-  console.error(
-    [
-      "Cannot resolve 'next/dist/bin/next' for frontend.",
-      "Install frontend dependencies first: npm ci --prefix frontend",
-    ].join('\n'),
-  );
-  process.exit(1);
-}
-const command = process.execPath;
-const args = [nextBin, scriptName];
-
-if (scriptName === 'dev' && forceCleanNextDev) {
-  fs.rmSync(path.join(appDirectory, '.next'), { recursive: true, force: true });
-}
-
-if (scriptName === 'dev' || scriptName === 'start') {
-  args.push('-p', nextPort);
-
-  if (nextHost) {
-    args.push('-H', nextHost);
-  }
-}
-
-if (useTurbopack) {
-  args.push('--turbopack');
-}
-
-const { PORT: _ignoredPort, HOST: _ignoredHost, ...forwardedEnv } = process.env;
+// ---------------------------------------------------------------------------
+// 4. Spawn options (environment & stdio)
+// ---------------------------------------------------------------------------
 const normalizedNodeEnv =
-  scriptName === 'build' ? 'production' : scriptName === 'dev' ? 'development' : process.env.NODE_ENV;
-const spawnStdio = hideNetworkLine || quietStartup || hideRequestLines ? ['ignore', 'pipe', 'pipe'] : 'inherit';
+  scriptName === 'build'
+    ? 'production'
+    : scriptName === 'dev'
+    ? 'development'
+    : process.env.NODE_ENV;
 
 const spawnOptions = {
   cwd: appDirectory,
   env: {
-    ...forwardedEnv,
+    ...process.env,
     ...(normalizedNodeEnv ? { NODE_ENV: normalizedNodeEnv } : {}),
-    PORT: nextPort,
-    ...(nextHost ? { HOST: nextHost } : {}),
+    VITE_PORT: frontendPort,
+    VITE_HOST: frontendHost,
     INIT_CWD: appDirectory,
     npm_config_local_prefix: appDirectory,
   },
-  stdio: spawnStdio,
+  stdio: 'inherit',
   shell: false,
 };
 
-const ensureDeterministicRoutesManifest = () => {
-  if (scriptName !== 'build') {
-    return;
-  }
-
-  const nextDirectory = path.join(appDirectory, '.next');
-  const sourceManifest = path.join(nextDirectory, 'routes-manifest.json');
-  const deterministicManifest = path.join(nextDirectory, 'routes-manifest-deterministic.json');
-  const shouldSyncToRepoRoot =
-    process.env.CI === 'true' || Boolean(process.env.VERCEL) || Boolean(process.env.DEPLOY_ID);
-  const repoRootNextDirectory = path.join(repoRoot, '.next');
-  const repoRootDeterministicManifest = path.join(repoRootNextDirectory, 'routes-manifest-deterministic.json');
-
-  if (fs.existsSync(deterministicManifest) || !fs.existsSync(sourceManifest)) {
-    if (!shouldSyncToRepoRoot || !fs.existsSync(deterministicManifest)) {
-      return;
-    }
-
-    fs.mkdirSync(repoRootNextDirectory, { recursive: true });
-    fs.copyFileSync(deterministicManifest, repoRootDeterministicManifest);
-    console.log('Synced .next/routes-manifest-deterministic.json to repo root');
-    return;
-  }
-
-  fs.copyFileSync(sourceManifest, deterministicManifest);
-  console.log('Created .next/routes-manifest-deterministic.json');
-
-  if (shouldSyncToRepoRoot) {
-    fs.mkdirSync(repoRootNextDirectory, { recursive: true });
-    fs.copyFileSync(deterministicManifest, repoRootDeterministicManifest);
-    console.log('Synced .next/routes-manifest-deterministic.json to repo root');
-  }
-};
-
+// ---------------------------------------------------------------------------
+// 5. Spawn the process
+// ---------------------------------------------------------------------------
 let child;
 try {
   child = spawn(command, args, spawnOptions);
-} catch (error) {
-  const canRetryWithShell =
-    process.platform === 'win32' && (error?.code === 'EINVAL' || error?.code === 'EPERM');
-
-  if (!canRetryWithShell) {
-    throw error;
-  }
-
-  child = spawn(command, args, {
-    ...spawnOptions,
-    shell: true,
-  });
+} catch (e) {
+  const canRetry =
+    process.platform === 'win32' &&
+    (e?.code === 'EINVAL' || e?.code === 'EPERM');
+  if (!canRetry) throw e;
+  child = spawn(command, args, { ...spawnOptions, shell: true });
 }
 
-if (hideNetworkLine || quietStartup || hideRequestLines) {
-  const requestLogPattern = /^\s*(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\s+\/\S*\s+\d{3}\s+in\s+\d+(?:\.\d+)?(?:ms|s)\b/i;
-
-  const shouldSkipLine = (line) => {
-    if (hideNetworkLine && line.includes('- Network:')) {
-      return true;
-    }
-
-    if (hideRequestLines && requestLogPattern.test(line.trim())) {
-      return true;
-    }
-
-      if (quietStartup) {
-        if (!line.trim()) {
-          return true;
-        }
-
-        if (/^\s*[○◌]\s+Compiling\b/i.test(line)) {
-          return true;
-        }
-
-        if (line.includes('- Environments:')) {
-          return true;
-        }
-
-      if (line.includes('- Experiments')) {
-        return true;
-      }
-
-      if (line.includes('devtoolSegmentExplorer')) {
-        return true;
-      }
-
-      if (line.includes('externalDir')) {
-        return true;
-      }
-    }
-
-    return false;
-  };
-
-  const forward = (stream, target) => {
-    let buffer = '';
-
-    stream.on('data', (chunk) => {
-      buffer += chunk.toString();
-      const lines = buffer.split(/\r?\n/);
-      buffer = lines.pop() ?? '';
-
-      for (const line of lines) {
-        if (shouldSkipLine(line)) {
-          continue;
-        }
-
-        target.write(`${line}\n`);
-      }
-    });
-
-    stream.on('end', () => {
-      if (buffer && !shouldSkipLine(buffer)) {
-        target.write(buffer);
-      }
-    });
-  };
-
-  forward(child.stdout, process.stdout);
-  forward(child.stderr, process.stderr);
-}
-
-child.on('error', (error) => {
-  console.error(`Failed to start Next.js process: ${error.message}`);
+child.on('error', (err) => {
+  console.error(`Failed to start Vite process: ${err.message}`);
   process.exit(1);
 });
 
 child.on('exit', (code) => {
-  if ((code ?? 0) === 0) {
-    ensureDeterministicRoutesManifest();
-  }
-
   process.exit(code ?? 0);
 });
-

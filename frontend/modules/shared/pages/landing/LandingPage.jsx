@@ -429,29 +429,31 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
                   }
                 }}
               >
-                {TOP_NAV_LINKS.map((link) => (
-                  <div
-                    key={link.label}
-                    className="relative mr-7 last:mr-0 xl:mr-8 xl:last:mr-0"
-                    onMouseEnter={() => link.hasDropdown && handleHeaderDropdownOpen(link.label)}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleHeaderTopLinkClick(link)}
-                      className="inline-flex min-h-[38px] items-center gap-1 px-1.5 text-[1.02rem] font-semibold text-[#35573f] dark:text-white transition-colors"
-                      style={{ fontFamily: 'var(--font-desktop)' }}
-                      aria-expanded={link.hasDropdown ? openHeaderDropdown === link.label : undefined}
+                <div className="flex items-center gap-7 xl:gap-8">
+                  {TOP_NAV_LINKS.map((link) => (
+                    <div
+                      key={link.label}
+                      className="relative"
+                      onMouseEnter={() => link.hasDropdown && handleHeaderDropdownOpen(link.label)}
                     >
-                      <span>{link.label}</span>
-                      {link.hasDropdown ? (
-                        <ChevronDown
-                          className={`h-4 w-4 opacity-75 transition-transform ${openHeaderDropdown === link.label ? 'rotate-180' : ''}`}
-                          aria-hidden="true"
-                        />
-                      ) : null}
-                    </button>
-                  </div>
-                ))}
+                      <button
+                        type="button"
+                        onClick={() => handleHeaderTopLinkClick(link)}
+                        className="inline-flex min-h-[38px] items-center gap-1 px-1.5 text-[1.02rem] font-semibold text-[#35573f] dark:text-white transition-colors"
+                        style={{ fontFamily: 'var(--font-desktop)' }}
+                        aria-expanded={link.hasDropdown ? openHeaderDropdown === link.label : undefined}
+                      >
+                        <span>{link.label}</span>
+                        {link.hasDropdown ? (
+                          <ChevronDown
+                            className={`h-4 w-4 opacity-75 transition-transform ${openHeaderDropdown === link.label ? 'rotate-180' : ''}`}
+                            aria-hidden="true"
+                          />
+                        ) : null}
+                      </button>
+                    </div>
+                  ))}
+                </div>
 
                 {openHeaderDropdown && TOP_NAV_DROPDOWNS[openHeaderDropdown] ? (
                   <div
@@ -583,14 +585,14 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
             <button
               type="button"
               onClick={onSignIn}
-              className="inline-flex h-11 items-center rounded-full border border-[#9bb28f] bg-white px-7 text-[1rem] font-semibold text-[#2f4e39] transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#22272b] dark:text-white dark:hover:bg-[#353c44]"
+              className="inline-flex h-9 items-center rounded-full border border-[#9bb28f] bg-white px-3.5 text-[0.875rem] font-semibold text-[#2f4e39] transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#22272b] dark:text-white dark:hover:bg-[#353c44]"
             >
               Sign In
             </button>
             <button
               type="button"
               onClick={onGetStarted}
-              className="inline-flex h-11 items-center rounded-full bg-[#3d6446] px-7 text-[1rem] font-semibold text-white transition-colors hover:bg-[#35573f] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86]"
+              className="inline-flex h-9 items-center rounded-full bg-[#3d6446] px-3.5 text-[0.875rem] font-semibold text-white transition-colors hover:bg-[#35573f] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86]"
             >
               Get Started
             </button>
@@ -934,7 +936,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
         <ThinSectionLine className="bottom-0 z-10" />
       </section>
 
-      <style jsx global>{`
+      <style>{`
         .hero-phone-stage {
           position: relative;
           width: 690px;

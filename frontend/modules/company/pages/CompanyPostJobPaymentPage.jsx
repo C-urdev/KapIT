@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { CheckCircle2, ChevronDown, CreditCard, ExternalLink, ShieldCheck, X } from 'lucide-react';
 import { companyAPI } from '@companyFeatures/companyAPI';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
@@ -10,7 +10,7 @@ import { getPaymentErrorMessageForUser } from '@sharedUtils/paymentErrorMessages
 const STORAGE_KEY = 'company-post-job-draft';
 const PAYMENT_MESSAGE_TYPE = 'company-post-job-payment-success';
 const PAYMENT_CANCEL_MESSAGE_TYPE = 'company-post-job-payment-cancelled';
-const localPaymentBypassEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_PAYMENT_BYPASS === 'true';
+const localPaymentBypassEnabled = import.meta.env.VITE_ENABLE_LOCAL_PAYMENT_BYPASS === 'true';
 const createPaymentIdempotencyKey = () => {
   if (typeof window !== 'undefined' && window.crypto?.randomUUID) {
     return `checkout-${window.crypto.randomUUID()}`;

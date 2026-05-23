@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@shared/hooks/useAppRouter';
 import {
   AlertCircle,
   ArrowLeft,
@@ -194,7 +194,7 @@ function StepVerify({ email, onNext, onBack }) {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [isLocalhost, setIsLocalhost] = useState(false);
-  const localAuthBypassEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS === 'true';
+  const localAuthBypassEnabled = import.meta.env.VITE_ENABLE_LOCAL_AUTH_BYPASS === 'true';
   const inputRefs = useRef([]);
 
   const code = digits.join('');

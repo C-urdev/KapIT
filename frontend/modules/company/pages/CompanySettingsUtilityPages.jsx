@@ -33,7 +33,7 @@ const INDUSTRY_OPTIONS = [
 const OTHER_COMPANY_TYPE_OPTION = 'Other';
 const COMPANY_TYPE_OPTIONS = [...INDUSTRY_OPTIONS, OTHER_COMPANY_TYPE_OPTION];
 const COMPANY_SIZE_OPTIONS = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'];
-const DEBUG_PROFILE_SYNC = process.env.NEXT_PUBLIC_DEBUG_PROFILE_SYNC === 'true';
+const DEBUG_PROFILE_SYNC = import.meta.env.VITE_DEBUG_PROFILE_SYNC === 'true';
 
 const parseLocation = (rawLocation, provinceOptions, provinceCodeByLabel, getCitiesForProvince) => {
   const locationText = String(rawLocation || '').trim();

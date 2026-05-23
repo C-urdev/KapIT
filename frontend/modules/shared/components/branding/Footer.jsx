@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
-import Link from 'next/link';
+import Link from '../../../../components/shared/Link';
 import SocialLinksGroup from './SocialLinksGroup';
 
 const LINK_GROUPS = [

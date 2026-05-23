@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from '@shared/hooks/useAppRouter';
 import { AlertCircle, Eye, EyeOff, Moon, Sun } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@shared/hooks/useAppRouter';
 import CompanyProfileOnboarding from '@sharedPages/onboarding/CompanyProfileOnboardingPage';
 import { logoutAndRedirect, updateStoredUser } from '@sharedServices/authService';
 import { saveCompanyProfileOnboarding } from '@companyFeatures/companyAPI';
