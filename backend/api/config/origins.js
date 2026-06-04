@@ -1,7 +1,12 @@
 const normalizeOrigin = (value) => String(value || '').trim().replace(/\/+$/, '');
 
+const resolvePreviewFlag = () =>
+  String(process.env.ALLOW_KAPIT_PREVIEW_ORIGIN || '')
+    .trim()
+    .toLowerCase() === 'true';
+
 const isKapitPreviewOrigin = (origin) =>
-  String(process.env.ALLOW_KAPIT_NETLIFY_PREVIEW || '').trim().toLowerCase() === 'true'
+  resolvePreviewFlag()
     && /^https:\/\/(?:[^.]+\.)?kapitdev\.netlify\.app$/i.test(origin);
 
 const splitOrigins = (value) =>

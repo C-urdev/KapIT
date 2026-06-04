@@ -9,6 +9,14 @@ const ACCESS_COOKIE_NAME = process.env.ACCESS_TOKEN_COOKIE_NAME || 'kapit_access
 const REFRESH_COOKIE_NAME = process.env.REFRESH_TOKEN_COOKIE_NAME || 'kapit_refresh_token';
 const CSRF_COOKIE_NAME = process.env.CSRF_COOKIE_NAME || 'kapit_csrf_token';
 const isProduction = process.env.NODE_ENV === 'production';
+const resolveCookieSameSite = () => {
+  const raw = String(process.env.AUTH_COOKIE_SAMESITE || '').trim().toLowerCase();
+  if (raw === 'strict') return 'strict';
+  if (raw === 'none') return 'none';
+  return 'lax';
+};
+const COOKIE_SAME_SITE = resolveCookieSameSite();
+const COOKIE_SECURE = COOKIE_SAME_SITE === 'none' ? true : isProduction;
 
 const getRefreshTokenSecret = () => {
   const refreshSecret = String(process.env.JWT_REFRESH_SECRET || '').trim();
@@ -42,8 +50,8 @@ const REFRESH_COOKIE_MAX_AGE_MS = REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000;
 
 const baseCookieOptions = {
   httpOnly: true,
-  secure: isProduction,
-  sameSite: 'lax',
+  secure: COOKIE_SECURE,
+  sameSite: COOKIE_SAME_SITE,
   path: '/',
 };
 
@@ -254,8 +262,8 @@ const attachSessionCookies = async (res, user, req, existingSessionId = null) =>
   });
   res.cookie(CSRF_COOKIE_NAME, csrfToken, {
     httpOnly: false,
-    secure: isProduction,
-    sameSite: 'lax',
+    secure: COOKIE_SECURE,
+    sameSite: COOKIE_SAME_SITE,
     path: '/',
     maxAge: REFRESH_COOKIE_MAX_AGE_MS,
   });
@@ -273,8 +281,8 @@ const clearSessionCookies = (res) => {
   res.clearCookie(REFRESH_COOKIE_NAME, { ...baseCookieOptions });
   res.clearCookie(CSRF_COOKIE_NAME, {
     httpOnly: false,
-    secure: isProduction,
-    sameSite: 'lax',
+    secure: COOKIE_SECURE,
+    sameSite: COOKIE_SAME_SITE,
     path: '/',
   });
 };

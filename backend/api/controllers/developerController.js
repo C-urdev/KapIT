@@ -1,16 +1,39 @@
 const pool = require('../config/database');
 const { logger } = require('../config/logger');
-const fs = require('fs/promises');
+const fsPromises = require('fs/promises');
 const { ensureBaseUserSchemaReady, ensureOnboardingSchemaReady } = require('../config/runtimeSchema');
 const { getPremiumStateForUser, requirePremiumApplicantFeature } = require('../services/planAccessService');
 const { isAiConfigured, analyzeResumeProfile } = require('../services/aiService');
 const {
   getResumeDownloadName,
+  getStoredNameFromResumeUrl,
   getStoredResumePath,
+  storeGeneratedResumeArtifact,
   storeResumeUpload,
 } = require('../services/resumeStorageService');
+const {
+  parseResumeText,
+  callGeminiForResume,
+  buildDocxBuffer,
+  buildGeneratedFileName,
+} = require('../services/resumeOptimizationService');
+const { convertDocxToPdf } = require('../services/pdfConversionService');
 const { normalizeSocialsText } = require('../utils/socials');
 const PROFILE_SYNC_DEBUG = process.env.DEBUG_PROFILE_SYNC === 'true';
+const ALLOWED_RESUME_CONTENT_TYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/octet-stream',
+]);
+
+const getMimeTypeForStoredName = (storedName) => {
+  const normalized = String(storedName || '').toLowerCase();
+  if (normalized.endsWith('.pdf')) return 'application/pdf';
+  if (normalized.endsWith('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  if (normalized.endsWith('.doc')) return 'application/msword';
+  return 'application/octet-stream';
+};
 const PROFILE_SYNC_REDACTED_KEYS = new Set([
   'email',
   'phone',
@@ -121,6 +144,8 @@ const getResumeAccessState = async (client, { requester, resumeUrl }) => {
     `SELECT user_id
      FROM developer_profiles
      WHERE resume_url = $1
+        OR optimized_resume_docx_url = $1
+        OR optimized_resume_pdf_url = $1
      LIMIT 1`,
     [normalizedResumeUrl]
   );
@@ -199,6 +224,9 @@ const getMyDeveloperProfile = async (req, res) => {
               COALESCE(dp.portfolio_link, '') AS portfolio_link,
               COALESCE(dp.linkedin_link, '') AS linkedin_link,
               COALESCE(dp.resume_url, '') AS resume_url,
+              COALESCE(dp.optimized_resume_docx_url, '') AS optimized_resume_docx_url,
+              COALESCE(dp.optimized_resume_pdf_url, '') AS optimized_resume_pdf_url,
+              COALESCE(dp.optimized_resume_json, '{}'::jsonb) AS optimized_resume_json,
               COALESCE(dp.profile_photo_url, u.profile_image, '') AS profile_photo_url,
               COALESCE(dp.other_links, '') AS other_links,
               COALESCE(dp.work_preference, '') AS work_preference,
@@ -300,7 +328,6 @@ const upsertMyDeveloperProfile = async (req, res) => {
     const hasSocialLinks = Object.values(socialsPayload).some((value) => String(value || '').trim().length > 0);
 
     const nextProfileImage = body.profileImage ? String(body.profileImage) : '';
-    const resumeUrl = body.resume ? String(body.resume) : '';
     const workPreference = String(body.workPreference || '').trim().toLowerCase();
 
     const userUpdateResult = await client.query(
@@ -375,7 +402,7 @@ const upsertMyDeveloperProfile = async (req, res) => {
          github_link = EXCLUDED.github_link,
          portfolio_link = EXCLUDED.portfolio_link,
          linkedin_link = EXCLUDED.linkedin_link,
-         resume_url = EXCLUDED.resume_url,
+         resume_url = COALESCE(EXCLUDED.resume_url, developer_profiles.resume_url),
          profile_photo_url = EXCLUDED.profile_photo_url,
          other_links = EXCLUDED.other_links,
          work_preference = EXCLUDED.work_preference,
@@ -399,7 +426,7 @@ const upsertMyDeveloperProfile = async (req, res) => {
         github || null,
         portfolioWebsite || null,
         linkedin || null,
-        resumeUrl || null,
+        Object.prototype.hasOwnProperty.call(body, 'resume') ? (body.resume ? String(body.resume) : '') : null,
         nextProfileImage || null,
         otherLinks || null,
         workPreference || null,
@@ -444,16 +471,21 @@ const uploadMyResume = async (req, res) => {
     await ensureBaseUserSchemaReady();
     await ensureOnboardingSchemaReady();
 
-    const contentType = String(req.get('content-type') || '').toLowerCase();
-    if (!contentType.includes('application/pdf')) {
-      return res.status(400).json({ success: false, message: 'Resume upload must be a PDF.' });
+    const contentType = String(req.get('content-type') || '').toLowerCase().split(';')[0].trim();
+    if (!ALLOWED_RESUME_CONTENT_TYPES.has(contentType)) {
+      return res.status(400).json({ success: false, message: 'Resume upload must be a PDF, DOC, or DOCX file.' });
     }
 
     const originalName = String(req.get('x-upload-filename') || 'resume.pdf').trim();
     const stored = await storeResumeUpload({
       buffer: req.body,
       originalName,
+      contentType,
     });
+    const extractedText = await parseResumeText({
+      absolutePath: stored.absolutePath,
+      fileName: stored.originalName,
+    }).catch(() => '');
 
     client = await pool.connect();
     const profileResult = await client.query(
@@ -488,6 +520,7 @@ const uploadMyResume = async (req, res) => {
       resumeUrl: stored.url,
       fileName: stored.originalName,
       size: stored.size,
+      extractedTextPreview: String(extractedText || '').slice(0, 12000),
     });
   } catch (error) {
     logger.error('Upload resume error:', error);
@@ -522,9 +555,9 @@ const downloadResume = async (req, res) => {
       return res.status(403).json({ success: false, message: 'You do not have permission to access this resume.' });
     }
 
-    await fs.access(absolutePath);
+    await fsPromises.access(absolutePath);
 
-    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Type', getMimeTypeForStoredName(storedName));
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader('Content-Disposition', `inline; filename="${getResumeDownloadName(storedName)}"`);
@@ -609,10 +642,162 @@ const analyzeMyResume = async (req, res) => {
   }
 };
 
+// POST /api/developer/ai/resume-optimize
+const optimizeMyResume = async (req, res) => {
+  let client;
+  try {
+    await ensureBaseUserSchemaReady();
+    await ensureOnboardingSchemaReady();
+    client = await pool.connect();
+    
+    // Phase 5: Premium gating for AI optimization
+    const plan = await getPremiumStateForUser(client, req.user.id);
+    requirePremiumApplicantFeature(plan, 'ATS resume optimization');
+
+    const profileResult = await client.query(
+      `SELECT u.id,
+              COALESCE(dp.full_name, u.name, u.username) AS full_name,
+              COALESCE(dp.preferred_it_role, u.desired_job, dp.job_title) AS preferred_role,
+              COALESCE(dp.resume_url, '') AS resume_url
+       FROM users u
+       LEFT JOIN developer_profiles dp ON dp.user_id = u.id
+       WHERE u.id = $1
+       LIMIT 1`,
+      [req.user.id]
+    );
+    if (!profileResult.rows.length) {
+      return res.status(404).json({ success: false, message: 'Developer profile not found.' });
+    }
+
+    const profile = profileResult.rows[0];
+    const storedName = getStoredNameFromResumeUrl(profile.resume_url);
+    if (!storedName) {
+      return res.status(400).json({ success: false, message: 'Please upload your resume first.' });
+    }
+    const absolutePath = getStoredResumePath(storedName);
+    if (!absolutePath) {
+      return res.status(404).json({ success: false, message: 'Uploaded resume file was not found.' });
+    }
+
+    const resumeText = await parseResumeText({
+      absolutePath,
+      fileName: getResumeDownloadName(storedName),
+    });
+    if (!resumeText) {
+      return res.status(400).json({ success: false, message: 'Resume text could not be extracted.' });
+    }
+
+    const optimized = await callGeminiForResume({
+      resumeText,
+      preferredRole: profile.preferred_role,
+    });
+    const docxBuffer = await buildDocxBuffer({
+      fullName: profile.full_name,
+      role: profile.preferred_role,
+      structured: optimized,
+    });
+    const docxStored = await storeGeneratedResumeArtifact({
+      buffer: docxBuffer,
+      fileName: buildGeneratedFileName('ats-resume', '.docx'),
+    });
+    const converted = await convertDocxToPdf({
+      docxAbsolutePath: docxStored.absolutePath,
+      context: { userId: req.user.id, flow: 'developer_optimize' },
+    });
+    let pdfStored = null;
+    let pdfSource = '';
+    let warning = '';
+    if (converted.ok && converted.buffer) {
+      pdfStored = await storeGeneratedResumeArtifact({
+        buffer: converted.buffer,
+        fileName: buildGeneratedFileName('ats-resume', '.pdf'),
+      });
+      pdfSource = converted.provider || 'ilovepdf';
+    } else {
+      warning = 'ATS PDF conversion is currently unavailable. DOCX output was generated successfully.';
+    }
+
+    await client.query(
+      `UPDATE developer_profiles
+       SET optimized_resume_docx_url = $1,
+           optimized_resume_pdf_url = $2,
+           optimized_resume_json = $3::jsonb,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE user_id = $4`,
+      [docxStored.url, pdfStored?.url || null, JSON.stringify(optimized), req.user.id]
+    );
+
+    return res.json({
+      success: true,
+      optimized,
+      optimizedDocxUrl: docxStored.url,
+      optimizedPdfUrl: pdfStored?.url || '',
+      pdfSource,
+      warning,
+      sourceResumeText: resumeText,
+    });
+  } catch (error) {
+    logger.error('Optimize resume error:', error);
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error?.message || 'Server error while optimizing resume.',
+    });
+  } finally {
+    client?.release();
+  }
+};
+
+// POST /api/developer/ai/resume-use-optimized
+const useOptimizedResumeAsPrimary = async (req, res) => {
+  let client;
+  try {
+    await ensureBaseUserSchemaReady();
+    await ensureOnboardingSchemaReady();
+    client = await pool.connect();
+
+    const result = await client.query(
+      `UPDATE developer_profiles
+       SET resume_url = COALESCE(NULLIF(optimized_resume_pdf_url, ''), optimized_resume_docx_url),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE user_id = $1
+         AND (COALESCE(optimized_resume_pdf_url, '') <> '' OR COALESCE(optimized_resume_docx_url, '') <> '')
+       RETURNING
+         COALESCE(resume_url, '') AS resume_url,
+         COALESCE(optimized_resume_pdf_url, '') AS optimized_resume_pdf_url,
+         COALESCE(optimized_resume_docx_url, '') AS optimized_resume_docx_url`,
+      [req.user.id]
+    );
+
+    if (!result.rows.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'Optimized ATS resume is not available yet. Please optimize your resume first.',
+      });
+    }
+
+    return res.json({
+      success: true,
+      resumeUrl: String(result.rows[0]?.resume_url || ''),
+      optimizedPdfUrl: String(result.rows[0]?.optimized_resume_pdf_url || ''),
+      optimizedDocxUrl: String(result.rows[0]?.optimized_resume_docx_url || ''),
+    });
+  } catch (error) {
+    logger.error('Use optimized resume error:', error);
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error?.message || 'Server error while selecting optimized resume.',
+    });
+  } finally {
+    client?.release();
+  }
+};
+
 module.exports = {
   getMyDeveloperProfile,
   upsertMyDeveloperProfile,
   uploadMyResume,
   downloadResume,
   analyzeMyResume,
+  optimizeMyResume,
+  useOptimizedResumeAsPrimary,
 };

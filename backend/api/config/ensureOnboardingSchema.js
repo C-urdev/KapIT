@@ -24,6 +24,9 @@ const ensureOnboardingSchema = async () => {
         portfolio_link TEXT,
         linkedin_link TEXT,
         resume_url TEXT,
+        optimized_resume_docx_url TEXT,
+        optimized_resume_pdf_url TEXT,
+        optimized_resume_json JSONB DEFAULT '{}'::jsonb,
         profile_photo_url TEXT,
         other_links TEXT,
         work_preference VARCHAR(20),
@@ -75,6 +78,9 @@ const ensureOnboardingSchema = async () => {
 
     await client.query('CREATE INDEX IF NOT EXISTS idx_dev_profiles_experience ON developer_profiles(experience_years);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_dev_profiles_location ON developer_profiles(location);');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS optimized_resume_docx_url TEXT;');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS optimized_resume_pdf_url TEXT;');
+    await client.query("ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS optimized_resume_json JSONB DEFAULT '{}'::jsonb;");
     await client.query('CREATE INDEX IF NOT EXISTS idx_company_profiles_industry ON company_profiles(industry);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_projects_company_id_created ON projects(company_id, created_at DESC);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_company_related_company_id_created ON company_related_companies(company_id, created_at DESC);');
