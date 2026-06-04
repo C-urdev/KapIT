@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/database');
 const { createNotification, ensureNotificationsTable } = require('./notificationsController');
-const { ensureBaseUserSchemaReady, ensureHiringSchemaReady, ensureOnboardingSchemaReady } = require('../config/runtimeSchema');
+const { ensureBaseUserSchemaReady, ensureHiringSchemaReady, ensureOnboardingSchemaReady, ensureResumeSchemaReady } = require('../config/runtimeSchema');
 const { withJobAvailability, closeExpiredJobs } = require('../services/jobAvailabilityService');
 const { getPremiumStateForUser, requirePremiumApplicantFeature } = require('../services/planAccessService');
 const { isAiConfigured, matchJobsForCandidate } = require('../services/aiService');
@@ -644,6 +644,7 @@ const getPublicProfile = async (req, res) => {
   try {
     await ensureBaseUserSchemaReady();
     await ensureHiringSchemaReady();
+    await ensureResumeSchemaReady();
     client = await pool.connect();
     const { id } = req.params;
 
@@ -1598,10 +1599,13 @@ const getMyApplications = async (req, res) => {
     await ensureHiringSchemaReady();
     client = await pool.connect();
 
-    const result = await client.query(
-      `SELECT a.id,
+    let result;
+    try {
+      result = await client.query(
+        `SELECT a.id,
               a.status,
-              a.resume_url,
+              a.resume_id,
+              COALESCE(a.resume_url, '') AS resume_url,
               a.created_at,
               a.updated_at,
               j.id AS job_id,
@@ -1618,8 +1622,36 @@ const getMyApplications = async (req, res) => {
        WHERE a.user_id = $1
        ORDER BY a.created_at DESC
        LIMIT 200`,
-      [req.user.id]
-    );
+        [req.user.id]
+      );
+    } catch (error) {
+      if (String(error?.code || '') !== '42P01') {
+        throw error;
+      }
+      result = await client.query(
+        `SELECT a.id,
+                a.status,
+                NULL::uuid AS resume_id,
+                COALESCE(a.resume_url, '') AS resume_url,
+                a.created_at,
+                a.updated_at,
+                j.id AS job_id,
+                j.title AS job_title,
+                j.location AS job_location,
+                j.type AS job_type,
+                j.salary AS job_salary,
+                COALESCE(c.name, u.company_name, u.username, 'Company') AS company_name,
+                COALESCE(c.logo, u.profile_image, '') AS company_logo
+         FROM applications a
+         JOIN jobs j ON j.id = a.job_id
+         LEFT JOIN companies c ON c.id = j.company_id
+         LEFT JOIN users u ON u.id = c.user_id
+         WHERE a.user_id = $1
+         ORDER BY a.created_at DESC
+         LIMIT 200`,
+        [req.user.id]
+      );
+    }
 
     const applications = result.rows.map((row) => ({
       id: row.id,
@@ -1629,7 +1661,8 @@ const getMyApplications = async (req, res) => {
       type: row.job_type || '',
       salary: row.job_salary || '',
       status: row.status || 'pending',
-      resumeUrl: row.resume_url || '',
+      resumeId: row.resume_id || null,
+      resumeUrl: row.resume_id ? `/resume/${row.resume_id}` : (row.resume_url || ''),
       appliedAt: row.created_at,
       updatedAt: row.updated_at,
       company: {
@@ -1754,21 +1787,27 @@ const applyToJob = async (req, res) => {
       });
     }
 
-    const developerProfile = await client.query(
-      `SELECT resume_url
-       FROM developer_profiles
+    const resumeRecord = await client.query(
+      `SELECT id, COALESCE(pdf_url, docx_url, '') AS resume_url
+       FROM resumes
        WHERE user_id = $1
+         AND archived_at IS NULL
+       ORDER BY
+         CASE WHEN resume_type = 'ats_optimized' THEN 0 ELSE 1 END,
+         is_primary DESC,
+         created_at DESC
        LIMIT 1`,
       [req.user.id]
     );
 
-    const resumeUrl = developerProfile.rows[0]?.resume_url || null;
+    const resumeId = resumeRecord.rows[0]?.id || null;
+    const resumeUrl = resumeRecord.rows[0]?.resume_url || null;
 
     const applicationResult = await client.query(
-      `INSERT INTO applications (job_id, user_id, status, resume_url)
-       VALUES ($1, $2, 'pending', $3)
-       RETURNING id, status, resume_url, created_at, updated_at`,
-      [jobId, req.user.id, resumeUrl]
+      `INSERT INTO applications (job_id, user_id, status, resume_id, resume_url)
+       VALUES ($1, $2, 'pending', $3, $4)
+       RETURNING id, status, resume_id, resume_url, created_at, updated_at`,
+      [jobId, req.user.id, resumeId, resumeUrl]
     );
 
     if (job.company_user_id) {
@@ -1797,7 +1836,8 @@ const applyToJob = async (req, res) => {
       application: {
         id: applicationResult.rows[0].id,
         status: applicationResult.rows[0].status,
-        resumeUrl: applicationResult.rows[0].resume_url || '',
+        resumeId: applicationResult.rows[0].resume_id || null,
+        resumeUrl: applicationResult.rows[0].resume_id ? `/resume/${applicationResult.rows[0].resume_id}` : (applicationResult.rows[0].resume_url || ''),
         createdAt: applicationResult.rows[0].created_at,
         updatedAt: applicationResult.rows[0].updated_at,
       },

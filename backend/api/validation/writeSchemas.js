@@ -1,4 +1,4 @@
-﻿const { z } = require('zod');
+const { z } = require('zod');
 
 const uuid = z.string().uuid();
 const positiveIntParam = z.coerce.number().int().positive();
@@ -18,6 +18,15 @@ const accountType = z.enum(['developer', 'company']);
 const userType = z.enum(['employee', 'company']);
 const provider = z.enum(['paypal']);
 const anyRecord = z.record(z.string(), z.any());
+const optionalNonNegativeIntFromNullable = z
+  .preprocess(
+    (value) => {
+      if (value == null || value === '') return undefined;
+      const numeric = Number(value);
+      return Number.isFinite(numeric) ? numeric : undefined;
+    },
+    z.number().int().nonnegative().optional()
+  );
 const authProfilePatchBody = anyRecord.superRefine((value, ctx) => {
   if (value && Object.prototype.hasOwnProperty.call(value, 'isPremium')) {
     ctx.addIssue({
@@ -96,8 +105,14 @@ const postBody = z
     imageUrl: z.string().max(2000000).refine(isAllowedImageUrl, 'Invalid URL').optional(),
     visibility: z.enum(['public', 'connections', 'private']).optional(),
     message: z.string().max(500).optional(),
-    parentCommentId: z.coerce.number().int().positive().optional(),
-    reactionType: z.string().min(1).max(32).optional(),
+    parentCommentId: optionalPositiveInt.nullable().optional(),
+    reactionType: z
+      .string()
+      .trim()
+      .min(1)
+      .max(32)
+      .refine((value) => /^[a-z0-9_-]+$/i.test(value), 'Invalid reaction type')
+      .optional(),
   })
   .strict();
 

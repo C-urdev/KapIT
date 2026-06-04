@@ -28,8 +28,14 @@ const MIN_OAUTH_TTL_MS = isProduction ? 60_000 : 100;
 const MIN_SOCIAL_SIGNUP_TTL_MS = isProduction ? 60_000 : 100;
 const OAUTH_STATE_TTL_MS = parseTtlMs(process.env.OAUTH_STATE_TTL_MS, 10 * 60 * 1000, MIN_OAUTH_TTL_MS);
 const SOCIAL_SIGNUP_TTL_MS = parseTtlMs(process.env.SOCIAL_SIGNUP_TTL_MS, 15 * 60 * 1000, MIN_SOCIAL_SIGNUP_TTL_MS);
-const COOKIE_SECURE = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
-const COOKIE_SAME_SITE = String(process.env.AUTH_COOKIE_SAMESITE || 'lax').toLowerCase() === 'strict' ? 'strict' : 'lax';
+const resolveCookieSameSite = () => {
+  const raw = String(process.env.AUTH_COOKIE_SAMESITE || '').trim().toLowerCase();
+  if (raw === 'strict') return 'strict';
+  if (raw === 'none') return 'none';
+  return 'lax';
+};
+const COOKIE_SAME_SITE = resolveCookieSameSite();
+const COOKIE_SECURE = COOKIE_SAME_SITE === 'none' ? true : String(process.env.NODE_ENV || '').toLowerCase() === 'production';
 const OAUTH_STATE_PURPOSE = 'oauth-state-store';
 const SOCIAL_SIGNUP_PURPOSE = 'social-signup-pending-session';
 

@@ -103,6 +103,20 @@ const verifyToken = async (req, res, next) => {
   }
 };
 
+const optionalAuth = async (req, res, next) => {
+  try {
+    const token = readAccessToken(req);
+    if (token) {
+      req.user = verifyAccessToken(token);
+      return next();
+    }
+  } catch {
+    // Continue as anonymous user.
+  }
+  req.user = null;
+  return next();
+};
+
 const requireRoles = (...roles) => {
   const allowed = roles.map((role) => String(role || '').trim().toLowerCase()).filter(Boolean);
 
@@ -159,6 +173,7 @@ const requireCsrfForCookieAuth = (req, res, next) => {
 
 module.exports = {
   verifyToken,
+  optionalAuth,
   requireRoles,
   requireCsrfForCookieAuth,
 };

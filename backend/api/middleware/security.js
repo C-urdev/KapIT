@@ -525,6 +525,14 @@ const developerApiRateLimiter = createRateLimiter({
   skip: isNonActionableRequest,
 });
 
+const resumeOptimizeRateLimiter = createRateLimiter({
+  storeName: 'resume-optimize',
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: Number(process.env.RESUME_OPTIMIZE_RATE_LIMIT_MAX || 10),
+  message: 'Too many optimization requests. Please try again later.',
+  skip: isNonActionableRequest,
+});
+
 const forgotPasswordRateLimiter = createRateLimiter({
   storeName: 'forgot-password',
   windowMs: Number(process.env.FORGOT_PASSWORD_RATE_LIMIT_WINDOW_MS || AUTH_ATTEMPT_WINDOW_MS),
@@ -562,6 +570,7 @@ module.exports = {
   companyApiRateLimiter,
   companyWriteRateLimiter,
   developerApiRateLimiter,
+  resumeOptimizeRateLimiter,
   forgotPasswordRateLimiter,
   resetPasswordRateLimiter,
   clearLoginRateLimit,

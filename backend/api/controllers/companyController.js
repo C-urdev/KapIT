@@ -336,7 +336,8 @@ const getApplicants = async (req, res) => {
     const result = await client.query(
       `SELECT a.id,
               a.status,
-              a.resume_url,
+              COALESCE(a.resume_id, lr.id) AS resume_id,
+              COALESCE(a.resume_url, lr.pdf_url, lr.docx_url, '') AS resume_url,
               a.created_at,
               a.updated_at,
               j.id AS job_id,
@@ -354,6 +355,14 @@ const getApplicants = async (req, res) => {
        FROM applications a
        JOIN jobs j ON j.id = a.job_id
        JOIN users u ON u.id = a.user_id
+       LEFT JOIN LATERAL (
+         SELECT r.id, r.pdf_url, r.docx_url
+         FROM resumes r
+         WHERE r.user_id = a.user_id
+           AND r.archived_at IS NULL
+         ORDER BY CASE WHEN r.resume_type = 'ats_optimized' THEN 0 ELSE 1 END, r.is_primary DESC, r.created_at DESC
+         LIMIT 1
+       ) lr ON TRUE
        LEFT JOIN applicant_ai_scores score ON score.application_id = a.id
        WHERE j.company_id = $1
        ORDER BY a.created_at DESC
@@ -364,7 +373,8 @@ const getApplicants = async (req, res) => {
     const applicants = result.rows.map((row) => ({
       id: row.id,
       status: row.status,
-      resumeUrl: row.resume_url || '',
+      resumeId: row.resume_id || null,
+      resumeUrl: row.resume_id ? `/resume/${row.resume_id}` : (row.resume_url || ''),
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       job: { id: row.job_id, title: row.job_title, status: row.job_status },
@@ -454,7 +464,8 @@ const updateApplicantStatus = async (req, res) => {
       const refreshed = await client.query(
         `SELECT a.id,
                 a.status,
-                a.resume_url,
+                COALESCE(a.resume_id, lr.id) AS resume_id,
+                COALESCE(a.resume_url, lr.pdf_url, lr.docx_url, '') AS resume_url,
                 a.created_at,
                 a.updated_at,
                 j.id AS job_id,
@@ -469,6 +480,14 @@ const updateApplicantStatus = async (req, res) => {
          FROM applications a
          JOIN jobs j ON j.id = a.job_id
          JOIN users u ON u.id = a.user_id
+         LEFT JOIN LATERAL (
+           SELECT r.id, r.pdf_url, r.docx_url
+           FROM resumes r
+           WHERE r.user_id = a.user_id
+             AND r.archived_at IS NULL
+           ORDER BY CASE WHEN r.resume_type = 'ats_optimized' THEN 0 ELSE 1 END, r.is_primary DESC, r.created_at DESC
+           LIMIT 1
+         ) lr ON TRUE
          WHERE a.id = $1`,
         [applicationId]
       );
@@ -479,7 +498,8 @@ const updateApplicantStatus = async (req, res) => {
         applicant: {
           id: row.id,
           status: row.status,
-          resumeUrl: row.resume_url || '',
+          resumeId: row.resume_id || null,
+          resumeUrl: row.resume_id ? `/resume/${row.resume_id}` : (row.resume_url || ''),
           createdAt: row.created_at,
           updatedAt: row.updated_at,
           job: { id: row.job_id, title: row.job_title, status: row.job_status },
@@ -670,7 +690,8 @@ const updateApplicantStatus = async (req, res) => {
     const refreshed = await client.query(
       `SELECT a.id,
               a.status,
-              a.resume_url,
+              COALESCE(a.resume_id, lr.id) AS resume_id,
+              COALESCE(a.resume_url, lr.pdf_url, lr.docx_url, '') AS resume_url,
               a.created_at,
               a.updated_at,
               j.id AS job_id,
@@ -685,6 +706,14 @@ const updateApplicantStatus = async (req, res) => {
        FROM applications a
        JOIN jobs j ON j.id = a.job_id
        JOIN users u ON u.id = a.user_id
+       LEFT JOIN LATERAL (
+         SELECT r.id, r.pdf_url, r.docx_url
+         FROM resumes r
+         WHERE r.user_id = a.user_id
+           AND r.archived_at IS NULL
+         ORDER BY CASE WHEN r.resume_type = 'ats_optimized' THEN 0 ELSE 1 END, r.is_primary DESC, r.created_at DESC
+         LIMIT 1
+       ) lr ON TRUE
        WHERE a.id = $1`,
       [applicationId]
     );
@@ -696,7 +725,8 @@ const updateApplicantStatus = async (req, res) => {
       applicant: {
         id: row.id,
         status: row.status,
-        resumeUrl: row.resume_url || '',
+        resumeId: row.resume_id || null,
+        resumeUrl: row.resume_id ? `/resume/${row.resume_id}` : (row.resume_url || ''),
         createdAt: row.created_at,
         updatedAt: row.updated_at,
         job: { id: row.job_id, title: row.job_title, status: row.job_status },
