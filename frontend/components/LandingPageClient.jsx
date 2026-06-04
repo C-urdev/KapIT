@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from '@shared/hooks/useAppRouter';
 import { lazy, Suspense } from 'react';
 import LandingPage from '@sharedPages/landing/LandingPage';
-import { getCurrentUser, isCompanyAccount } from '@sharedServices/authService';
+import { getCurrentUser, getStoredUser, isCompanyAccount } from '@sharedServices/authService';
+import { getSessionSnapshot } from '@sharedServices/apiClient';
 
 const SelectAccountTypeModal = lazy(() => import('@sharedComponents/auth/SelectAccountTypeModal'));
 const LoginModal = lazy(() => import('@sharedComponents/auth/LoginModal'));
@@ -28,6 +29,12 @@ export default function LandingPageClient() {
     let cancelled = false;
 
     const redirectIfAuthenticated = async () => {
+      const storedUser = getStoredUser();
+      const { csrfToken } = getSessionSnapshot();
+      if (!storedUser && !csrfToken) {
+        return;
+      }
+
       try {
         const data = await getCurrentUser();
         const currentUser = data?.user || null;
@@ -35,7 +42,8 @@ export default function LandingPageClient() {
           router.replace(resolveDashboardPath(currentUser));
         }
       } catch {
-        // Logged-out visitors should remain on the landing page.
+        // If the cached session is stale, leave the landing page and let the
+        // normal sign-in flow establish a fresh session.
       }
     };
 

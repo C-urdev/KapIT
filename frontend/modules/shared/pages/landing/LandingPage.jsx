@@ -802,7 +802,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
                           <Icon className="h-[16px] w-[16px]" />
                         </span>
                         <span className="hero-feature-flip-face hero-feature-flip-back" aria-hidden="true">
-                          <KapITLogo className="h-[17px] w-[17px] rounded-sm object-contain" />
+                          <KapITLogo className="h-[17px] w-[17px] rounded-full object-contain" />
                         </span>
                       </span>
                     </a>

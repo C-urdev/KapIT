@@ -246,7 +246,7 @@ const deriveFormFromProfile = ({ user, profile }) => {
   };
 };
 
-export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave, mode = 'account', asPage = false }) {
+export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave, mode = 'account', asPage = false, onResumeUploadComplete }) {
   const [profileLoading, setProfileLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -258,6 +258,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
   });
   const [cachedDeveloperProfile] = useState(() => readProfileCache());
   const [developerProfile, setDeveloperProfile] = useState(cachedDeveloperProfile);
+  const [resumeDirty, setResumeDirty] = useState(false);
   const [formData, setFormData] = useState(EMPTY_FORM);
 
   const resolvedJobTitle = String(formData.jobTitle || '').trim();
@@ -286,6 +287,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
   useEffect(() => {
     if (!isOpen) return;
     setError('');
+    setResumeDirty(false);
     const nextForm = deriveFormFromProfile({ user, profile: developerProfile });
     setFormData(nextForm);
     logProfileSync('settings-form-init', {
@@ -468,7 +470,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
       otherLinks: formData.otherLinks,
       workPreference: formData.workPreference,
       aboutMe: formData.aboutMe,
-      resume: formData.resume,
+      ...(resumeDirty ? { resume: formData.resume } : {}),
     };
 
     try {
@@ -514,7 +516,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
         workPreference: payload.workPreference,
         aboutMe: payload.aboutMe,
         bio: payload.aboutMe,
-        resume: payload.resume,
+        ...(resumeDirty ? { resume: payload.resume } : {}),
         profileCompleted: true,
       };
       const nextDeveloperProfile = {
@@ -538,7 +540,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
         work_preference: payload.workPreference || null,
         certifications: payload.certifications || null,
         school_university: school || null,
-        resume_url: payload.resume || null,
+        ...(resumeDirty ? { resume_url: payload.resume || null } : {}),
         profile_photo_url: persistedProfile?.profile_photo_url || payload.profileImage || null,
       };
       setDeveloperProfile(nextDeveloperProfile);
@@ -776,8 +778,12 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
               <Field label="Resume">
                 <ResumeUploader
                   value={formData.resume}
-                  onChange={(resume) => setFormData((p) => ({ ...p, resume }))}
+                  onChange={(resume) => {
+                    setResumeDirty(true);
+                    setFormData((p) => ({ ...p, resume }));
+                  }}
                   onUpload={(file) => developerAPI.uploadResume(file)}
+                  onUploadComplete={(payload) => onResumeUploadComplete?.(payload)}
                 />
               </Field>
             </div>

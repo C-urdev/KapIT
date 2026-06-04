@@ -123,6 +123,13 @@ const getResolvedPostOwnerName = (post, fallbackDisplayName = '') => {
   return fallbackDisplayName || 'User';
 };
 
+const countCommentThreadItems = (items) => (
+  (Array.isArray(items) ? items : []).reduce((total, comment) => {
+    const replies = Array.isArray(comment?.replies) ? comment.replies : [];
+    return total + 1 + countCommentThreadItems(replies);
+  }, 0)
+);
+
 export default function FeedPostCard({ post, user, displayName, profileImage, userInitial, isMenuOpen, onOpenMenu, onCloseMenu, onToggleSavePost, onReactToPost, onAddComment, onReactToComment, onToggleSharePost, onDeletePost, isHidden = false, onHidePost, onUndoHidePost, onHideAuthor, enableMenu = true, isSavedOverride = false }) {
   const toast = useToast();
   const actorKey = getActorKey(user);
@@ -150,7 +157,7 @@ export default function FeedPostCard({ post, user, displayName, profileImage, us
   const selectedReaction = REACTION_OPTIONS.find((entry) => entry.key === userReaction) || REACTION_OPTIONS[0];
   const reactionSummary = getReactionSummary(reactions);
   const reactionCount = reactionSummary.total;
-  const commentCount = comments.length;
+  const commentCount = countCommentThreadItems(comments);
   const shareCount = shares.length;
   const hasShared = shares.some((entry) => entry.userKey === actorKey);
   const formattedDate = new Date(post.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });

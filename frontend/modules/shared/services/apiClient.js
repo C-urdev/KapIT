@@ -7,7 +7,31 @@ const normalizeBaseUrl = (value, fallback = '/api') => {
   return (trimmed || fallback).replace(/\/$/, '');
 };
 
-const API_BASE = normalizeBaseUrl(VITE_EXPRESS_API_URL, '/api');
+const isLoopbackHost = (host) => host === 'localhost' || host === '127.0.0.1' || host === '::1';
+
+const alignLoopbackOriginForDev = (baseUrl) => {
+  if (typeof window === 'undefined' || !baseUrl || !/^https?:\/\//i.test(baseUrl)) {
+    return baseUrl;
+  }
+
+  try {
+    const parsed = new URL(baseUrl);
+    const browserHost = String(window.location.hostname || '').trim().toLowerCase();
+    const parsedHost = String(parsed.hostname || '').trim().toLowerCase();
+    const mode = String(import.meta.env.MODE || '').trim().toLowerCase();
+
+    if (mode !== 'production' && isLoopbackHost(browserHost) && isLoopbackHost(parsedHost) && browserHost !== parsedHost) {
+      parsed.hostname = browserHost;
+      return parsed.toString().replace(/\/$/, '');
+    }
+  } catch {
+    // Use configured base URL when parsing fails.
+  }
+
+  return baseUrl;
+};
+
+const API_BASE = alignLoopbackOriginForDev(normalizeBaseUrl(VITE_EXPRESS_API_URL, '/api'));
 const AUTH_BASE = `${API_BASE}/auth`;
 const FASTAPI_BASE = normalizeBaseUrl(VITE_FASTAPI_URL, '');
 const CSRF_COOKIE_NAME = VITE_CSRF_COOKIE_NAME || 'kapit_csrf_token';
@@ -227,6 +251,7 @@ export const authRequest = (path, options = {}) =>
 
 export const getSessionSnapshot = () => ({
   csrfToken: getCsrfToken(),
+  csrfCookieName: CSRF_COOKIE_NAME,
   apiBase: API_BASE,
   authBase: AUTH_BASE,
   fastApiBase: FASTAPI_BASE,
