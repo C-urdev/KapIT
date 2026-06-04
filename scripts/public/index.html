@@ -25,7 +25,7 @@
       try {
         const res = await fetch('/api/start', {method: 'POST'});
         const data = await res.json();
-        status.textContent = `npm start exited with code ${data.exitCode}`;
+        status.textContent = `pnpm start exited with code ${data.exitCode}`;
       } catch (e) {
         status.textContent = 'Failed to start: ' + e.message;
       }

@@ -3,8 +3,8 @@ services:
     name: kap-it-api
     runtime: node
     rootDir: .
-    buildCommand: npm install --prefix backend
-    startCommand: npm --prefix backend run start
+    buildCommand: pnpm --dir backend install --frozen-lockfile
+    startCommand: pnpm --dir backend run start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
