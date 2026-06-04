@@ -25,7 +25,7 @@ let frontendPort = Number(process.env.VITE_PORT || 5173);
 const FRONTEND_SCRIPT = 'dev'; // Vite defaults to 'dev' script in run-web.js
 const REUSE_EXISTING_BACKEND = process.env.REUSE_EXISTING_BACKEND === 'true';
 const BACKEND_WATCH_ENABLED = process.env.BACKEND_WATCH === 'true';
-const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 const quietStartup = process.env.QUIET_STARTUP !== 'false';
 const FASTAPI_URL = String(
   process.env.FASTAPI_URL || process.env.VITE_FASTAPI_URL || '',
@@ -75,11 +75,11 @@ const findFreePort = async (host, startPort, excludePorts = new Set(), maxAttemp
 };
 
 // ---------------------------------------------------------------------------
-// npm script runner
+// pnpm script runner
 // ---------------------------------------------------------------------------
 
-const runNpmScript = (prefixDir, scriptName) => {
-  const args = ['--silent', '--prefix', path.resolve(repoRoot, prefixDir), 'run', scriptName];
+const runPnpmScript = (prefixDir, scriptName) => {
+  const args = ['-C', path.resolve(repoRoot, prefixDir), 'run', scriptName];
   const options = {
     stdio: 'pipe',
     shell: false,
@@ -88,12 +88,12 @@ const runNpmScript = (prefixDir, scriptName) => {
 
   const createChild = () => {
     try {
-      return spawn(npmCommand, args, options);
+      return spawn(pnpmCommand, args, options);
     } catch (error) {
       const canRetryWithShell =
         process.platform === 'win32' && (error?.code === 'EINVAL' || error?.code === 'EPERM');
       if (!canRetryWithShell) throw error;
-      return spawn('cmd.exe', ['/d', '/s', '/c', npmCommand, ...args], options);
+      return spawn('cmd.exe', ['/d', '/s', '/c', pnpmCommand, ...args], options);
     }
   };
 
@@ -130,7 +130,7 @@ const runNpmScript = (prefixDir, scriptName) => {
 };
 
 const runBackendServer = () => {
-  return runNpmScript('backend', BACKEND_WATCH_ENABLED ? 'watch' : 'start');
+  return runPnpmScript('backend', BACKEND_WATCH_ENABLED ? 'watch' : 'start');
 };
 
 // ---------------------------------------------------------------------------
@@ -214,13 +214,13 @@ const shutdown = (code = 0) => {
 const startFrontend = () => {
   if (frontendStarted || shuttingDown) return;
   frontendStarted = true;
-  frontendProcess = runNpmScript('frontend', FRONTEND_SCRIPT);
+  frontendProcess = runPnpmScript('frontend', FRONTEND_SCRIPT);
   frontendProcess.on('exit', (code) => shutdown(code ?? 0));
 };
 
 const startFastApi = () => {
   if (shuttingDown || fastApiProcess || !shouldStartLocalFastApi()) return;
-  fastApiProcess = runNpmScript('backend', 'fastapi:dev');
+  fastApiProcess = runPnpmScript('backend', 'fastapi:dev');
   fastApiProcess.on('exit', (code) => {
     fastApiProcess = null;
     if (!shuttingDown && Number(code) !== 0) {

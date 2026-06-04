@@ -106,7 +106,6 @@ Use `.env.example` as the single source of truth for environment variables.
 4. Express persists core data in PostgreSQL and can use Redis if configured.
 5. For AI-enabled endpoints, Express calls the FastAPI service (`backend/ai-fastapi`) through `FASTAPI_URL`.
 6. Public deployment is split:
-   - Frontend: Netlify (`frontend/netlify.toml`)
    - Backend: Render (`render.yaml`)
 
 ## 🗂️ Folder Structure

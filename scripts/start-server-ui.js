@@ -9,18 +9,18 @@ app.use(express.static(path.resolve(import.meta.url, '..', 'public')));
 
 // Endpoint to start the dev server
 app.post('/api/start', (req, res) => {
-  const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-  const child = spawn(npmCmd, ['start'], {
+  const pnpmCmd = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+  const child = spawn(pnpmCmd, ['start'], {
     cwd: path.resolve(import.meta.url, '..', '..'), // project root (z:/kapIT)
     stdio: 'inherit',
     shell: false,
   });
   child.on('error', (err) => {
-    console.error('Failed to launch npm start:', err);
+    console.error('Failed to launch pnpm start:', err);
     res.status(500).json({ error: err.message });
   });
   child.on('exit', (code) => {
-    console.log(`npm start exited with code ${code}`);
+    console.log(`pnpm start exited with code ${code}`);
     res.json({ exitCode: code });
   });
 });
