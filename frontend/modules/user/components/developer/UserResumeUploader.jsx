@@ -2,11 +2,18 @@ import React, { useId, useMemo, useState } from 'react';
 import { FileText, Loader2, X } from 'lucide-react';
 
 const MAX_UPLOAD_MB = 5;
+const ALLOWED_RESUME_TYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]);
+const RESUME_ACCEPT = '.pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
 export default function ResumeUploader({
   value,
   onChange,
   onUpload,
+  onUploadComplete,
 }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -30,8 +37,8 @@ export default function ResumeUploader({
   const handleFile = async (file) => {
     if (!file || uploading) return;
 
-    if (file.type !== 'application/pdf') {
-      setError('Please upload a PDF file.');
+    if (!ALLOWED_RESUME_TYPES.has(String(file.type || '').toLowerCase())) {
+      setError('Please upload a PDF, DOC, or DOCX file.');
       return;
     }
 
@@ -56,6 +63,12 @@ export default function ResumeUploader({
       }
 
       onChange?.(nextResumeUrl);
+      onUploadComplete?.({
+        resumeUrl: nextResumeUrl,
+        fileName: String(result?.fileName || file.name || uploadedLabel || 'resume'),
+        contentType: String(file.type || '').toLowerCase(),
+        extractedTextPreview: String(result?.extractedTextPreview || '').trim(),
+      });
     } catch (uploadError) {
       setError(uploadError?.message || 'Failed to upload resume. Please try again.');
     } finally {
@@ -68,7 +81,7 @@ export default function ResumeUploader({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-[#344e41] dark:text-slate-200">
           <FileText className="h-5 w-5 text-[#588157] dark:text-[#f0c766]" />
-          <span className="font-semibold">Resume (PDF)</span>
+          <span className="font-semibold">Resume (PDF, DOC, DOCX)</span>
         </div>
         {hasValue ? (
           <button
@@ -96,7 +109,7 @@ export default function ResumeUploader({
       <input
         id={fileInputId}
         type="file"
-        accept="application/pdf"
+        accept={RESUME_ACCEPT}
         onChange={(e) => {
           void handleFile(e.target.files?.[0] || null);
           e.target.value = '';

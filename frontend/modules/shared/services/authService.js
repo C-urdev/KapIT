@@ -1,4 +1,4 @@
-import { authRequest } from './apiClient';
+import { authRequest, getSessionSnapshot } from './apiClient';
 
 const PROFILE_CACHE_KEY = 'kapit_profile_cache_by_email';
 const USER_STORAGE_KEY = 'user';
@@ -41,9 +41,17 @@ const clearLocalSessionState = () => {
     storage.removeItem(USER_STORAGE_KEY);
     storage.removeItem(PROFILE_CACHE_KEY);
     storage.removeItem('token');
+    const csrfCookieName = String(getSessionSnapshot()?.csrfCookieName || '').trim();
+    if (csrfCookieName && typeof document !== 'undefined') {
+      document.cookie = `${encodeURIComponent(csrfCookieName)}=; Max-Age=0; path=/`;
+    }
   } catch {
     // Ignore storage access failures.
   }
+};
+
+export const clearAuthStateLocally = () => {
+  clearLocalSessionState();
 };
 
 const getStoredUserSafe = () => {

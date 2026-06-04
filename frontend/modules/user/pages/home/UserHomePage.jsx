@@ -35,9 +35,12 @@ import {
   UserNotificationSettingsPage,
   UserSavedJobsSettingsPage,
 } from '@userPages/settings/UserSettingsUtilityPages';
+import UserResumeAtsPreviewPage from '@userPages/settings/UserResumeAtsPreviewPage';
 import UserMobileBottomNav from '@userComponents/navigation/mobile/UserMobileBottomNav';
 import UserApplicationsPanel from './UserApplicationsPanel';
 import UserSavedJobsPanel from './UserSavedJobsPanel';
+import UserResumeProfileViewerPage from './UserResumeProfileViewerPage';
+import { developerAPI } from '@userFeatures/developer/userDeveloperAPI';
 import {
   addCommentToPost,
   createPost,
@@ -60,7 +63,7 @@ const USER_NAV_QUERY_KEY = 'tab';
 const FEED_PAGE_SIZE = 10;
 const USER_PROFILE_QUERY_KEY = 'profileId';
 const USER_JOB_QUERY_KEY = 'jobId';
-const USER_NAV_TABS = new Set(['home', 'jobs', 'job-detail', 'pre-assessment', 'projects', 'search', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'help', 'tips', 'verified', 'settings', 'public-profile', 'settings-account', 'settings-career', 'settings-notifications', 'settings-saved-jobs', 'settings-applications', 'privacy-settings', 'privacy-change-password', 'privacy-comments', 'privacy-mentions', 'privacy-following', 'privacy-likes']);
+const USER_NAV_TABS = new Set(['home', 'jobs', 'job-detail', 'pre-assessment', 'projects', 'search', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'resume-viewer', 'help', 'tips', 'verified', 'settings', 'public-profile', 'settings-account', 'settings-career', 'settings-resume-ats', 'settings-notifications', 'settings-saved-jobs', 'settings-applications', 'privacy-settings', 'privacy-change-password', 'privacy-comments', 'privacy-mentions', 'privacy-following', 'privacy-likes']);
 const resolveProfileId = (value) => {
   const normalized = String(value || '').trim();
   return normalized || '';
@@ -170,13 +173,33 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   const [isMobileShellViewport, setIsMobileShellViewport] = useState(false);
   const [mobileChromeHidden, setMobileChromeHidden] = useState(false);
   const [mobileThreadOpen, setMobileThreadOpen] = useState(false);
+  const [resumeUploadPreview, setResumeUploadPreview] = useState({
+    resumeUrl: '',
+    fileName: '',
+    contentType: '',
+    extractedTextPreview: '',
+    optimized: null,
+    optimizedDocxUrl: '',
+    optimizedPdfUrl: '',
+    optimizing: false,
+    optimizeError: '',
+    applyingOptimizedResume: false,
+    applyOptimizedError: '',
+  });
+  const [resumeViewerPayload, setResumeViewerPayload] = useState({
+    resumeUrl: '',
+    isAts: false,
+    fileLabel: 'Resume',
+  });
   const feedRequestInFlightRef = useRef(false);
   const feedCursorRef = useRef(null);
   const hasMoreFeedPostsRef = useRef(false);
   const feedPostsRef = useRef([]);
+  const resumeSyncDoneForUserRef = useRef('');
   const lastScrollYRef = useRef(0);
   const isMessagesActive = activeNav === 'messages';
   const isSettingsActive = activeNav === 'settings';
+  const isResumeAtsPreviewActive = activeNav === 'settings-resume-ats';
   const isSearchActive = activeNav === 'search';
   const isEdgeToEdgeView = isMessagesActive || isSettingsActive;
   const pageBackgroundClass = isMessagesActive ? 'bg-[#dad7cd] dark:bg-[#121212]' : 'bg-[#dad7cd] dark:bg-[#121416]';
@@ -215,6 +238,58 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
         next.push(post);
       });
     return next;
+  }, []);
+
+  const applyUpdatedPostLocally = useCallback((updatedPost) => {
+    const postId = Number(updatedPost?.id);
+    if (!Number.isInteger(postId) || postId <= 0) {
+      return false;
+    }
+
+    let foundAny = false;
+    const apply = (list) => {
+      const items = Array.isArray(list) ? list : [];
+      let foundInList = false;
+      const next = items.map((item) => {
+        const itemId = Number(item?.id);
+        if (itemId !== postId) {
+          return item;
+        }
+        foundInList = true;
+        return updatedPost;
+      });
+      if (foundInList) {
+        foundAny = true;
+      }
+      return next;
+    };
+
+    setPosts((current) => apply(current));
+    setFeedPosts((current) => apply(current));
+    return foundAny;
+  }, []);
+
+  const applyPostMutationLocally = useCallback((postId, mutatePost) => {
+    const normalizedPostId = Number(postId);
+    if (!Number.isInteger(normalizedPostId) || normalizedPostId <= 0 || typeof mutatePost !== 'function') {
+      return false;
+    }
+
+    let foundAny = false;
+    const apply = (list) => {
+      const items = Array.isArray(list) ? list : [];
+      return items.map((item) => {
+        if (Number(item?.id) !== normalizedPostId) {
+          return item;
+        }
+        foundAny = true;
+        return mutatePost(item);
+      });
+    };
+
+    setPosts((current) => apply(current));
+    setFeedPosts((current) => apply(current));
+    return foundAny;
   }, []);
 
   const syncPostState = useCallback(async () => {
@@ -647,6 +722,63 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
     }
   }, [activeNav]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const userId = String(user?.id || '').trim();
+    if (!userId) {
+      return () => {
+        cancelled = true;
+      };
+    }
+    if (resumeSyncDoneForUserRef.current === userId) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const syncResumeIntoSessionUser = async () => {
+      try {
+        const response = await developerAPI.getMyProfile();
+        if (cancelled) return;
+        const profile = response?.profile || {};
+        const resumeUrl = String(profile?.resume_url || '').trim();
+        const optimizedResumePdfUrl = String(profile?.optimized_resume_pdf_url || '').trim();
+        const optimizedResumeDocxUrl = String(profile?.optimized_resume_docx_url || '').trim();
+        if (!resumeUrl && !optimizedResumePdfUrl && !optimizedResumeDocxUrl) {
+          return;
+        }
+
+        const currentResumeUrl = String(user?.resume || user?.resumeUrl || '').trim();
+        const currentOptimizedPdf = String(user?.optimizedResumePdfUrl || '').trim();
+        const currentOptimizedDocx = String(user?.optimizedResumeDocxUrl || '').trim();
+        const hasChange = (
+          currentResumeUrl !== resumeUrl
+          || currentOptimizedPdf !== optimizedResumePdfUrl
+          || currentOptimizedDocx !== optimizedResumeDocxUrl
+        );
+
+        resumeSyncDoneForUserRef.current = userId;
+        if (!hasChange) {
+          return;
+        }
+
+        await onUpdateUser?.({
+          ...user,
+          ...(resumeUrl ? { resume: resumeUrl, resumeUrl } : {}),
+          ...(optimizedResumePdfUrl ? { optimizedResumePdfUrl } : {}),
+          ...(optimizedResumeDocxUrl ? { optimizedResumeDocxUrl } : {}),
+        }, { persist: false });
+      } catch {
+        // Keep current session user if profile resume sync fails.
+      }
+    };
+
+    void syncResumeIntoSessionUser();
+    return () => {
+      cancelled = true;
+    };
+  }, [onUpdateUser, user?.id, user?.optimizedResumeDocxUrl, user?.optimizedResumePdfUrl, user?.resume, user?.resumeUrl]);
+
   const handleOpenPremiumMerchantWindow = () => {
     if (isMobileViewport) {
       setPremiumPopupOpen(false);
@@ -665,7 +797,13 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   };
 
   const handleCreatePost = async (postInput) => {
-    await createPost(postInput);
+    const createdPost = await createPost(postInput);
+    const createdId = Number(createdPost?.id);
+    if (Number.isInteger(createdId) && createdId > 0) {
+      setPosts((current) => mergePostsById([createdPost], current));
+      setFeedPosts((current) => mergePostsById([createdPost], current));
+      return;
+    }
     await syncPostState();
   };
 
@@ -687,28 +825,151 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   };
 
   const handleReactToPost = async (postId, reactionType) => {
-    await reactToPost(postId, reactionType);
-    await syncPostState();
+    const updatedPost = await reactToPost(postId, reactionType);
+    if (!applyUpdatedPostLocally(updatedPost)) {
+      await syncPostState();
+    }
   };
 
-  const handleAddComment = async (postId, content) => {
-    await addCommentToPost(postId, content);
-    await syncPostState();
+  const handleAddComment = async (postId, commentInput) => {
+    const actorName = String(user?.fullName || user?.name || user?.username || 'User').trim() || 'User';
+    const actorKey = String(user?.email || user?.username || user?.name || 'anonymous').trim().toLowerCase() || 'anonymous';
+    const actorProfileImage = String(user?.profileImage || '').trim();
+    const content = typeof commentInput === 'string' ? commentInput : String(commentInput?.content || '');
+    const imageUrl = typeof commentInput === 'string' ? '' : String(commentInput?.imageUrl || '').trim();
+    const parentCommentIdRaw = typeof commentInput === 'object' ? Number(commentInput?.parentCommentId) : NaN;
+    const parentCommentId = Number.isInteger(parentCommentIdRaw) && parentCommentIdRaw > 0 ? parentCommentIdRaw : null;
+
+    const optimisticComment = {
+      id: Number(`${Date.now()}${Math.floor(Math.random() * 1000)}`),
+      userKey: actorKey,
+      author: actorName,
+      authorProfileImage: actorProfileImage,
+      content,
+      imageUrl,
+      reactions: [],
+      replies: [],
+      createdAt: new Date().toISOString(),
+    };
+
+    applyPostMutationLocally(postId, (post) => {
+      const comments = Array.isArray(post?.comments) ? [...post.comments] : [];
+      if (!parentCommentId) {
+        return {
+          ...post,
+          comments: [optimisticComment, ...comments],
+        };
+      }
+
+      return {
+        ...post,
+        comments: comments.map((entry) => (
+          Number(entry?.id) === parentCommentId
+            ? {
+                ...entry,
+                replies: [...(Array.isArray(entry?.replies) ? entry.replies : []), optimisticComment],
+              }
+            : entry
+        )),
+      };
+    });
+
+    try {
+      const updatedPost = await addCommentToPost(postId, commentInput);
+      if (!applyUpdatedPostLocally(updatedPost)) {
+        await syncPostState();
+      }
+    } catch {
+      await syncPostState();
+    }
   };
 
   const handleReactToComment = async (postId, commentId, reactionType, parentCommentId = null) => {
-    await reactToCommentOnPost(postId, commentId, reactionType, parentCommentId);
-    await syncPostState();
+    const actorName = String(user?.fullName || user?.name || user?.username || 'User').trim() || 'User';
+    const actorKey = String(user?.email || user?.username || user?.name || 'anonymous').trim().toLowerCase() || 'anonymous';
+    const actorProfileImage = String(user?.profileImage || '').trim();
+    const actorAccountType = String(user?.accountType || (user?.type === 'company' ? 'company' : 'developer')).trim();
+    const actorUserType = String(user?.type || '').trim();
+    const normalizedReaction = String(reactionType || '').trim().toLowerCase();
+    const targetCommentId = Number(commentId);
+    const targetParentId = parentCommentId == null ? null : Number(parentCommentId);
+
+    const toggleCommentReaction = (comment) => {
+      if (!comment || Number(comment?.id) !== targetCommentId) {
+        return comment;
+      }
+      const reactions = Array.isArray(comment?.reactions) ? [...comment.reactions] : [];
+      const existingIndex = reactions.findIndex((entry) => String(entry?.userKey || '') === actorKey);
+
+      if (!normalizedReaction) {
+        if (existingIndex >= 0) {
+          reactions.splice(existingIndex, 1);
+        }
+      } else {
+        const nextReaction = {
+          userKey: actorKey,
+          userName: actorName,
+          profileImage: actorProfileImage,
+          accountType: actorAccountType,
+          userType: actorUserType,
+          type: normalizedReaction,
+          updatedAt: new Date().toISOString(),
+        };
+        if (existingIndex >= 0) {
+          reactions[existingIndex] = nextReaction;
+        } else {
+          reactions.push(nextReaction);
+        }
+      }
+
+      return {
+        ...comment,
+        reactions,
+      };
+    };
+
+    applyPostMutationLocally(postId, (post) => {
+      const comments = Array.isArray(post?.comments) ? [...post.comments] : [];
+      const nextComments = comments.map((entry) => {
+        if (targetParentId && Number(entry?.id) === targetParentId) {
+          return {
+            ...entry,
+            replies: (Array.isArray(entry?.replies) ? entry.replies : []).map((reply) => toggleCommentReaction(reply)),
+          };
+        }
+        if (!targetParentId) {
+          return toggleCommentReaction(entry);
+        }
+        return entry;
+      });
+
+      return {
+        ...post,
+        comments: nextComments,
+      };
+    });
+
+    try {
+      const updatedPost = await reactToCommentOnPost(postId, commentId, reactionType, parentCommentId);
+      if (!applyUpdatedPostLocally(updatedPost)) {
+        await syncPostState();
+      }
+    } catch {
+      await syncPostState();
+    }
   };
 
   const handleToggleSharePost = async (postId, shareInput) => {
-    await toggleSharePost(postId, shareInput);
-    await syncPostState();
+    const updatedPost = await toggleSharePost(postId, shareInput);
+    if (!applyUpdatedPostLocally(updatedPost)) {
+      await syncPostState();
+    }
   };
 
   const handleDeletePost = async (postId) => {
     await deletePost(postId);
-    await syncPostState();
+    setPosts((current) => (Array.isArray(current) ? current.filter((item) => Number(item?.id) !== Number(postId)) : []));
+    setFeedPosts((current) => (Array.isArray(current) ? current.filter((item) => Number(item?.id) !== Number(postId)) : []));
   };
   const handleSubmitSearch = ({ query, scope }) => {
     const normalizedQuery = String(query || '').trim();
@@ -931,7 +1192,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   };
 
   return (
-    <div className={`min-h-[100dvh] no-scrollbar transition-colors duration-150 ease-out ${pageBackgroundClass}`}>
+    <div className={`min-h-[100dvh] no-scrollbar transition-colors duration-150 ease-out ${pageBackgroundClass} ${isResumeAtsPreviewActive ? 'overflow-hidden' : ''}`}>
       <UserNavbar
         activeNav={activeNav}
         setActiveNav={updateActiveNav}
@@ -958,6 +1219,8 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
         className={`mx-auto w-full ${
           isEdgeToEdgeView
             ? 'max-w-none px-0 pt-0'
+            : isResumeAtsPreviewActive
+              ? 'max-w-[min(100%,1800px)] px-3 pt-0 sm:px-5 lg:px-6 xl:px-7 2xl:px-9'
             : isSearchActive
               ? 'max-w-[min(100%,1800px)] pb-28 pt-0 px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 xl:pt-0 xl:pb-8'
             : 'max-w-[min(100%,1800px)] pb-28 pt-4 px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 xl:py-6 xl:pb-8'
@@ -972,7 +1235,14 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
                   : 'calc(3.5rem + max(0.45rem, env(safe-area-inset-top)))',
               height: isMobileShellViewport ? '100dvh' : (isSettingsActive ? 'auto' : 'calc(100dvh - 4rem)'),
             }
-          : { paddingBottom: mobileSafeAreaBottomPadding }}
+          : isResumeAtsPreviewActive
+            ? {
+                paddingBottom: 0,
+                paddingTop: isMobileShellViewport ? 'calc(3.5rem + max(0.45rem, env(safe-area-inset-top)))' : '1rem',
+                height: isMobileShellViewport ? '100dvh' : 'calc(100dvh - 4rem)',
+                overflow: 'hidden',
+              }
+            : { paddingBottom: mobileSafeAreaBottomPadding }}
       >
         {canReturnToSettings && ['my-profile', 'projects', 'saved-jobs', 'applications'].includes(activeNav) && (
           <div className="mb-4">
@@ -1042,6 +1312,22 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
             onReactToComment={handleReactToComment}
             onToggleSharePost={handleToggleSharePost}
             onDeletePost={handleDeletePost}
+            onOpenResumeViewer={(payload) => {
+              setResumeViewerPayload({
+                resumeUrl: String(payload?.resumeUrl || '').trim(),
+                isAts: Boolean(payload?.isAts),
+                fileLabel: String(payload?.fileLabel || 'Resume'),
+              });
+              updateActiveNav('resume-viewer');
+            }}
+          />
+        )}
+        {activeNav === 'resume-viewer' && (
+          <UserResumeProfileViewerPage
+            resumeUrl={resumeViewerPayload.resumeUrl}
+            isAts={resumeViewerPayload.isAts}
+            fileLabel={resumeViewerPayload.fileLabel}
+            onBack={() => updateActiveNav('my-profile')}
           />
         )}
 
@@ -1158,6 +1444,119 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
             mode="career"
             onClose={() => updateActiveNav('settings')}
             onSave={(nextUser) => onUpdateUser?.(nextUser, { persist: false })}
+            onResumeUploadComplete={(payload) => {
+              setResumeUploadPreview({
+                resumeUrl: String(payload?.resumeUrl || ''),
+                fileName: String(payload?.fileName || ''),
+                contentType: String(payload?.contentType || ''),
+                extractedTextPreview: String(payload?.extractedTextPreview || ''),
+                optimized: null,
+                optimizedDocxUrl: '',
+                optimizedPdfUrl: '',
+                optimizing: false,
+                optimizeError: '',
+                applyingOptimizedResume: false,
+                applyOptimizedError: '',
+              });
+              updateActiveNav('settings-resume-ats');
+            }}
+          />
+        )}
+        {activeNav === 'settings-resume-ats' && (
+          <UserResumeAtsPreviewPage
+            user={user}
+            resumeUrl={resumeUploadPreview.resumeUrl}
+            fileName={resumeUploadPreview.fileName}
+            contentType={resumeUploadPreview.contentType}
+            extractedTextPreview={resumeUploadPreview.extractedTextPreview}
+            optimized={resumeUploadPreview.optimized}
+            optimizedDocxUrl={resumeUploadPreview.optimizedDocxUrl}
+            optimizedPdfUrl={resumeUploadPreview.optimizedPdfUrl}
+            optimizing={resumeUploadPreview.optimizing}
+            optimizeError={resumeUploadPreview.optimizeError}
+            onOptimize={async () => {
+              setResumeUploadPreview((prev) => ({ ...prev, optimizing: true, optimizeError: '', applyOptimizedError: '' }));
+              try {
+                const result = await developerAPI.optimizeResume();
+                setResumeUploadPreview((prev) => ({
+                  ...prev,
+                  optimizing: false,
+                  optimized: result?.optimized || null,
+                  optimizedDocxUrl: String(result?.optimizedDocxUrl || ''),
+                  optimizedPdfUrl: String(result?.optimizedPdfUrl || ''),
+                  extractedTextPreview: String(result?.sourceResumeText || prev.extractedTextPreview || ''),
+                  optimizeError: '',
+                }));
+              } catch (error) {
+                setResumeUploadPreview((prev) => ({
+                  ...prev,
+                  optimizing: false,
+                  optimizeError: String(error?.message || 'Failed to optimize resume.'),
+                }));
+              }
+            }}
+            onUseOptimizedResume={async () => {
+              setResumeUploadPreview((prev) => ({ ...prev, applyingOptimizedResume: true, applyOptimizedError: '' }));
+              try {
+                const result = await developerAPI.useOptimizedResume();
+                const nextResumeUrl = String(result?.resumeUrl || result?.optimizedPdfUrl || result?.optimizedDocxUrl || '').trim();
+                const nextOptimizedPdfUrl = String(result?.optimizedPdfUrl || resumeUploadPreview.optimizedPdfUrl || '').trim();
+                const nextOptimizedDocxUrl = String(result?.optimizedDocxUrl || resumeUploadPreview.optimizedDocxUrl || '').trim();
+
+                if (nextResumeUrl) {
+                  try {
+                    const me = await getCurrentUser();
+                    const nextUser = me?.user
+                      ? {
+                          ...me.user,
+                          resume: nextResumeUrl,
+                          resumeUrl: nextResumeUrl,
+                          optimizedResumePdfUrl: nextOptimizedPdfUrl,
+                          optimizedResumeDocxUrl: nextOptimizedDocxUrl,
+                        }
+                      : null;
+                    if (nextUser) {
+                      await onUpdateUser?.(nextUser, { persist: false });
+                    } else {
+                      await onUpdateUser?.({
+                        ...user,
+                        resume: nextResumeUrl,
+                        resumeUrl: nextResumeUrl,
+                        optimizedResumePdfUrl: nextOptimizedPdfUrl,
+                        optimizedResumeDocxUrl: nextOptimizedDocxUrl,
+                      }, { persist: false });
+                    }
+                  } catch {
+                    await onUpdateUser?.({
+                      ...user,
+                      resume: nextResumeUrl,
+                      resumeUrl: nextResumeUrl,
+                      optimizedResumePdfUrl: nextOptimizedPdfUrl,
+                      optimizedResumeDocxUrl: nextOptimizedDocxUrl,
+                    }, { persist: false });
+                  }
+                }
+
+                setResumeUploadPreview((prev) => ({
+                  ...prev,
+                  applyingOptimizedResume: false,
+                  applyOptimizedError: '',
+                  resumeUrl: nextResumeUrl || prev.resumeUrl,
+                  optimizedPdfUrl: nextOptimizedPdfUrl || prev.optimizedPdfUrl,
+                  optimizedDocxUrl: nextOptimizedDocxUrl || prev.optimizedDocxUrl,
+                }));
+                updateActiveNav('my-profile');
+              } catch (error) {
+                setResumeUploadPreview((prev) => ({
+                  ...prev,
+                  applyingOptimizedResume: false,
+                  applyOptimizedError: String(error?.message || 'Failed to use ATS resume in your profile.'),
+                }));
+              }
+            }}
+            applyingOptimizedResume={resumeUploadPreview.applyingOptimizedResume}
+            applyOptimizedError={resumeUploadPreview.applyOptimizedError}
+            onBack={() => updateActiveNav('settings-career')}
           />
         )}
         {activeNav === 'settings-notifications' && (

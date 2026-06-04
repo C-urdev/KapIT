@@ -1,6 +1,8 @@
 import React from 'react';
 import { MapPin, FileText, User, CheckCircle2, XCircle, Eye, Briefcase } from 'lucide-react';
 import { statusBadgeClass, formatJobStatus } from '@companyFeatures/companyUtils';
+import ResumeOpenChoiceModal from '@sharedComponents/modals/ResumeOpenChoiceModal';
+import { resumeService } from '@sharedServices/resumeService';
 
 export default function CompanyApplicantCard({ applicant, onViewProfile, onMessage, onHire, onReject, onReview, actionLoading }) {
   const user = applicant?.user || {};
@@ -9,6 +11,47 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
   const location = user.address || 'No location added';
   const role = user.desiredJob || 'IT Professional';
   const resumeUrl = applicant?.resumeUrl;
+  const resumeId = applicant?.resumeId;
+  const resumeHref = resumeId ? `/resume/${encodeURIComponent(resumeId)}` : resumeUrl;
+  const openResumeInNewTab = () => {
+    if (!resumeHref) return;
+    window.open(resumeHref, '_blank', 'noopener,noreferrer');
+  };
+  const downloadResume = async () => {
+    if (!resumeHref) return;
+
+    if (!resumeId) {
+      const a = document.createElement('a');
+      a.href = resumeHref;
+      a.download = '';
+      a.rel = 'noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      return;
+    }
+
+    try {
+      const data = await resumeService.getResume(resumeId);
+      const resume = data?.resume || {};
+      const signedUrl = resume.signed_pdf_url || resume.signed_docx_url || resumeHref;
+      const a = document.createElement('a');
+      a.href = signedUrl;
+      a.download = '';
+      a.rel = 'noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch {
+      const a = document.createElement('a');
+      a.href = resumeHref;
+      a.download = '';
+      a.rel = 'noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+  };
   const jobStatus = String(applicant?.job?.status || 'open').toLowerCase();
   const applicantStatus = String(applicant?.status || 'pending').toLowerCase();
   const isOpen = jobStatus === 'open';
@@ -21,6 +64,7 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
   const canReview = !actionLoading && isOpen && !isAccepted && !isRejected && !isReviewed && !isFilled;
   const canReject = !actionLoading && isOpen && !isAccepted && !isRejected && !isFilled;
   const canHire = !actionLoading && isOpen && !isAccepted && !isRejected && !isFilled;
+  const [resumeChoiceOpen, setResumeChoiceOpen] = React.useState(false);
 
   return (
     <>
@@ -57,7 +101,7 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
           <ActionRow
             applicant={applicant}
             user={user}
-            resumeUrl={resumeUrl}
+            resumeUrl={resumeHref}
             actionLoading={actionLoading}
             canReview={canReview}
             canReject={canReject}
@@ -71,6 +115,7 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
             onReject={onReject}
             onHire={onHire}
             wrap
+            onOpenResumeChoice={() => setResumeChoiceOpen(true)}
           />
         </div>
 
@@ -117,7 +162,7 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
           <ActionRow
             applicant={applicant}
             user={user}
-            resumeUrl={resumeUrl}
+            resumeUrl={resumeHref}
             actionLoading={actionLoading}
             canReview={canReview}
             canReject={canReject}
@@ -130,9 +175,23 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
             onReview={onReview}
             onReject={onReject}
             onHire={onHire}
+            onOpenResumeChoice={() => setResumeChoiceOpen(true)}
           />
         </div>
       </div>
+      <ResumeOpenChoiceModal
+        isOpen={resumeChoiceOpen}
+        title="Open Applicant Resume"
+        onClose={() => setResumeChoiceOpen(false)}
+        onView={() => {
+          setResumeChoiceOpen(false);
+          openResumeInNewTab();
+        }}
+        onDownload={async () => {
+          setResumeChoiceOpen(false);
+          await downloadResume();
+        }}
+      />
     </>
   );
 }
@@ -182,6 +241,7 @@ function ActionRow({
   onReview,
   onReject,
   onHire,
+  onOpenResumeChoice,
   wrap = false,
 }) {
   const compactActionClass = wrap ? 'w-full min-[420px]:w-auto justify-center' : 'min-w-[5.5rem] justify-center';
@@ -190,15 +250,14 @@ function ActionRow({
   return (
     <div className={`flex items-center gap-2 ${desktopLayoutClass}`}>
       {resumeUrl ? (
-        <a
-          href={resumeUrl}
-          target="_blank"
-          rel="noreferrer"
+        <button
+          type="button"
+          onClick={onOpenResumeChoice}
           className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#a3b18a] px-2.5 py-2 text-xs font-medium text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:text-white dark:hover:bg-[#353c44] xl:px-3 xl:text-sm ${compactActionClass}`}
         >
           <FileText className="h-4 w-4 shrink-0 text-[#588157] dark:text-[#f0c766]" />
           Resume
-        </a>
+        </button>
       ) : null}
       <button
         type="button"

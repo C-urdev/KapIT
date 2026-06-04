@@ -21,6 +21,7 @@ const JobMatchPage = lazy(() => import('./pages/JobMatchPage'));
 const PricingPage = lazy(() => import('./pages/PricingPage'));
 const PremiumPaymentPage = lazy(() => import('./pages/PremiumPaymentPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
+const ResumeViewerPage = lazy(() => import('./pages/ResumeViewerPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const App = () => {
@@ -43,6 +44,7 @@ const App = () => {
             <Route path="/companies/:companyId" element={<CompanyDetailsPage />} />
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+            <Route path="/resume/:resumeId" element={<ResumeViewerPage />} />
 
             {/* Protected routes */}
             <Route path="/dashboard/user" element={<UserDashboardPage />} />
