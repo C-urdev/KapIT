@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from '@shared/hooks/useAppRouter';
 import { AlertCircle, ArrowLeft, Loader2, Mail } from 'lucide-react';
 import AuthPage from '@sharedPages/auth/AuthPage';
 import { 
@@ -45,7 +45,7 @@ export default function AuthPageClient({ initialMode = 'login' }) {
   const [error, setError] = useState('');
   const [isLocalhost, setIsLocalhost] = useState(false);
   const otpInputRefs = useRef([]);
-  const localAuthBypassEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS === 'true';
+  const localAuthBypassEnabled = import.meta.env.VITE_ENABLE_LOCAL_AUTH_BYPASS === 'true';
 
   const completeRegistration = async (signupData, verificationToken) => {
     const data = await registerUser({

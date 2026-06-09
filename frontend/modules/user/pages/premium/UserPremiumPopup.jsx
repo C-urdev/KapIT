@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { BadgeCheck, Brain, Check, CheckCircle2, CreditCard, Crown, Image as ImageIcon, MessageCircle, Sparkles, X } from 'lucide-react';
 import {
   getUserPremiumPaymentProviders,
@@ -65,7 +65,7 @@ const PAYMENT_PROVIDERS = [
   },
 ];
 
-const localPaymentBypassEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_PAYMENT_BYPASS === 'true';
+const localPaymentBypassEnabled = import.meta.env.VITE_ENABLE_LOCAL_PAYMENT_BYPASS === 'true';
 
 function PlanCard({ plan, onUpgrade, buttonLabel, disabled = false }) {
   const highlighted = Boolean(plan.highlighted);

@@ -1,4 +1,5 @@
 node_modules
+.pnpm-store/
 
 # Env files
 .env
@@ -11,10 +12,14 @@ frontend/.next
 backend/ai-fastapi/.venv
 backend/api/uploads
 *.log
+pnpm-debug.log*
+npm-debug.log*
 frontend/next.dev.out.log
 frontend/next.dev.err.log
 server.dev.log
 server.dev.err.log
+tmp-auth-cookies*.txt
+**/package-lock.json
 
 # Security: never commit live database exports/backups
 database/reports/*.sql

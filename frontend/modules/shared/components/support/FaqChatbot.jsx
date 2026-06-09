@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import Link from '../../../../components/shared/Link';
+import { usePathname, useRouter } from '@shared/hooks/useAppRouter';
 import { Bot, Send, Volume2, VolumeX, Paperclip, Ellipsis, SquarePen, X } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 import { CHATBOT_DEFAULT_SUGGESTIONS, CHATBOT_WELCOME_MESSAGE } from '@shared/data/chatbotFaq';

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KapIT Dev Launcher</title>
+  <style>
+    body {font-family: system-ui, sans-serif; display: flex; height: 100vh; align-items: center; justify-content: center; background: #f0f4ff;}
+    button {padding: 1rem 2rem; font-size: 1.2rem; background: #0066ff; color: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);}
+    button:disabled {background:#999; cursor:not-allowed;}
+    #status {margin-top:1rem; font-size:0.9rem;}
+  </style>
+</head>
+<body>
+  <div>
+    <button id="startBtn">Start KapIT Development Server</button>
+    <div id="status"></div>
+  </div>
+  <script>
+    const btn = document.getElementById('startBtn');
+    const status = document.getElementById('status');
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      status.textContent = 'Launching...';
+      try {
+        const res = await fetch('/api/start', {method: 'POST'});
+        const data = await res.json();
+        status.textContent = `pnpm start exited with code ${data.exitCode}`;
+      } catch (e) {
+        status.textContent = 'Failed to start: ' + e.message;
+      }
+      btn.disabled = false;
+    });
+  </script>
+</body>
+</html>

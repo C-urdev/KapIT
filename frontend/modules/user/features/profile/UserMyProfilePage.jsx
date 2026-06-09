@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Edit3, GraduationCap, Link2, Loader2, MapPin, Mail, Pencil, Phone, User } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Edit3, FileText, GraduationCap, Link2, Loader2, MapPin, Mail, Pencil, Phone, User } from 'lucide-react';
 import { useToast } from '@sharedComponents/ui/ToastProvider';
 import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
 import { Avatar } from '@userPages/home/CenterFeedPostShared';
@@ -7,6 +7,16 @@ import FeedPostCard from '@userPages/home/FeedPostCard';
 import { normalizeSocialsText } from '@sharedUtils/socials';
 import ImageCropperModal from '@sharedComponents/modals/ImageCropperModal';
 import { readFileAsDataUrl, validateImageFile } from '@sharedUtils/imageUpload';
+
+const inferResumeKind = (url) => {
+  const raw = String(url || '').trim().toLowerCase();
+  if (!raw) return '';
+  if (raw.includes('.pdf')) return 'PDF';
+  if (raw.includes('.docx')) return 'DOCX';
+  if (raw.includes('.docs')) return 'DOCS';
+  if (raw.includes('.doc')) return 'DOC';
+  return 'File';
+};
 
 export default function UserMyProfilePage({
   user,
@@ -19,6 +29,7 @@ export default function UserMyProfilePage({
   onReactToComment,
   onToggleSharePost,
   onDeletePost,
+  onOpenResumeViewer,
   savedPostIds = [],
 }) {
   const toast = useToast();
@@ -35,7 +46,47 @@ export default function UserMyProfilePage({
   const [cropOpen, setCropOpen] = useState(false);
   const [rawImage, setRawImage] = useState('');
   const [profileImageBusy, setProfileImageBusy] = useState(false);
+  const [stableResumeState, setStableResumeState] = useState({
+    resumeUrl: '',
+    isAts: false,
+    kind: '',
+  });
   const normalizedUserSocials = useMemo(() => normalizeSocialsText(user?.socials), [user?.socials]);
+  const profileResumeUrl = useMemo(
+    () => String(user?.resume || user?.resumeUrl || '').trim(),
+    [user?.resume, user?.resumeUrl]
+  );
+  const atsResumePdfUrl = useMemo(
+    () => String(user?.optimizedResumePdfUrl || '').trim(),
+    [user?.optimizedResumePdfUrl]
+  );
+  const atsResumeDocxUrl = useMemo(
+    () => String(user?.optimizedResumeDocxUrl || '').trim(),
+    [user?.optimizedResumeDocxUrl]
+  );
+  const activeResumeUrl = useMemo(
+    () => profileResumeUrl || atsResumePdfUrl || atsResumeDocxUrl || '',
+    [profileResumeUrl, atsResumePdfUrl, atsResumeDocxUrl]
+  );
+  const activeResumeKind = useMemo(() => inferResumeKind(activeResumeUrl), [activeResumeUrl]);
+  const activeResumeIsAts = useMemo(
+    () => Boolean(activeResumeUrl && (activeResumeUrl === atsResumePdfUrl || activeResumeUrl === atsResumeDocxUrl)),
+    [activeResumeUrl, atsResumeDocxUrl, atsResumePdfUrl]
+  );
+
+  useEffect(() => {
+    if (!activeResumeUrl) return;
+    setStableResumeState({
+      resumeUrl: activeResumeUrl,
+      isAts: activeResumeIsAts,
+      kind: activeResumeKind || 'File',
+    });
+  }, [activeResumeIsAts, activeResumeKind, activeResumeUrl]);
+
+  const visibleResumeUrl = activeResumeUrl || stableResumeState.resumeUrl || '';
+  const visibleResumeIsAts = activeResumeUrl ? activeResumeIsAts : stableResumeState.isAts;
+  const visibleResumeKind = activeResumeUrl ? (activeResumeKind || 'File') : (stableResumeState.kind || 'File');
+
   const [formData, setFormData] = useState({
     fullName: user?.fullName || user?.name || user?.username || '',
     bio: user?.bio || '',
@@ -193,6 +244,24 @@ export default function UserMyProfilePage({
           {user?.education && <InfoRow icon={GraduationCap} text={user.education} />}
           {user?.email && <InfoRow icon={Mail} text={user.email} />}
           {user?.phone && <InfoRow icon={Phone} text={user.phone} />}
+          {visibleResumeUrl ? (
+            <InfoRow
+              icon={FileText}
+              text={(
+                <button
+                  type="button"
+                  onClick={() => onOpenResumeViewer?.({
+                    resumeUrl: visibleResumeUrl,
+                    isAts: visibleResumeIsAts,
+                    fileLabel: visibleResumeKind,
+                  })}
+                  className="font-medium text-[#3a5a40] underline underline-offset-2 hover:text-[#2f4e39] dark:text-[#cfead1] dark:hover:text-white"
+                >
+                  {`View ${visibleResumeIsAts ? 'ATS ' : ''}resume ${visibleResumeKind}`}
+                </button>
+              )}
+            />
+          ) : null}
         </div>
 
         <div className="space-y-4">

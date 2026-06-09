@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import Link from './shared/Link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Moon, Sparkles, Sun, ChevronDown, Building2, UserRound, BriefcaseBusiness, FileText, LifeBuoy, UsersRound, ShieldCheck, CircleHelp } from 'lucide-react';
 import Footer from '@sharedComponents/branding/Footer';
@@ -64,6 +64,8 @@ const TOP_NAV_LINKS = [
   { label: 'Solutions', hasDropdown: true, footerItem: 'Find talent' },
   { label: 'Resources', hasDropdown: true, footerItem: 'Help Center' },
   { label: 'Pricing', hasDropdown: false, href: '/pricing', footerItem: 'Pricing' },
+  // Keep docs access in-platform until a dedicated /docs route exists.
+  { label: 'Documentation', hasDropdown: false, footerItem: 'Help Center' },
 ];
 
 const TOP_NAV_DROPDOWNS = {

@@ -1,6 +1,30 @@
 const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const { InputValidationError, sanitizeAndValidateInput } = require('./inputSanitizer');
-const { getBodySanitizerLimits } = require('./bodySanitizerLimits');
+const ALLOWED_BINARY_UPLOAD_CONTENT_TYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/octet-stream',
+]);
+
+const isAllowedBinaryUploadRoute = (req) => {
+  const method = String(req.method || '').toUpperCase();
+  if (method !== 'POST') {
+    return false;
+  }
+  const path = String(req.path || '').trim().toLowerCase();
+  return path === '/api/developer/resume' || path === '/api/resumes/upload' || path === '/resume' || path === '/resumes/upload';
+};
+
+const getBodySanitizerLimits = () => ({
+  maxDepth: Number(process.env.INPUT_MAX_DEPTH || 12),
+  maxObjectKeys: Number(process.env.INPUT_MAX_OBJECT_KEYS || 120),
+  maxTotalKeys: Number(process.env.INPUT_MAX_TOTAL_KEYS || 800),
+  maxArrayLength: Number(process.env.INPUT_MAX_ARRAY_LENGTH || 200),
+  maxStringLength: Number(process.env.INPUT_MAX_STRING_LENGTH || 8000),
+  maxKeyLength: Number(process.env.INPUT_MAX_KEY_LENGTH || 120),
+  maxNodes: Number(process.env.INPUT_MAX_NODES || 3000),
+});
 
 const validateWriteRequests = (req, res, next) => {
   const method = String(req.method || '').toUpperCase();
@@ -13,8 +37,10 @@ const validateWriteRequests = (req, res, next) => {
   const hasBody = req.headers['content-length'] !== '0' && req.body !== undefined;
   const jsonLike = contentType.includes('application/json');
   const formLike = contentType.includes('application/x-www-form-urlencoded');
+  const normalizedContentType = contentType.split(';')[0].trim();
+  const binaryUploadAllowed = isAllowedBinaryUploadRoute(req) && ALLOWED_BINARY_UPLOAD_CONTENT_TYPES.has(normalizedContentType);
 
-  if (hasBody && contentType && !jsonLike && !formLike) {
+  if (hasBody && contentType && !jsonLike && !formLike && !binaryUploadAllowed) {
     return res.status(415).json({
       success: false,
       error: 'Unsupported content type.',

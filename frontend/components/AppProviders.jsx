@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@shared/hooks/useAppRouter';
 import { ThemeProvider } from '@sharedContext/ThemeContext';
 import FaqChatbot from '@sharedComponents/support/FaqChatbot';
 import ChatbotErrorBoundary from './ChatbotErrorBoundary';

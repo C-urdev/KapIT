@@ -146,7 +146,7 @@ const validateEnvironment = () => {
   validateBooleanString('ENABLE_LOCAL_PAYMENT_BYPASS', errors);
   validateBooleanString('NEXT_PUBLIC_ENABLE_LOCAL_AUTH_BYPASS', errors);
   validateBooleanString('NEXT_PUBLIC_ENABLE_LOCAL_PAYMENT_BYPASS', errors);
-  validateBooleanString('ALLOW_KAPIT_NETLIFY_PREVIEW', errors);
+  validateBooleanString('ALLOW_KAPIT_PREVIEW_ORIGIN', errors);
   validateBooleanString('AUTH_LIMITER_FAIL_CLOSED_FORCE', errors);
 
   if (readEnv('JWT_EXPIRE') && !readEnv('JWT_ACCESS_EXPIRE')) {

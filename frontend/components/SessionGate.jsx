@@ -1,9 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@shared/hooks/useAppRouter';
 import {
   acceptTermsAndConditions,
+  clearAuthStateLocally,
   getCurrentUser,
   getStoredUser,
   getUserAccountType,
@@ -64,8 +65,7 @@ export default function SessionGate({
         if (!needsTermsConsent) {
           routeAfterTermsAccepted(storedUser);
         }
-        // Keep UI responsive on route changes: validate session in background.
-        setLoading(false);
+        // Keep validating with backend before rendering protected children.
       }
 
       try {
@@ -76,7 +76,7 @@ export default function SessionGate({
 
         const nextUser = data?.user || null;
         if (!nextUser) {
-          await logoutUser();
+          clearAuthStateLocally();
           setUser(null);
           router.replace(redirectTo);
           return;
@@ -96,7 +96,7 @@ export default function SessionGate({
         }
       } catch {
         if (!cancelled) {
-          await logoutUser();
+          clearAuthStateLocally();
           setUser(null);
           router.replace(redirectTo);
         }

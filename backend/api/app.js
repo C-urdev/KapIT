@@ -13,8 +13,9 @@ const companyRoutes = require('./routes/companyRoutes');
 const developerRoutes = require('./routes/developerRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const matchRoutes = require('./routes/matchRoutes');
+const resumeRoutes = require('./routes/resumeRoutes');
 const { warmRuntimeSchemas } = require('./config/runtimeSchema');
-const { normalizeOrigin, isKapitPreviewOrigin, getAllowedOrigins } = require('./config/origins');
+const { normalizeOrigin, isKapitPreviewOrigin, isLoopbackOrigin, getAllowedOrigins } = require('./config/origins');
 const pool = require('./config/database');
 const {
   securityHeaders,
@@ -56,6 +57,7 @@ const getGlobalQuerySanitizerLimits = () => ({
 const createApp = () => {
   const app = express();
   const allowedOrigins = getAllowedOrigins();
+  const isProduction = String(process.env.NODE_ENV || '').trim().toLowerCase() === 'production';
   const successDataEnvelopeEnabled =
     String(process.env.SUCCESS_RESPONSE_DATA_ENVELOPE || '').toLowerCase() === 'true';
 
@@ -70,6 +72,10 @@ const createApp = () => {
         // Same-origin browser requests, server-to-server requests, and some
         // platform function invocations may omit the Origin header entirely.
         if (!normalizedOrigin) {
+          return callback(null, true);
+        }
+
+        if (!isProduction && isLoopbackOrigin(normalizedOrigin)) {
           return callback(null, true);
         }
 
@@ -164,9 +170,16 @@ const createApp = () => {
   app.use('/api/notifications', notificationsRateLimiter, notificationsRoutes);
   app.use('/api/company', companyApiRateLimiter, companyWriteRateLimiter, companyRoutes);
   app.use('/api/developer', developerApiRateLimiter, developerRoutes);
+  app.use('/api', developerApiRateLimiter, resumeRoutes);
 
   app.get('/health', (req, res) => {
     res.json({ success: true, message: 'Server is running' });
+  });
+
+  app.get('/api/version', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    res.json({ version: process.env.VITE_APP_VERSION || Date.now().toString() });
   });
 
   app.get('/ready', async (req, res) => {

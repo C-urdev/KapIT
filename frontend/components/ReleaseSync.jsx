@@ -4,10 +4,17 @@ import { useEffect } from 'react';
 
 const CHECK_INTERVAL_MS = 60 * 1000;
 const RELOAD_GUARD_KEY = 'kapit-reload-version';
+const VERSION_ENDPOINT = String(import.meta.env.VITE_VERSION_ENDPOINT || '/api/version').trim();
+
+const normalizeVersionUrl = () => {
+  const base = VERSION_ENDPOINT || '/api/version';
+  const separator = base.includes('?') ? '&' : '?';
+  return `${base}${separator}ts=${Date.now()}`;
+};
 
 export default function ReleaseSync({ currentVersion }) {
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'production') return undefined;
+    if (import.meta.env.MODE !== 'production') return undefined;
     if (!currentVersion) return undefined;
 
     let intervalId;
@@ -15,12 +22,14 @@ export default function ReleaseSync({ currentVersion }) {
 
     const checkVersion = async () => {
       try {
-        const response = await fetch(`/api/version?ts=${Date.now()}`, {
+        const response = await fetch(normalizeVersionUrl(), {
           cache: 'no-store',
           headers: { 'Cache-Control': 'no-cache' },
         });
 
         if (!response.ok) return;
+        const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+        if (!contentType.includes('application/json')) return;
 
         const data = await response.json();
         const latestVersion = String(data?.version || '').trim();

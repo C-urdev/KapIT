@@ -1,15 +1,40 @@
-const NEXT_PUBLIC_EXPRESS_API_URL = process.env.NEXT_PUBLIC_EXPRESS_API_URL || '';
-const NEXT_PUBLIC_FASTAPI_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || '';
-const NEXT_PUBLIC_CSRF_COOKIE_NAME = process.env.NEXT_PUBLIC_CSRF_COOKIE_NAME || '';
+const VITE_EXPRESS_API_URL = import.meta.env.VITE_EXPRESS_API_URL || '';
+const VITE_FASTAPI_URL = import.meta.env.VITE_FASTAPI_URL || '';
+const VITE_CSRF_COOKIE_NAME = import.meta.env.VITE_CSRF_COOKIE_NAME || '';
 
-const API_BASE = (
-  typeof window !== 'undefined'
-    ? '/api'
-    : (NEXT_PUBLIC_EXPRESS_API_URL || '/api')
-).replace(/\/$/, '');
+const normalizeBaseUrl = (value, fallback = '/api') => {
+  const trimmed = String(value || '').trim();
+  return (trimmed || fallback).replace(/\/$/, '');
+};
+
+const isLoopbackHost = (host) => host === 'localhost' || host === '127.0.0.1' || host === '::1';
+
+const alignLoopbackOriginForDev = (baseUrl) => {
+  if (typeof window === 'undefined' || !baseUrl || !/^https?:\/\//i.test(baseUrl)) {
+    return baseUrl;
+  }
+
+  try {
+    const parsed = new URL(baseUrl);
+    const browserHost = String(window.location.hostname || '').trim().toLowerCase();
+    const parsedHost = String(parsed.hostname || '').trim().toLowerCase();
+    const mode = String(import.meta.env.MODE || '').trim().toLowerCase();
+
+    if (mode !== 'production' && isLoopbackHost(browserHost) && isLoopbackHost(parsedHost) && browserHost !== parsedHost) {
+      parsed.hostname = browserHost;
+      return parsed.toString().replace(/\/$/, '');
+    }
+  } catch {
+    // Use configured base URL when parsing fails.
+  }
+
+  return baseUrl;
+};
+
+const API_BASE = alignLoopbackOriginForDev(normalizeBaseUrl(VITE_EXPRESS_API_URL, '/api'));
 const AUTH_BASE = `${API_BASE}/auth`;
-const FASTAPI_BASE = (NEXT_PUBLIC_FASTAPI_URL || '').replace(/\/$/, '');
-const CSRF_COOKIE_NAME = NEXT_PUBLIC_CSRF_COOKIE_NAME || 'kapit_csrf_token';
+const FASTAPI_BASE = normalizeBaseUrl(VITE_FASTAPI_URL, '');
+const CSRF_COOKIE_NAME = VITE_CSRF_COOKIE_NAME || 'kapit_csrf_token';
 
 let refreshRequest = null;
 let lastRefreshFailureAt = 0;
@@ -49,7 +74,7 @@ const getResponseErrorMessage = ({ response, data, resolvedPath }) => {
   const normalizedMessage = message.toLowerCase();
 
   if (normalizedMessage.includes('router_external_target_error')) {
-    return 'The deployed API proxy could not reach the backend service. Please retry, and verify NEXT_PUBLIC_EXPRESS_API_URL/EXPRESS_API_URL point to a live HTTPS API.';
+    return 'The deployed API proxy could not reach the backend service. Please retry, and verify VITE_EXPRESS_API_URL/EXPRESS_API_URL point to a live HTTPS API.';
   }
 
   if (response.status === 500 && normalizedMessage === 'internal server error') {
@@ -226,6 +251,7 @@ export const authRequest = (path, options = {}) =>
 
 export const getSessionSnapshot = () => ({
   csrfToken: getCsrfToken(),
+  csrfCookieName: CSRF_COOKIE_NAME,
   apiBase: API_BASE,
   authBase: AUTH_BASE,
   fastApiBase: FASTAPI_BASE,

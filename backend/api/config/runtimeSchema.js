@@ -2,6 +2,7 @@ const { ensureUsersProfileSchema } = require('./ensureUsersProfileSchema');
 const { ensureCompanySchema } = require('./ensureCompanySchema');
 const { ensureOnboardingSchema } = require('./ensureOnboardingSchema');
 const { ensureMessagingConversationSchema } = require('./ensureMessagingConversationSchema');
+const { ensureResumeSchema } = require('./ensureResumeSchema');
 const { useMigrationManagedSchema } = require('./schemaManagementMode');
 
 const schemaState = {
@@ -9,6 +10,7 @@ const schemaState = {
   hiring: { ready: false, promise: null },
   onboarding: { ready: false, promise: null },
   messaging: { ready: false, promise: null },
+  resumes: { ready: false, promise: null },
 };
 
 const runSchemaTask = async (key, task) => {
@@ -57,12 +59,19 @@ const ensureMessagingSchemaReady = async () => {
   await runSchemaTask('messaging', ensureMessagingConversationSchema);
 };
 
+const ensureResumeSchemaReady = async () => {
+  await ensureBaseUserSchemaReady();
+  await ensureHiringSchemaReady();
+  await runSchemaTask('resumes', ensureResumeSchema);
+};
+
 const warmRuntimeSchemas = async () => {
   const results = await Promise.allSettled([
     ensureBaseUserSchemaReady(),
     ensureHiringSchemaReady(),
     ensureOnboardingSchemaReady(),
     ensureMessagingSchemaReady(),
+    ensureResumeSchemaReady(),
   ]);
 
   return results;
@@ -73,5 +82,6 @@ module.exports = {
   ensureHiringSchemaReady,
   ensureOnboardingSchemaReady,
   ensureMessagingSchemaReady,
+  ensureResumeSchemaReady,
   warmRuntimeSchemas,
 };

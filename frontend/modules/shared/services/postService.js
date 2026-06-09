@@ -112,14 +112,14 @@ export const reactToPost = async (postId, reactionType) => {
 export const addCommentToPost = async (postId, commentInput) => {
   const content = typeof commentInput === 'string' ? commentInput : commentInput?.content;
   const imageUrl = typeof commentInput === 'string' ? '' : commentInput?.imageUrl;
-  const parentCommentId = typeof commentInput === 'object' ? commentInput?.parentCommentId : null;
-  const payload = withOptionalImageUrl(
-    {
-      content: String(content || '').trim(),
-      parentCommentId: parentCommentId ? Number(parentCommentId) : null,
-    },
-    imageUrl
-  );
+  const rawParentCommentId = typeof commentInput === 'object' ? commentInput?.parentCommentId : null;
+  const parsedParentCommentId = Number(rawParentCommentId);
+  const payload = withOptionalImageUrl({
+    content: String(content || '').trim(),
+    ...(Number.isInteger(parsedParentCommentId) && parsedParentCommentId > 0
+      ? { parentCommentId: parsedParentCommentId }
+      : {}),
+  }, imageUrl);
 
   const data = await authRequest(`/posts/${encodeURIComponent(postId)}/comments`, {
     method: 'POST',

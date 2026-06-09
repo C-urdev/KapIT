@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams } from '@shared/hooks/useAppRouter';
 import ApplicantCard from '@companyComponents/CompanyApplicantCard';
 import { companyAPI } from '@companyFeatures/companyAPI';
 import { useCompanyAnalytics, useCompanyApplicants } from '@companyFeatures/companyHooks';
