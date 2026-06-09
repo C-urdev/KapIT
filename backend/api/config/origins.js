@@ -1,7 +1,12 @@
 const normalizeOrigin = (value) => String(value || '').trim().replace(/\/+$/, '');
 
+const resolvePreviewFlag = () =>
+  String(process.env.ALLOW_KAPIT_PREVIEW_ORIGIN || '')
+    .trim()
+    .toLowerCase() === 'true';
+
 const isKapitPreviewOrigin = (origin) =>
-  String(process.env.ALLOW_KAPIT_NETLIFY_PREVIEW || '').trim().toLowerCase() === 'true'
+  resolvePreviewFlag()
     && /^https:\/\/(?:[^.]+\.)?kapitdev\.netlify\.app$/i.test(origin);
 
 const splitOrigins = (value) =>
@@ -9,6 +14,15 @@ const splitOrigins = (value) =>
     .split(',')
     .map(normalizeOrigin)
     .filter(Boolean);
+
+const isLoopbackOrigin = (value) => {
+  try {
+    const parsed = new URL(normalizeOrigin(value));
+    return ['localhost', '127.0.0.1', '[::1]'].includes(String(parsed.hostname || '').toLowerCase());
+  } catch (_error) {
+    return false;
+  }
+};
 
 const getAllowedOrigins = () =>
   {
@@ -35,5 +49,6 @@ const getAllowedOrigins = () =>
 module.exports = {
   normalizeOrigin,
   isKapitPreviewOrigin,
+  isLoopbackOrigin,
   getAllowedOrigins,
 };

@@ -65,7 +65,7 @@ export default function UserDesktopNavbar({
           aria-label="Go to home"
         >
           <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#a3b18a]/60 bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#353c44] sm:h-10 sm:w-10">
-            <KapITLogo className="h-7 w-7 object-contain sm:h-8 sm:w-8" alt="KapIT" />
+            <KapITLogo className="h-full w-full object-contain scale-[1.05]" alt="KapIT" />
           </div>
           <div className="hidden min-w-0 text-left min-[1180px]:block">
             <div className="truncate text-base font-bold leading-tight text-[#3a5a40] dark:text-white">KapIT</div>
@@ -158,14 +158,6 @@ export default function UserDesktopNavbar({
       </div>
 
       <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-2">
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="rounded-lg p-2 transition-colors hover:bg-[#f5f5f2] dark:hover:bg-[#353c44]"
-          aria-label={theme === 'light' ? 'Dark mode' : 'Light mode'}
-        >
-          {theme === 'light' ? <Moon className="h-5 w-5 text-[#344e41]" /> : <Sun className="h-5 w-5 text-white" />}
-        </button>
         <div className="relative" ref={profileMenuRef}>
           <button
             type="button"

@@ -6,6 +6,8 @@ const pool = require('./config/database');
 const { closeRedisClient, logRedisStartupStatus } = require('./config/redis');
 const { installConsoleBridge } = require('./config/logger');
 const { startPasswordResetCleanupJob } = require('./services/authService');
+const { startResumeWorker, stopResumeWorker } = require('./queues/resumeQueue');
+const { startResumeCleanupJob } = require('./services/resumeCleanupService');
 
 installConsoleBridge();
 
@@ -14,6 +16,8 @@ const HOST = process.env.HOST;
 const QUIET_STARTUP = process.env.QUIET_STARTUP === 'true';
 const app = createApp();
 const stopPasswordResetCleanupJob = startPasswordResetCleanupJob();
+const stopResumeCleanupJob = startResumeCleanupJob();
+startResumeWorker();
 let isShuttingDown = false;
 const warmSchemasInBackground = async () => {
   try {
@@ -71,7 +75,8 @@ const shutdown = async (signal) => {
     });
 
     stopPasswordResetCleanupJob();
-    await Promise.allSettled([pool.end(), closeRedisClient()]);
+    stopResumeCleanupJob();
+    await Promise.allSettled([stopResumeWorker(), pool.end(), closeRedisClient()]);
 
     if (!QUIET_STARTUP) {
       console.log('Graceful shutdown complete.');

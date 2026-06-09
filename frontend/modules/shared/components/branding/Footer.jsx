@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
-import Link from 'next/link';
+import Link from '../../../../components/shared/Link';
+import SocialLinksGroup from './SocialLinksGroup';
 
 const LINK_GROUPS = [
   {
@@ -28,13 +29,6 @@ const LINK_GROUPS = [
       { label: 'Safety', href: '/privacy-policy' },
     ],
   },
-];
-
-const SOCIAL_LINKS = [
-  { name: 'Email', href: 'mailto:support@kapit.online', icon: EmailIcon },
-  { name: 'Product Hunt', href: 'https://www.producthunt.com/@kapitph', icon: ProductHuntIcon },
-  { name: 'X', href: 'https://x.com/kapitjobsph', icon: XLogoIcon },
-  { name: 'Facebook', href: 'https://www.facebook.com/share/18fvaq4P3z/?mibextid=wwXIfr', icon: FacebookIcon },
 ];
 
 const FOOTER_INFO = {
@@ -100,23 +94,11 @@ export default function Footer() {
             <div className="mt-7 flex flex-wrap gap-2.5">
               <a
                 href="mailto:support@kapit.online"
-                className="inline-flex min-h-[44px] items-center rounded-xl bg-[#3a5a40] px-7 py-2.5 text-[1rem] font-semibold text-white transition hover:bg-[#344e41] dark:bg-[#6f9b74] dark:text-[#121416] dark:hover:bg-[#82ad86]"
+                className="inline-flex min-h-[44px] items-center rounded-full bg-[#3a5a40] px-7 py-2.5 text-[1rem] font-semibold text-white transition hover:bg-[#344e41] dark:bg-[#6f9b74] dark:text-[#121416] dark:hover:bg-[#82ad86]"
               >
                 Contact
               </a>
-              {SOCIAL_LINKS.map(({ name, href, icon: Icon }) => (
-                <a
-                  key={name}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#8ea98f] bg-[#edf3ea] text-[#2e5038] transition hover:border-[#5f7f67] hover:text-[#102a1b] dark:border-[#444d57] dark:bg-[#1a1d20] dark:text-[#d0d7dd] dark:hover:border-[#6f9b74] dark:hover:text-white"
-                  aria-label={`Open KapIT on ${name}`}
-                  title={name}
-                >
-                  <Icon className="h-[18px] w-[18px]" />
-                </a>
-              ))}
+              <SocialLinksGroup />
             </div>
 
           </div>
@@ -213,40 +195,5 @@ export default function Footer() {
         ) : null}
       </div>
     </footer>
-  );
-}
-
-function ProductHuntIcon({ className = 'h-4 w-4' }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="none" stroke="currentColor" strokeWidth="1.8">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M10 8h3.2a2.8 2.8 0 0 1 0 5.6H10z" />
-      <path d="M10 13.6V17" />
-    </svg>
-  );
-}
-
-function EmailIcon({ className = 'h-4 w-4' }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="none" stroke="currentColor" strokeWidth="1.8">
-      <rect x="3.5" y="5.5" width="17" height="13" rx="2" />
-      <path d="m4.5 7 7.5 6 7.5-6" />
-    </svg>
-  );
-}
-
-function XLogoIcon({ className = 'h-4 w-4' }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
-      <path d="M17.8 4H20l-4.8 5.5L21 20h-4.9l-3.8-4.9L7.9 20H5.7l5.2-6-5.6-10h5l3.4 4.5L17.8 4Zm-1.7 14.4h1.4L9.1 5.5H7.6l8.5 12.9Z" />
-    </svg>
-  );
-}
-
-function FacebookIcon({ className = 'h-4 w-4' }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
-      <path d="M13.5 20v-6h2l.3-2.4h-2.3V10c0-.7.2-1.2 1.2-1.2h1.3V6.6c-.2 0-1-.1-1.8-.1-1.8 0-3.1 1.1-3.1 3.2v1.8H9v2.4h2.2v6h2.3Z" />
-    </svg>
   );
 }
