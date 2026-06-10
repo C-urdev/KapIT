@@ -56,7 +56,7 @@ const validateWriteRequests = (req, res, next) => {
 
   if (req.body != null && typeof req.body === 'object') {
     try {
-      req.body = sanitizeAndValidateInput(req.body, getBodySanitizerLimits());
+      req.body = sanitizeAndValidateInput(req.body, getBodySanitizerLimits(req));
     } catch (error) {
       if (error instanceof InputValidationError) {
         return res.status(Number(error.statusCode || 400)).json({
