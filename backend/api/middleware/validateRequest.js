@@ -1,5 +1,6 @@
 const { ZodError, z } = require('zod');
 const { InputValidationError, sanitizeAndValidateInput } = require('./inputSanitizer');
+const { getBodySanitizerLimits } = require('./bodySanitizerLimits');
 
 const formatValidationError = (error) => {
   if (!(error instanceof ZodError)) {
@@ -27,16 +28,6 @@ const formatInputValidationError = (error) => {
   ];
 };
 
-const getBodySanitizerLimits = () => ({
-  maxDepth: Number(process.env.INPUT_MAX_DEPTH || 12),
-  maxObjectKeys: Number(process.env.INPUT_MAX_OBJECT_KEYS || 120),
-  maxTotalKeys: Number(process.env.INPUT_MAX_TOTAL_KEYS || 800),
-  maxArrayLength: Number(process.env.INPUT_MAX_ARRAY_LENGTH || 200),
-  maxStringLength: Number(process.env.INPUT_MAX_STRING_LENGTH || 8000),
-  maxKeyLength: Number(process.env.INPUT_MAX_KEY_LENGTH || 120),
-  maxNodes: Number(process.env.INPUT_MAX_NODES || 3000),
-});
-
 const getQuerySanitizerLimits = () => ({
   maxDepth: Number(process.env.QUERY_INPUT_MAX_DEPTH || 4),
   maxObjectKeys: Number(process.env.QUERY_INPUT_MAX_OBJECT_KEYS || 80),
@@ -60,7 +51,7 @@ const getParamSanitizerLimits = () => ({
 const validateRequest = (schema) => (req, res, next) => {
   try {
     const effectiveSchema = typeof schema?.parse === 'function' ? schema : z.object(schema);
-    const sanitizedBody = sanitizeAndValidateInput(req.body, getBodySanitizerLimits());
+    const sanitizedBody = sanitizeAndValidateInput(req.body, getBodySanitizerLimits(req));
     const sanitizedParams = sanitizeAndValidateInput(req.params, getParamSanitizerLimits());
     const sanitizedQuery = sanitizeAndValidateInput(req.query, getQuerySanitizerLimits());
 
