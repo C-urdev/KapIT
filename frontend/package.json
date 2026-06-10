@@ -3,10 +3,10 @@
   "private": true,
   "packageManager": "pnpm@11.0.0",
   "scripts": {
-    "dev": "node ../scripts/run-web.js dev",
+    "dev": "vite",
     "dev:vite": "vite",
-    "build": "node ../scripts/run-web.js build",
-    "start": "node ../scripts/run-web.js start",
+    "build": "vite build",
+    "start": "vite preview",
     "preview": "vite preview",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
   },
