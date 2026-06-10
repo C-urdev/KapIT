@@ -2,9 +2,9 @@ services:
   - type: web
     name: kap-it-api
     runtime: node
-    rootDir: .
-    buildCommand: pnpm --dir backend install --frozen-lockfile
-    startCommand: pnpm --dir backend run start
+    rootDir: backend
+    buildCommand: corepack prepare pnpm@11.0.0 --activate && pnpm install --frozen-lockfile
+    startCommand: pnpm run start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
