@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Search,
   Code2,
   Shield,
   Palette,
@@ -9,91 +8,22 @@ import {
   Cloud,
   ArrowRight,
   Users,
-  Moon,
-  Sun,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Building2,
-  UserRound,
-  BriefcaseBusiness,
-  FileText,
-  LifeBuoy,
-  UsersRound,
-  ShieldCheck,
-  CircleHelp,
   Share2,
   BookOpen,
   SquareStack,
+  Star,
 } from 'lucide-react';
-import { useTheme } from '@sharedContext/ThemeContext';
 import Footer from '@sharedComponents/branding/Footer';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
-import { SOCIAL_LINKS } from '@sharedComponents/branding/SocialLinksGroup';
+import HeroLampGlow from '@sharedComponents/effects/HeroLampGlow';
+import Lamp from '@sharedComponents/effects/Lamp';
+import SiteTopNav from '@sharedComponents/navigation/SiteTopNav';
+import ThinSectionLine from '@sharedComponents/ui/ThinSectionLine';
+import { useTheme } from '@sharedContext/ThemeContext';
 
 const TRUSTED_LOGOS = ['Google', 'Microsoft', 'PayPal', 'Meta'];
-const TOP_NAV_LINKS = [
-  { label: 'Solutions', hasDropdown: true, footerItem: 'Find talent' },
-  { label: 'Resources', hasDropdown: true, footerItem: 'Help Center' },
-  { label: 'Pricing', hasDropdown: false, href: '/pricing', footerItem: 'Pricing' },
-  // Keep docs access in-platform until a dedicated /docs route exists.
-  { label: 'Documentation', hasDropdown: false, footerItem: 'Help Center' },
-];
-const TOP_NAV_DROPDOWNS = {
-  Solutions: [
-    {
-      heading: 'DEVELOPERS',
-      items: [
-        {
-          title: 'Create profile',
-          description: 'Build your profile to get matched with opportunities.',
-          footerItem: 'Create profile',
-          icon: UserRound,
-        },
-        {
-          title: 'Portfolios',
-          description: 'Showcase your projects, skills, and achievements.',
-          footerItem: 'Portfolios',
-          icon: FileText,
-        },
-        {
-          title: 'Projects',
-          description: 'Join projects and collaborate with hiring companies.',
-          footerItem: 'Projects',
-          icon: BriefcaseBusiness,
-        },
-      ],
-    },
-    {
-      heading: 'COMPANIES',
-      items: [
-        {
-          title: 'Find talent',
-          description: 'Search and connect with the right IT candidates.',
-          footerItem: 'Find talent',
-          icon: Building2,
-        },
-        {
-          title: 'Post projects',
-          description: 'Publish job posts and receive qualified applicants.',
-          footerItem: 'Post projects',
-          icon: BriefcaseBusiness,
-        },
-      ],
-    },
-  ],
-  Resources: [
-    {
-      heading: 'QUICK LINKS',
-      items: [
-        { title: 'Help Center', description: 'Find answers and platform guides', footerItem: 'Help Center', icon: LifeBuoy },
-        { title: 'Community', description: 'Product updates and collaboration', footerItem: 'Community', icon: UsersRound },
-        { title: 'Safety', description: 'Security, trust, and best practices', footerItem: 'Safety', icon: ShieldCheck },
-        { title: 'FAQ', description: 'Latest answers to common questions', footerItem: 'FAQ', icon: CircleHelp },
-      ],
-    },
-  ],
-};
 
 const CATEGORIES = [
   { title: 'Programming & Tech', icon: Code2 },
@@ -105,62 +35,49 @@ const CATEGORIES = [
 ];
 const HERO_DEMO_DOMAIN = 'kapit.online';
 
-const FacebookSocialIcon = ({ className = '' }) => (
-  <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-    <path d="M14.5 7.5H16V5h-2c-2.1 0-3.5 1.4-3.5 3.6V11H8v2.5h2.5V19h2.7v-5.5h2.4L16 11h-2.8V8.9c0-.9.4-1.4 1.3-1.4Z" fill="currentColor" />
-  </svg>
-);
-
-const ProductHuntSocialIcon = ({ className = '' }) => (
-  <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-    <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.8" />
-    <path d="M10 8.6h3.1c1.8 0 3 1.2 3 2.9 0 1.9-1.3 3-3.1 3H12V17h-2V8.6Zm2 4.3h1c.8 0 1.2-.5 1.2-1.3 0-.7-.5-1.2-1.2-1.2h-1v2.5Z" fill="currentColor" />
-  </svg>
-);
-
-const XSocialIcon = ({ className = '' }) => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-    <path d="M16.8 5h2l-4.4 5L20 19h-4.4l-3.4-4.3L8.5 19h-2l4.8-5.5L6 5h4.3l3 3.9L16.8 5Zm-1.2 12.2h1.2L10.1 6.7H8.9l6.7 10.5Z" />
-  </svg>
-);
-
-const EmailSocialIcon = ({ className = '' }) => (
-  <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-    <rect x="4" y="6.5" width="16" height="11" rx="2.3" stroke="currentColor" strokeWidth="1.8" />
-    <path d="M5.3 8.4 12 13l6.7-4.6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const HERO_FEATURE_CALLOUTS = [
+const HERO_REVIEW_CALLOUTS = [
   {
-    title: 'Smart Matching',
-    description: 'AI maps each role to verified skills and profile depth.',
-    icon: FacebookSocialIcon,
-    socialName: 'Facebook',
-    className: 'hero-feature-callout--top',
+    reviewer: 'Mika R.',
+    role: 'Hiring Lead',
+    text: 'We started getting great applicants right away. The quality and fit were both impressive.',
+    rating: 4.5,
+    className: 'hero-review-card--top-right',
   },
   {
-    title: 'Vetted Talent',
-    description: 'Profiles are screened before they appear in hiring flow.',
-    icon: ProductHuntSocialIcon,
-    socialName: 'Product Hunt',
-    className: 'hero-feature-callout--upper-mid',
+    reviewer: 'Janelle P.',
+    role: 'Startup Founder',
+    text: 'The platform feels clean, fast, and very trustworthy. We loved the positive candidate flow.',
+    rating: 4.1,
+    className: 'hero-review-card--mid-right',
   },
   {
-    title: 'Real Opportunities',
-    description: 'Listings stay aligned to active company demand.',
-    icon: XSocialIcon,
-    socialName: 'X',
-    className: 'hero-feature-callout--lower-mid',
-  },
-  {
-    title: 'Fast Discovery',
-    description: 'Safari-first search previews key job details instantly.',
-    icon: EmailSocialIcon,
-    socialName: 'Email',
-    className: 'hero-feature-callout--bottom',
+    reviewer: 'Paolo S.',
+    role: 'Product Manager',
+    text: 'Shortlisting was easier than expected. We found strong matches without extra back-and-forth.',
+    rating: 4.7,
+    className: 'hero-review-card--bottom-right',
   },
 ];
+
+const renderRatingStars = (rating) => {
+  const roundedRating = Math.max(0, Math.min(5, rating));
+
+  return (
+    <span className="inline-flex items-center gap-0.5 text-[#f0c766]" aria-label={`${roundedRating.toFixed(1)} out of 5 stars`}>
+      {Array.from({ length: 5 }).map((_, index) => {
+        const fillAmount = Math.max(0, Math.min(1, roundedRating - index));
+        return (
+          <span key={`rating-star-${index}`} className="relative inline-flex h-3.5 w-3.5 shrink-0">
+            <Star className="absolute inset-0 h-3.5 w-3.5 text-[#d9d9d2]" strokeWidth={1.6} aria-hidden="true" />
+            <span className="absolute inset-0 overflow-hidden" style={{ width: `${fillAmount * 100}%` }}>
+              <Star className="h-3.5 w-3.5 fill-current text-[#f0c766]" strokeWidth={1.6} aria-hidden="true" />
+            </span>
+          </span>
+        );
+      })}
+    </span>
+  );
+};
 
 const LANDING_BG_STARS = (() => {
   const stars = [];
@@ -199,18 +116,15 @@ const LANDING_BG_STARS = (() => {
 })();
 
 export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn }) {
-  const { theme, toggleTheme } = useTheme();
-  const [query, setQuery] = useState('');
+  const { theme } = useTheme();
   const [typedDomain, setTypedDomain] = useState('');
   const [showHeroCaret, setShowHeroCaret] = useState(false);
   const [isHeroPreviewLoaded, setIsHeroPreviewLoaded] = useState(false);
   const [highlightGetStarted, setHighlightGetStarted] = useState(false);
   const [isDesktopCarousel, setIsDesktopCarousel] = useState(false);
-  const [openHeaderDropdown, setOpenHeaderDropdown] = useState(null);
-  const headerDropdownCloseTimerRef = useRef(null);
-  const navMenuRef = useRef(null);
   const topRef = useRef(null);
   const categoriesRef = useRef(null);
+  const heroTypingTimersRef = useRef(new Set());
 
   const scrollTo = (ref) => {
     ref?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -224,90 +138,31 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleSearch = (event) => {
-    event.preventDefault();
-    scrollTo(categoriesRef);
-  };
-
   const handleJoinDeveloperClick = () => {
     onJoinDeveloper?.();
   };
 
-  const handleTopNavClick = (footerItem) => {
-    if (typeof window === 'undefined') return;
-    window.dispatchEvent(new CustomEvent('kapit:footer-info-open', { detail: { item: footerItem } }));
-  };
-
-  const handleHeaderDropdownOpen = (label) => {
-    if (headerDropdownCloseTimerRef.current) {
-      window.clearTimeout(headerDropdownCloseTimerRef.current);
-      headerDropdownCloseTimerRef.current = null;
-    }
-    setOpenHeaderDropdown(label);
-  };
-
-  const handleHeaderDropdownClose = () => {
-    if (headerDropdownCloseTimerRef.current) {
-      window.clearTimeout(headerDropdownCloseTimerRef.current);
-    }
-    headerDropdownCloseTimerRef.current = window.setTimeout(() => {
-      setOpenHeaderDropdown(null);
-      headerDropdownCloseTimerRef.current = null;
-    }, 120);
-  };
-
-  const handleHeaderTopLinkClick = (link) => {
-    if (link.hasDropdown) {
-      setOpenHeaderDropdown((current) => (current === link.label ? null : link.label));
-      return;
-    }
-    if (link.href) {
-      window.location.href = link.href;
-      return;
-    }
-    handleTopNavClick(link.footerItem);
-  };
-
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
 
-    const handleOutsidePointerDown = (event) => {
-      if (!openHeaderDropdown) return;
-      if (navMenuRef.current?.contains(event.target)) return;
-      setOpenHeaderDropdown(null);
-    };
-
-    window.addEventListener('pointerdown', handleOutsidePointerDown);
-    return () => window.removeEventListener('pointerdown', handleOutsidePointerDown);
-  }, [openHeaderDropdown]);
-
-  useEffect(() => {
-    return () => {
-      if (headerDropdownCloseTimerRef.current) {
-        window.clearTimeout(headerDropdownCloseTimerRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-
-    const timers = new Set();
-    let cancelled = false;
     const typingCadenceMs = [120, 112, 126, 118, 114, 152, 122, 118, 132, 116, 136, 128];
 
     const queue = (callback, delay) => {
       const timer = window.setTimeout(() => {
-        timers.delete(timer);
-        if (!cancelled) {
-          callback();
-        }
+        heroTypingTimersRef.current.delete(timer);
+        callback();
       }, delay);
-      timers.add(timer);
+      heroTypingTimersRef.current.add(timer);
       return timer;
     };
 
+    const clearHeroTypingTimers = () => {
+      heroTypingTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+      heroTypingTimersRef.current.clear();
+    };
+
     const startDemoCycle = () => {
+      clearHeroTypingTimers();
       setTypedDomain('');
       setShowHeroCaret(false);
       setIsHeroPreviewLoaded(false);
@@ -317,7 +172,6 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
         let charIndex = 0;
 
         const typeNextCharacter = () => {
-          if (cancelled) return;
           charIndex += 1;
           setTypedDomain(HERO_DEMO_DOMAIN.slice(0, charIndex));
 
@@ -325,8 +179,6 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
             queue(() => {
               setIsHeroPreviewLoaded(true);
               queue(() => setShowHeroCaret(false), 240);
-              // Keep the loaded state visible, then replay the full sequence.
-              queue(startDemoCycle, 2900);
             }, 640);
             return;
           }
@@ -340,10 +192,17 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
 
     startDemoCycle();
 
+    const handlePageShow = (event) => {
+      if (event.persisted) {
+        startDemoCycle();
+      }
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+
     return () => {
-      cancelled = true;
-      timers.forEach((timer) => window.clearTimeout(timer));
-      timers.clear();
+      window.removeEventListener('pageshow', handlePageShow);
+      clearHeroTypingTimers();
     };
   }, []);
 
@@ -384,230 +243,7 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
   return (
     <div className="min-h-screen flex flex-col bg-[#edf3ef] dark:bg-gradient-to-b dark:from-[#121416] dark:via-[#1a1d20] dark:to-[#22272b]">
       <div ref={topRef} />
-      <header className="sticky top-0 z-40 overflow-visible border-b border-black/10 bg-white/96 shadow-[0_12px_28px_rgba(16,42,27,0.08)] supports-[backdrop-filter]:bg-white/78 dark:border-[#2f353c] dark:bg-[#121416]/88 backdrop-blur-xl backdrop-saturate-160 backdrop-brightness-110">
-        <div className="relative mx-auto flex w-full max-w-[min(100%,1700px)] flex-wrap items-center gap-3 px-6 py-3.5 sm:px-8 lg:flex-nowrap lg:gap-4 lg:px-10 xl:px-12 2xl:px-14">
-          <div className="flex min-w-0 flex-1 items-center gap-3 lg:gap-4 xl:gap-5">
-            <button
-              type="button"
-              onClick={scrollToTop}
-              className="flex shrink-0 items-center gap-3"
-              aria-label="Back to top"
-            >
-              <KapITLogo className="h-9 w-9 rounded-md object-contain bg-white" />
-              <h1 className="text-[2rem] leading-none font-semibold tracking-[-0.01em] text-[#35573f] dark:text-white">KapIT</h1>
-            </button>
-
-            <div className="hidden min-w-0 lg:flex items-center gap-4 xl:gap-5">
-              <form
-                onSubmit={handleSearch}
-                className="group flex h-11 min-w-[340px] max-w-[520px] items-center gap-2 rounded-full border border-[#a7bd9d] bg-white/82 px-3 shadow-[0_4px_10px_rgba(16,42,27,0.08)] backdrop-blur-sm transition-all focus-within:border-[#7fa285] dark:border-[#4b5968] dark:bg-[#1f252b]/92 dark:focus-within:border-[#7ba087]"
-              >
-                <Search className="h-4 w-4 shrink-0 text-[#5d7a63] dark:text-[#89a98f]" />
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="What are you looking for?"
-                  className="min-w-0 flex-1 bg-transparent py-1 text-[0.95rem] font-medium text-[#1f3a2a] outline-none placeholder:text-[#607669] dark:text-white dark:placeholder:text-[#9fb0be]"
-                />
-                <button
-                  type="submit"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#32573f] bg-[#3a5a40] text-white transition-colors hover:bg-[#344e41] dark:border-[#6f9b74] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86]"
-                  aria-label="Submit search"
-                >
-                  <Search className="h-3.5 w-3.5" />
-                </button>
-              </form>
-
-              <nav
-                ref={navMenuRef}
-                className="absolute left-1/2 flex -translate-x-1/2 items-center justify-center overflow-visible"
-                onMouseLeave={handleHeaderDropdownClose}
-                onMouseEnter={() => {
-                  if (headerDropdownCloseTimerRef.current) {
-                    window.clearTimeout(headerDropdownCloseTimerRef.current);
-                    headerDropdownCloseTimerRef.current = null;
-                  }
-                }}
-              >
-                <div className="flex items-center gap-7 xl:gap-8">
-                  {TOP_NAV_LINKS.map((link) => (
-                    <div
-                      key={link.label}
-                      className="relative"
-                      onMouseEnter={() => link.hasDropdown && handleHeaderDropdownOpen(link.label)}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => handleHeaderTopLinkClick(link)}
-                        className="inline-flex min-h-[38px] items-center gap-1 px-1.5 text-[1.02rem] font-semibold text-[#35573f] dark:text-white transition-colors"
-                        style={{ fontFamily: 'var(--font-desktop)' }}
-                        aria-expanded={link.hasDropdown ? openHeaderDropdown === link.label : undefined}
-                      >
-                        <span>{link.label}</span>
-                        {link.hasDropdown ? (
-                          <ChevronDown
-                            className={`h-4 w-4 opacity-75 transition-transform ${openHeaderDropdown === link.label ? 'rotate-180' : ''}`}
-                            aria-hidden="true"
-                          />
-                        ) : null}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {openHeaderDropdown && TOP_NAV_DROPDOWNS[openHeaderDropdown] ? (
-                  <div
-                    className="pointer-events-auto absolute left-1/2 top-full z-50 mt-6 -translate-x-1/2 overflow-hidden rounded-2xl border border-[#d7d7d7] bg-white shadow-[0_14px_32px_rgba(0,0,0,0.12)] dark:border-[#444d57] dark:bg-[#1a1d20]"
-                    style={{ width: '860px', maxWidth: '92vw' }}
-                    onMouseEnter={() => {
-                      if (headerDropdownCloseTimerRef.current) {
-                        window.clearTimeout(headerDropdownCloseTimerRef.current);
-                        headerDropdownCloseTimerRef.current = null;
-                      }
-                    }}
-                    onMouseLeave={handleHeaderDropdownClose}
-                  >
-                    <div
-                      className="grid"
-                      style={{
-                        gridTemplateColumns: openHeaderDropdown === 'Solutions' ? '1fr 1fr' : '1.08fr 0.92fr',
-                      }}
-                    >
-                      <div className="p-5">
-                        <p className="text-xs font-medium tracking-[0.22em] text-[#6b7280] dark:text-[#94a3b8]">
-                          {TOP_NAV_DROPDOWNS[openHeaderDropdown][0].heading}
-                        </p>
-                        <div className="mt-4 space-y-1.5">
-                          {TOP_NAV_DROPDOWNS[openHeaderDropdown][0].items.map((item) => {
-                            const ItemIcon = item.icon;
-
-                            return (
-                              <button
-                                key={item.title}
-                                type="button"
-                                onClick={() => {
-                                  handleTopNavClick(item.footerItem);
-                                  handleHeaderDropdownClose();
-                                }}
-                                className="group flex w-full items-start gap-3 rounded-xl px-1.5 py-2.5 text-left hover:bg-white/80 dark:hover:bg-[#22272b]"
-                              >
-                                <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#d0d4d9] bg-[#f3f4f6] text-[#6b7280] dark:border-[#4b5563] dark:bg-[#232931] dark:text-[#cbd5e1]">
-                                  <ItemIcon className="h-5 w-5" />
-                                </span>
-                                <span className="min-w-0">
-                                  <span className="block text-[1.02rem] font-medium text-[#1f2937] dark:text-white">{item.title}</span>
-                                  <span className="mt-0.5 block text-[0.98rem] text-[#4b5563] dark:text-[#cbd5e1]">
-                                    {item.description}
-                                  </span>
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      <div className="relative p-5">
-                        {openHeaderDropdown === 'Solutions' ? (
-                          <span
-                            aria-hidden="true"
-                            className="pointer-events-none absolute left-0 top-4 bottom-4 w-px bg-[#d9d9d9] dark:bg-[#3b4450]"
-                          />
-                        ) : (
-                          <span
-                            aria-hidden="true"
-                            className="pointer-events-none absolute left-0 top-0 bottom-0 w-px bg-[#dfdfdf] dark:bg-[#3b4450]"
-                          />
-                        )}
-                        {openHeaderDropdown === 'Solutions' ? (
-                          <>
-                            <p className="text-xs font-medium tracking-[0.22em] text-[#6b7280] dark:text-[#94a3b8]">
-                              {TOP_NAV_DROPDOWNS.Solutions[1].heading}
-                            </p>
-                            <div className="mt-4 space-y-1.5">
-                              {TOP_NAV_DROPDOWNS.Solutions[1].items.map((item) => {
-                                const ItemIcon = item.icon;
-                                return (
-                                  <button
-                                    key={item.title}
-                                    type="button"
-                                    onClick={() => {
-                                      handleTopNavClick(item.footerItem);
-                                      handleHeaderDropdownClose();
-                                    }}
-                                    className="group flex w-full items-start gap-3 rounded-xl px-1.5 py-2.5 text-left hover:bg-white/80 dark:hover:bg-[#22272b]"
-                                  >
-                                    <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#d0d4d9] bg-[#f3f4f6] text-[#6b7280] dark:border-[#4b5563] dark:bg-[#232931] dark:text-[#cbd5e1]">
-                                      <ItemIcon className="h-5 w-5" />
-                                    </span>
-                                    <span className="min-w-0">
-                                      <span className="block text-[1.02rem] font-medium text-[#1f2937] dark:text-white">{item.title}</span>
-                                      <span className="mt-0.5 block text-[0.98rem] text-[#4b5563] dark:text-[#cbd5e1]">
-                                        {item.description}
-                                      </span>
-                                    </span>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <p className="text-xs font-medium tracking-[0.22em] text-[#6b7280] dark:text-[#94a3b8]">
-                              RECENT UPDATE
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                handleTopNavClick('Help Center');
-                                handleHeaderDropdownClose();
-                              }}
-                              className="mt-4 block w-full rounded-xl border border-[#d0d4d9] bg-white p-2 text-left hover:bg-[#fafafa] dark:border-[#4b5563] dark:bg-[#232931] dark:hover:bg-[#28303a]"
-                            >
-                              <div className="h-36 rounded-lg bg-gradient-to-r from-[#f59e0b] via-[#f97316] to-[#ec4899] p-2">
-                                <div className="h-full rounded-md bg-white/90" />
-                              </div>
-                              <p className="mt-3 text-lg font-medium text-[#111827] dark:text-white">Introducing ATS Resume Format</p>
-                              <p className="mt-1 line-clamp-2 text-sm text-[#4b5563] dark:text-[#cbd5e1]">
-                                Build ATS-friendly resumes with cleaner structure, keyword alignment, and stronger screening compatibility.
-                              </p>
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-              </nav>
-            </div>
-          </div>
-
-          <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2.5">
-            <button
-              type="button"
-              onClick={onSignIn}
-              className="inline-flex h-9 items-center rounded-full border border-[#9bb28f] bg-white px-3.5 text-[0.875rem] font-semibold text-[#2f4e39] transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#22272b] dark:text-white dark:hover:bg-[#353c44]"
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={onGetStarted}
-              className="inline-flex h-9 items-center rounded-full bg-[#3d6446] px-3.5 text-[0.875rem] font-semibold text-white transition-colors hover:bg-[#35573f] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86]"
-            >
-              Get Started
-            </button>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="p-1.5 text-[#35573f] hover:opacity-80 dark:text-white transition-opacity"
-              aria-label="Toggle theme"
-            >
-              {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-            </button>
-          </div>
-        </div>
-        <ThinSectionLine className="bottom-0" />
-      </header>
+      <SiteTopNav onLogoClick={scrollToTop} onGetStarted={handleOpenAccountChoice} onSignIn={onSignIn} />
 
       <section className="relative overflow-hidden min-h-[100dvh] flex flex-col">
         <div
@@ -666,8 +302,9 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
           aria-hidden="true"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-white/12 via-white/16 to-[#f4f7f3] dark:from-[#121416]/58 dark:via-[#121416]/34 dark:to-[#1a1d20]" aria-hidden="true" />
+        <HeroLampGlow />
 
-        <div className="relative flex-1 flex items-center">
+        <div className="relative z-[5] flex-1 flex items-center">
           <div className="w-full max-w-[min(100%,1700px)] mx-auto px-6 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 py-10 sm:py-12 lg:py-14">
             <div className="max-w-5xl lg:max-w-3xl mx-auto lg:mx-0 text-center lg:text-left w-full xl:-translate-y-6 2xl:-translate-y-8">
               <h2 className="mt-2 text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.2rem] font-extrabold tracking-tight leading-[0.95] text-[#102a1b] dark:text-white max-w-[72rem] mx-auto lg:mx-0">
@@ -698,8 +335,10 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
           </div>
 
           <div className="pointer-events-none absolute right-[-2.2%] top-[47%] z-[6] hidden -translate-y-1/2 xl:block 2xl:right-[-1.2%]">
-            <div className="hero-phone-stage relative">
-              <div className="hero-phone-wrap pointer-events-auto relative">
+              <div
+                className="hero-phone-stage relative group"
+              >
+                <div className="hero-phone-wrap pointer-events-auto relative z-20">
                 <div className="hero-phone-glow absolute -inset-14 rounded-[84px]" aria-hidden="true" />
                 <div className="hero-phone-shell relative h-[622px] w-[314px] overflow-hidden rounded-[62px] border border-[#0b1216] bg-[#020406] p-[1.6px]">
                   <div className="hero-phone-bezel relative h-full w-full overflow-hidden rounded-[60px] border border-[#1a222b] bg-[#04080d] p-[1.4px]">
@@ -781,34 +420,28 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
                 </div>
               </div>
 
-              <div className="hero-feature-orbit pointer-events-auto">
-                {HERO_FEATURE_CALLOUTS.map(({ title, icon: Icon, className, socialName }) => {
-                  const socialLink = SOCIAL_LINKS.find((item) => item.name === socialName);
-                  const href = socialLink?.href || '#';
-                  const isHttpLink = /^https?:\/\//.test(href);
-
-                  return (
-                  <article key={title} className={`hero-feature-callout pointer-events-auto ${className}`}>
-                    <a
-                      href={href}
-                      target={isHttpLink ? '_blank' : undefined}
-                      rel={isHttpLink ? 'noopener noreferrer nofollow' : undefined}
-                      className="hero-feature-icon hero-feature-flip"
-                      aria-label={`Open KapIT on ${socialName}`}
-                      title={socialName}
-                    >
-                      <span className="hero-feature-flip-inner relative block h-full w-full">
-                        <span className="hero-feature-flip-face hero-feature-flip-front" aria-hidden="true">
-                          <Icon className="h-[16px] w-[16px]" />
-                        </span>
-                        <span className="hero-feature-flip-face hero-feature-flip-back" aria-hidden="true">
-                          <KapITLogo className="h-[17px] w-[17px] rounded-full object-contain" />
-                        </span>
-                      </span>
-                    </a>
+              <div className="hero-review-orbit pointer-events-none">
+                {HERO_REVIEW_CALLOUTS.map(({ reviewer, role, text, rating, className }) => (
+                  <article key={reviewer} className={`hero-review-card pointer-events-auto ${className}`}>
+                    <div className="hero-review-panel">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-[#102a1b] dark:text-white">{reviewer}</p>
+                        <p className="truncate text-xs font-medium text-[#5f6f67] dark:text-[#cbd5e1]">{role}</p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2 text-[#f0c766]">
+                          {renderRatingStars(rating)}
+                          <span className="text-[0.72rem] font-semibold tracking-[0.16em] text-[#5f755f] dark:text-[#c9d7cb]">
+                            {rating.toFixed(1)}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="mt-3 text-[0.95rem] leading-[1.65] text-[#24412d] dark:text-[#e7efe5]">
+                        "{text}"
+                      </p>
+                    </div>
                   </article>
-                  );
-                })}
+                ))}
               </div>
             </div>
           </div>
@@ -903,38 +536,28 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
             </div>
           </div>
         </div>
-        <ThinSectionLine className="bottom-0 z-10" />
       </section>
 
-      <section className="relative bg-gradient-to-b from-[#f8f4ec] via-[#eee9de] via-[8%] to-[#e2ddcf] dark:bg-gradient-to-b dark:from-[#1a1d20] dark:via-[#23282e] dark:to-[#121416]">
-        <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-12 sm:py-14 lg:py-16 flex items-center">
-          <div className="w-full px-2 sm:px-0 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-10">
-            <div className="max-w-2xl">
-              <h3 className="text-3xl font-bold text-[#102a1b] dark:text-white">
-                Start building with Filipino IT Talent
-              </h3>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto lg:shrink-0">
-              <button
-                type="button"
-                onClick={handleOpenAccountChoice}
-                className="w-full sm:w-auto inline-flex min-h-[54px] items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#444d57] text-[#102a1b] dark:text-white font-semibold hover:bg-white/90 dark:hover:bg-[#353c44] transition-colors"
-              >
-                Find Developers <ArrowRight className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={handleJoinDeveloperClick}
-                className="w-full sm:w-auto inline-flex min-h-[54px] items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white font-semibold transition-colors"
-              >
-                Join as Developer <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+      <Lamp
+        actions={(
+          <div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
+            <button
+              type="button"
+              onClick={handleOpenAccountChoice}
+              className="w-full sm:w-auto inline-flex min-h-[54px] items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#444d57] text-[#102a1b] dark:text-white font-semibold hover:bg-white/90 dark:hover:bg-[#353c44] transition-colors"
+            >
+              Find Developers <ArrowRight className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={handleJoinDeveloperClick}
+              className="w-full sm:w-auto inline-flex min-h-[54px] items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white font-semibold transition-colors"
+            >
+              Join as Developer <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
-        </div>
-        <ThinSectionLine className="bottom-0 z-10" />
-      </section>
+        )}
+      />
 
       <style>{`
         .hero-phone-stage {
@@ -1082,164 +705,91 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
             opacity: 0.92;
           }
         }
-        .hero-feature-orbit {
-          position: relative;
-          left: 370px;
-          top: -548px;
-          width: 310px;
-          height: 556px;
-        }
-        .hero-feature-callout {
-          position: absolute;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-        .hero-feature-callout::before {
-          content: '';
-          position: absolute;
-          left: -152px;
-          top: 50%;
-          width: 140px;
-          height: 1.5px;
-          border-radius: 999px;
-          background: linear-gradient(90deg, rgba(118, 141, 124, 0) 0%, rgba(118, 141, 124, 0.42) 42%, rgba(118, 141, 124, 0.8) 100%);
-          transform-origin: right center;
-          pointer-events: none;
-        }
-        .hero-feature-icon {
-          position: relative;
-          z-index: 1;
-          display: inline-flex;
-          height: 56px;
-          width: 56px;
-          min-height: 56px;
-          min-width: 56px;
-          max-height: 56px;
-          max-width: 56px;
-          flex: 0 0 56px;
-          aspect-ratio: 1 / 1;
-          overflow: visible;
-          align-items: center;
-          justify-content: center;
-          border-radius: 999px;
-          border: none;
-          background: transparent;
-          color: #2c4f37;
-          box-shadow: none;
-          backdrop-filter: blur(7px);
-        }
-        .hero-feature-icon svg {
-          display: block;
-          height: 18px;
-          width: 18px;
-        }
-        .hero-feature-flip {
-          perspective: 900px;
-        }
-        .hero-feature-flip-inner {
-          display: block;
-          transform-style: preserve-3d;
-          transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
-          will-change: transform;
-          transform: rotateY(0deg);
-        }
-        .hero-feature-flip-face {
+        .hero-review-orbit {
           position: absolute;
           inset: 0;
-          width: 100%;
-          height: 100%;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
+          z-index: 16;
+          opacity: 0;
+          transform: translateX(12px);
+          transition: opacity 260ms ease, transform 300ms ease;
+        }
+        .hero-review-card {
+          position: absolute;
+          z-index: 15;
+          width: min(276px, 32vw);
+          max-width: 276px;
+          opacity: 0;
+          transform: translateX(10px) scale(0.985);
+          transition: opacity 260ms ease, transform 300ms ease;
+        }
+        .hero-review-card::before {
+          content: '';
+          position: absolute;
+          right: calc(100% - 2px);
+          top: 50%;
+          z-index: 0;
+          width: var(--review-line-width, 128px);
+          height: 2px;
           border-radius: 999px;
-          border: 1px solid rgba(169, 193, 173, 0.9);
-          background: rgba(255, 255, 255, 0.92);
-          box-shadow: 0 14px 32px rgba(16, 42, 27, 0.16);
-          backface-visibility: hidden;
-          -webkit-backface-visibility: hidden;
-          transition: opacity 220ms ease;
+          background: linear-gradient(90deg, rgba(118, 141, 124, 0), rgba(118, 141, 124, 0.82));
+          box-shadow: 0 0 6px rgba(111, 155, 116, 0.12);
+          transform: translateY(-50%);
+          transform-origin: right center;
         }
-        .hero-feature-flip-front {
+        .hero-review-panel {
+          position: relative;
+          z-index: 1;
+          overflow: hidden;
+          border-radius: 28px;
+          border: 1px solid rgba(192, 209, 194, 0.95);
+          background:
+            linear-gradient(180deg, rgba(251, 253, 249, 0.98) 0%, rgba(239, 247, 239, 0.95) 100%);
+          padding: 20px 20px 18px;
+          box-shadow: 0 18px 38px rgba(23, 40, 28, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.78);
+          backdrop-filter: blur(12px);
+        }
+        .hero-phone-stage:hover .hero-review-orbit,
+        .hero-phone-stage:focus-within .hero-review-orbit {
           opacity: 1;
+          transform: translateX(0);
         }
-        .hero-feature-flip-back {
-          transform: rotateY(180deg);
-          opacity: 0;
-        }
-        .hero-feature-flip:hover .hero-feature-flip-inner {
-          transform: rotateY(180deg);
-        }
-        .hero-feature-flip:hover .hero-feature-flip-front {
-          opacity: 0;
-        }
-        .hero-feature-flip:hover .hero-feature-flip-back {
+        .hero-phone-stage:hover .hero-review-card,
+        .hero-phone-stage:focus-within .hero-review-card {
           opacity: 1;
+          transform: translateX(0) scale(1);
         }
-        .hero-feature-flip:active .hero-feature-flip-inner {
-          transform: rotateY(180deg);
+        .dark .hero-review-panel {
+          border-color: rgba(73, 85, 78, 0.92);
+          background: linear-gradient(180deg, rgba(35, 40, 44, 0.96) 0%, rgba(28, 33, 38, 0.9) 100%);
+          box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.04);
         }
-        .hero-feature-flip:active .hero-feature-flip-front {
-          opacity: 0;
+        .hero-review-card--top-right {
+          right: 14px;
+          top: 24px;
+          --review-line-width: 126px;
         }
-        .hero-feature-flip:active .hero-feature-flip-back {
-          opacity: 1;
+        .hero-review-card--mid-right {
+          right: 20px;
+          top: 290px;
+          --review-line-width: 118px;
         }
-        .hero-feature-flip:focus-visible .hero-feature-flip-inner {
-          transform: rotateY(180deg);
+        .hero-review-card--bottom-right {
+          right: 16px;
+          bottom: 24px;
+          --review-line-width: 124px;
         }
-        .hero-feature-flip:focus-visible .hero-feature-flip-front {
-          opacity: 0;
+        @media (hover: none) and (pointer: coarse) {
+          .hero-review-orbit {
+            opacity: 1;
+            transform: none;
+          }
+          .hero-review-card {
+            opacity: 1;
+            transform: none;
+          }
         }
-        .hero-feature-flip:focus-visible .hero-feature-flip-back {
-          opacity: 1;
-        }
-        .hero-feature-callout--top {
-          left: 114px;
-          top: 74px;
-        }
-        .hero-feature-callout--top::before {
-          transform: rotate(-8deg);
-        }
-        .hero-feature-callout--upper-mid {
-          left: 134px;
-          top: 206px;
-        }
-        .hero-feature-callout--upper-mid::before {
-          width: 160px;
-          left: -172px;
-          transform: rotate(-2deg);
-        }
-        .hero-feature-callout--lower-mid {
-          left: 132px;
-          top: 338px;
-        }
-        .hero-feature-callout--lower-mid::before {
-          width: 166px;
-          left: -178px;
-          transform: rotate(4deg);
-        }
-        .hero-feature-callout--bottom {
-          left: 110px;
-          top: 468px;
-        }
-        .hero-feature-callout--bottom::before {
-          width: 150px;
-          left: -162px;
-          transform: rotate(12deg);
-        }
-        .dark .hero-feature-icon {
-          background: transparent;
-          color: #d7e5d8;
-          box-shadow: none;
-        }
-        .dark .hero-feature-flip-face {
-          border-color: rgba(91, 107, 97, 0.92);
-          background: rgba(41, 49, 56, 0.92);
-          box-shadow: 0 16px 34px rgba(0, 0, 0, 0.34);
-        }
-        .dark .hero-feature-callout::before {
-          background: linear-gradient(90deg, rgba(146, 171, 149, 0) 0%, rgba(146, 171, 149, 0.4) 38%, rgba(170, 199, 175, 0.86) 100%);
+        .dark .hero-review-card::before {
+          background: linear-gradient(90deg, rgba(170, 199, 175, 0), rgba(170, 199, 175, 0.9));
         }
       `}</style>
 
@@ -1864,16 +1414,6 @@ function CategoryOrbitRow({ categories, onCategoryClick }) {
     </div>
   );
 }
-
-function ThinSectionLine({ className = '' }) {
-  return (
-      <div
-        className={`pointer-events-none absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-[#b8ad94] to-transparent opacity-95 shadow-[0_1px_0_rgba(255,255,255,0.45)] dark:via-[#5b6672] dark:shadow-[0_1px_0_rgba(12,24,40,0.7)] ${className}`}
-        aria-hidden="true"
-      />
-    );
-}
-
 
 
 
