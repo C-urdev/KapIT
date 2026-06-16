@@ -9,6 +9,7 @@ let lastUnavailableLogAt = 0;
 const getRedisUrl = () => String(process.env.REDIS_URL || '').trim();
 const getConnectTimeoutMs = () => Number(process.env.REDIS_CONNECT_TIMEOUT_MS || 750);
 const getFailOpenCooldownMs = () => Number(process.env.REDIS_FAILOPEN_COOLDOWN_MS || 30000);
+const isDevelopment = () => String(process.env.NODE_ENV || '').toLowerCase() === 'development';
 const shouldLogRedisStatus = () => {
   if (String(process.env.NODE_ENV || '').toLowerCase() === 'production') {
     return true;
@@ -31,7 +32,8 @@ const logRedisUnavailable = (error) => {
 
   lastUnavailableLogAt = current;
   const message = error?.message || String(error || 'unknown error');
-  console.warn(
+  const log = isDevelopment() ? console.info : console.warn;
+  log(
     `Redis unavailable (${message}). Rate limiting will use in-memory fallback for ${Math.ceil(cooldownMs / 1000)}s.`
   );
 };
@@ -74,7 +76,8 @@ const withTimeout = (promise, timeoutMs) =>
 const logRedisStartupStatus = async () => {
   const redisUrl = getRedisUrl();
   if (!redisUrl) {
-    console.warn('Redis startup: REDIS_URL is missing. Rate limiting uses in-memory fallback and payment checkout idempotency is disabled.');
+    const log = isDevelopment() ? console.info : console.warn;
+    log('Redis startup: REDIS_URL is missing. Rate limiting uses in-memory fallback and payment checkout idempotency is disabled.');
     return { hasRedisUrl: false, connected: false };
   }
 
@@ -88,7 +91,8 @@ const logRedisStartupStatus = async () => {
     markRedisUnavailable(error);
   }
 
-  console.warn('Redis startup: REDIS_URL is set but Redis is unavailable. Rate limiting uses in-memory fallback and payment checkout is temporarily blocked.');
+  const log = isDevelopment() ? console.info : console.warn;
+  log('Redis startup: REDIS_URL is set but Redis is unavailable. Rate limiting uses in-memory fallback and payment checkout is temporarily blocked.');
   return { hasRedisUrl: true, connected: false };
 };
 

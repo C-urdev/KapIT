@@ -1,17 +1,15 @@
 const pool = require('./database');
 const { logger } = require('./logger');
 
+const RUNTIME_MIGRATIONS_TABLE = 'runtime_migrations';
+
 const ensureMigrationsTable = async (client) => {
   await client.query(`
-    CREATE TABLE IF NOT EXISTS migrations (
+    CREATE TABLE IF NOT EXISTS ${RUNTIME_MIGRATIONS_TABLE} (
       id SERIAL PRIMARY KEY,
       name TEXT NOT NULL UNIQUE,
       executed_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
-  `);
-  await client.query(`
-    ALTER TABLE migrations
-      ADD COLUMN IF NOT EXISTS executed_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP;
   `);
 };
 
@@ -27,7 +25,10 @@ const runMigration = async (migrationName, up) => {
   try {
     await ensureMigrationsTable(client);
 
-    const { rows } = await client.query('SELECT 1 FROM migrations WHERE name = $1', [migrationName]);
+    const { rows } = await client.query(
+      `SELECT 1 FROM ${RUNTIME_MIGRATIONS_TABLE} WHERE name = $1`,
+      [migrationName]
+    );
     if (rows.length > 0) {
       logger.info({ migrationName }, 'Migration already executed, skipping.');
       return;
@@ -39,7 +40,10 @@ const runMigration = async (migrationName, up) => {
     await up(client);
 
     // Record successful execution
-    await client.query('INSERT INTO migrations (name) VALUES ($1)', [migrationName]);
+    await client.query(
+      `INSERT INTO ${RUNTIME_MIGRATIONS_TABLE} (name) VALUES ($1)`,
+      [migrationName]
+    );
     
     await client.query('COMMIT');
     logger.info({ migrationName }, 'Migration executed successfully.');
