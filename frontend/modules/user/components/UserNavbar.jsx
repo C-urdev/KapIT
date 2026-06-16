@@ -147,7 +147,7 @@ export default function UserNavbar({
       <nav
         className={`${
           activeNav === 'messages' ? 'fixed left-0 right-0 w-full xl:inset-auto xl:w-auto xl:sticky' : 'sticky'
-        } top-0 z-50 bg-[#f8fbf6] transition-transform duration-150 ease-out dark:bg-[#1c1f24] xl:bg-[#f8fbf6] dark:xl:bg-[#121416] ${
+        } top-0 z-50 overflow-visible bg-[#f8fbf6] transition-transform duration-150 ease-out dark:bg-[#1c1f24] xl:bg-[#f8fbf6] dark:xl:bg-[#121416] ${
           activeNav === 'messages'
             ? 'border-transparent shadow-none dark:border-transparent dark:shadow-none'
             : 'border-b border-[#a3b18a] shadow-sm dark:border-white/10 dark:shadow-[0_6px_24px_rgba(0,0,0,0.18)] xl:border-[#a3b18a] xl:shadow-sm dark:xl:border-[#353c44]'
