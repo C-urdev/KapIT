@@ -14,11 +14,15 @@ installConsoleBridge();
 const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST;
 const QUIET_STARTUP = process.env.QUIET_STARTUP === 'true';
+const IS_PRODUCTION = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
 const app = createApp();
 const stopPasswordResetCleanupJob = startPasswordResetCleanupJob();
 const stopResumeCleanupJob = startResumeCleanupJob();
 startResumeWorker();
 let isShuttingDown = false;
+let activePort = Number(PORT);
+let listenAttempts = 0;
+const MAX_PORT_RETRIES = Math.max(0, Number(process.env.PORT_FALLBACK_MAX_ATTEMPTS || 20));
 const warmSchemasInBackground = async () => {
   try {
     await ensureSchemaReady();
@@ -37,14 +41,53 @@ const onListen = () => {
   }
 
   if (HOST) {
-    console.log(`Server running on http://${HOST}:${PORT}`);
+    console.log(`Server running on http://${HOST}:${activePort}`);
     return;
   }
 
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${activePort}`);
 };
 
-const server = HOST ? app.listen(PORT, HOST, onListen) : app.listen(PORT, onListen);
+const startListening = () => {
+  const serverInstance = HOST ? app.listen(activePort, HOST, onListen) : app.listen(activePort, onListen);
+
+  serverInstance.once('error', (error) => {
+    if (isShuttingDown) {
+      return;
+    }
+
+    if (error?.code !== 'EADDRINUSE') {
+      console.error('Server failed to start:', error?.message || error);
+      process.exit(1);
+      return;
+    }
+
+    if (IS_PRODUCTION) {
+      console.error(`Port ${activePort} is in use. Aborting because production must stay on the configured port.`);
+      process.exit(1);
+      return;
+    }
+
+    if (listenAttempts >= MAX_PORT_RETRIES) {
+      console.error(
+        `Port ${activePort} is in use and no free fallback port was found after ${MAX_PORT_RETRIES} retries.`,
+      );
+      process.exit(1);
+      return;
+    }
+
+    const previousPort = activePort;
+    listenAttempts += 1;
+    activePort += 1;
+    process.env.PORT = String(activePort);
+    console.warn(`Port ${previousPort} is in use. Retrying on port ${activePort}.`);
+    server = startListening();
+  });
+
+  return serverInstance;
+};
+
+let server = startListening();
 void logRedisStartupStatus();
 
 const shutdown = async (signal) => {
