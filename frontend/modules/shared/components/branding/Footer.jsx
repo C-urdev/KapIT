@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import Link from '../../../../components/shared/Link';
 import SocialLinksGroup from './SocialLinksGroup';
+import ThinSectionLine from '@sharedComponents/ui/ThinSectionLine';
 
 const LINK_GROUPS = [
   {
@@ -79,8 +80,9 @@ export default function Footer() {
   return (
     <footer
       id="kapit-footer"
-      className="relative overflow-hidden bg-[#f6f8f3] text-[#102a1b] dark:bg-[#121416] dark:text-[#d0d7dd]"
+      className="relative overflow-hidden border-t border-black/10 bg-[#f6f8f3] text-[#102a1b] dark:border-[#2f353c] dark:bg-[#121416] dark:text-[#d0d7dd]"
     >
+      <ThinSectionLine className="top-0" />
       <div className="relative mx-auto w-full max-w-[min(100%,1700px)] px-6 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 pt-14 sm:pt-16 lg:pt-20 pb-44 sm:pb-48 lg:pb-52">
         <div className="relative z-10 grid items-start gap-12 lg:grid-cols-[420px_1fr] lg:gap-20 xl:gap-24">
           <div>
