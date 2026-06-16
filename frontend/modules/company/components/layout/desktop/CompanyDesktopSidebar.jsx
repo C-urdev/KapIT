@@ -14,16 +14,19 @@ function SidebarButton({ collapsed, active = false, label, title, onClick, icon,
     <button
       type="button"
       onClick={onClick}
-      className={`w-full flex items-center rounded-xl border transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+      className={`relative w-full flex items-center rounded-[1.1rem] border transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] overflow-visible ${
         collapsed ? 'justify-center px-0 py-2' : 'justify-start gap-3 px-4 py-3'
       } ${
         active
-          ? 'bg-[#eef6ee] dark:bg-[#353c44] border-[#588157] dark:border-[#6f9b74] text-[#3a5a40] dark:text-white'
-          : 'bg-transparent border-transparent text-[#344e41] dark:text-[#d0d7dd] hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] hover:border-[#a3b18a] dark:hover:border-[#444d57]'
+          ? 'bg-white/65 dark:bg-white/10 border-[#88a88b]/70 dark:border-[#6f9b74]/60 text-[#3a5a40] dark:text-white shadow-[0_10px_22px_rgba(58,90,64,0.08)]'
+          : 'bg-transparent border-transparent text-[#344e41] dark:text-[#d0d7dd] hover:bg-white/55 dark:hover:bg-white/6 hover:border-[#a3b18a]/70 dark:hover:border-[#444d57]'
       }`}
       aria-label={label}
       title={title || (collapsed ? label : undefined)}
     >
+      {active ? (
+        <span aria-hidden="true" className="absolute left-1/2 -top-1 h-1 w-8 -translate-x-1/2 rounded-t-full bg-[#588157] shadow-[0_0_18px_rgba(88,129,87,0.45)] dark:bg-[#6f9b74]" />
+      ) : null}
       <span className="shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]">{icon}</span>
       <span
         className={`overflow-hidden whitespace-nowrap text-sm font-semibold transition-all duration-300 ease-out ${

@@ -5,6 +5,7 @@ import CompanyMobileMenuDrawer from '@companyComponents/layout/mobile/CompanyMob
 import { LayoutDashboard, Briefcase, MessageCircle } from 'lucide-react';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
 import { getUnreadNotificationCount } from '@sharedServices/notificationsService';
+import PillNavButton from '@sharedComponents/navigation/PillNavButton';
 
 const TITLES = {
   [COMPANY_PATHS.dashboard]: 'Dashboard',
@@ -94,7 +95,7 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
   }, [pathname]);
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#dad7cd] dark:bg-[#121416] text-[#344e41] dark:text-white transition-colors duration-300">
+    <div className="min-h-screen overflow-x-hidden bg-[#eef2ec] dark:bg-[#0e1114] text-[#344e41] dark:text-white transition-colors duration-300">
       {!isPaymentPage ? (
         <CompanyHeader
           title={title}
@@ -175,29 +176,28 @@ function CompanyMobileBottomNav({ pathname, hidden = false }) {
   }
 
   return (
-    <div className={`xl:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#a3b18a] dark:border-[#444d57] bg-[#f8fbf6]/95 dark:bg-[#22272b]/95 backdrop-blur-md transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+    <div className={`xl:hidden fixed bottom-0 left-0 right-0 z-40 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
       hidden ? 'translate-y-full' : 'translate-y-0'
     }`}>
-      <div className="grid h-[3.6rem] grid-cols-3 gap-1 px-2 pt-0.5" style={{ paddingBottom: 'max(0.2rem, env(safe-area-inset-bottom))' }}>
-        {MOBILE_NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
-          const active = pathname === item.path;
-          return (
-            <button
-              key={item.path}
-              type="button"
-              onClick={() => navigate(item.path)}
-              className={`relative flex flex-col items-center justify-center gap-0.5 rounded-2xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                active
-                  ? 'bg-[#eef6ee] text-[#588157] shadow-sm shadow-[#588157]/10 dark:bg-[#353c44] dark:text-[#6f9b74] -translate-y-0.5'
-                  : 'text-[#344e41] dark:text-white'
-              }`}
-            >
-              <Icon className={`h-5 w-5 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${active ? 'scale-105' : 'scale-100'}`} />
-              <span className={`text-[11px] font-medium transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${active ? 'translate-y-0' : 'translate-y-0.5'}`}>{item.label}</span>
-            </button>
-          );
-        })}
+      <div className="px-3 pb-2 pt-1" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
+        <div className="grid grid-cols-3 gap-1.5 rounded-[1.9rem] border border-white/50 bg-white/72 p-1.5 shadow-[0_18px_40px_rgba(16,42,27,0.12)] backdrop-blur-2xl dark:border-white/10 dark:bg-[#1f252b]/82">
+          {MOBILE_NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const active = pathname === item.path;
+            return (
+              <PillNavButton
+                key={item.path}
+                layoutId="company-mobile-nav-lamp"
+                label={item.label}
+                icon={Icon}
+                active={active}
+                onClick={() => navigate(item.path)}
+                variant="stacked"
+                className="w-full"
+              />
+            );
+          })}
+        </div>
       </div>
     </div>
   );
