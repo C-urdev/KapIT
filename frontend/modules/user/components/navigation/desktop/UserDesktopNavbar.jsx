@@ -1,31 +1,17 @@
 import React from 'react';
-import { Search, Home, Briefcase, FolderKanban, MessageCircle, Bell, Moon, Sun, LogOut, HelpCircle, Settings } from 'lucide-react';
+import { Search, Home, Briefcase, FolderKanban, MessageCircle, Bell, LogOut, HelpCircle, Settings } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
 import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
+import PillNavButton from '@sharedComponents/navigation/PillNavButton';
 
-function NavButton({ icon: Icon, label, active, onClick, badgeCount = 0 }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`relative flex min-w-0 w-full flex-col items-center gap-1 rounded-2xl px-2.5 py-2 transition-colors duration-150 ease-out group sm:px-3 sm:py-2.5 ${
-        active
-          ? 'bg-[#eef6ee] text-[#588157] shadow-sm shadow-[#588157]/10 dark:bg-[#353c44] dark:text-[#6f9b74] dark:shadow-[#121416]/30'
-          : 'text-[#344e41] dark:text-white hover:bg-[#f5f5f2] hover:text-[#3a5a40] dark:hover:bg-[#31363d] dark:hover:text-[#d0d7dd]'
-      }`}
-    >
-      <span className="relative">
-        <Icon className={`h-5 w-5 sm:h-6 sm:w-6 transition-transform duration-150 ease-out ${active ? 'scale-[1.02]' : 'scale-100'}`} />
-        {badgeCount > 0 ? (
-          <span className="absolute -top-2 -right-3 min-w-[1.15rem] h-[1.15rem] px-1 rounded-full bg-[#d14343] text-white text-[10px] leading-none font-semibold flex items-center justify-center">
-            {badgeCount > 99 ? '99+' : badgeCount}
-          </span>
-        ) : null}
-      </span>
-      <span className="text-xs font-medium truncate px-1">{label}</span>
-    </button>
-  );
-}
+const USER_DESKTOP_NAV_ITEMS = [
+  { key: 'home', label: 'Home', icon: Home },
+  { key: 'jobs', label: 'Jobs', icon: Briefcase },
+  { key: 'projects', label: 'Projects', icon: FolderKanban },
+  { key: 'messages', label: 'Messages', icon: MessageCircle },
+  { key: 'notifications', label: 'Notifications', icon: Bell, badgeCount: true },
+];
 
 export default function UserDesktopNavbar({
   activeNav,
@@ -49,32 +35,45 @@ export default function UserDesktopNavbar({
   onOpenSettings,
   unreadNotificationCount = 0,
 }) {
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const displayName = user?.fullName || user?.name || user?.username || 'User';
   const userInitial = displayName.charAt(0).toUpperCase();
   const profileImage = user?.profileImage || '';
   const accountLabel = user?.headline || user?.title || 'User Account';
-
+  const navShellClass = isDarkMode
+    ? 'border border-white/10 bg-[#101418]/88 shadow-[0_16px_34px_rgba(8,14,18,0.24)]'
+    : 'border border-[#d2dbcf] bg-white/82 shadow-[0_16px_34px_rgba(16,42,27,0.08)]';
+  const activeNavButtonClass = isDarkMode
+    ? 'bg-white/8 text-white shadow-[0_8px_20px_rgba(0,0,0,0.2)]'
+    : 'bg-[#eef6ee] text-[#3a5a40] shadow-[0_10px_24px_rgba(58,90,64,0.08)]';
+  const inactiveNavButtonClass = isDarkMode
+    ? 'text-white/70 hover:bg-white/6 hover:text-white'
+    : 'text-[#344e41] hover:bg-[#f5f5f2] hover:text-[#3a5a40]';
+  const activeLabelClass = isDarkMode ? 'font-semibold text-white' : 'font-semibold text-[#3a5a40]';
+  const inactiveLabelClass = isDarkMode ? 'font-normal text-white/70' : 'font-normal text-[#344e41]';
+  const inactiveIconClass = isDarkMode ? 'text-white/70' : 'text-[#4b5563]';
+  const activeIconClass = isDarkMode ? 'text-white' : 'text-[#3a5a40]';
   return (
-    <div className="hidden h-16 w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 xl:grid 2xl:gap-5">
-      <div className="flex min-w-0 items-center gap-2 2xl:gap-3">
+    <div className="hidden h-20 w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 xl:grid 2xl:gap-6">
+      <div className="relative z-20 flex min-w-0 items-center gap-3 2xl:gap-4">
         <button
           type="button"
           onClick={() => setActiveNav('home')}
-          className="flex min-w-0 shrink-0 items-center gap-2 rounded-xl px-1.5 py-1.5 transition-colors hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] sm:gap-3 sm:px-2"
+          className="flex min-w-0 shrink-0 items-center gap-2.5 rounded-xl px-2 py-2 transition-colors hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] sm:gap-3 sm:px-2.5"
           aria-label="Go to home"
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#a3b18a]/60 bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#353c44] sm:h-10 sm:w-10">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#a3b18a]/60 bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#353c44] sm:h-11 sm:w-11">
             <KapITLogo className="h-full w-full object-contain scale-[1.05]" alt="KapIT" />
           </div>
           <div className="hidden min-w-0 text-left min-[1180px]:block">
-            <div className="truncate text-base font-bold leading-tight text-[#3a5a40] dark:text-white">KapIT</div>
+            <div className="truncate text-[1.05rem] font-bold leading-tight text-[#3a5a40] dark:text-white">KapIT</div>
           </div>
         </button>
 
-        <div className="min-w-0 max-w-[min(420px,calc(100vw-28rem))] flex-1 xl:max-w-[min(440px,32vw)] 2xl:max-w-[min(480px,28vw)]">
+        <div className="relative z-20 min-w-0 max-w-[min(420px,calc(100vw-28rem))] flex-1 xl:max-w-[min(440px,32vw)] 2xl:max-w-[min(480px,28vw)]">
           <div className="relative" ref={searchRef}>
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#344e41] dark:text-[#adb5be]" />
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-[#344e41] dark:text-[#adb5be]" />
             <input
               type="text"
               placeholder="Search skills, users, companies..."
@@ -90,10 +89,10 @@ export default function UserDesktopNavbar({
                   onSearchSubmit?.({ query: searchQuery, scope: 'all' });
                 }
               }}
-              className="w-full rounded-full border border-[#a3b18a] bg-[#f5f5f2] py-2 pl-10 pr-3 text-sm text-[#344e41] transition-colors placeholder:text-[#5f6f52] focus:outline-none focus:ring-2 focus:ring-[#588157] dark:border-[#444d57] dark:bg-[#353c44] dark:text-white dark:placeholder:text-[#adb5be] dark:focus:ring-[#6f9b74]"
+              className="w-full rounded-full border border-[#a3b18a] bg-[#f5f5f2] py-3 pl-11 pr-4 text-[0.98rem] text-[#344e41] transition-colors placeholder:text-[#5f6f52] focus:outline-none focus:ring-2 focus:ring-[#588157] dark:border-[#444d57] dark:bg-[#353c44] dark:text-white dark:placeholder:text-[#adb5be] dark:focus:ring-[#6f9b74]"
             />
             {searchOpen && searchQuery.trim() && (
-              <div className="absolute top-full left-0 right-0 mt-2 max-h-80 overflow-y-auto bg-[#f8fbf6] dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl shadow-xl z-50">
+              <div className="absolute top-full left-0 right-0 z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-[#a3b18a] bg-[#f8fbf6] shadow-xl dark:border-[#353c44] dark:bg-[#22272b]">
                 {searchLoading && (
                   <p className="px-4 py-3 text-sm text-[#344e41] dark:text-[#d0d7dd]">Searching...</p>
                 )}
@@ -141,23 +140,38 @@ export default function UserDesktopNavbar({
         </div>
       </div>
 
-      <div className="flex shrink-0 justify-center px-1">
-        <div className="grid w-[min(100%,520px)] grid-cols-5 gap-1 sm:gap-1.5">
-          <NavButton icon={Home} label="Home" active={activeNav === 'home'} onClick={() => setActiveNav('home')} />
-          <NavButton icon={Briefcase} label="Jobs" active={activeNav === 'jobs'} onClick={() => setActiveNav('jobs')} />
-          <NavButton icon={FolderKanban} label="Projects" active={activeNav === 'projects'} onClick={() => setActiveNav('projects')} />
-          <NavButton icon={MessageCircle} label="Messages" active={activeNav === 'messages'} onClick={() => setActiveNav('messages')} />
-          <NavButton
-            icon={Bell}
-            label="Notifications"
-            active={activeNav === 'notifications'}
-            onClick={() => setActiveNav('notifications')}
-            badgeCount={unreadNotificationCount}
-          />
+      <div className="relative z-10 flex shrink-0 justify-center px-1 overflow-visible">
+        <div className={`flex items-center gap-1.5 rounded-full p-1.5 backdrop-blur-2xl ${navShellClass}`}>
+          {USER_DESKTOP_NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeNav === item.key;
+
+            return (
+              <PillNavButton
+                key={item.key}
+                layoutId="user-desktop-nav-lamp"
+                icon={Icon}
+                label={item.label}
+                active={isActive}
+                onClick={() => setActiveNav(item.key)}
+                variant="stacked"
+                indicatorMode="line"
+                className="min-w-[4.2rem] px-3 py-2"
+                iconClassName={isActive ? activeIconClass : inactiveIconClass}
+                labelClassName="text-[0.73rem] tracking-[0.01em]"
+                activeLabelClassName={activeLabelClass}
+                inactiveLabelClassName={inactiveLabelClass}
+                activeClassName={activeNavButtonClass}
+                inactiveClassName={inactiveNavButtonClass}
+                title={item.label}
+                badgeCount={item.badgeCount ? unreadNotificationCount : 0}
+              />
+            );
+          })}
         </div>
       </div>
 
-      <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-2">
+      <div className="relative z-20 flex min-w-0 items-center justify-end gap-2 sm:gap-2.5">
         <div className="relative" ref={profileMenuRef}>
           <button
             type="button"

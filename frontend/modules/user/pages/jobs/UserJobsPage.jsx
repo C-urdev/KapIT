@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Building2, ChevronDown, ChevronLeft, ChevronRight, MapPin, Search, SlidersHorizontal, X } from 'lucide-react';
 import { getJobsFeed, getSavedJobs } from '@sharedServices/authService';
 import { formatJobStatus, statusBadgeClass } from '@companyFeatures/companyUtils';
@@ -74,11 +75,18 @@ const resolveJobId = (value) => {
   const numeric = Number(value);
   return Number.isInteger(numeric) && numeric > 0 ? numeric : null;
 };
-const SWIPE_THRESHOLD_PX = 56;
-const MAX_DRAG_OFFSET_PX = 120;
-const isInteractiveTarget = (target) => (
-  Boolean(target?.closest?.('button, a, input, select, textarea, [role="button"]'))
-);
+const wrapIndex = (index, length) => {
+  if (!Number.isInteger(length) || length <= 0) {
+    return 0;
+  }
+
+  return ((index % length) + length) % length;
+};
+const SWIPE_THRESHOLD_PX = 72;
+const SWIPE_EXIT_DISTANCE_PX = 180;
+const DECK_PREVIEW_OFFSET = 14;
+const DECK_PREVIEW_SCALE = 0.965;
+const DECK_SUBTLE_SCALE = 0.93;
 const applyStateToJob = (job, savedJobIds, jobCardStateById) => {
   const jobId = resolveJobId(job?.id);
   if (!jobId) {
@@ -109,20 +117,10 @@ export default function UserJobsPage({
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filterPopupPosition, setFilterPopupPosition] = useState({ top: 0, left: 0 });
   const [activeIndex, setActiveIndex] = useState(0);
+  const [swipeDirection, setSwipeDirection] = useState(0);
   const filterPopupRef = useRef(null);
   const filterButtonRef = useRef(null);
-  const swipeStartXRef = useRef(null);
-  const touchDraggingRef = useRef(false);
-  const pointerStartXRef = useRef(null);
-  const mouseDraggingRef = useRef(false);
   const lastAutoOpenRef = useRef('');
-  const animationTimeoutRef = useRef(null);
-  const finishTimeoutRef = useRef(null);
-  const [isDraggingCard, setIsDraggingCard] = useState(false);
-  const [dragDeltaX, setDragDeltaX] = useState(0);
-  const [animOffsetX, setAnimOffsetX] = useState(0);
-  const [animOpacity, setAnimOpacity] = useState(1);
-  const [animDurationMs, setAnimDurationMs] = useState(220);
   const savedJobIdsRef = useRef(savedJobIds);
 
   useEffect(() => {
@@ -152,6 +150,7 @@ export default function UserJobsPage({
         syncApplicationsForUser(user, nextJobs);
         setJobs(nextJobs);
         setActiveIndex((current) => Math.max(0, Math.min(current, Math.max(0, nextJobs.length - 1))));
+        setSwipeDirection(0);
 
         void getSavedJobs()
           .then((savedJobs) => {
@@ -203,17 +202,6 @@ export default function UserJobsPage({
   }, [jobCardStateById, savedJobIds]);
 
   useEffect(() => {
-    return () => {
-      if (animationTimeoutRef.current) {
-        window.clearTimeout(animationTimeoutRef.current);
-      }
-      if (finishTimeoutRef.current) {
-        window.clearTimeout(finishTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
     if (!showAdvancedFilters) return undefined;
 
     const updatePopupPosition = () => {
@@ -251,6 +239,7 @@ export default function UserJobsPage({
 
   useEffect(() => {
     setActiveIndex((current) => Math.max(0, Math.min(current, Math.max(0, jobs.length - 1))));
+    setSwipeDirection(0);
   }, [jobs.length]);
 
   useEffect(() => {
@@ -278,8 +267,6 @@ export default function UserJobsPage({
     () => Object.values(appliedFilters).some((value) => String(value || '').trim()),
     [appliedFilters]
   );
-
-  const currentJob = jobs[activeIndex] || null;
 
   const handleFilterChange = (key, value) => {
     setFilters((current) => {
@@ -316,171 +303,75 @@ export default function UserJobsPage({
     lastAutoOpenRef.current = '';
   };
 
-  const goPrev = () => {
-    if (jobs.length <= 1) return;
-    setActiveIndex((current) => (current - 1 + jobs.length) % jobs.length);
-  };
-
-  const goNext = () => {
-    if (jobs.length <= 1) return;
-    setActiveIndex((current) => (current + 1) % jobs.length);
-  };
-
-  const resetCardPosition = () => {
-    setAnimDurationMs(180);
-    setAnimOffsetX(0);
-    setAnimOpacity(1);
-    setDragDeltaX(0);
-  };
-
-  const animateSwipeTo = (direction) => {
+  const advanceJob = useCallback((direction) => {
     if (jobs.length <= 1) {
-      resetCardPosition();
       return;
     }
 
-    const outgoingOffset = direction > 0 ? -MAX_DRAG_OFFSET_PX : MAX_DRAG_OFFSET_PX;
-    const incomingOffset = direction > 0 ? MAX_DRAG_OFFSET_PX : -MAX_DRAG_OFFSET_PX;
+    setSwipeDirection(direction);
+    setActiveIndex((current) => wrapIndex(current + direction, jobs.length));
+  }, [jobs.length]);
 
-    setAnimDurationMs(180);
-    setAnimOffsetX(outgoingOffset);
-    setAnimOpacity(0.12);
-    setDragDeltaX(0);
+  const handleCardDragEnd = useCallback((_event, info) => {
+    const offsetX = Number(info?.offset?.x || 0);
+    if (Math.abs(offsetX) < SWIPE_THRESHOLD_PX) {
+      return;
+    }
 
-    if (animationTimeoutRef.current) {
-      window.clearTimeout(animationTimeoutRef.current);
-    }
-    animationTimeoutRef.current = window.setTimeout(() => {
-      if (direction > 0) {
-        goNext();
-      } else {
-        goPrev();
-      }
+    advanceJob(offsetX < 0 ? 1 : -1);
+  }, [advanceJob]);
 
-      setAnimDurationMs(0);
-      setAnimOffsetX(incomingOffset);
-      setAnimOpacity(0.18);
+  const currentJobIndex = jobs.length > 0 ? wrapIndex(activeIndex, jobs.length) : 0;
+  const prevJobIndex = jobs.length > 0 ? wrapIndex(currentJobIndex - 1, jobs.length) : 0;
+  const nextJobIndex = jobs.length > 0 ? wrapIndex(currentJobIndex + 1, jobs.length) : 0;
+  const currentJob = jobs[currentJobIndex] || null;
+  const deckJobs = useMemo(() => {
+    if (!jobs.length) {
+      return [];
+    }
 
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          setAnimDurationMs(240);
-          setAnimOffsetX(0);
-          setAnimOpacity(1);
-        });
-      });
+    if (jobs.length === 1) {
+      return [{
+        index: currentJobIndex,
+        job: jobs[currentJobIndex],
+        position: 'current',
+      }];
+    }
 
-      if (finishTimeoutRef.current) {
-        window.clearTimeout(finishTimeoutRef.current);
-      }
-      finishTimeoutRef.current = window.setTimeout(() => {
-        setAnimDurationMs(220);
-        setAnimOffsetX(0);
-        setAnimOpacity(1);
-      }, 250);
-    }, 180);
-  };
+    if (jobs.length === 2) {
+      const previewIndex = nextJobIndex === currentJobIndex ? prevJobIndex : nextJobIndex;
+      return [
+        {
+          index: currentJobIndex,
+          job: jobs[currentJobIndex],
+          position: 'current',
+        },
+        {
+          index: previewIndex,
+          job: jobs[previewIndex],
+          position: 'front',
+        },
+      ];
+    }
 
-  const handleSwipeStart = (event) => {
-    if (isInteractiveTarget(event.target)) {
-      swipeStartXRef.current = null;
-      touchDraggingRef.current = false;
-      return;
-    }
-    swipeStartXRef.current = event.touches?.[0]?.clientX ?? null;
-    touchDraggingRef.current = swipeStartXRef.current != null;
-    if (touchDraggingRef.current) {
-      setIsDraggingCard(true);
-    }
-  };
-
-  const handleSwipeMove = (event) => {
-    if (!touchDraggingRef.current) {
-      return;
-    }
-    const startX = swipeStartXRef.current;
-    const currentX = event.touches?.[0]?.clientX ?? startX;
-    if (startX == null || currentX == null) {
-      return;
-    }
-    const deltaX = currentX - startX;
-    const boundedDelta = Math.max(-MAX_DRAG_OFFSET_PX, Math.min(MAX_DRAG_OFFSET_PX, deltaX));
-    setDragDeltaX(boundedDelta);
-  };
-
-  const handleSwipeEnd = (event) => {
-    if (!touchDraggingRef.current) {
-      return;
-    }
-    touchDraggingRef.current = false;
-    setIsDraggingCard(false);
-    const startX = swipeStartXRef.current;
-    swipeStartXRef.current = null;
-    if (startX == null) {
-      return;
-    }
-    const endX = event.changedTouches?.[0]?.clientX ?? startX;
-    const deltaX = endX - startX;
-    if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX) {
-      resetCardPosition();
-      return;
-    }
-    if (deltaX < 0) {
-      animateSwipeTo(1);
-      return;
-    }
-    animateSwipeTo(-1);
-  };
-
-  const handlePointerDown = (event) => {
-    if (event.pointerType !== 'mouse' || event.button !== 0 || isInteractiveTarget(event.target)) {
-      return;
-    }
-    try {
-      event.currentTarget.setPointerCapture?.(event.pointerId);
-    } catch {
-      // Ignore unsupported pointer capture.
-    }
-    pointerStartXRef.current = event.clientX;
-    mouseDraggingRef.current = true;
-    setIsDraggingCard(true);
-  };
-
-  const handlePointerMove = (event) => {
-    if (!mouseDraggingRef.current || pointerStartXRef.current == null) {
-      return;
-    }
-    const deltaX = event.clientX - pointerStartXRef.current;
-    const boundedDelta = Math.max(-MAX_DRAG_OFFSET_PX, Math.min(MAX_DRAG_OFFSET_PX, deltaX));
-    setDragDeltaX(boundedDelta);
-  };
-
-  const handlePointerUp = (event) => {
-    if (!mouseDraggingRef.current) {
-      return;
-    }
-    mouseDraggingRef.current = false;
-    try {
-      event.currentTarget.releasePointerCapture?.(event.pointerId);
-    } catch {
-      // Ignore unsupported pointer capture.
-    }
-    const startX = pointerStartXRef.current;
-    pointerStartXRef.current = null;
-    setIsDraggingCard(false);
-    if (startX == null) {
-      return;
-    }
-    const deltaX = event.clientX - startX;
-    if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX) {
-      resetCardPosition();
-      return;
-    }
-    if (deltaX < 0) {
-      animateSwipeTo(1);
-      return;
-    }
-    animateSwipeTo(-1);
-  };
+    return [
+      {
+        index: prevJobIndex,
+        job: jobs[prevJobIndex],
+        position: 'back',
+      },
+      {
+        index: currentJobIndex,
+        job: jobs[currentJobIndex],
+        position: 'current',
+      },
+      {
+        index: nextJobIndex,
+        job: jobs[nextJobIndex],
+        position: 'front',
+      },
+    ];
+  }, [currentJobIndex, jobs, nextJobIndex, prevJobIndex]);
 
   const handleOpenCompany = () => {
     if (!currentJob) {
@@ -575,16 +466,19 @@ export default function UserJobsPage({
         </div>
       ) : (
         <section className="space-y-4">
-          <div className="flex items-center justify-center">
+          <div className="flex flex-col items-center justify-center gap-2 text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[#5f6f52] dark:text-[#a8b1ba]">
-              {activeIndex + 1} of {jobs.length}
+              {currentJobIndex + 1} of {jobs.length}
+            </p>
+            <p className="text-xs text-[#5f6f52] dark:text-[#a8b1ba]">
+              Swipe the top card left or right to move through the feed.
             </p>
           </div>
 
           <div className="mx-auto flex w-full max-w-[980px] items-center justify-center gap-3 md:gap-6 lg:gap-10">
             <button
               type="button"
-              onClick={() => animateSwipeTo(-1)}
+              onClick={() => advanceJob(-1)}
               disabled={jobs.length <= 1}
               aria-label="Previous job"
               className="hidden md:inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#a3b18a] bg-[#f8fbf6] text-[#344e41] transition-colors hover:bg-[#eef6ee] disabled:cursor-not-allowed disabled:opacity-45 dark:border-[#444d57] dark:bg-[#22272b] dark:text-[#eceff2] dark:hover:bg-[#353c44]"
@@ -592,55 +486,91 @@ export default function UserJobsPage({
               <ChevronLeft className="h-6 w-6" />
             </button>
 
-            <div
+            <motion.div
               tabIndex={0}
               onKeyDown={(event) => {
                 if (event.key === 'ArrowLeft') {
                   event.preventDefault();
-                  animateSwipeTo(-1);
+                  advanceJob(-1);
                 }
                 if (event.key === 'ArrowRight') {
                   event.preventDefault();
-                  animateSwipeTo(1);
+                  advanceJob(1);
                 }
               }}
-              onTouchStart={handleSwipeStart}
-              onTouchMove={handleSwipeMove}
-              onTouchEnd={handleSwipeEnd}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerCancel={() => {
-                pointerStartXRef.current = null;
-                mouseDraggingRef.current = false;
-                touchDraggingRef.current = false;
-                setIsDraggingCard(false);
-                resetCardPosition();
-              }}
-              className={`w-full max-w-[700px] outline-none focus-visible:ring-2 focus-visible:ring-[#588157] rounded-2xl select-none ${isDraggingCard ? 'cursor-grabbing' : 'cursor-grab'}`}
+              className="relative w-full max-w-[700px] rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#588157]"
               aria-label="Swipe left or right to browse jobs"
             >
-              <div
-                style={{
-                  transform: `translateX(${animOffsetX + dragDeltaX}px)`,
-                  opacity: animOpacity,
-                  transitionProperty: 'transform, opacity',
-                  transitionDuration: `${animDurationMs}ms`,
-                  transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
-                }}
-              >
-                <SquareJobCard
-                  job={currentJob}
-                  profileCompleted={Boolean(user?.profileCompleted)}
-                  onViewCompany={handleOpenCompany}
-                  onMoreInfo={handleOpenDetail}
-                />
+              <div className="relative aspect-square w-full select-none">
+                <div className="absolute inset-0">
+                  <AnimatePresence initial={false} mode="popLayout">
+                    {deckJobs.map(({ job, position }) => {
+                      const isCurrent = position === 'current';
+                      const stackClasses = position === 'current'
+                        ? 'z-30'
+                        : position === 'front'
+                          ? 'z-20'
+                          : 'z-10';
+
+                      return (
+                        <motion.div
+                          key={job.id}
+                          layout
+                          className={`absolute inset-0 ${stackClasses}`}
+                          initial={position === 'current'
+                            ? {
+                              opacity: 0,
+                              x: swipeDirection > 0 ? 120 : -120,
+                              scale: 0.96,
+                              rotate: swipeDirection > 0 ? 7 : -7,
+                            }
+                            : false}
+                          animate={{
+                            opacity: isCurrent ? 1 : position === 'front' ? 0.6 : 0.34,
+                            x: isCurrent ? 0 : position === 'front' ? DECK_PREVIEW_OFFSET : -DECK_PREVIEW_OFFSET,
+                            y: isCurrent ? 0 : position === 'front' ? DECK_PREVIEW_OFFSET * 1.4 : DECK_PREVIEW_OFFSET * 0.75,
+                            scale: isCurrent ? 1 : position === 'front' ? DECK_PREVIEW_SCALE : DECK_SUBTLE_SCALE,
+                            rotate: isCurrent ? 0 : position === 'front' ? 2.5 : -2.5,
+                          }}
+                          exit={{
+                            opacity: 0,
+                            x: swipeDirection > 0 ? -SWIPE_EXIT_DISTANCE_PX : SWIPE_EXIT_DISTANCE_PX,
+                            scale: 0.94,
+                            rotate: swipeDirection > 0 ? -10 : 10,
+                          }}
+                          transition={{
+                            type: 'spring',
+                            stiffness: 320,
+                            damping: 30,
+                            mass: 0.9,
+                          }}
+                          style={{
+                            pointerEvents: isCurrent ? 'auto' : 'none',
+                            touchAction: isCurrent ? 'pan-y' : 'none',
+                          }}
+                        >
+                          <SquareJobCard
+                            job={job}
+                            profileCompleted={Boolean(user?.profileCompleted)}
+                            onViewCompany={isCurrent ? handleOpenCompany : undefined}
+                            onMoreInfo={isCurrent ? handleOpenDetail : undefined}
+                            draggable={isCurrent}
+                            onDragEnd={isCurrent ? handleCardDragEnd : undefined}
+                          />
+                          {!isCurrent && (
+                            <div className="absolute inset-0 rounded-2xl bg-transparent" aria-hidden="true" />
+                          )}
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+                </div>
               </div>
-            </div>
+            </motion.div>
 
             <button
               type="button"
-              onClick={() => animateSwipeTo(1)}
+              onClick={() => advanceJob(1)}
               disabled={jobs.length <= 1}
               aria-label="Next job"
               className="hidden md:inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#a3b18a] bg-[#f8fbf6] text-[#344e41] transition-colors hover:bg-[#eef6ee] disabled:cursor-not-allowed disabled:opacity-45 dark:border-[#444d57] dark:bg-[#22272b] dark:text-[#eceff2] dark:hover:bg-[#353c44]"
@@ -678,7 +608,7 @@ export default function UserJobsPage({
   );
 }
 
-function SquareJobCard({ job, profileCompleted = false, onViewCompany, onMoreInfo }) {
+function SquareJobCard({ job, profileCompleted = false, onViewCompany, onMoreInfo, draggable = false, onDragEnd }) {
   if (!job) {
     return null;
   }
@@ -712,7 +642,16 @@ function SquareJobCard({ job, profileCompleted = false, onViewCompany, onMoreInf
     : 'We are still calculating your match details.';
 
   return (
-    <article className="aspect-square w-full rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] p-5 shadow-sm transition-colors dark:border-[#353c44] dark:bg-[#22272b] sm:p-7">
+    <motion.article
+      drag={draggable ? 'x' : false}
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.75}
+      dragMomentum={false}
+      onDragEnd={draggable ? onDragEnd : undefined}
+      whileTap={draggable ? { scale: 0.995 } : undefined}
+      className="aspect-square w-full cursor-grab rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] p-5 shadow-sm transition-colors active:cursor-grabbing dark:border-[#353c44] dark:bg-[#22272b] sm:p-7"
+      style={draggable ? { touchAction: 'pan-y' } : undefined}
+    >
       <div className="flex h-full flex-col">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div className="min-w-0 flex items-center gap-3">
@@ -822,7 +761,7 @@ function SquareJobCard({ job, profileCompleted = false, onViewCompany, onMoreInf
           </button>
         </div>
       </div>
-    </article>
+    </motion.article>
   );
 }
 
