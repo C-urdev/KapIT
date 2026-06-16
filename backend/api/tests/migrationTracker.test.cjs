@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-test('runMigration tolerates migrations tables missing executed_at', async () => {
+test('runMigration uses runtime_migrations table separate from SQL migrations', async () => {
   const pool = require('../config/database');
   const originalConnect = pool.connect;
   const queries = [];
@@ -9,7 +9,7 @@ test('runMigration tolerates migrations tables missing executed_at', async () =>
   pool.connect = async () => ({
     query: async (sql, params) => {
       queries.push({ sql: String(sql), params });
-      if (/SELECT 1 FROM migrations WHERE name = \$1/i.test(String(sql))) {
+      if (/SELECT 1 FROM runtime_migrations WHERE name = \$1/i.test(String(sql))) {
         return { rows: [{ '?column?': 1 }] };
       }
       return { rows: [] };
@@ -24,17 +24,17 @@ test('runMigration tolerates migrations tables missing executed_at', async () =>
     await runMigration('001_initial_resume_schema', async () => {});
 
     assert.ok(
-      queries.some((entry) => /SELECT 1 FROM migrations WHERE name = \$1/i.test(entry.sql)),
-      'Expected migration lookup to avoid the executed_at column'
+      queries.some((entry) => /CREATE TABLE IF NOT EXISTS runtime_migrations/i.test(entry.sql)),
+      'Expected runtime migrations to use a dedicated table'
     );
     assert.ok(
-      queries.some((entry) => /ADD COLUMN IF NOT EXISTS executed_at/i.test(entry.sql)),
-      'Expected the migrations table to self-heal a missing executed_at column'
+      queries.some((entry) => /SELECT 1 FROM runtime_migrations WHERE name = \$1/i.test(entry.sql)),
+      'Expected migration lookup against runtime_migrations.name'
     );
     assert.equal(
-      queries.some((entry) => /SELECT executed_at FROM migrations/i.test(entry.sql)),
+      queries.some((entry) => /FROM migrations WHERE name/i.test(entry.sql)),
       false,
-      'The tracker should not depend on an executed_at lookup'
+      'The tracker must not query the SQL migrations table'
     );
   } finally {
     pool.connect = originalConnect;

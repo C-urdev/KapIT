@@ -140,9 +140,11 @@ test('Redis startup status warns when REDIS_URL is missing', async () => {
   process.env.LOG_REDIS_STATUS = 'true';
 
   const originalWarn = console.warn;
-  const warns = [];
+  const originalInfo = console.info;
+  const logs = [];
 
-  console.warn = (...args) => warns.push(args.map(String).join(' '));
+  console.warn = (...args) => logs.push(args.map(String).join(' '));
+  console.info = (...args) => logs.push(args.map(String).join(' '));
 
   try {
     const { logRedisStartupStatus } = require('../config/redis');
@@ -150,9 +152,10 @@ test('Redis startup status warns when REDIS_URL is missing', async () => {
 
     assert.equal(status.hasRedisUrl, false);
     assert.equal(status.connected, false);
-    assert.ok(warns.some((line) => line.includes('Redis startup: REDIS_URL is missing')));
+    assert.ok(logs.some((line) => line.includes('Redis startup: REDIS_URL is missing')));
   } finally {
     console.warn = originalWarn;
+    console.info = originalInfo;
 
     if (previousRedisUrl === undefined) {
       delete process.env.REDIS_URL;
@@ -191,9 +194,11 @@ test('Redis startup status warns when REDIS_URL exists but Redis is unavailable'
   process.env.REDIS_FAILOPEN_COOLDOWN_MS = '250';
 
   const originalWarn = console.warn;
-  const warns = [];
+  const originalInfo = console.info;
+  const logs = [];
 
-  console.warn = (...args) => warns.push(args.map(String).join(' '));
+  console.warn = (...args) => logs.push(args.map(String).join(' '));
+  console.info = (...args) => logs.push(args.map(String).join(' '));
 
   try {
     const { logRedisStartupStatus, closeRedisClient } = require('../config/redis');
@@ -201,10 +206,11 @@ test('Redis startup status warns when REDIS_URL exists but Redis is unavailable'
 
     assert.equal(status.hasRedisUrl, true);
     assert.equal(status.connected, false);
-    assert.ok(warns.some((line) => line.includes('Redis startup: REDIS_URL is set but Redis is unavailable')));
+    assert.ok(logs.some((line) => line.includes('Redis startup: REDIS_URL is set but Redis is unavailable')));
     await closeRedisClient();
   } finally {
     console.warn = originalWarn;
+    console.info = originalInfo;
 
     if (previousRedisUrl === undefined) {
       delete process.env.REDIS_URL;
@@ -251,9 +257,11 @@ test('Redis startup status handles malformed REDIS_URL safely', async () => {
   process.env.REDIS_FAILOPEN_COOLDOWN_MS = '100';
 
   const originalWarn = console.warn;
-  const warns = [];
+  const originalInfo = console.info;
+  const logs = [];
 
-  console.warn = (...args) => warns.push(args.map(String).join(' '));
+  console.warn = (...args) => logs.push(args.map(String).join(' '));
+  console.info = (...args) => logs.push(args.map(String).join(' '));
 
   try {
     const { logRedisStartupStatus, getRedisClient, closeRedisClient } = require('../config/redis');
@@ -263,10 +271,11 @@ test('Redis startup status handles malformed REDIS_URL safely', async () => {
     assert.equal(status.hasRedisUrl, true);
     assert.equal(status.connected, false);
     assert.equal(redis, null);
-    assert.ok(warns.some((line) => line.includes('Redis startup: REDIS_URL is set but Redis is unavailable')));
+    assert.ok(logs.some((line) => line.includes('Redis startup: REDIS_URL is set but Redis is unavailable')));
     await closeRedisClient();
   } finally {
     console.warn = originalWarn;
+    console.info = originalInfo;
 
     if (previousRedisUrl === undefined) {
       delete process.env.REDIS_URL;
