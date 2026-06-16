@@ -45,6 +45,3 @@ export default function UserMobileBottomNav({ activeNav, setActiveNav, unreadNot
     </div>
   );
 }
-
-
-

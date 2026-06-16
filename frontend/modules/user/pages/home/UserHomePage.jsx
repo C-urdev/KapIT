@@ -202,7 +202,9 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   const isResumeAtsPreviewActive = activeNav === 'settings-resume-ats';
   const isSearchActive = activeNav === 'search';
   const isEdgeToEdgeView = isMessagesActive || isSettingsActive;
-  const pageBackgroundClass = isMessagesActive ? 'bg-[#dad7cd] dark:bg-[#121212]' : 'bg-[#dad7cd] dark:bg-[#121416]';
+  const pageBackgroundClass = isMessagesActive
+    ? 'bg-[#e7e2d7] dark:bg-[#121212]'
+    : 'bg-[#eef2ec] dark:bg-[#0e1114]';
   const hideMobileChromeForMessages = isTabletViewport && isMessagesActive && mobileThreadOpen;
   const effectiveMobileChromeHidden = mobileChromeHidden || hideMobileChromeForMessages;
   const canAccessPreAssessment = Boolean(user?.isPremium);
