@@ -129,8 +129,60 @@ const runPnpmScript = (prefixDir, scriptName) => {
   return child;
 };
 
+const runPnpmExec = (prefixDir, execArgs) => {
+  const args = ['-C', path.resolve(repoRoot, prefixDir), 'exec', ...execArgs];
+  const options = {
+    stdio: 'pipe',
+    shell: false,
+    env: buildChildEnv(),
+  };
+
+  const createChild = () => {
+    try {
+      return spawn(pnpmCommand, args, options);
+    } catch (error) {
+      const canRetryWithShell =
+        process.platform === 'win32' && (error?.code === 'EINVAL' || error?.code === 'EPERM');
+      if (!canRetryWithShell) throw error;
+      return spawn('cmd.exe', ['/d', '/s', '/c', pnpmCommand, ...args], options);
+    }
+  };
+
+  const child = createChild();
+  const prefix = `[${prefixDir}] `;
+
+  if (child.stdout) {
+    child.stdout.on('data', (data) => {
+      const lines = data.toString().split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line || i < lines.length - 1) {
+          process.stdout.write(line ? `${prefix}${line}\n` : '\n');
+        }
+      }
+    });
+  }
+
+  if (child.stderr) {
+    child.stderr.on('data', (data) => {
+      const lines = data.toString().split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line || i < lines.length - 1) {
+          process.stderr.write(line ? `${prefix}${line}\n` : '\n');
+        }
+      }
+    });
+  }
+
+  return child;
+};
+
 const runBackendServer = () => {
-  return runPnpmScript('backend', BACKEND_WATCH_ENABLED ? 'watch' : 'start');
+  const backendArgs = BACKEND_WATCH_ENABLED
+    ? ['node', '--watch', 'api/server.js']
+    : ['node', 'api/server.js'];
+  return runPnpmExec('backend', backendArgs);
 };
 
 // ---------------------------------------------------------------------------
@@ -220,7 +272,7 @@ const startFrontend = () => {
 
 const startFastApi = () => {
   if (shuttingDown || fastApiProcess || !shouldStartLocalFastApi()) return;
-  fastApiProcess = runPnpmScript('backend', 'fastapi:dev');
+  fastApiProcess = runPnpmExec('backend', ['node', 'scripts/start-fastapi-dev.cjs']);
   fastApiProcess.on('exit', (code) => {
     fastApiProcess = null;
     if (!shuttingDown && Number(code) !== 0) {
