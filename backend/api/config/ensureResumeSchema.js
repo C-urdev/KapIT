@@ -10,6 +10,7 @@ const ensureResumeSchema = async () => {
         source_resume_id UUID NULL REFERENCES resumes(id) ON DELETE SET NULL,
         original_filename TEXT NOT NULL DEFAULT '',
         storage_provider TEXT NOT NULL DEFAULT 'local',
+        r2_object_key TEXT,
         pdf_url TEXT,
         docx_url TEXT,
         extracted_text TEXT,

@@ -140,6 +140,24 @@ const validateEnvironment = () => {
     errors.push('Environment variables PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET must be set together.');
   }
 
+  const r2Enabled = readEnv('R2_ENABLED').toLowerCase() === 'true';
+  if (r2Enabled) {
+    requireValue('R2_ACCOUNT_ID', errors);
+    requireValue('R2_ACCESS_KEY_ID', errors);
+    requireValue('R2_SECRET_ACCESS_KEY', errors);
+    requireValue('R2_BUCKET_NAME', errors);
+
+    const r2AccessKeyId = readEnv('R2_ACCESS_KEY_ID');
+    if (r2AccessKeyId && r2AccessKeyId.length < 16) {
+      errors.push('R2_ACCESS_KEY_ID must be at least 16 characters long.');
+    }
+
+    const r2Expires = Number(readEnv('R2_PRESIGN_EXPIRES_SECONDS') || 300);
+    if (Number.isNaN(r2Expires) || r2Expires < 60 || r2Expires > 3600) {
+      errors.push('R2_PRESIGN_EXPIRES_SECONDS must be a number between 60 and 3600.');
+    }
+  }
+
   validateSecretQuality('JWT_SECRET', errors);
   validateSecretQuality('JWT_REFRESH_SECRET', errors);
   validateBooleanString('ENABLE_LOCAL_AUTH_BYPASS', errors);
