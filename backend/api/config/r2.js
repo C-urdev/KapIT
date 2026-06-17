@@ -16,7 +16,10 @@ const isR2Enabled = () => readEnv('R2_ENABLED').toLowerCase() === 'true';
 
 const getR2BucketName = () => {
   let name = readEnv('R2_BUCKET_NAME') || 'kapit-uploads';
-  name = name.replace(/^s3:\/\//i, '').replace(/^r2:\/\//i, '').replace(/\/$/, '');
+  name = name.replace(/^(https?|s3|r2):\/\//i, '').replace(/\/$/, '');
+  if (name.includes('.r2.cloudflarestorage.com')) {
+    name = name.split('.')[0];
+  }
   return name;
 };
 
