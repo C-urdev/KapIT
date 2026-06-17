@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://kap-it-api.onrender.com/api/:path*"
+      "destination": "https://kapit-backend-staging-dj1p.onrender.com/api/:path*"
     },
     {
       "source": "/:path*",
