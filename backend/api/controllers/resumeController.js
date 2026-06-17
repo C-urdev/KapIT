@@ -139,14 +139,54 @@ const streamSignedResumeFile = async (req, res) => {
   if (!visibility || visibility.forbidden) return res.status(403).json({ success: false, message: 'Forbidden' });
   const row = visibility;
   if (!row) return res.status(404).json({ success: false, message: 'Resume not found.' });
+  
+  if (row.storage_provider === 'r2') {
+    const { getR2ObjectStream, generatePresignedDownloadUrl } = require('../services/r2UploadService');
+    const { isR2Enabled } = require('../config/r2');
+    
+    if (!isR2Enabled()) {
+      return res.status(503).json({ success: false, message: 'Cloud storage is currently disabled.' });
+    }
+
+    // `row.pdf_url` might be `/api/developer/resumes/r2:object_key_encoded`
+    // Wait, the DB stores `r2_object_key`.
+    const objectKey = row.r2_object_key;
+    if (!objectKey) return res.status(404).json({ success: false, message: 'File missing in cloud storage.' });
+
+    // Stream the file from R2 through the backend to the client.
+    try {
+      const streamData = await getR2ObjectStream({ objectKey });
+      
+      const originalName = row.original_filename || 'resume';
+      const ext = require('path').extname(objectKey);
+      const downloadName = originalName.endsWith(ext) ? originalName : `${originalName}${ext}`;
+
+      res.setHeader('Content-Disposition', `inline; filename="${downloadName}"`);
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      if (streamData.contentType) res.setHeader('Content-Type', streamData.contentType);
+      if (streamData.contentLength) res.setHeader('Content-Length', streamData.contentLength);
+
+      streamData.body.pipe(res);
+      return;
+    } catch (error) {
+      logger.error({ error: error?.message, objectKey }, 'r2.download.failed');
+      return res.status(404).json({ success: false, message: 'File missing in cloud storage.' });
+    }
+  }
+
+  // Fallback for local files
   const resumeUrl = fileKind === 'pdf' ? row.pdf_url : row.docx_url;
   const storedName = getStoredNameFromResumeUrl(resumeUrl);
   const absolutePath = getStoredResumePath(storedName);
   if (!absolutePath) return res.status(404).json({ success: false, message: 'File missing.' });
-  await fs.access(absolutePath);
-  res.setHeader('Content-Disposition', `inline; filename="${getResumeDownloadName(storedName)}"`);
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  return res.sendFile(absolutePath);
+  try {
+    await fs.access(absolutePath);
+    res.setHeader('Content-Disposition', `inline; filename="${getResumeDownloadName(storedName)}"`);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    return res.sendFile(absolutePath);
+  } catch (error) {
+    return res.status(404).json({ success: false, message: 'File missing.' });
+  }
 };
 
 const streamResumeJobEvents = async (req, res) => {

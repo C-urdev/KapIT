@@ -14,6 +14,7 @@ const developerRoutes = require('./routes/developerRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const matchRoutes = require('./routes/matchRoutes');
 const resumeRoutes = require('./routes/resumeRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 const { warmRuntimeSchemas } = require('./config/runtimeSchema');
 const { normalizeOrigin, isKapitPreviewOrigin, isLoopbackOrigin, getAllowedOrigins } = require('./config/origins');
 const pool = require('./config/database');
@@ -171,6 +172,7 @@ const createApp = () => {
   app.use('/api/company', companyApiRateLimiter, companyWriteRateLimiter, companyRoutes);
   app.use('/api/developer', developerApiRateLimiter, developerRoutes);
   app.use('/api', developerApiRateLimiter, resumeRoutes);
+  app.use('/api', developerApiRateLimiter, uploadRoutes);
 
   app.get('/health', (req, res) => {
     res.json({ success: true, message: 'Server is running' });
