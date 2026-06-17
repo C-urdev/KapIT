@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const { getRedisClient } = require('../config/redis');
 const helmet = require('helmet');
 const { logger } = require('../config/logger');
+const { logSecurityViolation } = require('../config/securityEventLogger');
 const { getAllowedOrigins, normalizeOrigin } = require('../config/origins');
 
 const WINDOW_MS = 15 * 60 * 1000;
@@ -350,6 +351,15 @@ const createRateLimiter = ({
         });
 
         if (result.count > max) {
+          if (storeName === 'presign-upload') {
+             logSecurityViolation({
+               type: 'rate_limit_exceeded',
+               req,
+               userId: req.user?.id || 'anonymous',
+               intent: 'upload_flood_attempt',
+               reason: 'Triggered presign rate limiter',
+             });
+          }
           return res.status(429).json({
             success: false,
             message,
@@ -533,6 +543,14 @@ const resumeOptimizeRateLimiter = createRateLimiter({
   skip: isNonActionableRequest,
 });
 
+const presignRateLimiter = createRateLimiter({
+  storeName: 'presign-upload',
+  windowMs: Number(process.env.R2_PRESIGN_RATE_LIMIT_WINDOW_MS || 60000),
+  max: Number(process.env.R2_PRESIGN_RATE_LIMIT_MAX || 20),
+  message: 'Too many upload requests. Please try again shortly.',
+  skip: isNonActionableRequest,
+});
+
 const forgotPasswordRateLimiter = createRateLimiter({
   storeName: 'forgot-password',
   windowMs: Number(process.env.FORGOT_PASSWORD_RATE_LIMIT_WINDOW_MS || AUTH_ATTEMPT_WINDOW_MS),
@@ -571,6 +589,7 @@ module.exports = {
   companyWriteRateLimiter,
   developerApiRateLimiter,
   resumeOptimizeRateLimiter,
+  presignRateLimiter,
   forgotPasswordRateLimiter,
   resetPasswordRateLimiter,
   clearLoginRateLimit,
