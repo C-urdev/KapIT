@@ -4,11 +4,21 @@ const { logger } = require('./logger');
 let r2Client = null;
 let initLogged = false;
 
-const readEnv = (key) => String(process.env[key] || '').trim();
+const readEnv = (key) => {
+  let val = String(process.env[key] || '').trim();
+  if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+    val = val.slice(1, -1).trim();
+  }
+  return val;
+};
 
 const isR2Enabled = () => readEnv('R2_ENABLED').toLowerCase() === 'true';
 
-const getR2BucketName = () => readEnv('R2_BUCKET_NAME') || 'kapit-uploads';
+const getR2BucketName = () => {
+  let name = readEnv('R2_BUCKET_NAME') || 'kapit-uploads';
+  name = name.replace(/^s3:\/\//i, '').replace(/^r2:\/\//i, '').replace(/\/$/, '');
+  return name;
+};
 
 const getR2PresignExpireSeconds = () =>
   Math.min(3600, Math.max(60, Number(readEnv('R2_PRESIGN_EXPIRES_SECONDS') || 300)));
