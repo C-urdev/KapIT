@@ -3,6 +3,8 @@ const { logger } = require('../config/logger');
 const fs = require('fs/promises');
 const { getStoredNameFromResumeUrl, getStoredResumePath } = require('./resumeStorageService');
 const { ensureResumeSchemaReady } = require('../config/runtimeSchema');
+const { getR2Client, getR2BucketName, isR2Enabled } = require('../config/r2');
+const { ListObjectsV2Command, DeleteObjectsCommand } = require('@aws-sdk/client-s3');
 
 let timer;
 
@@ -43,6 +45,61 @@ const runCleanup = async () => {
         AND processing_status IN ('pending','processing','failed')
         AND created_at < CURRENT_TIMESTAMP - INTERVAL '24 hours'`
     );
+
+    // Orphaned R2 File Purge
+    if (isR2Enabled()) {
+      const client = getR2Client();
+      const bucket = getR2BucketName();
+      
+      let isTruncated = true;
+      let continuationToken = undefined;
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      
+      while (isTruncated) {
+        const listRes = await client.send(
+          new ListObjectsV2Command({
+            Bucket: bucket,
+            Prefix: 'uploads/',
+            ContinuationToken: continuationToken,
+          })
+        );
+        
+        const contents = listRes.Contents || [];
+        const oldObjects = contents.filter(obj => obj.LastModified && obj.LastModified < twentyFourHoursAgo);
+        
+        if (oldObjects.length > 0) {
+          // Batch check DB to see if they are referenced
+          const keys = oldObjects.map(o => o.Key);
+          
+          // Split into smaller chunks to avoid massive queries
+          const chunkSize = 100;
+          for (let i = 0; i < keys.length; i += chunkSize) {
+            const chunk = keys.slice(i, i + chunkSize);
+            const { rows } = await pool.query(
+              `SELECT r2_object_key FROM resumes WHERE r2_object_key = ANY($1)`,
+              [chunk]
+            );
+            
+            const referencedKeys = new Set(rows.map(r => r.r2_object_key));
+            const toDelete = chunk.filter(k => !referencedKeys.has(k)).map(k => ({ Key: k }));
+            
+            if (toDelete.length > 0) {
+              await client.send(
+                new DeleteObjectsCommand({
+                  Bucket: bucket,
+                  Delete: { Objects: toDelete, Quiet: true },
+                })
+              );
+              logger.info({ deletedCount: toDelete.length }, 'resume.cleanup.r2_orphans_purged');
+            }
+          }
+        }
+        
+        isTruncated = listRes.IsTruncated;
+        continuationToken = listRes.NextContinuationToken;
+      }
+    }
+
   } catch (error) {
     if (String(error?.code || '') === '42P01') {
       return;
