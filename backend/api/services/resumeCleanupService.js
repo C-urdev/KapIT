@@ -4,7 +4,7 @@ const fs = require('fs/promises');
 const { getStoredNameFromResumeUrl, getStoredResumePath } = require('./resumeStorageService');
 const { ensureResumeSchemaReady } = require('../config/runtimeSchema');
 const { getR2Client, getR2BucketName, isR2Enabled } = require('../config/r2');
-const { ListObjectsV2Command, DeleteObjectsCommand } = require('@aws-sdk/client-s3');
+const { ListObjectsV2Command, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 
 let timer;
 
@@ -84,11 +84,15 @@ const runCleanup = async () => {
             const toDelete = chunk.filter(k => !referencedKeys.has(k)).map(k => ({ Key: k }));
             
             if (toDelete.length > 0) {
-              await client.send(
-                new DeleteObjectsCommand({
-                  Bucket: bucket,
-                  Delete: { Objects: toDelete, Quiet: true },
-                })
+              await Promise.all(
+                toDelete.map((obj) =>
+                  client.send(
+                    new DeleteObjectCommand({
+                      Bucket: bucket,
+                      Key: obj.Key,
+                    })
+                  ).catch(e => logger.warn({ error: e.message, key: obj.Key }, 'r2.cleanup.single_delete_failed'))
+                )
               );
               logger.info({ deletedCount: toDelete.length }, 'resume.cleanup.r2_orphans_purged');
             }
