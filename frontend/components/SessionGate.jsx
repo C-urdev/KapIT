@@ -82,6 +82,11 @@ export default function SessionGate({
           return;
         }
 
+        // Fix: Update local storage with fresh user data from backend immediately.
+        // This prevents infinite redirect loops where storedUser has one account type
+        // and the backend has another.
+        updateStoredUser(nextUser);
+
         const userType = getUserAccountType(nextUser);
         if (requiredType && userType !== requiredType) {
           router.replace(resolveDashboardPath(nextUser));
