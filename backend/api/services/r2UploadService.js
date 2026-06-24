@@ -9,17 +9,25 @@ const { logger } = require('../config/logger');
 const { logSecurityViolation } = require('../config/securityEventLogger');
 const { scanFile, quarantineFile } = require('./antivirusService');
 
-const ALLOWED_EXTENSIONS = new Set(['.pdf', '.doc', '.docx']);
+const ALLOWED_EXTENSIONS = new Set(['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.webp']);
 
 const MIME_TO_EXTENSION = {
   'application/pdf': '.pdf',
   'application/msword': '.doc',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
 };
 
 const PDF_SIGNATURE = Buffer.from('%PDF-');
 const DOC_SIGNATURE = Buffer.from([0xd0, 0xcf, 0x11, 0xe0]);
 const DOCX_SIGNATURE = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
+
+// Extremely basic magic bytes for images (PNG, JPEG, WEBP)
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4E, 0x47]);
+const JPEG_SIGNATURE = Buffer.from([0xFF, 0xD8, 0xFF]);
+const WEBP_SIGNATURE = Buffer.from('WEBP');
 
 // Size tolerance when verifying uploaded object (metadata overhead).
 const SIZE_TOLERANCE_BYTES = 2048;
@@ -44,14 +52,15 @@ const sanitizeFileName = (value) => {
  *
  * Format: uploads/<userId>/<timestamp>-<uuid>-<sanitized-name>.<ext>
  */
-const buildObjectKey = ({ userId, originalName, contentType }) => {
+const buildObjectKey = ({ userId, originalName, contentType, intent }) => {
   const ext = path.extname(String(originalName || '')).toLowerCase();
   const resolvedExt = ALLOWED_EXTENSIONS.has(ext) ? ext : (MIME_TO_EXTENSION[contentType] || '.pdf');
   const baseName = sanitizeFileName(
     String(originalName || 'upload').replace(/\.[^.]+$/, '')
   );
   const uniqueId = `${Date.now()}-${crypto.randomUUID()}`;
-  return `uploads/${userId}/${uniqueId}-${baseName}${resolvedExt}`;
+  const subFolder = intent === 'profile_image' ? 'profile_images' : 'resumes';
+  return `uploads/${userId}/${subFolder}/${uniqueId}-${baseName}${resolvedExt}`;
 };
 
 /**
@@ -67,17 +76,25 @@ const validateMagicBytes = (buffer, extension) => {
     if (buffer.length < PDF_SIGNATURE.length || !buffer.subarray(0, PDF_SIGNATURE.length).equals(PDF_SIGNATURE)) {
       return 'File content does not match a valid PDF.';
     }
-  }
-
-  if (extension === '.doc') {
+  } else if (extension === '.doc') {
     if (buffer.length < DOC_SIGNATURE.length || !buffer.subarray(0, DOC_SIGNATURE.length).equals(DOC_SIGNATURE)) {
       return 'File content does not match a valid DOC.';
     }
-  }
-
-  if (extension === '.docx') {
+  } else if (extension === '.docx') {
     if (buffer.length < DOCX_SIGNATURE.length || !buffer.subarray(0, DOCX_SIGNATURE.length).equals(DOCX_SIGNATURE)) {
       return 'File content does not match a valid DOCX.';
+    }
+  } else if (extension === '.png') {
+    if (buffer.length < PNG_SIGNATURE.length || !buffer.subarray(0, PNG_SIGNATURE.length).equals(PNG_SIGNATURE)) {
+      return 'File content does not match a valid PNG.';
+    }
+  } else if (extension === '.jpg' || extension === '.jpeg') {
+    if (buffer.length < JPEG_SIGNATURE.length || !buffer.subarray(0, JPEG_SIGNATURE.length).equals(JPEG_SIGNATURE)) {
+      return 'File content does not match a valid JPEG.';
+    }
+  } else if (extension === '.webp') {
+    if (buffer.length < 12 || !buffer.subarray(8, 12).equals(WEBP_SIGNATURE)) {
+      return 'File content does not match a valid WEBP.';
     }
   }
 
@@ -90,7 +107,7 @@ const validateMagicBytes = (buffer, extension) => {
  * All validation (extension, MIME, size) is performed before the URL is created.
  * The presigned URL locks the Content-Type to prevent content-type smuggling.
  */
-const generatePresignedUploadUrl = async ({ userId, originalName, contentType, fileSize }) => {
+const generatePresignedUploadUrl = async ({ userId, originalName, contentType, fileSize, intent = 'resume' }) => {
   const maxBytes = getR2UploadMaxBytes();
 
   if (fileSize > maxBytes) {
@@ -101,7 +118,7 @@ const generatePresignedUploadUrl = async ({ userId, originalName, contentType, f
 
   const ext = path.extname(String(originalName || '')).toLowerCase();
   if (!ALLOWED_EXTENSIONS.has(ext)) {
-    const error = new Error('Only .pdf, .doc, and .docx files are allowed.');
+    const error = new Error('Unsupported file extension.');
     error.statusCode = 400;
     throw error;
   }
@@ -112,7 +129,7 @@ const generatePresignedUploadUrl = async ({ userId, originalName, contentType, f
     throw error;
   }
 
-  const objectKey = buildObjectKey({ userId, originalName, contentType });
+  const objectKey = buildObjectKey({ userId, originalName, contentType, intent });
   const expiresIn = getR2PresignExpireSeconds();
 
   const command = new PutObjectCommand({
@@ -124,6 +141,7 @@ const generatePresignedUploadUrl = async ({ userId, originalName, contentType, f
       'x-kapit-user-id': String(userId),
       'x-kapit-declared-size': String(fileSize),
       'x-kapit-original-name': sanitizeFileName(originalName),
+      'x-kapit-intent': String(intent),
     },
   });
 
@@ -131,7 +149,7 @@ const generatePresignedUploadUrl = async ({ userId, originalName, contentType, f
   const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
 
   logger.info(
-    { userId, objectKey, contentType, fileSize, expiresIn },
+    { userId, objectKey, contentType, fileSize, expiresIn, intent },
     'r2.presigned_url.generated'
   );
 
