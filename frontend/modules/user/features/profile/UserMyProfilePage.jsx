@@ -7,6 +7,7 @@ import FeedPostCard from '@userPages/home/FeedPostCard';
 import { normalizeSocialsText } from '@sharedUtils/socials';
 import ImageCropperModal from '@sharedComponents/modals/ImageCropperModal';
 import { readFileAsDataUrl, validateImageFile } from '@sharedUtils/imageUpload';
+import { developerAPI } from '@userFeatures/developer/userDeveloperAPI';
 
 const inferResumeKind = (url) => {
   const raw = String(url || '').trim().toLowerCase();
@@ -157,14 +158,37 @@ export default function UserMyProfilePage({
   const handleConfirmCrop = async (croppedDataUrl) => {
     try {
       setProfileImageBusy(true);
+
+      if (!croppedDataUrl) {
+        return;
+      }
+
+      let imageUrl = croppedDataUrl;
+
+      // Try uploading to R2 first.
+      try {
+        const res = await fetch(croppedDataUrl);
+        const blob = await res.blob();
+        const file = new File([blob], 'profile.jpg', { type: blob.type || 'image/jpeg' });
+        const result = await developerAPI.uploadProfileImage(file);
+        imageUrl = result?.profileImageUrl || croppedDataUrl;
+      } catch {
+        // R2 unavailable – fall back to Base64.
+      }
+
       setFormData((prev) => ({
         ...prev,
-        profileImage: croppedDataUrl || prev.profileImage,
+        profileImage: imageUrl,
       }));
-      if (croppedDataUrl) {
+
+      if (imageUrl !== croppedDataUrl) {
+        // R2 upload succeeded – the backend already updated the DB.
+        toast.success('Profile photo uploaded.');
+      } else {
+        // Fallback – save Base64 via the existing profile update flow.
         await onUpdateUser?.({ profileImage: croppedDataUrl });
+        toast.success('Profile photo updated.');
       }
-      toast.success('Profile photo updated.');
     } catch (error) {
       console.error(error);
       toast.error('Failed to update profile picture. Please try again.');
