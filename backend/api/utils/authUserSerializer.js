@@ -1,5 +1,28 @@
 const { normalizeSocialsText } = require('./socials');
 
+/**
+ * Resolve an r2:// profile image reference into a presigned download URL.
+ * Non-R2 values (Base64, https://, empty) are returned as-is.
+ */
+const resolveProfileImage = async (profileImage) => {
+  const raw = String(profileImage || '').trim();
+  if (!raw || !raw.startsWith('r2://')) {
+    return raw;
+  }
+
+  try {
+    const { isR2Enabled } = require('../config/r2');
+    if (!isR2Enabled()) {
+      return '';
+    }
+    const { generatePresignedDownloadUrl } = require('../services/r2UploadService');
+    const objectKey = raw.replace(/^r2:\/\//, '');
+    return await generatePresignedDownloadUrl({ objectKey, expiresSeconds: 3600 });
+  } catch {
+    return '';
+  }
+};
+
 const serializeUser = (user) => ({
   id: user.id,
   username: user.username,
@@ -33,6 +56,18 @@ const serializeUser = (user) => ({
   hiringFor: user.hiring_for || '',
 });
 
+/**
+ * Async version of serializeUser that resolves r2:// profile images
+ * into real presigned download URLs before sending to the frontend.
+ */
+const serializeUserAsync = async (user) => {
+  const serialized = serializeUser(user);
+  serialized.profileImage = await resolveProfileImage(serialized.profileImage);
+  return serialized;
+};
+
 module.exports = {
   serializeUser,
+  serializeUserAsync,
+  resolveProfileImage,
 };
