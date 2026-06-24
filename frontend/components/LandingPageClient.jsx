@@ -39,6 +39,7 @@ export default function LandingPageClient() {
         const data = await getCurrentUser();
         const currentUser = data?.user || null;
         if (!cancelled && currentUser) {
+          updateStoredUser(currentUser);
           router.replace(resolveDashboardPath(currentUser));
         }
       } catch {
