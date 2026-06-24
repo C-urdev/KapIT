@@ -40,12 +40,13 @@ const requestPresignedUrl = async (req, res) => {
       });
     }
 
-    const { fileName, contentType, fileSize } = parsed.data;
+    const { fileName, contentType, fileSize, intent } = parsed.data;
     const result = await generatePresignedUploadUrl({
       userId: req.user.id,
       originalName: fileName,
       contentType,
       fileSize,
+      intent,
     });
 
     return res.status(200).json({
@@ -97,7 +98,7 @@ const confirmUpload = async (req, res) => {
       });
     }
 
-    const { objectKey, contentType, fileSize } = parsed.data;
+    const { objectKey, contentType, fileSize, intent } = parsed.data;
 
     // Ownership check: the object key must be scoped to the authenticated user.
     const expectedPrefix = `uploads/${req.user.id}/`;
@@ -121,6 +122,12 @@ const confirmUpload = async (req, res) => {
       userId: req.user.id,
     });
 
+    // ── Profile Image Flow ──────────────────────────────────────────
+    if (intent === 'profile_image') {
+      return await handleProfileImageConfirm({ req, res, objectKey, verified });
+    }
+
+    // ── Resume Flow (default) ───────────────────────────────────────
     // Extract text from the uploaded document.
     const ext = path.extname(objectKey).toLowerCase();
     let extractedText = '';
@@ -229,6 +236,64 @@ const confirmUpload = async (req, res) => {
       success: false,
       error: error?.message || 'Upload confirmation failed.',
     });
+  }
+};
+
+/**
+ * Handle the confirm flow for profile image uploads.
+ * Updates the users table (and company/developer profile tables) with the R2 object key
+ * so that the image is served via a presigned URL instead of a Base64 blob.
+ */
+const handleProfileImageConfirm = async ({ req, res, objectKey, verified }) => {
+  const { generatePresignedDownloadUrl } = require('../services/r2UploadService');
+
+  // Build a stable reference URL. The frontend will request a presigned download
+  // URL through the existing /api/uploads/image/:objectKey route when it needs
+  // to display the image. We store the objectKey as the canonical reference.
+  const imageRef = `r2://${objectKey}`;
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Update the main users table.
+    await client.query(
+      `UPDATE users SET profile_image = $1 WHERE id = $2`,
+      [imageRef, req.user.id]
+    );
+
+    // Update developer_profiles if exists.
+    await client.query(
+      `UPDATE developer_profiles SET profile_photo_url = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2`,
+      [imageRef, req.user.id]
+    );
+
+    // Update companies.logo if this is a company user.
+    await client.query(
+      `UPDATE companies SET logo = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2`,
+      [imageRef, req.user.id]
+    );
+
+    await client.query('COMMIT');
+
+    // Generate a short-lived download URL so the frontend can display the image immediately.
+    const downloadUrl = await generatePresignedDownloadUrl({ objectKey, expiresSeconds: 3600 });
+
+    logger.info(
+      { userId: req.user.id, objectKey },
+      'upload.confirm.profile_image.success'
+    );
+
+    return res.status(201).json({
+      success: true,
+      profileImageUrl: downloadUrl,
+      objectKey,
+    });
+  } catch (dbError) {
+    await client.query('ROLLBACK');
+    throw dbError;
+  } finally {
+    client.release();
   }
 };
 

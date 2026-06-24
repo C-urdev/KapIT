@@ -2,6 +2,7 @@ const express = require('express');
 const { verifyToken, requireCsrfForCookieAuth } = require('../middleware/auth');
 const { presignRateLimiter } = require('../middleware/security');
 const { requestPresignedUrl, confirmUpload } = require('../controllers/uploadController');
+const { logger } = require('../config/logger');
 
 const router = express.Router();
 
@@ -24,6 +25,35 @@ router.post(
   requireCsrfForCookieAuth,
   express.json({ limit: '16kb' }),
   confirmUpload
+);
+
+// Resolve an R2 object key into a short-lived presigned download URL.
+// Used by the frontend to display profile images stored in R2.
+router.post(
+  '/uploads/resolve-image',
+  verifyToken,
+  express.json({ limit: '8kb' }),
+  async (req, res) => {
+    try {
+      const { isR2Enabled } = require('../config/r2');
+      if (!isR2Enabled()) {
+        return res.status(503).json({ success: false, error: 'Cloud storage is not configured.' });
+      }
+
+      const objectKey = String(req.body?.objectKey || '').trim();
+      if (!objectKey || !objectKey.startsWith('uploads/')) {
+        return res.status(400).json({ success: false, error: 'Invalid object key.' });
+      }
+
+      const { generatePresignedDownloadUrl } = require('../services/r2UploadService');
+      const url = await generatePresignedDownloadUrl({ objectKey, expiresSeconds: 3600 });
+
+      return res.json({ success: true, url });
+    } catch (error) {
+      logger.error({ error: error?.message }, 'upload.resolve-image.failed');
+      return res.status(500).json({ success: false, error: 'Failed to resolve image URL.' });
+    }
+  }
 );
 
 module.exports = router;

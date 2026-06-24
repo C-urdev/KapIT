@@ -23,7 +23,7 @@ const {
   revokeSessionById,
   revokeSessionByToken,
 } = require('../services/authSessionService');
-const { serializeUser } = require('../utils/authUserSerializer');
+const { serializeUser, serializeUserAsync } = require('../utils/authUserSerializer');
 const { clearLoginRateLimit } = require('../middleware/security');
 const { assertLocalAuthBypassAllowed } = require('../config/localBypass');
 const { getOrCreateCompanyForUserId } = require('../services/companyService');
@@ -604,7 +604,7 @@ const getCurrentUser = async (req, res) => {
         if (updated.rows.length) {
           return res.json({
             success: true,
-            user: serializeUser(updated.rows[0]),
+            user: await serializeUserAsync(updated.rows[0]),
           });
         }
       } catch (error) {
@@ -614,7 +614,7 @@ const getCurrentUser = async (req, res) => {
 
     res.json({
       success: true,
-      user: serializeUser(user),
+      user: await serializeUserAsync(user),
     });
   } catch (error) {
     logger.error({ err: error }, 'Get user error');
