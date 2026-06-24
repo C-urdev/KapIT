@@ -3,6 +3,7 @@ import { Image, Loader2, X } from 'lucide-react';
 import { useToast } from '@sharedComponents/ui/ToastProvider';
 import ImageCropperModal from '@sharedComponents/modals/ImageCropperModal';
 import { readFileAsDataUrl, validateImageFile } from '@sharedUtils/imageUpload';
+import { uploadToR2 } from '@sharedServices/r2UploadClient';
 
 export default function CompanyLogoUpload({ value, onChange, compact = false }) {
   const toast = useToast();
@@ -31,10 +32,31 @@ export default function CompanyLogoUpload({ value, onChange, compact = false }) 
   };
 
   const handleConfirmCrop = async (croppedDataUrl) => {
-    onChange?.(croppedDataUrl);
     setCropOpen(false);
     setRawImage('');
-    toast.success('Logo cropped successfully.');
+
+    if (!croppedDataUrl) return;
+
+    try {
+      setLoading(true);
+
+      // Convert Base64 → File and upload to R2.
+      const res = await fetch(croppedDataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], 'company-logo.jpg', { type: blob.type || 'image/jpeg' });
+
+      const result = await uploadToR2(file, { intent: 'profile_image' });
+      const imageUrl = result?.profileImageUrl || croppedDataUrl;
+
+      onChange?.(imageUrl);
+      toast.success('Logo uploaded successfully.');
+    } catch {
+      // R2 unavailable – fall back to Base64.
+      onChange?.(croppedDataUrl);
+      toast.success('Logo cropped successfully.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

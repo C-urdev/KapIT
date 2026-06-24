@@ -369,10 +369,32 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
   };
 
   const handleConfirmCrop = async (croppedDataUrl) => {
-    setForm((prev) => ({ ...prev, profileImage: croppedDataUrl || prev.profileImage }));
     setCropOpen(false);
     setRawProfileImage('');
-    toast.success('Profile photo cropped successfully.');
+
+    if (!croppedDataUrl) return;
+
+    // Try uploading the cropped image to Cloudflare R2.
+    try {
+      setPhotoLoading(true);
+
+      // Convert Base64 data URL → File blob for upload.
+      const res = await fetch(croppedDataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], 'profile.jpg', { type: blob.type || 'image/jpeg' });
+
+      const result = await developerAPI.uploadProfileImage(file);
+      const imageUrl = result?.profileImageUrl || croppedDataUrl;
+
+      setForm((prev) => ({ ...prev, profileImage: imageUrl }));
+      toast.success('Profile photo uploaded successfully.');
+    } catch (error) {
+      // If R2 upload fails (e.g. R2 not configured on localhost), fall back to Base64.
+      setForm((prev) => ({ ...prev, profileImage: croppedDataUrl }));
+      toast.success('Profile photo cropped successfully.');
+    } finally {
+      setPhotoLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
