@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter } from '@shared/hooks/useAppRouter';
 import { Loader2, AlertCircle } from 'lucide-react';
@@ -154,11 +155,14 @@ function LoadingView() {
     </div>
   );
 }
+=======
+import useViewportMode from './useViewportMode';
+import DesktopGoogleCallbackPage from './desktop/auth/GoogleCallbackPage';
+import MobileGoogleCallbackPage from './mobile/auth/GoogleCallbackPage';
+>>>>>>> 6a95f539 (feat: add desktop/mobile viewport routing for all pages)
 
 export default function GoogleCallbackPage() {
-  return (
-    <Suspense fallback={<LoadingView />}>
-      <GoogleCallbackContent />
-    </Suspense>
-  );
+  const isDesktop = useViewportMode();
+  const Page = isDesktop ? DesktopGoogleCallbackPage : MobileGoogleCallbackPage;
+  return <Page />;
 }

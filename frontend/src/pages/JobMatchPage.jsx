@@ -1,10 +1,9 @@
-import JobMatchClient from '../../components/JobMatchClient';
-import SessionGate from '../../components/SessionGate';
+import useViewportMode from './useViewportMode';
+import DesktopJobMatchPage from './desktop/user/JobMatchPage';
+import MobileJobMatchPage from './mobile/user/JobMatchPage';
 
 export default function JobMatchPage() {
-  return (
-    <SessionGate requiredAccountType="developer" redirectTo="/">
-      {({ user }) => <JobMatchClient user={user} />}
-    </SessionGate>
-  );
+  const isDesktop = useViewportMode();
+  const Page = isDesktop ? DesktopJobMatchPage : MobileJobMatchPage;
+  return <Page />;
 }
