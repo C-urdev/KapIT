@@ -1,5 +1,9 @@
-import CompanyAppClient from '../../components/CompanyAppClient';
+import useViewportMode from './useViewportMode';
+import DesktopCompanyAppPage from './desktop/company/CompanyAppPage';
+import MobileCompanyAppPage from './mobile/company/CompanyAppPage';
 
 export default function CompanyAppPage() {
-  return <CompanyAppClient />;
+  const isDesktop = useViewportMode();
+  const Page = isDesktop ? DesktopCompanyAppPage : MobileCompanyAppPage;
+  return <Page />;
 }
