@@ -1,5 +1,9 @@
-import UserPremiumPaymentClient from '../../components/UserPremiumPaymentClient';
+import useViewportMode from './useViewportMode';
+import DesktopPremiumPaymentPage from './desktop/user/PremiumPaymentPage';
+import MobilePremiumPaymentPage from './mobile/user/PremiumPaymentPage';
 
 export default function PremiumPaymentPage() {
-  return <UserPremiumPaymentClient />;
+  const isDesktop = useViewportMode();
+  const Page = isDesktop ? DesktopPremiumPaymentPage : MobilePremiumPaymentPage;
+  return <Page />;
 }

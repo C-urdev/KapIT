@@ -1,5 +1,9 @@
-import DeveloperOnboardingClient from '../../components/DeveloperOnboardingClient';
+import useViewportMode from './useViewportMode';
+import DesktopDeveloperOnboardingPage from './desktop/user/DeveloperOnboardingPage';
+import MobileDeveloperOnboardingPage from './mobile/user/DeveloperOnboardingPage';
 
 export default function DeveloperOnboardingPage() {
-  return <DeveloperOnboardingClient />;
+  const isDesktop = useViewportMode();
+  const Page = isDesktop ? DesktopDeveloperOnboardingPage : MobileDeveloperOnboardingPage;
+  return <Page />;
 }
