@@ -129,12 +129,20 @@ pool.on('connect', () => {
 });
 
 pool.on('error', (err) => {
+  if (['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT', 'ECONNABORTED', 'EPIPE'].includes(err?.code)) {
+    console.warn(`Transient database connection error (${err.code}). Pool will reconnect automatically.`);
+    // Do NOT exit the process. pg pool will discard the broken connection and create a new one.
+    return;
+  }
+  
   if (err?.code === 'ENOTFOUND') {
     console.error('Database host could not be resolved. Check DB_HOST or DATABASE_URL in your .env.');
+    process.exit(-1);
   } else {
     console.error('Unexpected database error:', err);
+    // You might choose to exit here, or keep it running depending on your needs.
+    // Given the nature of a persistent API, it's often better to let it retry.
   }
-  process.exit(-1);
 });
 
 module.exports = pool;
