@@ -5,7 +5,7 @@ import LandingPhoneMockup from './LandingPhoneMockup';
 
 export default function LandingHowItWorksSection() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#fbfaf6] via-[#fbfaf6] via-[97%] to-[#f8f4ec] dark:bg-gradient-to-b dark:from-[#23282e] dark:via-[#202428] dark:to-[#1a1d20]">
+    <section className="relative overflow-hidden bg-gradient-to-b from-[#fbfaf6] via-[#fbfaf6] via-[97%] to-[#f8f4ec] dark:bg-none dark:bg-[#181a1b]">
       <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 pt-6 pb-16 sm:pt-10 sm:pb-20 lg:pt-12 lg:pb-24 relative">
         <div className="max-w-2xl mb-10">
           <h3 className="text-3xl lg:text-4xl font-bold text-[#102a1b] dark:text-white">

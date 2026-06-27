@@ -166,11 +166,21 @@ export default function SiteTopNav({
   );
 
   return (
-    <header className="sticky top-0 z-40 overflow-visible border-b border-black/5 bg-white/85 dark:border-[#2f353c] dark:bg-[#121416]/90 backdrop-blur-xl">
-      <div className="relative w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-4 flex flex-wrap lg:flex-nowrap items-center justify-between gap-3">
-        {logoNode}
+    <>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes navItemSlideUp {
+          0% { opacity: 0; transform: translateY(24px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-nav-item {
+          animation: navItemSlideUp 0.6s cubic-bezier(0.32,0.72,0,1) forwards;
+          opacity: 0;
+        }
+      `}} />
+      <header className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[96%] max-w-5xl rounded-full border border-black/10 bg-white/80 dark:border-white/10 dark:bg-[#0a0a0a]/80 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] px-6 py-4 flex items-center justify-between gap-3 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]">
+          {logoNode}
 
-        <nav
+          <nav
           ref={navMenuRef}
           className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-8 xl:gap-10 overflow-visible"
           onMouseLeave={handleHeaderDropdownClose}
@@ -224,7 +234,7 @@ export default function SiteTopNav({
                     {TOP_NAV_DROPDOWNS[openHeaderDropdown][0].heading}
                   </p>
                   <div className="mt-4 space-y-1.5">
-                    {TOP_NAV_DROPDOWNS[openHeaderDropdown][0].items.map((item) => {
+                    {TOP_NAV_DROPDOWNS[openHeaderDropdown][0].items.map((item, index) => {
                       const ItemIcon = item.icon;
 
                       return (
@@ -235,14 +245,15 @@ export default function SiteTopNav({
                             handleTopNavClick(item.footerItem);
                             handleHeaderDropdownClose();
                           }}
-                          className="group flex w-full items-start gap-3 rounded-xl px-1.5 py-2.5 text-left hover:bg-white/80 dark:hover:bg-[#22272b]"
+                          className={`group flex w-full items-start gap-3 rounded-xl px-2 py-3 text-left hover:bg-black/5 dark:hover:bg-white/5 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] animate-nav-item`}
+                          style={{ animationDelay: `${index * 50}ms` }}
                         >
-                          <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#d0d4d9] bg-[#f3f4f6] text-[#6b7280] dark:border-[#4b5563] dark:bg-[#232931] dark:text-[#cbd5e1]">
+                          <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-black/5 dark:bg-white/10 text-[#6b7280] dark:text-[#cbd5e1] group-hover:scale-105 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
                             <ItemIcon className="h-5 w-5" />
                           </span>
                           <span className="min-w-0">
-                            <span className="block text-[1.02rem] font-medium text-[#1f2937] dark:text-white">{item.title}</span>
-                            <span className="mt-0.5 block text-[0.98rem] text-[#4b5563] dark:text-[#cbd5e1]">
+                            <span className="block text-[1.02rem] font-medium text-[#111] dark:text-white">{item.title}</span>
+                            <span className="mt-0.5 block text-[0.98rem] text-[#787774] dark:text-[#a1a1aa]">
                               {item.description}
                             </span>
                           </span>
@@ -270,7 +281,7 @@ export default function SiteTopNav({
                         {TOP_NAV_DROPDOWNS.Solutions[1].heading}
                       </p>
                       <div className="mt-4 space-y-1.5">
-                        {TOP_NAV_DROPDOWNS.Solutions[1].items.map((item) => {
+                        {TOP_NAV_DROPDOWNS.Solutions[1].items.map((item, index) => {
                           const ItemIcon = item.icon;
                           return (
                             <button
@@ -280,14 +291,15 @@ export default function SiteTopNav({
                                 handleTopNavClick(item.footerItem);
                                 handleHeaderDropdownClose();
                               }}
-                              className="group flex w-full items-start gap-3 rounded-xl px-1.5 py-2.5 text-left hover:bg-white/80 dark:hover:bg-[#22272b]"
+                              className={`group flex w-full items-start gap-3 rounded-xl px-2 py-3 text-left hover:bg-black/5 dark:hover:bg-white/5 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] animate-nav-item`}
+                              style={{ animationDelay: `${(index + TOP_NAV_DROPDOWNS.Solutions[0].items.length) * 50}ms` }}
                             >
-                              <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#d0d4d9] bg-[#f3f4f6] text-[#6b7280] dark:border-[#4b5563] dark:bg-[#232931] dark:text-[#cbd5e1]">
+                              <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-black/5 dark:bg-white/10 text-[#6b7280] dark:text-[#cbd5e1] group-hover:scale-105 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
                                 <ItemIcon className="h-5 w-5" />
                               </span>
                               <span className="min-w-0">
-                                <span className="block text-[1.02rem] font-medium text-[#1f2937] dark:text-white">{item.title}</span>
-                                <span className="mt-0.5 block text-[0.98rem] text-[#4b5563] dark:text-[#cbd5e1]">
+                                <span className="block text-[1.02rem] font-medium text-[#111] dark:text-white">{item.title}</span>
+                                <span className="mt-0.5 block text-[0.98rem] text-[#787774] dark:text-[#a1a1aa]">
                                   {item.description}
                                 </span>
                               </span>
@@ -325,33 +337,23 @@ export default function SiteTopNav({
           ) : null}
         </nav>
 
-        <div className="ml-auto lg:ml-0 flex items-center gap-2">
-          {renderActionButton(
-            'Sign In',
-            signInHref,
-            onSignIn,
-            'inline-flex items-center justify-center px-4 sm:px-5 py-2.5 rounded-full border border-[#a3b18a] dark:border-[#444d57] bg-white dark:bg-[#22272b] text-[#344e41] dark:text-white text-sm sm:text-base font-semibold hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors'
-          )}
-          {renderActionButton(
-            'Get Started',
-            getStartedHref,
-            onGetStarted,
-            'inline-flex items-center justify-center px-4 sm:px-5 py-2.5 rounded-full text-sm sm:text-base text-white font-semibold bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] transition-colors'
-          )}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors"
-            aria-label="Toggle theme"
-          >
-            {theme === 'light' ? <Moon className="w-5 h-5 text-[#344e41]" /> : <Sun className="w-5 h-5 text-white" />}
-          </button>
-        </div>
-      </div>
-      <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-[#b8ad94] to-transparent opacity-95 shadow-[0_1px_0_rgba(255,255,255,0.45)] dark:via-[#5b6672] dark:shadow-[0_1px_0_rgba(10,14,18,0.75)]"
-        aria-hidden="true"
-      />
-    </header>
+          <div className="ml-auto lg:ml-0 flex items-center gap-3">
+            {renderActionButton(
+              'Sign In',
+              signInHref,
+              onSignIn,
+              'inline-flex items-center justify-center px-6 py-2.5 rounded-full text-sm font-semibold bg-[#3a5a40] text-white transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:text-[#111] dark:hover:bg-[#82ad86]'
+            )}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-[#3a5a40]/10 dark:hover:bg-white/10 transition-colors"
+              aria-label="Toggle theme"
+            >
+              {theme === 'light' ? <Moon className="w-5 h-5 text-[#3a5a40]" /> : <Sun className="w-5 h-5 text-white" />}
+            </button>
+          </div>
+      </header>
+    </>
   );
 }
