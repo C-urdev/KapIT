@@ -1,103 +1,128 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
-import HeroLampGlow from '@sharedComponents/effects/HeroLampGlow';
 import { useTheme } from '@sharedContext/ThemeContext';
-import { createLandingBgStars } from './landingData';
-
-const LANDING_BG_STARS = createLandingBgStars();
 
 export default function LandingHeroSection({ onGetStarted, onJoinDeveloper }) {
   const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
-    <section className="relative overflow-hidden min-h-[100dvh] flex flex-col">
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: theme === 'dark' ? 'url(/hero%20dark.png)' : 'url(/hero%20light.png)',
-        }}
-        aria-hidden="true"
-      />
-      <div className="pointer-events-none absolute inset-0 z-[1] overflow-hidden" aria-hidden="true">
-        <div
-          className="landing-bg-glow absolute inset-0"
-          style={{
-            background:
-              theme === 'dark'
-                ? 'radial-gradient(58% 44% at 50% 14%, rgba(226, 232, 240, 0.22) 0%, rgba(148, 163, 184, 0.13) 44%, rgba(18, 20, 22, 0) 86%), radial-gradient(58% 38% at 50% 72%, rgba(163, 230, 53, 0.07) 0%, rgba(18,20,22,0) 78%)'
-                : 'radial-gradient(58% 44% at 50% 14%, rgba(16, 185, 129, 0.03) 0%, rgba(163, 230, 53, 0.018) 44%, rgba(247, 246, 241, 0) 86%), radial-gradient(58% 38% at 50% 72%, rgba(245, 222, 179, 0.12) 0%, rgba(247,246,241,0) 80%)',
-          }}
-        />
-        <div
-          className="landing-bg-horizon absolute inset-x-[-10%] bottom-[8%] h-36 sm:h-44"
-          style={{
-            background:
-              theme === 'dark'
-                ? 'radial-gradient(58% 90% at 50% 100%, rgba(203, 213, 225, 0.2) 0%, rgba(148, 163, 184, 0.12) 36%, rgba(18,20,22,0) 76%)'
-                : 'radial-gradient(58% 90% at 50% 100%, rgba(132, 204, 22, 0.045) 0%, rgba(16, 185, 129, 0.03) 34%, rgba(247,246,241,0) 78%)',
-          }}
-        />
-        <div
-          className="landing-bg-wave absolute inset-x-[7%] bottom-[10%] h-20 rounded-[50%] border"
-          style={{
-            borderColor: theme === 'dark' ? 'rgba(203,213,225,0.24)' : 'rgba(132, 204, 22, 0.3)',
-          }}
-        />
-        <div
-          className="landing-bg-wave landing-bg-wave-delay absolute inset-x-[15%] bottom-[11.5%] h-16 rounded-[50%] border"
-          style={{
-            borderColor: theme === 'dark' ? 'rgba(226,232,240,0.18)' : 'rgba(101, 163, 13, 0.26)',
-          }}
-        />
-        {LANDING_BG_STARS.map((star) => (
-          <span
-            key={`${star.top}-${star.left}`}
-            className={`absolute ${star.size} rounded-full bg-[#facc15]/70 shadow-[0_0_7px_rgba(217,119,6,0.35)] dark:bg-white/65 dark:shadow-none`}
-            style={{ top: star.top, left: star.left }}
-          />
-        ))}
-      </div>
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 hidden h-[42vh] dark:block"
-        style={{
-          background:
-            'linear-gradient(180deg, rgba(18,20,22,0.96) 0%, rgba(18,20,22,0.74) 36%, rgba(18,20,22,0.38) 64%, rgba(18,20,22,0) 100%), radial-gradient(58% 54% at 50% 0%, rgba(203,213,225,0.14) 0%, rgba(18,20,22,0) 72%)',
-        }}
-        aria-hidden="true"
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-white/12 via-white/16 to-[#f4f7f3] dark:from-[#121416]/58 dark:via-[#121416]/34 dark:to-[#1a1d20]" aria-hidden="true" />
-      <HeroLampGlow />
+    <section className="relative min-h-[100dvh] w-full bg-[#FDFBF7] dark:bg-[#181a1b] overflow-hidden flex flex-col lg:flex-row items-center pt-24 lg:pt-0">
+      
+      {/* Editorial Split: Left Side Typography */}
+      <div className="relative z-20 w-full lg:w-1/2 flex flex-col justify-center px-6 sm:px-12 lg:px-20 xl:px-28 py-16 lg:py-0">
+        <div className="max-w-2xl">
+          <style dangerouslySetInnerHTML={{ __html: `
+            @keyframes heroSlideUp {
+              to { opacity: 1; transform: translateY(0); }
+            }
+            @keyframes heroFadeIn {
+              to { opacity: 1; }
+            }
+          `}} />
+          
+          <h1 className="text-[2.55rem] sm:text-[4rem] md:text-[4.8rem] lg:text-[5.8rem] font-extrabold tracking-[-0.02em] leading-[1.05] text-[#102a1b] dark:text-white mb-6 w-full lg:w-[150%] max-w-none mix-blend-multiply dark:mix-blend-normal pointer-events-none translate-y-8 opacity-0 animate-[heroSlideUp_1s_cubic-bezier(0.32,0.72,0,1)_forwards]" style={{ fontFamily: 'var(--font-desktop)' }}>
+            <span className="block lg:hidden">Connect<br /><span className="text-[#588157] dark:text-[#a3b18a]">Filipino</span> IT</span>
+            <span className="hidden lg:block lg:whitespace-nowrap">Connect <span className="text-[#588157] dark:text-[#a3b18a]">Filipino</span> IT</span>
+            <span className="block lg:whitespace-nowrap">Talent with <span className="text-[#588157] dark:text-[#a3b18a]">Opportunity</span></span>
+          </h1>
+          
+          <p className="text-base sm:text-[1.08rem] lg:text-[1.12rem] text-[#2f4e39] dark:text-[#a1a1aa] leading-relaxed max-w-[19.5rem] sm:max-w-md mb-10 font-medium translate-y-8 opacity-0 animate-[heroSlideUp_1s_cubic-bezier(0.32,0.72,0,1)_0.15s_forwards]">
+            KapIT is a focused hiring marketplace where companies find vetted developers and IT professionals discover real, skill-matched opportunities.
+          </p>
 
-      <div className="relative z-[5] flex-1 flex items-center">
-        <div className="w-full max-w-[min(100%,1700px)] mx-auto px-6 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 py-10 sm:py-12 lg:py-14">
-          <div className="max-w-5xl lg:max-w-3xl mx-auto lg:mx-0 text-center lg:text-left w-full xl:-translate-y-6 2xl:-translate-y-8">
-            <h2 className="mt-2 text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.2rem] font-extrabold tracking-tight leading-[0.95] text-[#102a1b] dark:text-white max-w-[72rem] mx-auto lg:mx-0">
-              <span className="block md:whitespace-nowrap">Connect Filipino IT</span>
-              <span className="block md:whitespace-nowrap">Talent with Opportunity</span>
-            </h2>
-            <p className="mt-5 sm:mt-6 text-[1rem] sm:text-[1.08rem] lg:text-[1.12rem] leading-relaxed font-medium text-[#2f4e39] dark:text-[#d0d7dd] max-w-3xl mx-auto lg:mx-0">
-              KapIT is a focused hiring marketplace where companies find vetted developers and IT professionals discover real, skill-matched opportunities.
-            </p>
-
-            <div className="mt-10 sm:mt-12 flex flex-row flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4">
-              <button
-                type="button"
-                onClick={onGetStarted}
-                className="w-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-5 py-3 sm:px-7 sm:py-4 rounded-full bg-white/85 dark:bg-[#22272b]/70 border border-[#a3b18a] dark:border-[#444d57] text-[#102a1b] dark:text-white text-[0.95rem] sm:text-lg font-semibold hover:bg-white dark:hover:bg-[#353c44] transition-colors backdrop-blur"
-              >
-                Find Developers <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={onJoinDeveloper}
-                className="w-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-5 py-3 sm:px-7 sm:py-4 rounded-full bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white text-[0.95rem] sm:text-lg font-semibold transition-colors"
-              >
-                Join as Developer <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              </button>
-            </div>
+          <div className="flex flex-wrap items-center gap-4 relative z-40 translate-y-8 opacity-0 animate-[heroSlideUp_1s_cubic-bezier(0.32,0.72,0,1)_0.3s_forwards]">
+            <button
+              type="button"
+              onClick={onGetStarted}
+              className="group inline-flex items-center justify-between gap-4 pl-7 pr-2 py-2 rounded-full text-[1.02rem] font-semibold border border-[#d7e4d6] bg-[#f6faf4] text-[#102a1b] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] hover:border-[#b9cfb6] hover:bg-[#edf6ea] hover:shadow-[0_8px_24px_rgba(58,90,64,0.10)] dark:border-[#36453b] dark:bg-[#172019] dark:text-[#edf6ea] dark:hover:bg-[#203025]"
+            >
+              <span>Find Developers</span>
+              <div className="w-10 h-10 rounded-full bg-[#e3eddf] flex items-center justify-center transition-transform duration-500 group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:scale-105 dark:bg-[#2f4e39]">
+                <ArrowRight className="w-[18px] h-[18px] text-[#2f4e39] dark:text-[#edf6ea]" />
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={onJoinDeveloper}
+              className="group inline-flex items-center justify-between gap-4 pl-7 pr-2 py-2 rounded-full text-[1.02rem] font-semibold bg-[#3a5a40] text-[#f8fbf6] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] hover:bg-[#344e41] hover:shadow-[0_10px_26px_rgba(58,90,64,0.22)] dark:bg-[#6f9b74] dark:text-[#08110b] dark:hover:bg-[#82ad86]"
+            >
+              <span>Join as Developer</span>
+              <div className="w-10 h-10 rounded-full bg-[#2f4e39] flex items-center justify-center transition-transform duration-500 group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:scale-105 dark:bg-[#588157]">
+                <ArrowRight className="w-[18px] h-[18px] text-[#f8fbf6] dark:text-[#08110b]" />
+              </div>
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Editorial Split: Right Side Visual */}
+      {mounted && theme === 'light' ? (
+        <div className="w-full h-[45vh] lg:absolute lg:inset-y-0 lg:right-0 lg:w-[48%] lg:h-full z-10 opacity-0 animate-[heroFadeIn_1.5s_ease-out_forwards]">
+          <div className="hidden lg:block absolute inset-y-0 left-0 w-40 bg-gradient-to-r from-[#FDFBF7] via-[#FDFBF7]/80 to-transparent z-10" />
+          <img
+            src="/hero_visual_light_taste.png"
+            alt="Workspace"
+            className="w-full h-full object-cover object-left"
+          />
+        </div>
+      ) : mounted && theme === 'dark' ? (
+        <div className="w-full lg:w-1/2 min-h-[60vh] lg:min-h-[100dvh] relative flex items-center justify-center py-16 lg:py-6 p-4 lg:p-6 xl:p-10 z-10 opacity-0 animate-[heroFadeIn_1s_ease-out_forwards]">
+          {/* Subtle background ambient gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#181a1b] via-transparent to-[#181a1b] lg:bg-gradient-to-l opacity-75 pointer-events-none" />
+          
+          <div className="relative w-full max-w-[420px] lg:max-w-[500px] xl:max-w-[580px] flex flex-col gap-6 sm:gap-8 z-10 mx-auto">
+            {/* IMG 1: Top Left */}
+            <div 
+              className="w-[85%] sm:w-[80%] self-start aspect-[16/9] rounded-[1rem] sm:rounded-[1.25rem] bg-[#111] ring-1 ring-white/10 p-1.5 sm:p-2 shadow-xl animate-[heroSlideUp_1.2s_cubic-bezier(0.32,0.72,0,1)_forwards]"
+              style={{ opacity: 0 }}
+            >
+              <div className="relative w-full h-full rounded-[calc(1rem-0.375rem)] sm:rounded-[calc(1.25rem-0.5rem)] overflow-hidden bg-[#111]">
+                <img
+                  src="/hero_visual_dark.png"
+                  alt="Top Left Primary"
+                  className="w-full h-full object-cover object-center"
+                />
+              </div>
+            </div>
+
+            {/* IMG 2: Middle Right */}
+            <div 
+              className="w-[85%] sm:w-[80%] self-end aspect-[16/9] rounded-[1rem] sm:rounded-[1.25rem] bg-[#111] ring-1 ring-white/10 p-1.5 sm:p-2 shadow-xl animate-[heroSlideUp_1.4s_cubic-bezier(0.32,0.72,0,1)_forwards]"
+              style={{ opacity: 0 }}
+            >
+              <div className="relative w-full h-full rounded-[calc(1rem-0.375rem)] sm:rounded-[calc(1.25rem-0.5rem)] overflow-hidden bg-[#111]">
+                <div className="absolute inset-0 bg-black/20 z-10 pointer-events-none transition-opacity duration-500 hover:opacity-0" />
+                <img
+                  src="/hero_visual_dark_2.png"
+                  alt="Middle Right Workspace"
+                  className="w-full h-full object-cover object-center"
+                />
+              </div>
+            </div>
+
+            {/* IMG 3: Bottom Left */}
+            <div 
+              className="w-[85%] sm:w-[80%] self-start aspect-[16/9] rounded-[1rem] sm:rounded-[1.25rem] bg-[#111] ring-1 ring-white/10 p-1.5 sm:p-2 shadow-xl animate-[heroSlideUp_1.6s_cubic-bezier(0.32,0.72,0,1)_forwards]"
+              style={{ opacity: 0 }}
+            >
+              <div className="relative w-full h-full rounded-[calc(1rem-0.375rem)] sm:rounded-[calc(1.25rem-0.5rem)] overflow-hidden bg-[#111]">
+                <div className="absolute inset-0 bg-black/20 z-10 pointer-events-none transition-opacity duration-500 hover:opacity-0" />
+                <img
+                  src="/hero_visual_dark_3.png"
+                  alt="Bottom Left Workspace"
+                  className="w-full h-full object-cover object-center"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      
     </section>
   );
 }

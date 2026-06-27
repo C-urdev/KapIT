@@ -9,7 +9,7 @@ export const SOCIAL_LINKS = [
 ];
 
 const BASE_ITEM_CLASS =
-  'inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#8ea98f] bg-[#edf3ea] text-[#2e5038] shadow-[0_7px_16px_rgba(16,42,27,0.09)] transition-[transform,border-color,color,opacity] duration-200 ease-out hover:-translate-y-0.5 hover:border-[#5f7f67] hover:text-[#102a1b] dark:border-[#444d57] dark:bg-[#1a1d20] dark:text-[#d0d7dd] dark:hover:border-[#6f9b74] dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5f7f67]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent';
+  'inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d7e4d6] bg-[#edf3ea] text-[#2e5038] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[#b9cfb6] hover:bg-[#e3eddf] hover:text-[#102a1b] hover:scale-105 dark:border-[#36453b] dark:bg-[#172019] dark:text-[#d0e4d1] dark:hover:bg-[#203025] dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#588157]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent';
 
 const FLIP_CARD_CLASS =
   'group relative inline-flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5f7f67]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent';

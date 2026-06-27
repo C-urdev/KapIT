@@ -470,14 +470,14 @@ export default function FaqChatbot() {
             }
             setIsOpen((prev) => !prev);
           }}
-          className={`group inline-flex h-14 w-14 items-center justify-center rounded-full border shadow-[0_14px_35px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-transform duration-300 hover:scale-105 ${
+          className={`group inline-flex h-12 w-12 items-center justify-center rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.15)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:scale-110 active:scale-[0.98] ${
             isDark
-              ? 'border-[#6f9b74] bg-[#2b3138] text-[#9fd3a6]'
-              : 'border-[#a3b18a] bg-[#3a5a40] text-white'
+              ? 'bg-[#6f9b74] text-[#111]'
+              : 'bg-[#3a5a40] text-white'
           }`}
           aria-label={isOpen ? 'Toggle chatbot' : 'Open chatbot'}
         >
-          <Bot size={22} className="transition-transform duration-300 group-hover:rotate-6" />
+          <Bot size={20} className="transition-transform duration-300 group-hover:rotate-6" />
         </button>
       ) : null}
     </div>
