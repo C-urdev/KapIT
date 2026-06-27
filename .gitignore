@@ -45,7 +45,7 @@ CLAUDE.md
 .agents/skills/
 .cursorrules
 SECURITY_ROTATION.md
-
+.agents/skills.json
 .agents/gemini-skills/
 
 # Python artifacts
