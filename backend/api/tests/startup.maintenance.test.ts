@@ -14,7 +14,7 @@ const waitForImmediateWork = () => new Promise((resolve) => setTimeout(resolve, 
 
 const createConnectivityAggregateError = () => {
   const nestedError = Object.assign(new Error('connect EACCES 127.0.0.1:5432'), { code: 'EACCES' });
-  const error = new AggregateError([nestedError], 'database unavailable');
+  const error = new AggregateError([nestedError], 'database unavailable') as AggregateError & { code: string };
   error.code = 'EACCES';
   return error;
 };
