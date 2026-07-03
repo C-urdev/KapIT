@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-node --require ./backend/node_modules/tsx/dist/cjs/index.cjs scripts/security-guard.ts
+node scripts/security-guard.cjs
 status=$?
 
 if [ "$status" -ne 0 ]; then
