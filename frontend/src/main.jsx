@@ -8,7 +8,11 @@ import ReleaseSync from '../components/ReleaseSync.jsx';
 import { HelmetProvider } from 'react-helmet-async';
 import './globals.css'; // Tailwind globals if any
 
-const buildVersion = import.meta.env.VITE_BUILD_VERSION || 'local-dev';
+const buildVersion = String(
+  import.meta.env.VITE_BUILD_VERSION
+  || import.meta.env.VITE_APP_VERSION
+  || 'dev'
+).trim();
 
 const getInitialTheme = () => {
   const match = document.cookie.match(/(?:^|;\s*)theme=([^;]*)/);
