@@ -1,8 +1,6 @@
-'use client';
+import React from 'react';
 
-import React, { Component } from 'react';
-
-class ChatbotErrorBoundary extends Component {
+export default class ChatbotErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false };
@@ -13,13 +11,16 @@ class ChatbotErrorBoundary extends Component {
   }
 
   componentDidCatch(error) {
-    console.error('FaqChatbot crashed:', error);
+    if (typeof console !== 'undefined' && typeof console.error === 'function') {
+      console.error('FaqChatbot crashed:', error);
+    }
   }
 
   render() {
-    if (this.state.hasError) return null;
+    if (this.state.hasError) {
+      return null;
+    }
+
     return this.props.children;
   }
 }
-
-export default ChatbotErrorBoundary;

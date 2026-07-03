@@ -1,11 +1,8 @@
 import React from 'react';
-import { Moon, Sun, Bell } from 'lucide-react';
-import { useTheme } from '@sharedContext/ThemeContext';
+import { Bell } from 'lucide-react';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
 
-export default function CompanyDesktopHeader({ title, user, sidebarCollapsed, unreadNotificationCount = 0 }) {
-  const { theme, toggleTheme } = useTheme();
-
+export default function CompanyDesktopHeader({ title, user: _user, sidebarCollapsed, unreadNotificationCount = 0 }) {
   return (
     <div className={`hidden xl:grid h-20 items-center transition-[grid-template-columns] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? 'grid-cols-[4.5rem_minmax(0,1fr)]' : 'grid-cols-[18rem_minmax(0,1fr)]'}`}>
       <div className={`h-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-6'}`}>

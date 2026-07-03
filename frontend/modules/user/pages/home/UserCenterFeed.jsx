@@ -139,7 +139,6 @@ function BottomFeedLoader() {
     <div className="space-y-3">
       {[...Array(2)].map((_, index) => (
         <div
-          // eslint-disable-next-line react/no-array-index-key
           key={index}
           className="rounded-xl border border-[#a3b18a]/30 bg-[#f8fbf6]/70 p-4 dark:border-[#353c44]/30 dark:bg-[#22272b]/70"
         >

@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noImplicitAny": true
+  },
+  "include": [
+    "api/config/**/*.ts",
+    "api/utils/**/*.ts",
+    "api/validation/**/*.ts",
+    "api/services/aiService.ts",
+    "types/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "ai-fastapi",
+    "**/.pytest_cache/**",
+    "api/tests/**/*.ts"
+  ]
+}

@@ -55,7 +55,7 @@ export default function CompanyManageJobsPage() {
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [refetch]);
+  }, [refetch, toast]);
 
   const summary = useMemo(() => ({
     open: displayJobs.filter((job) => job?.status === 'open').length,

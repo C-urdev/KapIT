@@ -47,6 +47,7 @@ CLAUDE.md
 SECURITY_ROTATION.md
 .agents/skills.json
 .agents/gemini-skills/
+.agents/*
 
 # Python artifacts
 __pycache__/
