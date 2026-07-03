@@ -56,6 +56,15 @@ const getGlobalQuerySanitizerLimits = () => ({
   maxNodes: Number(process.env.QUERY_INPUT_MAX_NODES || 800),
 });
 
+const resolveAppVersion = () =>
+  String(
+    process.env.VITE_BUILD_VERSION
+    || process.env.VITE_APP_VERSION
+    || process.env.RENDER_GIT_COMMIT
+    || process.env.COMMIT_SHA
+    || 'dev'
+  ).trim();
+
 const createApp = () => {
   const app = express();
   const allowedOrigins = getAllowedOrigins();
@@ -182,7 +191,7 @@ const createApp = () => {
   app.get('/api/version', (req, res) => {
     res.setHeader('Cache-Control', 'no-store, max-age=0');
     res.setHeader('Pragma', 'no-cache');
-    res.json({ version: process.env.VITE_APP_VERSION || Date.now().toString() });
+    res.json({ version: resolveAppVersion() });
   });
 
   app.get('/ready', async (req, res) => {
