@@ -5,7 +5,7 @@ import { Link as RouterLink } from 'react-router-dom';
  * Uses react-router's <Link> for internal routes, <a> for external URLs.
  * Accepts `href` prop for compatibility with existing code.
  */
-export default function Link({ href, children, target, rel, replace, scroll, ...rest }) {
+export default function Link({ href, children, target, rel, replace, scroll: _scroll, ...rest }) {
   const isExternal = /^https?:\/\//i.test(String(href));
   if (isExternal) {
     return (

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Search } from 'lucide-react';
 import { searchAccounts } from '@sharedServices/authService';
 import UserSearchScopeChips from '@userComponents/search/UserSearchScopeChips';
@@ -35,7 +35,7 @@ export default function UserSearchResultsPage({
     return items;
   };
 
-  const runSearch = async (nextQuery, nextScope) => {
+  const runSearch = useCallback(async (nextQuery, nextScope) => {
     const normalizedQuery = String(nextQuery || '').trim();
     if (!normalizedQuery) {
       setResults([]);
@@ -63,14 +63,14 @@ export default function UserSearchResultsPage({
         setLoading(false);
       }
     }
-  };
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       void runSearch(query, scope);
     }, 300);
     return () => clearTimeout(timer);
-  }, [query, scope]);
+  }, [query, runSearch, scope]);
 
   return (
     <div className="mx-auto w-full max-w-[min(100%,980px)]">

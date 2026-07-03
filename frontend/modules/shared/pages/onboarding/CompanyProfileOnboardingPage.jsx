@@ -446,7 +446,7 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
   );
 }
 
-function Section({ title, children, invalid = false }) {
+function Section({ title, children, invalid: _invalid = false }) {
   return (
     <section>
       <h2 className="text-lg font-bold text-[#2f3e2f] dark:text-white">{title}</h2>

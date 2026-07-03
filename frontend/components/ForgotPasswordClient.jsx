@@ -187,7 +187,7 @@ function StepEmail({ onNext }) {
 
 // ─── Step 2 — OTP Verify ─────────────────────────────────────────────────────
 
-function StepVerify({ email, onNext, onBack }) {
+function StepVerify({ email, onNext, onBack: _onBack }) {
   const [digits, setDigits] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -396,8 +396,6 @@ function StepReset({ resetToken, onDone }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
-
   const strength = (() => {
     if (!password) return 0;
     let s = 0;

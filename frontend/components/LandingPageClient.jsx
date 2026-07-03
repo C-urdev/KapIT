@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from '@shared/hooks/useAppRouter';
 import { lazy, Suspense } from 'react';
 import LandingPage from '@sharedPages/landing/LandingPage';
-import { getCurrentUser, getStoredUser, isCompanyAccount } from '@sharedServices/authService';
+import { getCurrentUser, getStoredUser, isCompanyAccount, updateStoredUser } from '@sharedServices/authService';
 import { getSessionSnapshot } from '@sharedServices/apiClient';
 
 const SelectAccountTypeModal = lazy(() => import('@sharedComponents/auth/SelectAccountTypeModal'));

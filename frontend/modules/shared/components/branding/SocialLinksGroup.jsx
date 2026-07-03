@@ -72,7 +72,7 @@ export default function SocialLinksGroup({
         );
       })}
       {useFlipInteraction ? (
-        <style jsx>{`
+        <style>{`
           .social-flip-card {
             perspective: 900px;
           }

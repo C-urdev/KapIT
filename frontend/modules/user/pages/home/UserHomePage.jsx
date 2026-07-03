@@ -130,7 +130,7 @@ const syncUserNavToUrl = (nextNav, options = {}) => {
   }
 };
 
-export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onUpdateUser }) {
+export default function UserHomePage({ user, userType, onOpenHelp: _onOpenHelp, onLogout, onUpdateUser }) {
   const [activeNav, setActiveNav] = useState(() => getUserNavFromUrl());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [premiumPopupOpen, setPremiumPopupOpen] = useState(false);
@@ -539,7 +539,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
     setSavedJobs([]);
     setSavedPosts([]);
     setApplications(getApplicationsForUser(user));
-  }, [user]);
+  }, [syncPostState, user]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -779,7 +779,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
     return () => {
       cancelled = true;
     };
-  }, [onUpdateUser, user?.id, user?.optimizedResumeDocxUrl, user?.optimizedResumePdfUrl, user?.resume, user?.resumeUrl]);
+  }, [onUpdateUser, user, user?.id, user?.optimizedResumeDocxUrl, user?.optimizedResumePdfUrl, user?.resume, user?.resumeUrl]);
 
   const handleOpenPremiumMerchantWindow = () => {
     if (isMobileViewport) {

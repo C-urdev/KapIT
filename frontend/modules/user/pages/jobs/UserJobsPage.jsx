@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Building2, ChevronDown, ChevronLeft, ChevronRight, MapPin, Search, SlidersHorizontal, X } from 'lucide-react';
 import { getJobsFeed, getSavedJobs } from '@sharedServices/authService';
 import { formatJobStatus, statusBadgeClass } from '@companyFeatures/companyUtils';
-import { useToast } from '@sharedComponents/ui/ToastProvider';
 import { syncApplicationsForUser } from '@userFeatures/activity/userActivityStorage';
 import JobsSkeleton from '../../../../components/shared/skeletons/JobsSkeleton';
 
@@ -111,7 +110,6 @@ export default function UserJobsPage({
   const [savedJobIds, setSavedJobIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const toast = useToast();
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
