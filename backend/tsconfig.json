@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowJs": true,
+    "checkJs": false,
+    "strict": false,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "noEmit": true
+  },
+  "include": ["api/**/*.js", "api/**/*.cjs", "api/**/*.ts", "scripts/**/*.cjs", "scripts/**/*.ts", "serverless/**/*.ts", "serverless/**/*.js", "types/**/*.d.ts"],
+  "exclude": ["node_modules", "dist", "ai-fastapi", "**/.pytest_cache/**"]
+}

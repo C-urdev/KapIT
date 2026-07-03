@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Briefcase, Save, UserCircle, X } from 'lucide-react';
 import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
 import SkillTags from '@userComponents/developer/UserSkillTags';
@@ -260,6 +260,9 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
   const [developerProfile, setDeveloperProfile] = useState(cachedDeveloperProfile);
   const [resumeDirty, setResumeDirty] = useState(false);
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const latestUserRef = useRef(user);
+  const latestProfileRef = useRef(developerProfile);
+  const latestCachedProfileRef = useRef(cachedDeveloperProfile);
 
   const resolvedJobTitle = String(formData.jobTitle || '').trim();
   const preferredRoleOptions = useMemo(() => {
@@ -298,12 +301,22 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
   }, [isOpen, user, mode, developerProfile]);
 
   useEffect(() => {
+    latestUserRef.current = user;
+    latestProfileRef.current = developerProfile;
+    latestCachedProfileRef.current = cachedDeveloperProfile;
+  }, [cachedDeveloperProfile, developerProfile, user]);
+
+  useEffect(() => {
     let cancelled = false;
 
     const loadDeveloperProfile = async () => {
-      if (!isOpen || user?.type === 'company') return;
+      const currentUser = latestUserRef.current;
+      const currentProfile = latestProfileRef.current;
+      const currentCachedProfile = latestCachedProfileRef.current;
 
-      if (!developerProfile) {
+      if (!isOpen || currentUser?.type === 'company') return;
+
+      if (!currentProfile) {
         setProfileLoading(true);
       }
 
@@ -313,7 +326,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
         const hasServerProfile = Boolean(responseProfile && typeof responseProfile === 'object');
         const nextProfile = hasServerProfile
           ? responseProfile
-          : (developerProfile || cachedDeveloperProfile || null);
+          : (currentProfile || currentCachedProfile || null);
         logProfileSync('settings-fetch-profile-response', {
           profile: hasServerProfile ? responseProfile : null,
           warning: data?.warning || '',
@@ -324,15 +337,15 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
         }
         if (cancelled) return;
         setDeveloperProfile(nextProfile);
-        const nextForm = deriveFormFromProfile({ user, profile: nextProfile });
+        const nextForm = deriveFormFromProfile({ user: currentUser, profile: nextProfile });
         setFormData(nextForm);
         logProfileSync('settings-form-after-fetch', nextForm);
       } catch {
         if (cancelled) return;
-        const fallback = cachedDeveloperProfile || null;
+        const fallback = currentCachedProfile || null;
         logProfileSync('settings-fetch-profile-fallback', fallback);
         setDeveloperProfile(fallback);
-        const nextForm = deriveFormFromProfile({ user, profile: fallback });
+        const nextForm = deriveFormFromProfile({ user: currentUser, profile: fallback });
         setFormData(nextForm);
         logProfileSync('settings-form-after-fallback', nextForm);
       } finally {

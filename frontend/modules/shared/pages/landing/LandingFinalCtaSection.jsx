@@ -2,7 +2,7 @@ import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import Lamp from '@sharedComponents/effects/Lamp';
 
-export default function LandingFinalCtaSection({ onOpenAccountChoice, onJoinDeveloper }) {
+export default function LandingFinalCtaSection({ onOpenAccountChoice, onJoinDeveloper: _onJoinDeveloper }) {
   return (
     <Lamp
       actions={(

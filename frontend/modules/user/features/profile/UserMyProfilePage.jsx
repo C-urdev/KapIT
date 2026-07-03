@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Edit3, FileText, GraduationCap, Link2, Loader2, MapPin, Mail, Pencil, Phone, User } from 'lucide-react';
 import { useToast } from '@sharedComponents/ui/ToastProvider';
 import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
-import { Avatar } from '@userPages/home/CenterFeedPostShared';
 import FeedPostCard from '@userPages/home/FeedPostCard';
 import { normalizeSocialsText } from '@sharedUtils/socials';
 import ImageCropperModal from '@sharedComponents/modals/ImageCropperModal';

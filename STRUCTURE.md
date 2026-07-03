@@ -6,7 +6,7 @@ This file is the single source of truth for repository layout and frontend place
 
 ```text
 kapIT/
-|- frontend/                # Next.js frontend
+|- frontend/                # Vite React frontend
 |- backend/
 |  |- api/                  # Express API server
 |  |  |- config/
@@ -33,6 +33,11 @@ Use these domains for frontend code ownership:
 - `frontend/modules/shared` for shared code used by both user and company flows.
 - `frontend/modules/user` for user-only code.
 - `frontend/modules/company` for company-only code.
+
+## Runtime Notes
+
+- The frontend runtime is Vite React, not Next.js.
+- Keep the remaining plain JavaScript holdouts only when they are intentional runtime, config, or script exceptions during the migration.
 
 ## Placement Rules
 

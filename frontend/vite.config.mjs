@@ -9,21 +9,21 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ---------------------------------------------------------------------------
-// Load path aliases from jsconfig.json (if present) to keep existing imports
+// Load path aliases from tsconfig.json, which is the frontend source of truth.
 // ---------------------------------------------------------------------------
-const jsconfigPath = path.resolve(__dirname, "jsconfig.json");
+const tsconfigPath = path.resolve(__dirname, "tsconfig.json");
 let alias = {};
-if (fs.existsSync(jsconfigPath)) {
+if (fs.existsSync(tsconfigPath)) {
   try {
-    const jsconfig = JSON.parse(fs.readFileSync(jsconfigPath, "utf-8"));
-    const paths = jsconfig.compilerOptions?.paths || {};
+    const parsedConfig = JSON.parse(fs.readFileSync(tsconfigPath, "utf-8"));
+    const paths = parsedConfig.compilerOptions?.paths || {};
     for (const [pattern, targets] of Object.entries(paths)) {
       const cleanKey = pattern.replace(/\/\*$/, "");
       const target = targets[0].replace(/\/\*$/, "");
       alias[cleanKey] = path.resolve(__dirname, target);
     }
   } catch (e) {
-    console.warn("Failed to parse jsconfig.json for Vite aliasing:", e);
+    console.warn(`Failed to parse ${path.basename(tsconfigPath)} for Vite aliasing:`, e);
   }
 }
 

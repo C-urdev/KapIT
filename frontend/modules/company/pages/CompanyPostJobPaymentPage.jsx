@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, ChevronDown, CreditCard, ExternalLink, ShieldCheck, X } from 'lucide-react';
+import { CheckCircle2, X } from 'lucide-react';
 import { companyAPI } from '@companyFeatures/companyAPI';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
 import { JOB_POST_PLANS, PAYMENT_PROVIDERS, PLAN_FEATURES } from '@companyFeatures/companyPaymentCatalog';
