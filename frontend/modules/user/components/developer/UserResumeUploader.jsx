@@ -1,4 +1,4 @@
-import React, { useId, useMemo, useEffect } from 'react';
+import React, { useId, useMemo } from 'react';
 import { FileText, Loader2, X } from 'lucide-react';
 import { useR2Upload } from '../../../shared/hooks/useR2Upload';
 
@@ -13,7 +13,7 @@ const RESUME_ACCEPT = '.pdf,.doc,.docx,application/pdf,application/msword,applic
 export default function ResumeUploader({
   value,
   onChange,
-  onUpload,
+  onUpload: _onUpload,
   onUploadComplete,
 }) {
   const fileInputId = useId();

@@ -340,7 +340,7 @@ function PipelineGraph({ data }) {
   );
 }
 
-function Modal({ onClose, children }) {
+function Modal({ onClose: _onClose, children }) {
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="w-full max-w-5xl max-h-[85vh] overflow-y-auto rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] shadow-2xl shadow-black/20 dark:shadow-black/50 transition-colors duration-300">

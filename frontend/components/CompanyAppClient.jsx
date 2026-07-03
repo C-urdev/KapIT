@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter } from '@shared/hooks/useAppRouter';
 import { logoutAndRedirect } from '@sharedServices/authService';
 import { ToastProvider } from '@sharedComponents/ui/ToastProvider';
@@ -206,6 +206,14 @@ export default function CompanyAppClient() {
 }
 
 function CompanyWorkspaceBootstrap({ user, updateUser }) {
+  const latestUserRef = useRef(user);
+  const latestUpdateUserRef = useRef(updateUser);
+
+  useEffect(() => {
+    latestUserRef.current = user;
+    latestUpdateUserRef.current = updateUser;
+  }, [updateUser, user]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -213,19 +221,20 @@ function CompanyWorkspaceBootstrap({ user, updateUser }) {
       try {
         const profileData = await primeCompanyProfileData();
         const company = profileData?.company || {};
+        const currentUser = latestUserRef.current;
         if (cancelled) {
           return;
         }
 
         const updates = {
-          companyName: String(company?.name || user?.companyName || user?.username || '').trim(),
-          profileImage: String(company?.logo || user?.profileImage || '').trim(),
-          bio: String(company?.short_description || company?.description || user?.bio || '').trim(),
-          address: String(company?.location || user?.address || '').trim(),
-          website: String(company?.website || user?.website || '').trim(),
+          companyName: String(company?.name || currentUser?.companyName || currentUser?.username || '').trim(),
+          profileImage: String(company?.logo || currentUser?.profileImage || '').trim(),
+          bio: String(company?.short_description || company?.description || currentUser?.bio || '').trim(),
+          address: String(company?.location || currentUser?.address || '').trim(),
+          website: String(company?.website || currentUser?.website || '').trim(),
         };
 
-        updateUser(updates);
+        latestUpdateUserRef.current(updates);
       } catch {
         // Keep existing user snapshot if preloading profile fails.
       }

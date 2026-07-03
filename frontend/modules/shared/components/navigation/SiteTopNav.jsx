@@ -72,9 +72,9 @@ export default function SiteTopNav({
   onLogoClick,
   logoHref = '/',
   onSignIn,
-  onGetStarted,
+  onGetStarted: _onGetStarted,
   signInHref = '/auth/login',
-  getStartedHref = '/auth/register',
+  getStartedHref: _getStartedHref = '/auth/register',
 }) {
   const { theme, toggleTheme } = useTheme();
   const [openHeaderDropdown, setOpenHeaderDropdown] = useState(null);

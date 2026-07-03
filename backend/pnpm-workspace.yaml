@@ -1,6 +1,7 @@
-packages:
-  - .
-
 allowBuilds:
-  bcrypt: true
-  msgpackr-extract: true
+  bcrypt: set this to true or false
+  esbuild: set this to true or false
+  msgpackr-extract: set this to true or false
+overrides:
+  path-to-regexp: 0.1.13
+  qs: 6.15.2

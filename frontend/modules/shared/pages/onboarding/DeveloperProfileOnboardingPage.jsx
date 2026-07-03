@@ -388,7 +388,7 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
 
       setForm((prev) => ({ ...prev, profileImage: imageUrl }));
       toast.success('Profile photo uploaded successfully.');
-    } catch (error) {
+    } catch {
       // If R2 upload fails (e.g. R2 not configured on localhost), fall back to Base64.
       setForm((prev) => ({ ...prev, profileImage: croppedDataUrl }));
       toast.success('Profile photo cropped successfully.');
@@ -734,7 +734,7 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
   );
 }
 
-function Section({ title, icon: Icon, children, invalid = false }) {
+function Section({ title, icon: Icon, children, invalid: _invalid = false }) {
   return (
     <section>
       <div className="flex items-center gap-2">

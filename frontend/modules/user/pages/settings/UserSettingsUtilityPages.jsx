@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Bell, Briefcase, Check, ChevronRight, FileCheck2 } from 'lucide-react';
+import { ArrowLeft, Bell, Briefcase, Check, ChevronRight } from 'lucide-react';
 import UserSavedJobsPanel from '../home/UserSavedJobsPanel';
 import UserApplicationsPanel from '../home/UserApplicationsPanel';
 

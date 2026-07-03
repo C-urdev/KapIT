@@ -40,7 +40,7 @@ function SectionHeading({ title, isFirst = false }) {
 }
 
 export default function UserSettingsPage({
-  user,
+  user: _user,
   onBack,
   onOpenAccountDetails,
   onOpenCareerPreferences,
@@ -50,7 +50,7 @@ export default function UserSettingsPage({
   onOpenNotifications,
   onOpenFaq,
   onOpenTerms,
-  onOpenPrivacy,
+  onOpenPrivacy: _onOpenPrivacy,
   onOpenCookies,
 }) {
   const { theme, toggleTheme } = useTheme();

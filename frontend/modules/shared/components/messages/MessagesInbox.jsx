@@ -739,25 +739,6 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
   );
 }
 
-function RailIconButton({ children, label, onClick, disabled }) {
-  return (
-    <button
-      type="button"
-      onClick={disabled ? undefined : onClick}
-      disabled={disabled}
-      title={label}
-      aria-label={label}
-      className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-[#5c6d58] transition-colors dark:text-[#b3bcc5] ${
-        disabled
-          ? 'cursor-not-allowed opacity-40'
-          : 'hover:bg-[#eef6ee] dark:hover:bg-[#353c44]'
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
 function ComposerIconButton({ children, label, disabled, onClick }) {
   return (
     <button
