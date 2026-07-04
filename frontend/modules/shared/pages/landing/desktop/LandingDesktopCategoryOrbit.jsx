@@ -3,7 +3,7 @@ import LandingCategoryCard from '../LandingCategoryCard';
 
 export default function LandingDesktopCategoryOrbit({ categories, onCategoryClick }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6 w-full max-w-6xl mx-auto">
+    <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 xl:gap-6">
       {categories.map((category) => (
         <LandingCategoryCard
           key={category.title}
