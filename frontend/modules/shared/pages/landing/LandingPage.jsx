@@ -1,11 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
-import Footer from '@sharedComponents/branding/Footer';
-import SiteTopNav from '@sharedComponents/navigation/SiteTopNav';
+import React, { useEffect, useState } from 'react';
 import DesktopLandingPage from '../../../desktop/pages/landing/LandingPage';
 import MobileLandingPage from '../../../mobile/pages/landing/LandingPage';
 
 export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn }) {
-  const topRef = useRef(null);
   const [isDesktopLayout, setIsDesktopLayout] = useState(false);
 
   useEffect(() => {
@@ -28,10 +25,6 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
   }, []);
 
   const scrollToTop = () => {
-    if (topRef.current) {
-      topRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -44,21 +37,20 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#edf3ef] dark:bg-gradient-to-b dark:from-[#121416] dark:via-[#1a1d20] dark:to-[#22272b]">
-      <div ref={topRef} />
-      <SiteTopNav onLogoClick={scrollToTop} onGetStarted={handleOpenAccountChoice} onSignIn={onSignIn} />
-      {isDesktopLayout ? (
-        <DesktopLandingPage
-          onOpenAccountChoice={handleOpenAccountChoice}
-          onJoinDeveloperClick={handleJoinDeveloperClick}
-        />
-      ) : (
-        <MobileLandingPage
-          onOpenAccountChoice={handleOpenAccountChoice}
-          onJoinDeveloperClick={handleJoinDeveloperClick}
-        />
-      )}
-      <Footer />
-    </div>
+    isDesktopLayout ? (
+      <DesktopLandingPage
+        onLogoClick={scrollToTop}
+        onOpenAccountChoice={handleOpenAccountChoice}
+        onJoinDeveloperClick={handleJoinDeveloperClick}
+        onSignIn={onSignIn}
+      />
+    ) : (
+      <MobileLandingPage
+        onLogoClick={scrollToTop}
+        onOpenAccountChoice={handleOpenAccountChoice}
+        onJoinDeveloperClick={handleJoinDeveloperClick}
+        onSignIn={onSignIn}
+      />
+    )
   );
 }

@@ -1,1 +1,1 @@
-export { default } from '../PricingPage';
+export { default } from '../../../../modules/mobile/pages/pricing/PricingPage';
