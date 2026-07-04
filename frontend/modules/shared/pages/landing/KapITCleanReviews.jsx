@@ -80,7 +80,7 @@ export default function KapITCleanReviews({ children }) {
   return (
     <>
       <div className="hidden lg:flex relative w-full bg-transparent py-12 justify-center items-center overflow-visible">
-        <div className="relative w-[1600px] h-[620px] flex items-center justify-center scale-75 xl:scale-90 2xl:scale-100 origin-right">
+        <div className="relative w-[1600px] h-[620px] flex items-center justify-center scale-100 xl:scale-90 2xl:scale-100 origin-right">
           <div className="hero-review-orbit absolute left-[400px] top-0 w-[1100px] h-[620px] z-20">
             <svg className="absolute inset-0 w-full h-full pointer-events-none z-30" xmlns="http://www.w3.org/2000/svg">
               {REVIEWS.map((review) => (
