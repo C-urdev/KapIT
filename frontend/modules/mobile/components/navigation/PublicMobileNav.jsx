@@ -62,7 +62,7 @@ export default function PublicMobileNav({
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 lg:hidden">
+      <header className="fixed inset-x-0 top-0 z-50 min-[1100px]:hidden">
         <div className="px-4 pt-4">
           <div className={`flex items-center justify-between rounded-[1.75rem] border px-4 py-3 backdrop-blur-xl ${shellClass}`}>
             {logoNode}
@@ -89,7 +89,7 @@ export default function PublicMobileNav({
       </header>
 
       {menuOpen ? (
-        <div className="fixed inset-0 z-40 lg:hidden">
+        <div className="fixed inset-0 z-40 min-[1100px]:hidden">
           <button
             type="button"
             className="absolute inset-0 bg-[#09110d]/45 backdrop-blur-sm"
