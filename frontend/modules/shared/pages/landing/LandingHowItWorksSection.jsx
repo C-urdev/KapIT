@@ -6,13 +6,13 @@ import LandingPhoneMockup from './LandingPhoneMockup';
 export default function LandingHowItWorksSection() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-[#fbfaf6] via-[#fbfaf6] via-[97%] to-[#f8f4ec] dark:bg-none dark:bg-[#181a1b]">
-      <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 pt-6 pb-16 sm:pt-10 sm:pb-20 lg:pt-12 lg:pb-24 relative">
-        <div className="max-w-2xl mb-10">
+      <div className="relative mx-auto w-full max-w-[min(100%,1800px)] px-3 pt-6 pb-12 sm:px-5 sm:pt-10 sm:pb-16 lg:px-6 lg:pt-8 lg:pb-16 xl:px-7 2xl:px-9">
+        <div className="mb-7 max-w-2xl lg:mb-8">
           <h3 className="text-3xl lg:text-4xl font-bold text-[#102a1b] dark:text-white">
             How KapIT works
           </h3>
         </div>
-        <div className="grid grid-cols-1 items-center gap-10 min-[1100px]:grid-cols-12 min-[1100px]:gap-0 xl:gap-8">
+        <div className="grid grid-cols-1 gap-10 min-[1100px]:grid-cols-12 min-[1100px]:items-start min-[1100px]:gap-0 xl:gap-8">
           <div className="relative z-10 flex flex-col gap-8 min-[1100px]:col-span-4 xl:col-span-5">
             <div className="max-w-lg flex flex-col gap-4 min-[1100px]:max-w-[26.5rem] min-[1180px]:max-w-[29.5rem] xl:max-w-lg">
               <div className="group rounded-3xl relative overflow-hidden border border-[#a3b18a]/20 dark:border-white/5 bg-white/50 dark:bg-[#1a1d20]/50 p-5 sm:p-6 md:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-md transition-all duration-500 ease-out hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] hover:border-[#588157]/30 dark:hover:border-white/15 cursor-default">
@@ -65,8 +65,8 @@ export default function LandingHowItWorksSection() {
             </div>
           </div>
 
-          <div className="relative z-10 hidden overflow-visible min-[1100px]:col-span-8 min-[1100px]:flex min-[1100px]:min-h-[540px] min-[1100px]:items-center min-[1100px]:justify-start xl:col-span-7 xl:min-h-[620px] xl:justify-end">
-            <div className="pointer-events-auto relative z-10 min-[1100px]:left-[-345px] min-[1100px]:origin-left min-[1100px]:scale-[0.74] min-[1180px]:left-[-255px] min-[1180px]:scale-[0.76] xl:absolute xl:left-auto xl:top-1/2 xl:origin-right xl:-translate-y-1/2 xl:right-[-300px] xl:scale-[0.62] 2xl:right-[-220px] 2xl:scale-[0.78] [@media(min-width:1440px)]:right-[-260px] [@media(min-width:1440px)]:scale-[0.7]">
+          <div className="relative z-10 hidden overflow-visible min-[1100px]:col-span-8 min-[1100px]:flex min-[1100px]:min-h-[500px] min-[1100px]:items-center min-[1100px]:justify-center xl:col-span-7 xl:min-h-[560px]">
+            <div className="pointer-events-auto relative z-10 mx-auto min-[1100px]:w-full min-[1100px]:max-w-[700px] min-[1100px]:origin-center min-[1100px]:scale-[0.64] min-[1200px]:max-w-[780px] min-[1200px]:scale-[0.7] min-[1320px]:max-w-[860px] min-[1320px]:scale-[0.77] xl:max-w-[920px] xl:scale-[0.82] 2xl:max-w-[1040px] 2xl:scale-[0.92]">
               <KapITCleanReviews>
                 <LandingPhoneMockup />
               </KapITCleanReviews>
