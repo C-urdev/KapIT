@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, Moon, Sun, Building2, UserRound, BriefcaseBusiness, FileText, LifeBuoy, UsersRound, ShieldCheck, CircleHelp } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import Link from '../../../../components/shared/Link';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
@@ -76,8 +77,10 @@ export default function SiteTopNav({
   signInHref = '/auth/login',
   getStartedHref: _getStartedHref = '/auth/register',
 }) {
+  const { pathname } = useLocation();
   const { theme, toggleTheme } = useTheme();
   const [openHeaderDropdown, setOpenHeaderDropdown] = useState(null);
+  const [selectedTopNavLabel, setSelectedTopNavLabel] = useState(() => (pathname === '/pricing' ? 'Pricing' : null));
   const headerDropdownCloseTimerRef = useRef(null);
   const navMenuRef = useRef(null);
 
@@ -91,6 +94,7 @@ export default function SiteTopNav({
       window.clearTimeout(headerDropdownCloseTimerRef.current);
       headerDropdownCloseTimerRef.current = null;
     }
+    setSelectedTopNavLabel(null);
     setOpenHeaderDropdown(label);
   };
 
@@ -106,15 +110,27 @@ export default function SiteTopNav({
 
   const handleHeaderTopLinkClick = (link) => {
     if (link.hasDropdown) {
+      setSelectedTopNavLabel(null);
       setOpenHeaderDropdown((current) => (current === link.label ? null : link.label));
       return;
     }
+    setSelectedTopNavLabel(link.label);
+    setOpenHeaderDropdown(null);
     if (link.href) {
       window.location.href = link.href;
       return;
     }
     handleTopNavClick(link.footerItem);
   };
+
+  useEffect(() => {
+    if (pathname === '/pricing') {
+      setSelectedTopNavLabel('Pricing');
+      return;
+    }
+
+    setSelectedTopNavLabel((current) => (current === 'Pricing' ? null : current));
+  }, [pathname]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -167,6 +183,9 @@ export default function SiteTopNav({
   const inactiveNavLinkClass = isDarkTheme
     ? 'text-[#d0d7dd] hover:text-white'
     : 'text-[#344e41] hover:text-[#102a1b]';
+  const hoverNavLinkClass = isDarkTheme
+    ? 'hover:border hover:border-white/10 hover:bg-[#202428]/90 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_10px_22px_rgba(0,0,0,0.24)] hover:backdrop-blur-xl'
+    : 'hover:border hover:border-[#dce6d4] hover:bg-white/86 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_22px_rgba(58,90,64,0.13)] hover:backdrop-blur-xl';
   const dropdownPanelClass = isDarkTheme
     ? 'border-white/10 bg-[#202428]/95 shadow-[0_22px_60px_rgba(0,0,0,0.44)]'
     : 'border-[#dfe7d6] bg-[#fbfcf8]/94 shadow-[0_22px_58px_rgba(58,90,64,0.13)]';
@@ -245,29 +264,49 @@ export default function SiteTopNav({
             }}
           >
             <div className="relative z-10 flex items-center gap-4">
-              {TOP_NAV_LINKS.map((link) => (
-                <div key={link.label} className="relative" onMouseEnter={() => link.hasDropdown && handleHeaderDropdownOpen(link.label)}>
-                  <button
-                    type="button"
-                    onClick={() => handleHeaderTopLinkClick(link)}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-[0.98rem] font-medium transition-all duration-300 ${
-                      openHeaderDropdown === link.label
-                        ? activeNavLinkClass
-                        : inactiveNavLinkClass
-                    }`}
-                    style={{ fontFamily: 'var(--font-desktop)' }}
-                    aria-expanded={link.hasDropdown ? openHeaderDropdown === link.label : undefined}
+              {TOP_NAV_LINKS.map((link) => {
+                const isActive = openHeaderDropdown === link.label || selectedTopNavLabel === link.label;
+
+                return (
+                  <div
+                    key={link.label}
+                    className="relative"
+                    onMouseEnter={() => {
+                      if (link.hasDropdown) {
+                        handleHeaderDropdownOpen(link.label);
+                        return;
+                      }
+
+                      if (headerDropdownCloseTimerRef.current) {
+                        window.clearTimeout(headerDropdownCloseTimerRef.current);
+                        headerDropdownCloseTimerRef.current = null;
+                      }
+
+                      setOpenHeaderDropdown(null);
+                    }}
                   >
-                    <span>{link.label}</span>
-                    {link.hasDropdown ? (
-                      <ChevronDown
-                        className={`h-4 w-4 opacity-70 transition-transform ${openHeaderDropdown === link.label ? 'rotate-180' : ''}`}
-                        aria-hidden="true"
-                      />
-                    ) : null}
-                  </button>
-                </div>
-              ))}
+                    <button
+                      type="button"
+                      onClick={() => handleHeaderTopLinkClick(link)}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2.5 text-[0.98rem] font-medium transition-all duration-300 ${
+                        isActive
+                          ? activeNavLinkClass
+                          : `border-transparent ${inactiveNavLinkClass} ${hoverNavLinkClass}`
+                      }`}
+                      style={{ fontFamily: 'var(--font-desktop)' }}
+                      aria-expanded={link.hasDropdown ? openHeaderDropdown === link.label : undefined}
+                    >
+                      <span>{link.label}</span>
+                      {link.hasDropdown ? (
+                        <ChevronDown
+                          className={`h-4 w-4 opacity-70 transition-transform ${openHeaderDropdown === link.label ? 'rotate-180' : ''}`}
+                          aria-hidden="true"
+                        />
+                      ) : null}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
 
             {openHeaderDropdown && TOP_NAV_DROPDOWNS[openHeaderDropdown] ? (
