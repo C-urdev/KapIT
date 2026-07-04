@@ -12,9 +12,9 @@ export default function LandingHowItWorksSection() {
             How KapIT works
           </h3>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
-          <div className="lg:col-span-5 flex flex-col gap-8 relative z-10">
-            <div className="max-w-lg flex flex-col gap-4">
+        <div className="grid grid-cols-1 items-center gap-10 min-[1100px]:grid-cols-12 min-[1100px]:gap-0 xl:gap-8">
+          <div className="relative z-10 flex flex-col gap-8 min-[1100px]:col-span-4 xl:col-span-5">
+            <div className="max-w-lg flex flex-col gap-4 min-[1100px]:max-w-[26.5rem] min-[1180px]:max-w-[29.5rem] xl:max-w-lg">
               <div className="group rounded-3xl relative overflow-hidden border border-[#a3b18a]/20 dark:border-white/5 bg-white/50 dark:bg-[#1a1d20]/50 p-5 sm:p-6 md:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-md transition-all duration-500 ease-out hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] hover:border-[#588157]/30 dark:hover:border-white/15 cursor-default">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#588157]/[0.04] to-transparent dark:from-white/[0.03] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="relative flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -31,7 +31,7 @@ export default function LandingHowItWorksSection() {
                 </div>
               </div>
 
-              <div className="group rounded-3xl relative md:left-8 lg:left-12 overflow-hidden border border-[#a3b18a]/20 dark:border-white/5 bg-white/50 dark:bg-[#1a1d20]/50 p-5 sm:p-6 md:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-md transition-all duration-500 ease-out hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] hover:border-[#588157]/30 dark:hover:border-white/15 cursor-default">
+              <div className="group relative overflow-hidden rounded-3xl border border-[#a3b18a]/20 bg-white/50 p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-md transition-all duration-500 ease-out hover:-translate-y-1 hover:border-[#588157]/30 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] cursor-default sm:p-6 md:p-7 min-[1100px]:left-12 dark:border-white/5 dark:bg-[#1a1d20]/50 dark:hover:border-white/15">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#588157]/[0.04] to-transparent dark:from-white/[0.03] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="relative flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div className="flex-1">
@@ -65,8 +65,8 @@ export default function LandingHowItWorksSection() {
             </div>
           </div>
 
-          <div className="lg:col-span-7 relative z-0 hidden lg:flex justify-end overflow-visible">
-            <div className="pointer-events-auto absolute right-[-420px] xl:right-[-340px] 2xl:right-[-200px] top-1/2 -translate-y-1/2 scale-75 xl:scale-90 2xl:scale-100 origin-right">
+          <div className="relative z-10 hidden overflow-visible min-[1100px]:col-span-8 min-[1100px]:flex min-[1100px]:min-h-[540px] min-[1100px]:items-center min-[1100px]:justify-start xl:col-span-7 xl:min-h-[620px] xl:justify-end">
+            <div className="pointer-events-auto relative z-10 min-[1100px]:left-[-345px] min-[1100px]:origin-left min-[1100px]:scale-[0.74] min-[1180px]:left-[-255px] min-[1180px]:scale-[0.76] xl:absolute xl:left-auto xl:top-1/2 xl:origin-right xl:-translate-y-1/2 xl:right-[-300px] xl:scale-[0.62] 2xl:right-[-220px] 2xl:scale-[0.78] [@media(min-width:1440px)]:right-[-260px] [@media(min-width:1440px)]:scale-[0.7]">
               <KapITCleanReviews>
                 <LandingPhoneMockup />
               </KapITCleanReviews>
