@@ -11,10 +11,10 @@ export default function LandingHeroSection({ onGetStarted, onJoinDeveloper }) {
   }, []);
 
   return (
-    <section className="relative min-h-[100dvh] w-full bg-[#FDFBF7] dark:bg-[#181a1b] overflow-hidden flex flex-col lg:flex-row items-center pt-24 lg:pt-0">
+    <section className="relative min-h-[100dvh] w-full overflow-hidden bg-[#FDFBF7] dark:bg-[#181a1b] flex flex-col items-center pt-24 lg:pt-28 min-[1100px]:flex-row min-[1100px]:pt-0">
       
       {/* Editorial Split: Left Side Typography */}
-      <div className="relative z-20 w-full lg:w-1/2 flex flex-col justify-center px-6 sm:px-12 lg:px-20 xl:px-28 py-16 lg:py-0">
+      <div className="relative z-20 flex w-full flex-col justify-center px-6 py-14 sm:px-12 lg:px-16 lg:py-12 min-[1100px]:w-1/2 min-[1100px]:pl-10 min-[1100px]:pr-20 min-[1100px]:py-0 2xl:pl-14 2xl:pr-28">
         <div className="max-w-2xl">
           <style dangerouslySetInnerHTML={{ __html: `
             @keyframes heroSlideUp {
@@ -25,10 +25,10 @@ export default function LandingHeroSection({ onGetStarted, onJoinDeveloper }) {
             }
           `}} />
           
-          <h1 className="text-[2.55rem] sm:text-[4rem] md:text-[4.8rem] lg:text-[5.8rem] font-extrabold tracking-[-0.02em] leading-[1.05] text-[#102a1b] dark:text-white mb-6 w-full lg:w-[150%] max-w-none mix-blend-multiply dark:mix-blend-normal pointer-events-none translate-y-8 opacity-0 animate-[heroSlideUp_1s_cubic-bezier(0.32,0.72,0,1)_forwards]" style={{ fontFamily: 'var(--font-desktop)' }}>
-            <span className="block lg:hidden">Connect<br /><span className="text-[#588157] dark:text-[#a3b18a]">Filipino</span> IT</span>
-            <span className="hidden lg:block lg:whitespace-nowrap">Connect <span className="text-[#588157] dark:text-[#a3b18a]">Filipino</span> IT</span>
-            <span className="block lg:whitespace-nowrap">Talent with <span className="text-[#588157] dark:text-[#a3b18a]">Opportunity</span></span>
+          <h1 className="mb-6 w-full max-w-none translate-y-8 text-[2.55rem] font-extrabold leading-[1.03] tracking-[-0.03em] text-[#102a1b] opacity-0 mix-blend-multiply pointer-events-none animate-[heroSlideUp_1s_cubic-bezier(0.32,0.72,0,1)_forwards] sm:text-[4rem] md:text-[4.7rem] lg:text-[5rem] min-[1100px]:w-[125%] min-[1100px]:text-[5.15rem] 2xl:text-[5.8rem] dark:text-white dark:mix-blend-normal" style={{ fontFamily: 'var(--font-desktop)' }}>
+            <span className="block min-[1100px]:hidden">Connect<br /><span className="text-[#588157] dark:text-[#a3b18a]">Filipino</span> IT</span>
+            <span className="hidden min-[1100px]:block min-[1100px]:whitespace-nowrap">Connect <span className="text-[#588157] dark:text-[#a3b18a]">Filipino</span> IT</span>
+            <span className="block min-[1100px]:whitespace-nowrap">Talent with <span className="text-[#588157] dark:text-[#a3b18a]">Opportunity</span></span>
           </h1>
           
           <p className="text-base sm:text-[1.08rem] lg:text-[1.12rem] text-[#2f4e39] dark:text-[#a1a1aa] leading-relaxed max-w-[19.5rem] sm:max-w-md mb-10 font-medium translate-y-8 opacity-0 animate-[heroSlideUp_1s_cubic-bezier(0.32,0.72,0,1)_0.15s_forwards]">
@@ -62,20 +62,19 @@ export default function LandingHeroSection({ onGetStarted, onJoinDeveloper }) {
 
       {/* Editorial Split: Right Side Visual */}
       {mounted && theme === 'light' ? (
-        <div className="w-full h-[45vh] lg:absolute lg:inset-y-0 lg:right-0 lg:w-[48%] lg:h-full z-10 opacity-0 animate-[heroFadeIn_1.5s_ease-out_forwards]">
-          <div className="hidden lg:block absolute inset-y-0 left-0 w-40 bg-gradient-to-r from-[#FDFBF7] via-[#FDFBF7]/80 to-transparent z-10" />
+        <div className="z-10 h-[42vh] w-full opacity-0 animate-[heroFadeIn_1.5s_ease-out_forwards] lg:h-[52vh] min-[1100px]:absolute min-[1100px]:inset-y-0 min-[1100px]:right-0 min-[1100px]:h-full min-[1100px]:w-1/2">
           <img
             src="/hero_visual_light_taste.png"
             alt="Workspace"
-            className="w-full h-full object-cover object-left"
+            className="h-full w-full object-cover object-center min-[1100px]:object-left"
           />
         </div>
       ) : mounted && theme === 'dark' ? (
-        <div className="w-full lg:w-1/2 min-h-[60vh] lg:min-h-[100dvh] relative flex items-center justify-center py-16 lg:py-6 p-4 lg:p-6 xl:p-10 z-10 opacity-0 animate-[heroFadeIn_1s_ease-out_forwards]">
+        <div className="relative z-10 flex min-h-[60vh] w-full items-center justify-center p-4 py-14 opacity-0 animate-[heroFadeIn_1s_ease-out_forwards] lg:min-h-[68vh] lg:p-6 lg:py-10 min-[1100px]:min-h-[100dvh] min-[1100px]:w-1/2 min-[1100px]:py-6 min-[1100px]:p-10">
           {/* Subtle background ambient gradient */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#181a1b] via-transparent to-[#181a1b] lg:bg-gradient-to-l opacity-75 pointer-events-none" />
           
-          <div className="relative w-full max-w-[420px] lg:max-w-[500px] xl:max-w-[580px] flex flex-col gap-6 sm:gap-8 z-10 mx-auto">
+          <div className="relative z-10 mx-auto flex w-full max-w-[420px] flex-col gap-6 sm:gap-8 lg:max-w-[500px] xl:max-w-[580px]">
             {/* IMG 1: Top Left */}
             <div 
               className="w-[85%] sm:w-[80%] self-start aspect-[16/9] rounded-[1rem] sm:rounded-[1.25rem] bg-[#111] ring-1 ring-white/10 p-1.5 sm:p-2 shadow-xl animate-[heroSlideUp_1.2s_cubic-bezier(0.32,0.72,0,1)_forwards]"
