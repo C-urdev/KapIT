@@ -29,12 +29,15 @@ if (fs.existsSync(tsconfigPath)) {
 
 export default defineConfig(({ mode }) => {
   const proxyTarget = `http://localhost:${process.env.PORT || 5000}`;
+  const devHost = process.env.VITE_HOST || "127.0.0.1";
+  const devPort = Number(process.env.VITE_PORT || 5173);
   console.log(`[Vite Config] Proxying /api to ${proxyTarget}`);
   return {
     plugins: [react()],
     resolve: { alias },
     server: {
-      port: Number(process.env.VITE_PORT || 5173),
+      host: devHost,
+      port: devPort,
       // Proxy API calls to the Express backend (running on PORT)
       proxy: {
         "/api": {
@@ -43,6 +46,10 @@ export default defineConfig(({ mode }) => {
           secure: false,
         },
       },
+    },
+    preview: {
+      host: devHost,
+      port: devPort,
     },
   };
 });
