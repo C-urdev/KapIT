@@ -44,10 +44,7 @@ export default function MobileLandingPage({ onLogoClick, onOpenAccountChoice, on
           
           {/* HERO SECTION - Card Layout */}
           <section className="w-full flex flex-col items-start pt-4 pb-16 relative">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            <div
               className="w-full bg-[#1F332A] dark:bg-[#111111] rounded-[2rem] p-6 pt-8 pb-10 text-white relative shadow-[0_32px_64px_-12px_rgba(0,0,0,0.15)] dark:shadow-none border border-transparent dark:border-[#22C55E]/10"
             >
               <h1 className="font-sans font-bold text-[3.25rem] leading-[0.95] tracking-[-0.04em] text-white max-w-[9ch]">
@@ -72,7 +69,7 @@ export default function MobileLandingPage({ onLogoClick, onOpenAccountChoice, on
                   <ArrowRight className="h-5 w-5 text-[#1F332A] group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
-            </motion.div>
+            </div>
           </section>
 
           {/* HOW IT WORKS SECTION - Z-Axis Cascade */}
@@ -88,10 +85,10 @@ export default function MobileLandingPage({ onLogoClick, onOpenAccountChoice, on
               {/* Card 1: Create Profile */}
               <div className="sticky top-[100px] w-full pt-4">
                 <motion.div 
-                  initial={{ opacity: 0, y: 40 }}
+                  initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                  viewport={{ once: true, margin: "-20px" }}
+                  transition={{ duration: 0.35, ease: "easeOut" }}
                   className="w-full bg-white dark:bg-[#141414] rounded-[2.5rem] p-8 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_24px_-4px_rgba(0,0,0,0.4)] border border-transparent dark:border-white/5"
                 >
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#2D4A3E] dark:text-[#EAB308] mb-3">Step 1</p>
@@ -112,10 +109,10 @@ export default function MobileLandingPage({ onLogoClick, onOpenAccountChoice, on
               {/* Card 2: Showcase Work */}
               <div className="sticky top-[120px] w-full pt-4">
                 <motion.div 
-                  initial={{ opacity: 0, y: 40 }}
+                  initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                  viewport={{ once: true, margin: "-20px" }}
+                  transition={{ duration: 0.35, ease: "easeOut" }}
                   className="w-full bg-[#F6F8F4] dark:bg-[#1A1A1A] rounded-[2.5rem] p-8 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_24px_-4px_rgba(0,0,0,0.6)] border border-transparent dark:border-white/5"
                 >
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#2D4A3E] dark:text-[#EAB308] mb-3">Step 2</p>
@@ -136,10 +133,10 @@ export default function MobileLandingPage({ onLogoClick, onOpenAccountChoice, on
               {/* Card 3: Connect & Collaborate */}
               <div className="sticky top-[140px] w-full pt-4">
                 <motion.div 
-                  initial={{ opacity: 0, y: 40 }}
+                  initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                  viewport={{ once: true, margin: "-20px" }}
+                  transition={{ duration: 0.35, ease: "easeOut" }}
                   className="w-full bg-white dark:bg-[#202020] rounded-[2.5rem] p-8 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_24px_-4px_rgba(0,0,0,0.8)] border border-transparent dark:border-white/5"
                 >
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#2D4A3E] dark:text-[#EAB308] mb-3">Step 3</p>
@@ -173,10 +170,10 @@ export default function MobileLandingPage({ onLogoClick, onOpenAccountChoice, on
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeCategory}
-                    initial={{ opacity: 0, x: 50 }}
+                    initial={{ opacity: 0, x: 40 }}
                     animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -50 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    exit={{ opacity: 0, x: -40 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 40 }}
                     drag="x"
                     dragConstraints={{ left: 0, right: 0 }}
                     dragElastic={0.2}
@@ -232,10 +229,10 @@ export default function MobileLandingPage({ onLogoClick, onOpenAccountChoice, on
 
           {/* WHY US? COMPARISON TABLE */}
           <motion.section
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            viewport={{ once: true, margin: "-20px" }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
             className="w-full mt-16 mb-16"
           >
             <div className="text-center mb-8">
@@ -282,10 +279,10 @@ export default function MobileLandingPage({ onLogoClick, onOpenAccountChoice, on
 
           {/* NEWSLETTER CTA SECTION */}
           <motion.section
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            viewport={{ once: true, margin: "-20px" }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
             className="w-full mt-4"
           >
             <div className="rounded-[2rem] bg-[#2D4A3E] dark:bg-[#111111] px-6 py-12 text-center shadow-[0_32px_64px_-12px_rgba(0,0,0,0.15)] dark:shadow-none border border-transparent dark:border-[#22C55E]/10">
