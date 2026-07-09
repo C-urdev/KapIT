@@ -145,14 +145,14 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div 
-        className="relative w-full max-w-[400px] rounded-2xl bg-[#202123] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-[400px] rounded-2xl bg-white dark:bg-[#202123] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
         aria-labelledby="login-modal-title"
       >
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 text-[#c5c5d2] hover:text-white transition-colors"
+          className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 dark:text-[#c5c5d2] dark:hover:text-white transition-colors"
           aria-label="Close modal"
         >
           <X className="w-5 h-5" />
@@ -160,10 +160,10 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
 
         <div className="px-8 py-10">
           <div className="text-center mb-8">
-            <h2 id="login-modal-title" className="text-2xl font-bold text-white mb-3">
+            <h2 id="login-modal-title" className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
               Log in to KapIT
             </h2>
-            <p className="text-[14px] text-[#c5c5d2] leading-relaxed">
+            <p className="text-[14px] text-gray-600 dark:text-[#c5c5d2] leading-relaxed">
               Find vetted developers and real, skill-matched opportunities.
             </p>
           </div>
@@ -180,7 +180,7 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
               type="button"
               disabled={loading}
               onClick={handleGoogleClick}
-              className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-[#2A2B32] hover:bg-[#343541] rounded-full border border-white/10 transition-colors text-white font-medium text-sm disabled:opacity-50"
+              className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 dark:bg-[#2A2B32] dark:hover:bg-[#343541] rounded-full border border-gray-200 dark:border-white/10 transition-colors text-gray-700 dark:text-white font-medium text-sm disabled:opacity-50"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -195,7 +195,7 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
               type="button"
               disabled={loading}
               onClick={handleGithubClick}
-              className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-[#2A2B32] hover:bg-[#343541] rounded-full border border-white/10 transition-colors text-white font-medium text-sm disabled:opacity-50"
+              className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 dark:bg-[#2A2B32] dark:hover:bg-[#343541] rounded-full border border-gray-200 dark:border-white/10 transition-colors text-gray-700 dark:text-white font-medium text-sm disabled:opacity-50"
             >
               <GitFork className="w-5 h-5" />
               Continue with GitHub
@@ -203,8 +203,8 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
           </div>
 
           <div className="relative flex items-center justify-center mb-6">
-            <div className="absolute inset-x-0 h-px bg-white/10"></div>
-            <span className="relative bg-[#202123] px-2 text-xs text-[#c5c5d2] font-medium uppercase tracking-wider">
+            <div className="absolute inset-x-0 h-px bg-gray-200 dark:bg-white/10"></div>
+            <span className="relative bg-white dark:bg-[#202123] px-2 text-xs text-gray-500 dark:text-[#c5c5d2] font-medium uppercase tracking-wider">
               OR
             </span>
           </div>
@@ -216,7 +216,7 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-[#2A2B32] border border-white/10 rounded-full text-white placeholder-[#8e8ea0] focus:outline-none focus:border-white/30 transition-colors text-sm"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-[#2A2B32] border border-gray-200 dark:border-white/10 rounded-full text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#8e8ea0] focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors text-sm"
                 required
               />
             </div>
@@ -227,13 +227,13 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 pr-10 bg-[#2A2B32] border border-white/10 rounded-full text-white placeholder-[#8e8ea0] focus:outline-none focus:border-white/30 transition-colors text-sm"
+                className="w-full px-4 py-3 pr-10 bg-gray-50 dark:bg-[#2A2B32] border border-gray-200 dark:border-white/10 rounded-full text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#8e8ea0] focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors text-sm"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8e8ea0] hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-[#8e8ea0] dark:hover:text-white"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -248,7 +248,7 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-[#8e8ea0]">
+          <div className="mt-6 text-center text-sm text-gray-600 dark:text-[#8e8ea0]">
             Don't have an account?{' '}
             <button
               type="button"
