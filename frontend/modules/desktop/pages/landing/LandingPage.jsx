@@ -6,6 +6,7 @@ import LandingHowItWorksSection from '../../../shared/pages/landing/LandingHowIt
 import LandingTrustedSection from '../../../shared/pages/landing/LandingTrustedSection';
 import PublicDesktopNav from '../../components/navigation/PublicDesktopNav';
 import LandingCategoriesSection from './categories/LandingCategoriesSection';
+import LandingWhyUsSection from './LandingWhyUsSection';
 
 export default function DesktopLandingPage({ onLogoClick, onOpenAccountChoice, onJoinDeveloperClick, onSignIn }) {
   return (
@@ -19,6 +20,7 @@ export default function DesktopLandingPage({ onLogoClick, onOpenAccountChoice, o
       <LandingTrustedSection />
       <LandingCategoriesSection onOpenAccountChoice={onOpenAccountChoice} />
       <LandingHowItWorksSection />
+      <LandingWhyUsSection />
       <LandingFinalCtaSection onOpenAccountChoice={onOpenAccountChoice} onJoinDeveloper={onJoinDeveloperClick} />
       <Footer />
     </div>

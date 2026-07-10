@@ -18,7 +18,7 @@ export default function LandingCategoriesSection({ onOpenAccountChoice }) {
 
   return (
     <section className="relative bg-gradient-to-b from-[#e2ddcf] via-[#ebe6da] to-[#f7f6f1] dark:bg-gradient-to-b dark:from-[#1a1d20] dark:via-[#202428] dark:to-[#23282e] scroll-mt-24">
-      <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 pt-6 pb-12 sm:px-5 sm:pt-10 sm:pb-16 lg:px-6 lg:pt-8 lg:pb-16 xl:px-7 2xl:px-9">
+      <div className="landing-desktop-shell pt-6 pb-12 sm:pt-10 sm:pb-16 lg:pt-8 lg:pb-16">
         <div className="mb-7 max-w-2xl lg:mb-8">
           <h3 className="text-3xl lg:text-4xl font-bold text-[#102a1b] dark:text-white">
             Explore categories

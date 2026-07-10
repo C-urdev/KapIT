@@ -6,7 +6,7 @@ export default function LandingTrustedSection() {
   return (
     <section className="relative bg-gradient-to-b from-[#edf3ef] via-[#ecefe9] to-[#e5e0d4] dark:bg-gradient-to-b dark:from-[#1a1d20] dark:via-[#1d2226] dark:to-[#20262b] backdrop-blur">
       <ThinSectionLine className="top-0" />
-      <div className="w-full max-w-[min(100%,1800px)] mx-auto px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-5 sm:py-6">
+      <div className="landing-desktop-shell py-5 sm:py-6">
         <div className="flex flex-col md:flex-row items-center justify-center md:justify-between gap-4">
           <p className="text-sm font-semibold tracking-[0.01em] text-[#2f4e39] dark:text-[#d0d7dd]">
             Trusted by companies hiring Filipino tech talent

@@ -100,7 +100,7 @@ export function LampContainer({ children, className = '' }) {
         />
       </div>
 
-      <div className="relative z-50 -mt-24 flex w-full max-w-4xl flex-col items-center px-5 pb-12 text-center sm:-mt-28 sm:pb-14">
+      <div className="landing-desktop-shell relative z-50 -mt-24 flex w-full flex-col items-center pb-12 text-center sm:-mt-28 sm:pb-14">
         {children}
       </div>
     </div>
