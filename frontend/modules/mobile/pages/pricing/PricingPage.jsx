@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ArrowRight, Check, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
 import Link from '../../../../components/shared/Link';
 import Footer from '../../../shared/components/branding/Footer';
 import PublicMobileNav from '../../components/navigation/PublicMobileNav';
@@ -30,52 +30,34 @@ export default function MobilePricingPage() {
       <PublicMobileNav />
 
       <main className="pb-20 pt-28">
-        <section className="px-4">
-          <div className="overflow-hidden rounded-[2rem] bg-[#163828] px-5 pb-6 pt-7 text-white shadow-[0_22px_60px_rgba(16,42,27,0.22)]">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#d9e6dc]">
-              <Sparkles className="h-3.5 w-3.5" />
-              Mobile pricing
-            </div>
-            <h1 className="mt-6 max-w-[9ch] text-[2.9rem] font-semibold leading-[0.94] tracking-[-0.06em]">
-              Separate mobile pricing without copying your business logic.
-            </h1>
-            <p className="mt-4 max-w-[28ch] text-sm leading-7 text-[#d5e0d8]">
-              Keep the stacked mobile experience flexible while the shared pricing data stays consistent underneath.
-            </p>
-          </div>
+        <section className="px-6 pb-2 pt-10 text-center flex flex-col items-center">
+          <h1 className="text-[3.5rem] font-semibold leading-none tracking-tighter text-[#102a1b] dark:text-white">
+            Pricing
+          </h1>
+          <h2 className="mt-5 max-w-sm text-[15px] leading-relaxed text-[#4f6858] dark:text-[#a5b4ac]">
+            KapIT offers the exact same premium IT job seeking and talent sourcing tools as leading platforms but at <strong className="font-semibold text-[#102a1b] dark:text-[#d4ddd7]">50-60% less cost</strong>. Honest, transparent, and built to scale.
+          </h2>
         </section>
 
-        <section className="mt-6 px-4">
-          <div className="rounded-[1.7rem] border border-[#d4ded1] bg-[#fbfcf8] p-4 shadow-[0_16px_40px_rgba(27,53,38,0.08)] dark:border-white/10 dark:bg-[#171d20]">
-            <div className="inline-flex w-full rounded-full border border-[#d1dacf] bg-[#eef3e9] p-1 dark:border-white/10 dark:bg-white/5">
-              {['company', 'user'].map((option) => {
-                const active = audience === option;
-                return (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => setAudience(option)}
-                    className={`flex-1 rounded-full px-4 py-2.5 text-sm font-semibold capitalize transition-colors ${
-                      active
-                        ? 'bg-[#163828] text-white dark:bg-[#95c09b] dark:text-[#102115]'
-                        : 'text-[#345542] dark:text-[#c7d0cb]'
-                    }`}
-                  >
-                    {option}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="mt-4 rounded-[1.4rem] bg-[#eef3e9] px-4 py-4 dark:bg-white/5">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#5c7261] dark:text-[#98a89d]">
-                <ShieldCheck className="h-4 w-4" />
-                Shared essentials
-              </div>
-              <p className="mt-3 text-sm leading-6 text-[#234031] dark:text-[#d4ddd7]">
-                Verified checkout, guided onboarding, and the same plan definitions across desktop and mobile.
-              </p>
-            </div>
+        <section className="mt-4 px-6">
+          <div className="inline-flex w-full rounded-full border border-[#d1dacf] bg-[#eef3e9] p-1.5 dark:border-white/10 dark:bg-white/5">
+            {['company', 'user'].map((option) => {
+              const active = audience === option;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setAudience(option)}
+                  className={`flex-1 rounded-full px-4 py-3 text-[15px] font-semibold capitalize transition-all ${
+                    active
+                      ? 'bg-[#163828] text-white shadow-sm dark:bg-[#95c09b] dark:text-[#102115]'
+                      : 'text-[#345542] dark:text-[#c7d0cb]'
+                  }`}
+                >
+                  {option}
+                </button>
+              );
+            })}
           </div>
         </section>
 
