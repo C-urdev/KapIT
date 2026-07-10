@@ -3,7 +3,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from '../../../../components/shared/Link';
 import { usePathname, useRouter } from '@shared/hooks/useAppRouter';
-import { Bot, Send, Volume2, VolumeX, Paperclip, Ellipsis, SquarePen, X } from 'lucide-react';
+import { Send, Volume2, VolumeX, Paperclip, Ellipsis, SquarePen, X } from 'lucide-react';
+import ChatbotBrandMark from './ChatbotBrandMark';
 import { useTheme } from '@sharedContext/ThemeContext';
 import { CHATBOT_DEFAULT_SUGGESTIONS, CHATBOT_WELCOME_MESSAGE } from '@shared/data/chatbotFaq';
 import { getChatbotErrorReply, requestChatbotMessage } from '@sharedServices/chatbotService';
@@ -57,6 +58,12 @@ export default function FaqChatbot() {
   const isDark = theme === 'dark';
   const pathname = usePathname();
   const router = useRouter();
+  const isLandingPage = pathname === '/';
+  const isPricingPage = pathname === '/pricing';
+  const anchorClassName = `chatbot-fab-anchor${isLandingPage ? ' chatbot-fab-anchor--landing' : ''}${isPricingPage ? ' chatbot-fab-anchor--pricing' : ''}`;
+  const launcherButtonClass = isDark
+    ? 'group relative z-10 inline-flex h-[52px] w-[52px] items-center justify-center rounded-full border border-white/12 bg-[#202428]/92 text-[#e2e6e9] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_18px_38px_rgba(0,0,0,0.34)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-[#2a2f35] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_22px_42px_rgba(0,0,0,0.4)] active:scale-[0.98]'
+    : 'group relative z-10 inline-flex h-[52px] w-[52px] items-center justify-center rounded-full border border-[#9ab896] bg-[#bcd3af]/96 text-[#2f4a36] shadow-[0_16px_34px_rgba(58,90,64,0.18),inset_0_1px_0_rgba(255,255,255,0.52)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-[#c8dcbf] hover:shadow-[0_20px_40px_rgba(58,90,64,0.24),inset_0_1px_0_rgba(255,255,255,0.58)] active:scale-[0.98]';
 
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -250,7 +257,7 @@ export default function FaqChatbot() {
   }, []);
 
   return (
-    <div className="fixed bottom-16 right-4 z-[70] sm:bottom-20 sm:right-5">
+    <div className={anchorClassName}>
       {isOpen && !isMinimized ? (
         <div
           className={`mb-3 flex h-[min(88vh,820px)] max-h-[calc(100vh-36px)] w-[min(94vw,390px)] flex-col overflow-hidden rounded-3xl border shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-all duration-300 ${
@@ -260,12 +267,10 @@ export default function FaqChatbot() {
           <div className={`relative shrink-0 px-4 py-4 ${isDark ? 'border-b border-[#3b434b] bg-[#121416]' : 'border-b border-[#c9d4ba] bg-white text-[#102a1b]'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full border ${isDark ? 'border-[#6f9b74] bg-[#2b3138]' : 'border-[#a3b18a] bg-[#f5f5f2]'}`}>
-                  <Bot size={16} className={isDark ? 'text-[#9fd3a6]' : 'text-[#3a5a40]'} />
-                </span>
+                <ChatbotBrandMark size="md" isDark={isDark} />
                 <div>
-                  <p className="text-sm font-semibold">KapIT Support Agent</p>
-                  <p className={`text-[11px] ${isDark ? 'text-white/60' : 'text-[#102a1b]/60'}`}>Online</p>
+                  <p className="text-sm font-semibold tracking-[-0.02em]">KapIT Assistant</p>
+                  <p className={`text-[11px] font-medium ${isDark ? 'text-[#9fd3a6]' : 'text-[#588157]'}`}>Online now</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -392,9 +397,9 @@ export default function FaqChatbot() {
                     </button>
                   ))}
                 </div>
-                <div className="mt-3 flex items-center justify-center gap-1 text-xs text-[#8b8f8a]">
-                  <span className="inline-flex h-4 w-4 items-center justify-center rounded bg-[#9ca3af] text-[10px] font-semibold text-white">C</span>
-                  <span>Powered by KapIT</span>
+                <div className="mt-3 flex items-center justify-center gap-2 text-xs text-[#8b8f8a]">
+                  <ChatbotBrandMark size="xs" showStatus={false} isDark={isDark} />
+                  <span>Powered by KapIT Assistant</span>
                 </div>
               </div>
             ) : null}
@@ -454,7 +459,7 @@ export default function FaqChatbot() {
               </button>
             </form>
             {isTyping ? (
-              <p className={`px-2 pt-2 text-[11px] ${isDark ? 'text-white/50' : 'text-[#102a1b]/55'}`}>KapIT Support Agent is typing...</p>
+              <p className={`px-2 pt-2 text-[11px] ${isDark ? 'text-white/50' : 'text-[#102a1b]/55'}`}>KapIT Assistant is typing...</p>
             ) : null}
           </div>
         </div>
@@ -470,14 +475,10 @@ export default function FaqChatbot() {
             }
             setIsOpen((prev) => !prev);
           }}
-          className={`group inline-flex h-12 w-12 items-center justify-center rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.15)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:scale-110 active:scale-[0.98] ${
-            isDark
-              ? 'bg-[#6f9b74] text-[#111]'
-              : 'bg-[#3a5a40] text-white'
-          }`}
+          className={launcherButtonClass}
           aria-label={isOpen ? 'Toggle chatbot' : 'Open chatbot'}
         >
-          <Bot size={20} className="transition-transform duration-300 group-hover:rotate-6" />
+          <ChatbotBrandMark size="lg" isDark={isDark} showStatus={false} shell="none" />
         </button>
       ) : null}
     </div>
