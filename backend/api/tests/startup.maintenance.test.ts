@@ -61,6 +61,38 @@ test('password reset cleanup logs a single warning for temporary database connec
   }
 });
 
+test('password reset cleanup skips missing password_reset_tokens table without logging an error', async () => {
+  const originalQuery = pool.query;
+  const originalWarn = logger.warn;
+  const originalError = logger.error;
+  const warnCalls = [];
+  const errorCalls = [];
+
+  pool.query = async () => {
+    const error = new Error('relation "password_reset_tokens" does not exist');
+    error.code = '42P01';
+    throw error;
+  };
+  logger.warn = (...args) => warnCalls.push(args);
+  logger.error = (...args) => errorCalls.push(args);
+
+  try {
+    const stopJob = startPasswordResetCleanupJob();
+    await waitForImmediateWork();
+    stopJob();
+
+    assert.equal(warnCalls.length, 0);
+    assert.equal(
+      errorCalls.some(([, message]) => String(message).includes('Password reset token cleanup failed.')),
+      false
+    );
+  } finally {
+    pool.query = originalQuery;
+    logger.warn = originalWarn;
+    logger.error = originalError;
+  }
+});
+
 test('resume cleanup logs a single warning for temporary database connectivity issues', async () => {
   const originalQuery = pool.query;
   const originalWarn = logger.warn;

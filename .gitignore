@@ -1,5 +1,6 @@
 node_modules
 .pnpm-store/
+docker-compose.yaml
 
 # Env files
 .env

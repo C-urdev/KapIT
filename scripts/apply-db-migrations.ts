@@ -37,6 +37,19 @@ const envKey = envArg ? envArg.slice('--env='.length) : 'STAGING_DATABASE_URL';
 
 const connectionString = String(process.env[envKey] || '').trim();
 
+const resolveMigrationSsl = (databaseUrl: string): false | { rejectUnauthorized: boolean } => {
+  try {
+    const parsed = new URL(databaseUrl);
+    const host = String(parsed.hostname || '').trim().toLowerCase();
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return false;
+    }
+  } catch {
+    // Let client connection report malformed URLs later.
+  }
+  return { rejectUnauthorized: false };
+};
+
 const listMigrations = (): string[] => {
   if (!fs.existsSync(migrationsDir)) {
     throw new Error(`Migrations directory not found: ${migrationsDir}`);
@@ -109,7 +122,7 @@ const run = async (): Promise<void> => {
 
   const client = new Client({
     connectionString,
-    ssl: { rejectUnauthorized: false },
+    ssl: resolveMigrationSsl(connectionString),
   });
 
   await client.connect();
