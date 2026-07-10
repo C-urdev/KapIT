@@ -6,7 +6,7 @@ import LandingPhoneMockup from './LandingPhoneMockup';
 export default function LandingHowItWorksSection() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-[#fbfaf6] via-[#fbfaf6] via-[97%] to-[#f8f4ec] dark:bg-none dark:bg-[#181a1b]">
-      <div className="relative mx-auto w-full max-w-[min(100%,1800px)] px-3 pt-6 pb-12 sm:px-5 sm:pt-10 sm:pb-16 lg:px-6 lg:pt-8 lg:pb-16 xl:px-7 2xl:px-9">
+      <div className="landing-desktop-shell relative pt-6 pb-12 sm:pt-10 sm:pb-16 lg:pt-8 lg:pb-16">
         <div className="mb-7 max-w-2xl lg:mb-8">
           <h3 className="text-3xl lg:text-4xl font-bold text-[#102a1b] dark:text-white">
             How KapIT works

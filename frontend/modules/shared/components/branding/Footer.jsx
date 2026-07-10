@@ -33,7 +33,7 @@ const LINK_GROUPS = [
 export default function Footer() {
   return (
     <footer className="relative w-full overflow-hidden border-t border-black/5 bg-[#FDFBF7] pt-20 pb-28 dark:border-white/8 dark:bg-[#181a1b] lg:pt-24 lg:pb-32">
-      <div className="relative z-10 max-w-[1440px] mx-auto px-6 sm:px-12 lg:px-20 xl:px-28">
+      <div className="landing-desktop-shell relative z-10">
         
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-8">
           

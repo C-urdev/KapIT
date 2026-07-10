@@ -11,11 +11,11 @@ export default function LandingHeroSection({ onGetStarted, onJoinDeveloper }) {
   }, []);
 
   return (
-    <section className="relative min-h-[100dvh] w-full overflow-hidden bg-[#FDFBF7] dark:bg-[#181a1b] flex flex-col items-center pt-24 lg:pt-28 min-[1100px]:flex-row min-[1100px]:pt-0">
+    <section className="relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[#FDFBF7] pt-24 dark:bg-[#181a1b] lg:pt-28 min-[1100px]:pt-0">
       
       {/* Editorial Split: Left Side Typography */}
-      <div className="relative z-20 flex w-full flex-col justify-center px-6 py-14 sm:px-12 lg:px-16 lg:py-12 min-[1100px]:w-[55%] min-[1100px]:pl-10 min-[1100px]:pr-10 min-[1100px]:py-0 xl:w-1/2 xl:pr-20 2xl:pl-14 2xl:pr-28">
-        <div className="max-w-2xl">
+      <div className="landing-desktop-shell relative z-20 flex w-full flex-1 flex-col justify-center py-16 sm:py-20 min-[1100px]:min-h-[100dvh] min-[1100px]:py-24">
+        <div className="flex w-full max-w-[34rem] flex-col gap-8 min-[1100px]:max-w-[52%] min-[1100px]:gap-10 xl:max-w-[54%]">
           <style dangerouslySetInnerHTML={{ __html: `
             @keyframes heroSlideUp {
               to { opacity: 1; transform: translateY(0); }
@@ -24,18 +24,38 @@ export default function LandingHeroSection({ onGetStarted, onJoinDeveloper }) {
               to { opacity: 1; }
             }
           `}} />
-          
-          <h1 className="mb-6 w-full max-w-none translate-y-8 text-[2.55rem] font-extrabold leading-[1.03] tracking-[-0.03em] text-[#102a1b] opacity-0 mix-blend-multiply pointer-events-none animate-[heroSlideUp_1s_cubic-bezier(0.32,0.72,0,1)_forwards] sm:text-[4rem] md:text-[4.7rem] lg:text-[5rem] min-[1100px]:w-[114%] min-[1100px]:text-[5.15rem] 2xl:text-[5.8rem] dark:text-white dark:mix-blend-normal" style={{ fontFamily: 'var(--font-desktop)' }}>
-            <span className="block min-[1100px]:hidden">Connect<br /><span className="text-[#588157] dark:text-[#a3b18a]">Filipino</span> IT</span>
-            <span className="hidden min-[1100px]:block min-[1100px]:whitespace-nowrap">Connect <span className="text-[#588157] dark:text-[#a3b18a]">Filipino</span> IT</span>
-            <span className="block min-[1100px]:whitespace-nowrap">Talent with <span className="text-[#588157] dark:text-[#a3b18a]">Opportunity</span></span>
-          </h1>
-          
-          <p className="text-base sm:text-[1.08rem] lg:text-[1.12rem] text-[#2f4e39] dark:text-[#a1a1aa] leading-relaxed max-w-[19.5rem] sm:max-w-md min-[1100px]:max-w-[29rem] xl:max-w-none mb-10 font-medium translate-y-8 opacity-0 animate-[heroSlideUp_1s_cubic-bezier(0.32,0.72,0,1)_0.15s_forwards]">
-            KapIT is a focused hiring marketplace where companies find vetted developers and IT professionals discover real, skill-matched opportunities.
-          </p>
 
-          <div className="relative z-40 flex flex-wrap items-center gap-4 translate-y-8 opacity-0 animate-[heroSlideUp_1s_cubic-bezier(0.32,0.72,0,1)_0.3s_forwards] min-[1100px]:flex-nowrap min-[1100px]:gap-3 xl:gap-4">
+          <div className="translate-y-8 space-y-6 opacity-0 animate-[heroSlideUp_1s_cubic-bezier(0.32,0.72,0,1)_forwards] min-[1100px]:space-y-7">
+            <h1
+              className="w-full font-bold leading-[1.05] tracking-[-0.04em] text-[#102a1b] dark:text-white [font-size:clamp(2.5rem,5.4vw,3.85rem)] min-[1100px]:[font-size:clamp(3.1rem,4.8vw,4.75rem)]"
+              style={{ fontFamily: 'var(--font-desktop)' }}
+            >
+              <span className="min-[1100px]:hidden">
+                Connect{' '}
+                <span className="text-[#588157] dark:text-[#a3b18a]">Filipino IT</span>
+                <br />
+                Talent with{' '}
+                <span className="text-[#588157] dark:text-[#a3b18a]">Opportunity</span>
+              </span>
+              <span className="hidden min-[1100px]:block">
+                <span className="whitespace-nowrap">
+                  Connect{' '}
+                  <span className="text-[#588157] dark:text-[#a3b18a]">Filipino IT</span>
+                </span>
+                <br />
+                <span className="whitespace-nowrap">
+                  Talent with{' '}
+                  <span className="text-[#588157] dark:text-[#a3b18a]">Opportunity</span>
+                </span>
+              </span>
+            </h1>
+
+            <p className="max-w-[30rem] text-[1.0625rem] font-normal leading-[1.75] text-[#5d6f5d] text-pretty min-[1100px]:max-w-[34rem] min-[1100px]:text-[1.125rem] min-[1100px]:leading-[1.8] xl:max-w-[38rem] dark:text-[#a1a1aa]">
+              The Philippine IT job board with portfolio-ready profiles, ATS-optimized resumes, and skill match percentages, helping companies hire qualified Filipino developers and talent land roles that actually fit.
+            </p>
+          </div>
+
+          <div className="relative z-40 flex translate-y-8 flex-wrap items-center gap-3 opacity-0 animate-[heroSlideUp_1s_cubic-bezier(0.32,0.72,0,1)_0.3s_forwards] min-[1100px]:gap-4 min-[1100px]:pt-1">
             <button
               type="button"
               onClick={onGetStarted}

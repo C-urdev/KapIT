@@ -246,8 +246,8 @@ export default function SiteTopNav({
           opacity: 0;
         }
       `}} />
-      <header className="fixed top-5 left-1/2 z-50 w-[94%] max-w-[1160px] -translate-x-1/2 px-2 py-2 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] lg:top-6">
-        <div className="relative flex items-center gap-5 lg:gap-8">
+      <header className="fixed inset-x-0 top-5 z-50 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] lg:top-6">
+        <div className="landing-desktop-shell relative flex items-center gap-5 py-2 lg:gap-8">
           <div className="shrink-0">
             {logoNode}
           </div>
