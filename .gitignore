@@ -64,3 +64,18 @@ __pycache__/
 .coverage
 .coverage.*
 htmlcov/
+
+# AI Scratchpads and Temporary files
+scratch/
+scratch_*.js
+scratch_*.ts
+scratch_*.jsx
+scratch_*.tsx
+scratch_*.sql
+temp_*.sql
+test_*.sql
+cleanup_*.sql
+*-review*.md
+*-audit*.md
+*readiness-review*.md
+*schema-audit*.md
