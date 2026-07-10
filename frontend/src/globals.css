@@ -188,6 +188,65 @@ html::-webkit-scrollbar-thumb {
   }
 }
 
+@layer components {
+  .landing-desktop-shell {
+    @apply mx-auto w-full max-w-[1440px] px-6 sm:px-12 lg:px-20 xl:px-28;
+  }
+}
+
+.chatbot-fab-anchor {
+  position: fixed;
+  z-index: 70;
+  bottom: 1.5rem;
+  right: max(1.5rem, calc((100vw - min(100vw, 1440px)) / 2 + 1.5rem));
+}
+
+@media (min-width: 640px) {
+  .chatbot-fab-anchor {
+    bottom: 1.75rem;
+    right: max(3rem, calc((100vw - min(100vw, 1440px)) / 2 + 3rem));
+  }
+}
+
+@media (min-width: 1024px) {
+  .chatbot-fab-anchor {
+    bottom: 2rem;
+    right: max(5rem, calc((100vw - min(100vw, 1440px)) / 2 + 5rem));
+  }
+}
+
+@media (min-width: 1280px) {
+  .chatbot-fab-anchor {
+    right: max(7rem, calc((100vw - min(100vw, 1440px)) / 2 + 7rem));
+  }
+}
+
+@media (min-width: 1100px) {
+  .chatbot-fab-anchor--landing {
+    right: clamp(10rem, 13vw, 14rem);
+    bottom: clamp(7rem, 18vh, 9rem);
+  }
+
+  .chatbot-fab-anchor--pricing {
+    right: max(3rem, calc((100vw - min(100vw, 1440px)) / 2 + 3rem));
+    bottom: 2.5rem;
+  }
+}
+
+@media (min-width: 1440px) {
+  .chatbot-fab-anchor--landing {
+    right: clamp(11rem, 14vw, 15rem);
+    bottom: clamp(7.5rem, 18.5vh, 9.5rem);
+  }
+}
+
+@media (min-width: 1680px) {
+  .chatbot-fab-anchor--landing {
+    right: clamp(12rem, 15vw, 16rem);
+    bottom: clamp(8rem, 19vh, 10rem);
+  }
+}
+
 .landing-bg-glow {
   will-change: transform, opacity;
   animation: glowPulse 24s ease-in-out infinite;
