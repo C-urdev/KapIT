@@ -261,6 +261,9 @@ const startPasswordResetCleanupJob = () => {
         }
         return;
       }
+      if (String(error?.code || '') === '42P01') {
+        return;
+      }
       logger.error({ err: error }, 'Password reset token cleanup failed.');
     }
   };
