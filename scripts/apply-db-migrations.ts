@@ -10,6 +10,7 @@ const repoRoot = path.resolve(scriptDirectory, '..');
 const migrationsDir = path.join(repoRoot, 'database', 'migrations');
 
 dotenv.config({ path: path.resolve(repoRoot, '.env') });
+dotenv.config({ path: path.resolve(repoRoot, '.env.local'), override: true });
 
 type PgClient = import('pg').Client;
 const require = createRequire(import.meta.url);
