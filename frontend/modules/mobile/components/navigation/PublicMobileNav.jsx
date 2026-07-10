@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronRight, Menu, Moon, Sparkles, Sun, X } from 'lucide-react';
+import { ChevronRight, ChevronDown, Menu, Moon, Sun, X } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import Link from '../../../../components/shared/Link';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
@@ -33,6 +33,11 @@ export default function PublicMobileNav({
   const { pathname } = useLocation();
   const { theme, toggleTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState({});
+
+  const toggleGroup = (label) => {
+    setExpandedGroups((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
   const isDarkTheme = theme === 'dark';
   const shellClass = isDarkTheme
     ? 'border-white/10 bg-[#111519]/88 shadow-[0_18px_50px_rgba(0,0,0,0.36)]'
@@ -96,85 +101,103 @@ export default function PublicMobileNav({
             onClick={() => setMenuOpen(false)}
             aria-label="Close menu overlay"
           />
-          <div className={`absolute inset-x-0 top-[5.5rem] bottom-0 overflow-y-auto rounded-t-[2rem] border px-4 pb-8 pt-5 ${panelClass}`}>
-            <div className="rounded-[1.5rem] border border-current/10 p-4">
-              <div className="inline-flex items-center gap-2 rounded-full border border-current/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em]">
-                <Sparkles className="h-3.5 w-3.5" />
-                Public pages
-              </div>
-              <p className={`mt-3 text-sm leading-6 ${mutedClass}`}>
-                Switch between pricing, support, and onboarding without leaving the public site flow.
-              </p>
-            </div>
-
-            <div className="mt-6 space-y-6">
-              {PUBLIC_NAV_LINKS.map((link) => (
-                <section key={link.label} className="rounded-[1.5rem] border border-current/10 p-4">
-                  {link.href ? (
-                    <Link
-                      href={link.href}
-                      className={`flex items-center justify-between text-base font-semibold ${pathname === link.href ? 'text-[#7a9e7f] dark:text-[#95c09b]' : ''}`}
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      <span>{link.label}</span>
-                      <ChevronRight className="h-4 w-4" />
-                    </Link>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!link.hasDropdown) {
-                            openPublicFooterItem(link.footerItem);
-                            setMenuOpen(false);
-                          }
-                        }}
-                        className="flex w-full items-center justify-between text-left text-base font-semibold"
+          <div className={`absolute inset-x-0 top-[5.5rem] bottom-0 overflow-y-auto rounded-t-[2rem] border px-6 pb-8 pt-8 ${panelClass}`}>
+            <div className="flex flex-col space-y-6">
+              {PUBLIC_NAV_LINKS.map((link) => {
+                const isExpanded = expandedGroups[link.label];
+                return (
+                  <div key={link.label} className="flex flex-col border-b border-current/5 pb-6 last:border-0 last:pb-0">
+                    {link.href ? (
+                      <Link
+                        href={link.href}
+                        className={`flex items-center justify-between text-xl font-medium tracking-tight ${pathname === link.href ? 'text-[#7a9e7f] dark:text-[#95c09b]' : ''}`}
+                        onClick={() => setMenuOpen(false)}
                       >
                         <span>{link.label}</span>
-                        {link.hasDropdown ? <ChevronRight className="h-4 w-4" /> : null}
-                      </button>
+                      </Link>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (link.hasDropdown) {
+                              toggleGroup(link.label);
+                            } else {
+                              openPublicFooterItem(link.footerItem);
+                              setMenuOpen(false);
+                            }
+                          }}
+                          className="flex w-full items-center justify-between text-left text-xl font-medium tracking-tight transition-colors hover:text-current/80"
+                        >
+                          <span>{link.label}</span>
+                          {link.hasDropdown && (
+                            <span className="text-current/40 transition-transform duration-200">
+                              {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                            </span>
+                          )}
+                        </button>
 
-                      {link.hasDropdown && PUBLIC_NAV_DROPDOWNS[link.label] ? (
-                        <div className="mt-4 space-y-4">
-                          {PUBLIC_NAV_DROPDOWNS[link.label].map((group) => (
-                            <div key={group.heading}>
-                              <p className={`text-xs font-semibold uppercase tracking-[0.22em] ${mutedClass}`}>{group.heading}</p>
-                              <div className="mt-2 space-y-2">
-                                {group.items.map((item) => {
-                                  const ItemIcon = item.icon;
-                                  return (
-                                    <button
-                                      key={item.title}
-                                      type="button"
-                                      onClick={() => {
-                                        openPublicFooterItem(item.footerItem);
-                                        setMenuOpen(false);
-                                      }}
-                                      className={`flex w-full items-start gap-3 rounded-[1.1rem] px-3 py-3 text-left ${isDarkTheme ? 'bg-white/[0.03]' : 'bg-[#f3f7f0]'}`}
-                                    >
-                                      <span className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border ${isDarkTheme ? 'border-white/10 bg-white/6' : 'border-[#d6e1d2] bg-white'}`}>
-                                        <ItemIcon className="h-4 w-4" />
-                                      </span>
-                                      <span>
-                                        <span className="block text-sm font-semibold">{item.title}</span>
-                                        <span className={`mt-1 block text-sm leading-6 ${mutedClass}`}>{item.description}</span>
-                                      </span>
-                                    </button>
-                                  );
-                                })}
+                        {link.hasDropdown && PUBLIC_NAV_DROPDOWNS[link.label] && (
+                          <div
+                            className={`grid transition-all duration-300 ease-in-out ${
+                              isExpanded ? 'grid-rows-[1fr] pt-6 opacity-100' : 'grid-rows-[0fr] opacity-0'
+                            }`}
+                          >
+                            <div className="overflow-hidden">
+                              <div className="space-y-8">
+                                {PUBLIC_NAV_DROPDOWNS[link.label].map((group) => (
+                                  <div key={group.heading}>
+                                    <p className={`mb-3 text-xs font-semibold uppercase tracking-widest ${mutedClass}`}>
+                                      {group.heading}
+                                    </p>
+                                    <div className="space-y-2">
+                                      {group.items.map((item) => {
+                                        const ItemIcon = item.icon;
+                                        return (
+                                          <button
+                                            key={item.title}
+                                            type="button"
+                                            onClick={() => {
+                                              openPublicFooterItem(item.footerItem);
+                                              setMenuOpen(false);
+                                            }}
+                                            className={`group flex w-full items-center gap-4 rounded-2xl p-3 text-left transition-all ${
+                                              isDarkTheme ? 'hover:bg-white/5' : 'hover:bg-black/5'
+                                            }`}
+                                          >
+                                            <span
+                                              className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-colors ${
+                                                isDarkTheme
+                                                  ? 'border-white/10 bg-white/5 group-hover:bg-white/10 group-hover:text-white'
+                                                  : 'border-black/5 bg-black/5 group-hover:bg-black/10 group-hover:text-black'
+                                              }`}
+                                            >
+                                              <ItemIcon className="h-5 w-5" />
+                                            </span>
+                                            <div>
+                                              <span className="block text-[15px] font-semibold tracking-tight">{item.title}</span>
+                                              <span className={`mt-0.5 block text-[13px] leading-snug ${mutedClass}`}>
+                                                {item.description}
+                                              </span>
+                                            </div>
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      ) : null}
-                    </>
-                  )}
-                </section>
-              ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
-            <div className="mt-8 grid gap-3">
+            <div className="mt-10 grid gap-3">
               {renderAction('Sign in', signInHref, onSignIn ? () => {
                 setMenuOpen(false);
                 onSignIn();
