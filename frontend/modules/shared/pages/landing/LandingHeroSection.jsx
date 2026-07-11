@@ -55,26 +55,17 @@ export default function LandingHeroSection({ onGetStarted, onJoinDeveloper }) {
             </p>
           </div>
 
-          <div className="relative z-40 flex translate-y-8 flex-wrap items-center gap-3 opacity-0 animate-[heroSlideUp_1s_cubic-bezier(0.32,0.72,0,1)_0.3s_forwards] min-[1100px]:gap-4 min-[1100px]:pt-1">
+          <div className="relative z-40 flex translate-y-8 items-center opacity-0 animate-[heroSlideUp_1s_cubic-bezier(0.32,0.72,0,1)_0.3s_forwards] min-[1100px]:pt-1">
             <button
               type="button"
               onClick={onGetStarted}
-              className="group inline-flex items-center justify-between gap-4 rounded-full border border-[#d7e4d6] bg-[#f6faf4] py-2 pl-7 pr-2 text-[1.02rem] font-semibold text-[#102a1b] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] hover:border-[#b9cfb6] hover:bg-[#edf6ea] hover:shadow-[0_8px_24px_rgba(58,90,64,0.10)] min-[1100px]:shrink-0 min-[1100px]:pl-6 dark:border-[#36453b] dark:bg-[#172019] dark:text-[#edf6ea] dark:hover:bg-[#203025] xl:pl-7"
+              className="group relative inline-flex items-center justify-center gap-3 rounded-full bg-[#344e41] px-8 py-3.5 text-[1.08rem] font-bold tracking-tight text-white shadow-[0_12px_32px_rgba(52,78,65,0.25),inset_0_1px_0_rgba(255,255,255,0.15)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-1 hover:bg-[#2a3f34] hover:shadow-[0_16px_40px_rgba(52,78,65,0.35),inset_0_1px_0_rgba(255,255,255,0.2)] active:translate-y-0 active:scale-[0.98] dark:bg-[#e2eedf] dark:text-[#102a1b] dark:shadow-[0_12px_32px_rgba(226,238,223,0.15)] dark:hover:bg-white dark:hover:shadow-[0_16px_40px_rgba(226,238,223,0.25)]"
             >
-              <span>Find Developers</span>
-              <div className="w-10 h-10 rounded-full bg-[#e3eddf] flex items-center justify-center transition-transform duration-500 group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:scale-105 dark:bg-[#2f4e39]">
-                <ArrowRight className="w-[18px] h-[18px] text-[#2f4e39] dark:text-[#edf6ea]" />
-              </div>
-            </button>
-            <button
-              type="button"
-              onClick={onJoinDeveloper}
-              className="group inline-flex items-center justify-between gap-4 rounded-full bg-[#3a5a40] py-2 pl-7 pr-2 text-[1.02rem] font-semibold text-[#f8fbf6] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] hover:bg-[#344e41] hover:shadow-[0_10px_26px_rgba(58,90,64,0.22)] min-[1100px]:shrink-0 min-[1100px]:pl-6 dark:bg-[#6f9b74] dark:text-[#08110b] dark:hover:bg-[#82ad86] xl:pl-7"
-            >
-              <span>Join as Developer</span>
-              <div className="w-10 h-10 rounded-full bg-[#2f4e39] flex items-center justify-center transition-transform duration-500 group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:scale-105 dark:bg-[#588157]">
-                <ArrowRight className="w-[18px] h-[18px] text-[#f8fbf6] dark:text-[#08110b]" />
-              </div>
+              <span>Get Started</span>
+              <ArrowRight className="w-4.5 h-4.5 transition-transform duration-300 ease-out group-hover:translate-x-1" />
+              
+              {/* Subtle inner glow for premium feel */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-white/5 to-white/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100 dark:via-black/5 dark:to-black/10" />
             </button>
           </div>
         </div>
