@@ -79,3 +79,4 @@ cleanup_*.sql
 *-audit*.md
 *readiness-review*.md
 *schema-audit*.md
+test_*.ts
