@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const pool = require('../config/database');
 const { logger } = require('../config/logger');
+const { ensureBaseUserSchemaReady, ensureHiringSchemaReady } = require('../config/runtimeSchema');
 const { attachSessionCookies } = require('../services/authSessionService');
 const { serializeUser } = require('../utils/authUserSerializer');
 const { generateUsername } = require('../utils/usernameGenerator');
@@ -444,6 +445,11 @@ const completeSocialSignup = async (req, res) => {
 
   let pgClient;
   try {
+    await ensureBaseUserSchemaReady();
+    if (accountType === 'company') {
+      await ensureHiringSchemaReady();
+    }
+
     pgClient = await pool.connect();
 
     const existingByEmail = await pgClient.query('SELECT id FROM users WHERE LOWER(email) = $1 LIMIT 1', [socialPayload.email]);

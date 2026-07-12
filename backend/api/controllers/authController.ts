@@ -332,7 +332,6 @@ const register = async (req, res) => {
   let client;
   
   try {
-    client = await pool.connect();
     const derived = deriveAccountTypeAndUserType({ accountType, userType });
     if (!derived.userType || !derived.accountType) {
       return res.status(400).json({
@@ -340,6 +339,13 @@ const register = async (req, res) => {
         message: 'Invalid account type',
       });
     }
+
+    await ensureBaseUserSchemaReady();
+    if (derived.accountType === 'company') {
+      await ensureHiringSchemaReady();
+    }
+
+    client = await pool.connect();
 
     // Check if user already exists
     const userExists = await client.query(
