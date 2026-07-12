@@ -63,16 +63,48 @@
 
 @layer components {
   .input-base {
-    @apply px-4 py-2 border border-[#a3b18a] dark:border-[#444d57] rounded-lg bg-white dark:bg-[#1a1d20] text-[#344e41] dark:text-white outline-none focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74];
+    @apply px-4 py-2 border border-[#a3b18a]/60 dark:border-[#444d57] rounded-lg bg-white dark:bg-[#1a1d20] text-[#2f3e2f] dark:text-white outline-none focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74];
   }
 
   .field {
-    @apply w-full rounded-xl border border-[#a3b18a] dark:border-[#444d57] bg-white dark:bg-[#1a1d20] px-4 py-3 text-[#344e41] dark:text-white placeholder:text-[#3a5a40] dark:placeholder:text-[#adb5be] outline-none focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74] transition-colors;
+    @apply w-full rounded-xl border border-[#a3b18a]/60 dark:border-[#444d57] bg-white dark:bg-[#1a1d20] px-4 py-3 text-[#2f3e2f] dark:text-zinc-100 placeholder:text-[#588157]/60 dark:placeholder:text-zinc-500 outline-none focus:border-[#588157] focus:ring-1 focus:ring-[#588157] dark:focus:border-[#6f9b74] dark:focus:ring-[#6f9b74] transition-all shadow-sm;
   }
 
   .profile-onboarding input.field:not([readonly]):not([disabled]):not(:placeholder-shown),
   .profile-onboarding textarea.field:not([readonly]):not([disabled]):not(:placeholder-shown) {
-    @apply bg-[#eef6ee] border-[#7aa27d] text-[#1f3a2a] dark:bg-[#1f2b23] dark:border-[#5f8a68] dark:text-[#e7f4ea];
+    @apply bg-[#eef6ee]/50 border-[#7aa27d]/60 text-[#1f3a2a] dark:bg-[#1f2b23] dark:border-[#5f8a68] dark:text-[#e7f4ea];
+  }
+
+  .animate-in {
+    animation-duration: 500ms;
+    animation-fill-mode: forwards;
+    animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .fade-in {
+    animation-name: fadeIn;
+  }
+
+  .slide-in-from-right-4 {
+    animation-name: fadeIn, slideInRight;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(1rem);
+  }
+  to {
+    transform: translateX(0);
   }
 }
 

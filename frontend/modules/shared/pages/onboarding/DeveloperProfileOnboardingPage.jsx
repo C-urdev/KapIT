@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useMemo, useState } from 'react';
-import { ArrowLeft, Briefcase, LogOut, Moon, Sun, UserCircle2 } from 'lucide-react';
+import { ArrowLeft, Briefcase, LogOut, Moon, Sun, UserCircle2, ChevronDown, Check } from 'lucide-react';
 import { useToast } from '@sharedComponents/ui/ToastProvider';
 import ImageCropperModal from '@sharedComponents/modals/ImageCropperModal';
 import { useTheme } from '@sharedContext/ThemeContext';
@@ -172,6 +172,7 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
   const [rawProfileImage, setRawProfileImage] = useState('');
   const [cropOpen, setCropOpen] = useState(false);
   const [photoLoading, setPhotoLoading] = useState(false);
+  const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     profileImage: user?.profileImage || '',
     fullName: user?.fullName || user?.name || '',
@@ -349,6 +350,26 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
     [missing]
   );
 
+  const stepComplete = useMemo(() => {
+    if (step === 0) {
+      return !missing.fullName && !missing.provinceCode && !missing.city && !missing.phoneNumber;
+    }
+    if (step === 1) {
+      return (
+        !missing.jobTitle &&
+        !missing.yearsOfExperience &&
+        !missing.skills &&
+        !missing.preferredRole &&
+        !missing.educationAttainment &&
+        !missing.vocationalCourse &&
+        !missing.customEducationAttainment &&
+        !missing.school &&
+        !missing.customSchool
+      );
+    }
+    return true;
+  }, [step, missing]);
+
   const onPickPhoto = async (file) => {
     if (!file) return;
     const validation = validateImageFile(file);
@@ -455,18 +476,18 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
   };
 
   return (
-    <div className="profile-onboarding min-h-screen bg-[#f5f5f2] text-[#344e41] dark:bg-[#121416] dark:text-slate-200">
-      <header className="sticky top-0 z-30 border-b border-[#a3b18a] bg-white dark:border-[#353c44] dark:bg-[#121416]">
+    <div className="profile-onboarding min-h-screen bg-[#f5f5f2] text-[#2f3e2f] dark:bg-[#121416] dark:text-zinc-100 selection:bg-[#a3b18a]/30 dark:selection:bg-[#a3b18a]/30">
+      <header className="sticky top-0 z-30 border-b border-[#a3b18a]/40 bg-white/80 backdrop-blur-xl dark:border-[#353c44] dark:bg-[#121416]/80">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
           <button
             type="button"
             onClick={() => navigate('/')}
-            className="inline-flex items-center gap-2 text-[#344e41] hover:text-[#3a5a40] dark:text-slate-200 dark:hover:text-white"
+            className="inline-flex items-center gap-2 text-[#588157] hover:text-[#3a5a40] dark:text-slate-300 dark:hover:text-white transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
             <span className="inline-flex items-center gap-3">
               <KapITLogo className="h-9 w-9 rounded-lg object-contain bg-white" />
-              <span className="text-xl font-bold text-[#3a5a40] dark:text-white">KapIT</span>
+              <span className="text-xl font-bold tracking-tight text-[#2f3e2f] dark:text-white">KapIT</span>
             </span>
           </button>
 
@@ -474,15 +495,15 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
             <button
               type="button"
               onClick={toggleTheme}
-              className="rounded-lg p-2 transition-colors hover:bg-[#f5f5f2] dark:hover:bg-[#353c44]"
+              className="rounded-full p-2.5 transition-colors hover:bg-[#eef6ee] dark:hover:bg-[#353c44]"
               aria-label="Toggle theme"
             >
-              {theme === 'light' ? <Moon className="h-5 w-5 text-[#344e41]" /> : <Sun className="h-5 w-5 text-white" />}
+              {theme === 'light' ? <Moon className="h-5 w-5 text-[#3a5a40]" /> : <Sun className="h-5 w-5 text-white" />}
             </button>
             <button
               type="button"
               onClick={onLogout}
-              className="inline-flex items-center gap-2 rounded-lg border border-red-300 px-3 py-2 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/30"
+              className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 transition-all hover:bg-red-50 dark:border-red-800 dark:bg-[#1a1d20] dark:text-red-400 dark:hover:bg-red-950/50"
             >
               <LogOut className="h-4 w-4" />
               Log out
@@ -492,229 +513,241 @@ export default function DeveloperProfileOnboardingPage({ user, onSubmit, onLogou
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-10">
-        <div className="rounded-2xl border border-[#a3b18a] bg-white p-6 shadow-lg shadow-black/5 dark:border-[#353c44] dark:bg-[#22272b] dark:shadow-black/30 sm:p-8">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#a3b18a] bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#1a1d20]">
-              <Briefcase className="h-6 w-6 text-[#588157] dark:text-[#6f9b74]" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white sm:text-3xl">Complete your developer profile</h1>
-            </div>
-          </div>
+        <div className="rounded-3xl border border-[#a3b18a]/40 bg-white p-6 shadow-sm dark:border-[#353c44] dark:bg-[#22272b] sm:p-10">
+          <StepIndicator step={step} />
 
           <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-8">
-            <Section title="Profile Picture (Optional)" icon={UserCircle2}>
-              <div className="flex items-center gap-4">
-                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-[#a3b18a] bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#1a1d20]">
-                  {form.profileImage ? (
-                    <img src={form.profileImage} alt="Profile" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="text-sm text-[#5f6f52] dark:text-slate-500">No photo</span>
-                  )}
+            <div className="transition-all duration-300">
+              {step === 0 && (
+                <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-8">
+                  <Section title="Profile Picture (Optional)" icon={UserCircle2}>
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-[#a3b18a]/40 bg-[#f5f5f2] shadow-sm dark:border-[#444d57] dark:bg-[#1a1d20]">
+                        {form.profileImage ? (
+                          <img src={form.profileImage} alt="Profile" className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="text-xs font-medium text-[#588157]/70 dark:text-slate-500">No photo</span>
+                        )}
+                      </div>
+                      <div>
+                        <input
+                          id={profileImageInputId}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => onPickPhoto(e.target.files?.[0] || null)}
+                          className="sr-only"
+                        />
+                        <label
+                          htmlFor={profileImageInputId}
+                          className="inline-flex cursor-pointer items-center rounded-full border border-[#a3b18a]/60 bg-[#eef6ee] px-4 py-2 text-sm font-medium text-[#3a5a40] shadow-sm transition-all hover:bg-[#e3eee3] focus:outline-none focus:ring-2 focus:ring-[#588157] focus:ring-offset-2 dark:border-[#444d57] dark:bg-[#353c44] dark:text-[#d0d7dd] dark:hover:bg-[#4a535d] dark:focus:ring-offset-[#22272b]"
+                        >
+                          Upload
+                        </label>
+                        {photoLoading ? (
+                          <p className="mt-2 text-xs font-medium text-[#588157]/70 dark:text-slate-400">Preparing image...</p>
+                        ) : null}
+                        <p className="mt-2 text-xs text-[#588157]/70 dark:text-slate-400">JPG/PNG recommended.</p>
+                      </div>
+                    </div>
+                  </Section>
+
+                  <Section title="Basic Information" invalid={submitAttempted && sectionInvalid.basic}>
+                    <Grid>
+                      <Field label="Full Name (First name, M.I., Last name)" required invalid={submitAttempted && missing.fullName}>
+                        <input value={form.fullName} onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))} className={`field ${submitAttempted && missing.fullName ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="e.g. Juan D. Dela Cruz" title="Enter your full name in this format: First name, middle initial, last name." />
+                      </Field>
+                      <Field label="Province" required invalid={submitAttempted && missing.provinceCode}>
+                        <SearchableSelect
+                          value={form.provinceCode}
+                          onChange={(provinceCode) => setForm((p) => ({ ...p, provinceCode }))}
+                          options={locationData.provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
+                          placeholder="Select a province"
+                          searchPlaceholder="Search provinces"
+                          className={`field ${submitAttempted && missing.provinceCode ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
+                        />
+                      </Field>
+                      <Field label="City / Municipality" required invalid={submitAttempted && missing.city}>
+                        <SearchableSelect
+                          value={form.city}
+                          onChange={(city) => setForm((p) => ({ ...p, city }))}
+                          options={cityOptions.map((city) => ({ value: city.name, label: city.name }))}
+                          placeholder={form.provinceCode ? 'Select a city or municipality' : 'Select a province first'}
+                          searchPlaceholder="Search cities"
+                          disabled={!form.provinceCode}
+                          className={`field ${submitAttempted && missing.city ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
+                        />
+                      </Field>
+                      <Field label="Country">
+                        <input value="Philippines" readOnly className="field bg-[#f5f5f2]/50 text-[#588157] dark:bg-[#1a1d20]/60 dark:text-slate-400 cursor-not-allowed" />
+                      </Field>
+                      <Field label="Phone Number" required invalid={submitAttempted && missing.phoneNumber}>
+                        <input value={form.phoneNumber} onChange={(e) => setForm((p) => ({ ...p, phoneNumber: e.target.value }))} className={`field ${submitAttempted && missing.phoneNumber ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="e.g. +63 9xx xxx xxxx" />
+                      </Field>
+                      <Field label="Email" required>
+                        <input value={form.email} readOnly className="field bg-[#f5f5f2]/50 text-[#588157] dark:bg-[#1a1d20]/60 dark:text-slate-400 cursor-not-allowed" />
+                      </Field>
+                    </Grid>
+                  </Section>
                 </div>
-                <div>
-                  <input
-                    id={profileImageInputId}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => onPickPhoto(e.target.files?.[0] || null)}
-                    className="sr-only"
-                  />
-                  <label
-                    htmlFor={profileImageInputId}
-                    className="inline-flex cursor-pointer items-center rounded-lg border border-[#a3b18a] bg-[#eef6ee] px-4 py-2 text-sm font-semibold text-[#3a5a40] hover:bg-[#e3eee3] dark:border-[#444d57] dark:bg-[#353c44] dark:text-[#d0d7dd] dark:hover:bg-[#4a535d]"
-                  >
-                    Upload
-                  </label>
-                  {photoLoading ? (
-                    <p className="mt-2 text-xs text-[#5f6f52] dark:text-slate-400">Preparing image...</p>
-                  ) : null}
-                  <p className="mt-2 text-xs text-[#5f6f52] dark:text-slate-400">JPG/PNG recommended.</p>
+              )}
+
+              {step === 1 && (
+                <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-8">
+                  <Section title="Professional Details" invalid={submitAttempted && sectionInvalid.professional}>
+                    <Grid>
+                      <Field label="Job Title" required invalid={submitAttempted && missing.jobTitle}>
+                        <SearchableSelect
+                          value={form.jobTitle}
+                          onChange={(jobTitle) => setForm((p) => ({ ...p, jobTitle }))}
+                          options={JOB_TITLES}
+                          placeholder="Select a job title"
+                          searchPlaceholder="Search job titles"
+                          allowCustomValue
+                          className={`field ${submitAttempted && missing.jobTitle ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
+                        />
+                      </Field>
+                      <Field label="Years of Experience" required invalid={submitAttempted && missing.yearsOfExperience}>
+                        <input type="number" min="0" max="60" value={form.yearsOfExperience} onChange={(e) => setForm((p) => ({ ...p, yearsOfExperience: e.target.value }))} className={`field ${submitAttempted && missing.yearsOfExperience ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="e.g. 3" />
+                      </Field>
+                      <Field label="Preferred IT Role" full required invalid={submitAttempted && missing.preferredRole}>
+                        <SearchableSelect
+                          value={form.preferredRole}
+                          onChange={(preferredRole) => setForm((p) => ({ ...p, preferredRole }))}
+                          options={preferredRoleOptions}
+                          placeholder={resolvedJobTitle ? 'Select a preferred IT role' : 'Select a job title first'}
+                          searchPlaceholder="Search roles"
+                          disabled={!resolvedJobTitle}
+                          className={`field ${submitAttempted && missing.preferredRole ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
+                        />
+                      </Field>
+                      <Field label="Skills" full required invalid={submitAttempted && missing.skills}>
+                        <SkillTags
+                          value={form.skills}
+                          onChange={(skills) => setForm((p) => ({ ...p, skills }))}
+                          placeholder="Type a skill and press Enter"
+                          className={`field ${submitAttempted && missing.skills ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
+                        />
+                      </Field>
+                    </Grid>
+                  </Section>
+
+                  <Section title="Education" invalid={submitAttempted && sectionInvalid.education}>
+                    <Grid>
+                      <Field label="Educational Attainment" required invalid={submitAttempted && missing.educationAttainment}>
+                        <SearchableSelect
+                          value={form.educationAttainment}
+                          onChange={(educationAttainment) =>
+                            setForm((p) => ({
+                              ...p,
+                              educationAttainment,
+                              vocationalCourse: educationAttainment === VOCATIONAL_EDUCATION_OPTION ? p.vocationalCourse : '',
+                              customEducationAttainment: educationAttainment === OTHER_EDUCATION_OPTION ? p.customEducationAttainment : '',
+                            }))
+                          }
+                          options={EDUCATIONAL_ATTAINMENT_OPTIONS}
+                          placeholder="Select educational attainment"
+                          searchPlaceholder="Search education"
+                          className={`field ${submitAttempted && missing.educationAttainment ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
+                        />
+                      </Field>
+                      <Field label="School / University" required invalid={submitAttempted && missing.school}>
+                        <SearchableSelect
+                          value={form.school}
+                          onChange={(school) =>
+                            setForm((p) => ({
+                              ...p,
+                              school,
+                              customSchool: school === OTHER_SCHOOL_OPTION ? p.customSchool : '',
+                            }))
+                          }
+                          options={SCHOOL_OPTIONS}
+                          placeholder="Select a school or university"
+                          searchPlaceholder="Search schools"
+                          className={`field ${submitAttempted && missing.school ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
+                        />
+                      </Field>
+                      {requiresVocationalCourse ? (
+                        <Field label="Specify Vocational Course" required invalid={submitAttempted && missing.vocationalCourse}>
+                          <input value={form.vocationalCourse} onChange={(e) => setForm((p) => ({ ...p, vocationalCourse: e.target.value }))} className={`field ${submitAttempted && missing.vocationalCourse ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="e.g. Computer Programming NC IV" />
+                        </Field>
+                      ) : null}
+                      {requiresCustomEducation ? (
+                        <Field label="Specify Educational Attainment" required invalid={submitAttempted && missing.customEducationAttainment}>
+                          <input value={form.customEducationAttainment} onChange={(e) => setForm((p) => ({ ...p, customEducationAttainment: e.target.value }))} className={`field ${submitAttempted && missing.customEducationAttainment ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="Type your educational attainment" />
+                        </Field>
+                      ) : null}
+                      {requiresCustomSchool ? (
+                        <Field label="Specify School / University" required invalid={submitAttempted && missing.customSchool}>
+                          <input value={form.customSchool} onChange={(e) => setForm((p) => ({ ...p, customSchool: e.target.value }))} className={`field ${submitAttempted && missing.customSchool ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="Type your school or university" />
+                        </Field>
+                      ) : null}
+                    </Grid>
+                  </Section>
+
+                  <CollapsibleSection title="Add certifications (Optional)">
+                    <Field full>
+                      <input value={form.certifications} onChange={(e) => setForm((p) => ({ ...p, certifications: e.target.value }))} className="field" placeholder="e.g. AWS CCP, Google UX" />
+                    </Field>
+                  </CollapsibleSection>
                 </div>
-              </div>
-            </Section>
+              )}
 
-            <Section title="Basic Information" invalid={submitAttempted && sectionInvalid.basic}>
-              <Grid>
-                <Field label="Full Name (First name, M.I., Last name)" required invalid={submitAttempted && missing.fullName}>
-                  <input value={form.fullName} onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))} className={`field ${submitAttempted && missing.fullName ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="e.g. Juan D. Dela Cruz" title="Enter your full name in this format: First name, middle initial, last name." />
-                </Field>
-                <Field label="Province" required invalid={submitAttempted && missing.provinceCode}>
-                  <SearchableSelect
-                    value={form.provinceCode}
-                    onChange={(provinceCode) => setForm((p) => ({ ...p, provinceCode }))}
-                    options={locationData.provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
-                    placeholder="Select a province"
-                    searchPlaceholder="Search provinces"
-                    className={`field ${submitAttempted && missing.provinceCode ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
-                  />
-                </Field>
-                <Field label="City / Municipality" required invalid={submitAttempted && missing.city}>
-                  <SearchableSelect
-                    value={form.city}
-                    onChange={(city) => setForm((p) => ({ ...p, city }))}
-                    options={cityOptions.map((city) => ({ value: city.name, label: city.name }))}
-                    placeholder={form.provinceCode ? 'Select a city or municipality' : 'Select a province first'}
-                    searchPlaceholder="Search cities"
-                    disabled={!form.provinceCode}
-                    className={`field ${submitAttempted && missing.city ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
-                  />
-                </Field>
-                <Field label="Country">
-                  <input value="Philippines" readOnly className="field bg-[#f5f5f2] dark:bg-[#1a1d20]/60" />
-                </Field>
-                <Field label="Phone Number" required invalid={submitAttempted && missing.phoneNumber}>
-                  <input value={form.phoneNumber} onChange={(e) => setForm((p) => ({ ...p, phoneNumber: e.target.value }))} className={`field ${submitAttempted && missing.phoneNumber ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="e.g. +63 9xx xxx xxxx" />
-                </Field>
-                <Field label="Email" required>
-                  <input value={form.email} readOnly className="field bg-[#f5f5f2] dark:bg-[#1a1d20]/60" />
-                </Field>
-              </Grid>
-            </Section>
+              {step === 2 && (
+                <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-8">
+                  <Section title="Work Preferences">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                      {WORK_PREFERENCE_OPTIONS.map((option) => {
+                        const selected = form.workPreference === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setForm((p) => ({ ...p, workPreference: option.value }))}
+                            aria-pressed={selected}
+                            className={`rounded-xl border px-5 py-4 text-sm font-medium transition-all active:scale-[0.98] ${
+                              selected
+                                ? 'border-[#588157] bg-[#588157] text-white shadow-md dark:border-[#6f9b74] dark:bg-[#6f9b74] dark:text-white'
+                                : 'border-[#a3b18a]/50 bg-white text-[#344e41] hover:border-[#a3b18a] hover:bg-[#eef6ee]/50 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-800'
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </Section>
 
-            <Section title="Professional Details" invalid={submitAttempted && sectionInvalid.professional}>
-              <Grid>
-                <Field label="Job Title" required invalid={submitAttempted && missing.jobTitle}>
-                  <SearchableSelect
-                    value={form.jobTitle}
-                    onChange={(jobTitle) => setForm((p) => ({ ...p, jobTitle }))}
-                    options={JOB_TITLES}
-                    placeholder="Select a job title"
-                    searchPlaceholder="Search job titles"
-                    allowCustomValue
-                    className={`field ${submitAttempted && missing.jobTitle ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
-                  />
-                </Field>
-                <Field label="Years of Experience" required invalid={submitAttempted && missing.yearsOfExperience}>
-                  <input type="number" min="0" max="60" value={form.yearsOfExperience} onChange={(e) => setForm((p) => ({ ...p, yearsOfExperience: e.target.value }))} className={`field ${submitAttempted && missing.yearsOfExperience ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="e.g. 3" />
-                </Field>
-                <Field label="Preferred IT Role" full required invalid={submitAttempted && missing.preferredRole}>
-                  <SearchableSelect
-                    value={form.preferredRole}
-                    onChange={(preferredRole) => setForm((p) => ({ ...p, preferredRole }))}
-                    options={preferredRoleOptions}
-                    placeholder={resolvedJobTitle ? 'Select a preferred IT role' : 'Select a job title first'}
-                    searchPlaceholder="Search roles"
-                    disabled={!resolvedJobTitle}
-                    className={`field ${submitAttempted && missing.preferredRole ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
-                  />
-                </Field>
-                <Field label="Skills" full required invalid={submitAttempted && missing.skills}>
-                  <SkillTags
-                    value={form.skills}
-                    onChange={(skills) => setForm((p) => ({ ...p, skills }))}
-                    placeholder="Type a skill and press Enter"
-                    className={`field ${submitAttempted && missing.skills ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
-                  />
-                </Field>
-              </Grid>
-            </Section>
+                  <Section title="About Me" invalid={submitAttempted && sectionInvalid.about}>
+                    <textarea value={form.aboutMe} onChange={(e) => setForm((p) => ({ ...p, aboutMe: e.target.value }))} className={`field min-h-28 ${submitAttempted && missing.aboutMe ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="Short description about you, your work style, and what you're looking for." />
+                  </Section>
 
-            <Section title="Education" invalid={submitAttempted && sectionInvalid.education}>
-              <Grid>
-                <Field label="Educational Attainment" required invalid={submitAttempted && missing.educationAttainment}>
-                  <SearchableSelect
-                    value={form.educationAttainment}
-                    onChange={(educationAttainment) =>
-                      setForm((p) => ({
-                        ...p,
-                        educationAttainment,
-                        vocationalCourse: educationAttainment === VOCATIONAL_EDUCATION_OPTION ? p.vocationalCourse : '',
-                        customEducationAttainment: educationAttainment === OTHER_EDUCATION_OPTION ? p.customEducationAttainment : '',
-                      }))
-                    }
-                    options={EDUCATIONAL_ATTAINMENT_OPTIONS}
-                    placeholder="Select educational attainment"
-                    searchPlaceholder="Search education"
-                    className={`field ${submitAttempted && missing.educationAttainment ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
-                  />
-                </Field>
-                <Field label="School / University" required invalid={submitAttempted && missing.school}>
-                  <SearchableSelect
-                    value={form.school}
-                    onChange={(school) =>
-                      setForm((p) => ({
-                        ...p,
-                        school,
-                        customSchool: school === OTHER_SCHOOL_OPTION ? p.customSchool : '',
-                      }))
-                    }
-                    options={SCHOOL_OPTIONS}
-                    placeholder="Select a school or university"
-                    searchPlaceholder="Search schools"
-                    className={`field ${submitAttempted && missing.school ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`}
-                  />
-                </Field>
-                {requiresVocationalCourse ? (
-                  <Field label="Specify Vocational Course" required invalid={submitAttempted && missing.vocationalCourse}>
-                    <input value={form.vocationalCourse} onChange={(e) => setForm((p) => ({ ...p, vocationalCourse: e.target.value }))} className={`field ${submitAttempted && missing.vocationalCourse ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="e.g. Computer Programming NC IV" />
-                  </Field>
-                ) : null}
-                {requiresCustomEducation ? (
-                  <Field label="Specify Educational Attainment" required invalid={submitAttempted && missing.customEducationAttainment}>
-                    <input value={form.customEducationAttainment} onChange={(e) => setForm((p) => ({ ...p, customEducationAttainment: e.target.value }))} className={`field ${submitAttempted && missing.customEducationAttainment ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="Type your educational attainment" />
-                  </Field>
-                ) : null}
-                {requiresCustomSchool ? (
-                  <Field label="Specify School / University" required invalid={submitAttempted && missing.customSchool}>
-                    <input value={form.customSchool} onChange={(e) => setForm((p) => ({ ...p, customSchool: e.target.value }))} className={`field ${submitAttempted && missing.customSchool ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="Type your school or university" />
-                  </Field>
-                ) : null}
-                <Field label="Certifications (Optional)" full>
-                  <input value={form.certifications} onChange={(e) => setForm((p) => ({ ...p, certifications: e.target.value }))} className="field" placeholder="e.g. AWS CCP, Google UX" />
-                </Field>
-              </Grid>
-            </Section>
+                  <CollapsibleSection title="Add socials (Optional)">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <PortfolioCard title="GitHub" value={form.github} onChange={(github) => setForm((p) => ({ ...p, github }))} />
+                      <PortfolioCard title="Portfolio Website" value={form.portfolioWebsite} onChange={(portfolioWebsite) => setForm((p) => ({ ...p, portfolioWebsite }))} />
+                      <PortfolioCard title="LinkedIn" value={form.linkedin} onChange={(linkedin) => setForm((p) => ({ ...p, linkedin }))} />
+                      <PortfolioCard title="Other Links" value={form.otherLinks} onChange={(otherLinks) => setForm((p) => ({ ...p, otherLinks }))} />
+                    </div>
+                  </CollapsibleSection>
 
-            <Section title="Socials">
-              <div className="grid gap-4 md:grid-cols-2">
-                <PortfolioCard title="GitHub" value={form.github} onChange={(github) => setForm((p) => ({ ...p, github }))} />
-                <PortfolioCard title="Portfolio Website" value={form.portfolioWebsite} onChange={(portfolioWebsite) => setForm((p) => ({ ...p, portfolioWebsite }))} />
-                <PortfolioCard title="LinkedIn" value={form.linkedin} onChange={(linkedin) => setForm((p) => ({ ...p, linkedin }))} />
-                <PortfolioCard title="Other Links" value={form.otherLinks} onChange={(otherLinks) => setForm((p) => ({ ...p, otherLinks }))} />
-              </div>
-            </Section>
-
-            <Section title="Work Preferences">
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {WORK_PREFERENCE_OPTIONS.map((option) => {
-                  const selected = form.workPreference === option.value;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => setForm((p) => ({ ...p, workPreference: option.value }))}
-                      aria-pressed={selected}
-                      className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors active:scale-[0.99] ${
-                        selected
-                          ? 'border-[#588157] bg-[#eef6ee] text-[#3a5a40] dark:border-[#6f9b74] dark:bg-[#353c44] dark:text-white'
-                          : 'border-[#a3b18a] bg-[#f5f5f2] text-[#344e41] hover:bg-[#eef6ee] dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-200 dark:hover:bg-slate-900/60'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </Section>
-
-            <Section title="About Me" invalid={submitAttempted && sectionInvalid.about}>
-              <textarea value={form.aboutMe} onChange={(e) => setForm((p) => ({ ...p, aboutMe: e.target.value }))} className={`field min-h-28 ${submitAttempted && missing.aboutMe ? '!border-red-500 !focus:ring-red-500 !focus:border-red-500' : ''}`} placeholder="Short description about you, your work style, and what you're looking for. (Optional)" />
-            </Section>
-
-            <Section title="Resume (Optional)">
-              <ResumeUploader
-                value={form.resume}
-                onChange={(resume) => setForm((p) => ({ ...p, resume }))}
-                onUpload={(file) => developerAPI.uploadResume(file)}
-              />
-            </Section>
-
-            <div className="flex items-center justify-end gap-3">
-              <button type="submit" disabled={saving} className="rounded-xl bg-[#3a5a40] px-5 py-3 font-semibold text-white hover:bg-[#344e41] disabled:cursor-not-allowed disabled:opacity-60 dark:border dark:border-[#6f9b74]/30 dark:bg-[#353c44] dark:text-[#eceff2] dark:hover:bg-[#4a535d]">
-                {saving ? 'Saving...' : 'Save profile'}
-              </button>
+                  <CollapsibleSection title="Upload resume (Optional)">
+                    <ResumeUploader
+                      value={form.resume}
+                      onChange={(resume) => setForm((p) => ({ ...p, resume }))}
+                      onUpload={(file) => developerAPI.uploadResume(file)}
+                    />
+                  </CollapsibleSection>
+                </div>
+              )}
             </div>
+
+            <StepNav
+              step={step}
+              setStep={setStep}
+              canContinue={stepComplete}
+              saving={saving}
+              setSubmitAttempted={setSubmitAttempted}
+            />
           </form>
         </div>
       </main>
@@ -738,8 +771,8 @@ function Section({ title, icon: Icon, children, invalid: _invalid = false }) {
   return (
     <section>
       <div className="flex items-center gap-2">
-        {Icon ? <Icon className="h-5 w-5 text-[#588157] dark:text-[#6f9b74]" /> : null}
-        <h2 className="text-lg font-bold text-[#2f3e2f] dark:text-white">{title}</h2>
+        {Icon ? <Icon className="h-5 w-5 text-[#588157]/80 dark:text-[#6f9b74]" /> : null}
+        <h2 className="text-lg font-semibold tracking-tight text-[#2f3e2f] dark:text-white">{title}</h2>
       </div>
       <div className="mt-4">{children}</div>
     </section>
@@ -753,7 +786,7 @@ function Grid({ children }) {
 function Field({ label, full = false, required = false, invalid = false, children }) {
   return (
     <div className={full ? 'md:col-span-2' : ''}>
-      <label className={`mb-1 block text-sm font-semibold ${invalid ? 'text-red-700 dark:text-red-300' : 'text-[#3a5a40] dark:text-slate-200'}`}>
+      <label className={`mb-1.5 block text-sm font-medium ${invalid ? 'text-red-600 dark:text-red-400' : 'text-[#344e41] dark:text-slate-200'}`}>
         {label}
         {required ? <span className="ml-1 text-red-600 dark:text-red-400">*</span> : null}
       </label>
@@ -762,7 +795,116 @@ function Field({ label, full = false, required = false, invalid = false, childre
   );
 }
 
+function StepIndicator({ step }) {
+  const steps = ['Personal info', 'Experience', 'Almost done'];
 
+  return (
+    <div className="mb-10 w-full px-2 sm:px-10">
+      <div className="flex items-center justify-between relative">
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 h-[2px] w-full bg-[#a3b18a]/30 dark:bg-slate-700/50 z-0 rounded-full"></div>
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 h-[2px] bg-[#588157] dark:bg-[#6f9b74] z-0 transition-all duration-500 ease-in-out rounded-full" style={{ width: `${(step / (steps.length - 1)) * 100}%` }}></div>
+        
+        {steps.map((label, idx) => {
+          const isActive = step === idx;
+          const isPast = step > idx;
+          
+          return (
+            <div key={label} className="relative z-10 flex flex-col items-center">
+              <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center border-[2.5px] transition-all duration-500 ${
+                isActive ? 'border-[#588157] bg-white text-[#588157] dark:border-[#6f9b74] dark:bg-[#22272b] dark:text-[#6f9b74] shadow-sm ring-4 ring-[#eef6ee] dark:ring-[#2a3036]' 
+                : isPast ? 'border-[#588157] bg-[#588157] text-white dark:border-[#6f9b74] dark:bg-[#6f9b74]' 
+                : 'border-[#a3b18a]/50 bg-white text-transparent dark:border-slate-600 dark:bg-[#22272b]'
+              }`}>
+                {isPast ? <Check className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={3} /> : <div className={`h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full transition-all duration-500 ${isActive ? 'bg-[#588157] dark:bg-[#6f9b74] scale-100' : 'bg-transparent scale-0'}`} />}
+              </div>
+              <span className={`absolute top-12 w-32 text-center text-xs font-semibold tracking-wide transition-colors duration-500 hidden sm:block ${
+                isActive ? 'text-[#344e41] dark:text-slate-200'
+                : isPast ? 'text-[#588157] dark:text-[#6f9b74]' 
+                : 'text-[#a3b18a] dark:text-slate-500'
+              }`}>
+                {label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
+function StepNav({ step, setStep, canContinue, saving, setSubmitAttempted }) {
+  const onNext = () => {
+    if (!canContinue) {
+      setSubmitAttempted(true);
+      return;
+    }
+    setSubmitAttempted(false);
+    setStep((s) => s + 1);
+  };
 
+  const onBack = () => {
+    setStep((s) => Math.max(0, s - 1));
+  };
 
+  return (
+    <div className="mt-10 flex items-center justify-between border-t border-[#a3b18a]/20 dark:border-slate-700/50 pt-8 pb-2">
+      {step > 0 ? (
+        <button
+          type="button"
+          onClick={onBack}
+          className="rounded-full px-6 py-2.5 text-sm font-semibold text-[#588157] transition-all hover:bg-[#eef6ee] active:scale-[0.98] dark:text-[#a0c1a4] dark:hover:bg-[#2a3036]"
+        >
+          ← Back
+        </button>
+      ) : (
+        <div /> 
+      )}
+
+      {step < 2 ? (
+        <button
+          type="button"
+          onClick={onNext}
+          className={`rounded-full px-8 py-3.5 text-sm font-semibold text-white shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#588157] focus:ring-offset-2 active:scale-[0.98] dark:focus:ring-offset-[#22272b] ${
+            canContinue
+              ? 'bg-[#588157] hover:bg-[#4a6d49] hover:shadow-md dark:bg-[#588157] dark:hover:bg-[#4a6d49]'
+              : 'bg-[#a3b18a] opacity-60 dark:bg-slate-600'
+          }`}
+        >
+          Continue →
+        </button>
+      ) : (
+        <button
+          type="submit"
+          disabled={saving}
+          className="rounded-full bg-[#3a5a40] px-8 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#2f4833] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#588157] focus:ring-offset-2 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#6f9b74] dark:text-white dark:hover:bg-[#5f8a68] dark:focus:ring-offset-[#22272b]"
+        >
+          {saving ? 'Saving...' : 'Save profile'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function CollapsibleSection({ title, children }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className={`rounded-2xl border bg-white p-1 dark:bg-[#1a1d20]/80 transition-all duration-300 ${isOpen ? 'border-[#a3b18a]/40 shadow-sm dark:border-slate-600/50' : 'border-[#a3b18a]/20 hover:border-[#a3b18a]/40 dark:border-slate-700/50 dark:hover:border-slate-600/50'}`}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex w-full items-center justify-between rounded-xl px-5 py-4 text-left text-[15px] font-semibold text-[#344e41] hover:bg-[#eef6ee]/50 dark:text-slate-200 dark:hover:bg-[#2a3036]/40 transition-colors"
+      >
+        <span>{title}</span>
+        <ChevronDown className={`h-5 w-5 text-[#588157] dark:text-[#6f9b74] transition-transform duration-300 ease-out ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+        <div className="overflow-hidden">
+          <div className="px-5 pb-5 pt-2">
+            {children}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
