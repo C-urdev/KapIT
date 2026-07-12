@@ -42,14 +42,14 @@ export default function UserDesktopNavbar({
   const profileImage = user?.profileImage || '';
   const accountLabel = user?.headline || user?.title || 'User Account';
   const navShellClass = isDarkMode
-    ? 'border border-white/10 bg-[#101418]/88 shadow-[0_16px_34px_rgba(8,14,18,0.24)]'
-    : 'border border-[#d2dbcf] bg-white/82 shadow-[0_16px_34px_rgba(16,42,27,0.08)]';
+    ? 'border border-white/10 bg-[#22272b]/70 shadow-[0_16px_34px_rgba(0,0,0,0.24)]'
+    : 'border border-white/40 bg-white/70 shadow-[0_16px_34px_rgba(0,0,0,0.08)]';
   const activeNavButtonClass = isDarkMode
-    ? 'bg-white/8 text-white shadow-[0_8px_20px_rgba(0,0,0,0.2)]'
-    : 'bg-[#eef6ee] text-[#3a5a40] shadow-[0_10px_24px_rgba(58,90,64,0.08)]';
+    ? 'bg-[#1a1d20]/50 text-[#82ad86] shadow-sm'
+    : 'bg-white/60 text-[#3a5a40] shadow-sm';
   const inactiveNavButtonClass = isDarkMode
-    ? 'text-white/70 hover:bg-white/6 hover:text-white'
-    : 'text-[#344e41] hover:bg-[#f5f5f2] hover:text-[#3a5a40]';
+    ? 'text-[#d0d7dd] hover:bg-[#1a1d20]/30 hover:text-white'
+    : 'text-[#344e41] hover:bg-white/40 hover:text-[#3a5a40]';
   const activeLabelClass = isDarkMode ? 'font-semibold text-white' : 'font-semibold text-[#3a5a40]';
   const inactiveLabelClass = isDarkMode ? 'font-normal text-white/70' : 'font-normal text-[#344e41]';
   const inactiveIconClass = isDarkMode ? 'text-white/70' : 'text-[#4b5563]';
@@ -63,8 +63,8 @@ export default function UserDesktopNavbar({
           className="flex min-w-0 shrink-0 items-center gap-2.5 rounded-xl px-2 py-2 transition-colors hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] sm:gap-3 sm:px-2.5"
           aria-label="Go to home"
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#a3b18a]/60 bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#353c44] sm:h-11 sm:w-11">
-            <KapITLogo className="h-full w-full object-contain scale-[1.05]" alt="KapIT" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/40 bg-white/50 shadow-sm dark:border-white/10 dark:bg-[#1a1d20]/50 sm:h-11 sm:w-11">
+            <KapITLogo className="h-full w-full scale-[1.05] object-contain" alt="KapIT" />
           </div>
           <div className="hidden min-w-0 text-left min-[1180px]:block">
             <div className="truncate text-[1.05rem] font-bold leading-tight text-[#3a5a40] dark:text-white">KapIT</div>
@@ -89,10 +89,10 @@ export default function UserDesktopNavbar({
                   onSearchSubmit?.({ query: searchQuery, scope: 'all' });
                 }
               }}
-              className="w-full rounded-full border border-[#a3b18a] bg-[#f5f5f2] py-3 pl-11 pr-4 text-[0.98rem] text-[#344e41] transition-colors placeholder:text-[#5f6f52] focus:outline-none focus:ring-2 focus:ring-[#588157] dark:border-[#444d57] dark:bg-[#353c44] dark:text-white dark:placeholder:text-[#adb5be] dark:focus:ring-[#6f9b74]"
+              className="w-full rounded-full border border-white/40 bg-white/50 py-3 pl-11 pr-4 text-[0.98rem] text-[#344e41] shadow-sm transition-all placeholder:text-[#5f6f52] focus:bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#588157]/20 dark:border-white/10 dark:bg-[#1a1d20]/50 dark:text-white dark:placeholder:text-[#adb5be] dark:focus:bg-[#1a1d20]/70 dark:focus:ring-[#82ad86]/20"
             />
             {searchOpen && searchQuery.trim() && (
-              <div className="absolute top-full left-0 right-0 z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-[#a3b18a] bg-[#f8fbf6] shadow-xl dark:border-[#353c44] dark:bg-[#22272b]">
+              <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-2xl border border-white/40 bg-white/80 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/80">
                 {searchLoading && (
                   <p className="px-4 py-3 text-sm text-[#344e41] dark:text-[#d0d7dd]">Searching...</p>
                 )}
@@ -176,7 +176,7 @@ export default function UserDesktopNavbar({
           <button
             type="button"
             onClick={() => setProfileMenuOpen((prev) => !prev)}
-            className="hidden min-[1380px]:flex items-center gap-2 overflow-hidden rounded-xl border border-[#a3b18a] bg-[#f5f5f2] py-1.5 pl-1.5 pr-2.5 transition-all hover:ring-2 hover:ring-[#588157]/20 dark:border-[#444d57] dark:bg-[#353c44] dark:hover:ring-[#82ad86]/20 2xl:py-2 2xl:pl-2 2xl:pr-3"
+            className="hidden min-[1380px]:flex items-center gap-2 overflow-hidden rounded-full border border-white/40 bg-white/50 py-1.5 pl-1.5 pr-2.5 shadow-sm transition-all hover:bg-white/70 hover:ring-2 hover:ring-[#588157]/20 dark:border-white/10 dark:bg-[#1a1d20]/50 dark:hover:bg-[#1a1d20]/70 dark:hover:ring-[#82ad86]/20 2xl:py-2 2xl:pl-2 2xl:pr-3"
             aria-label="Open profile menu"
           >
             <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#588157] text-sm font-bold text-white dark:bg-[#6f9b74] 2xl:h-8 2xl:w-8">
@@ -198,7 +198,7 @@ export default function UserDesktopNavbar({
           </button>
 
           {profileMenuOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-[#f8fbf6] dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl shadow-lg overflow-hidden z-50">
+            <div className="absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-2xl border border-white/40 bg-white/80 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/80">
               <button
                 onClick={() => {
                   setProfileMenuOpen(false);

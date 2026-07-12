@@ -72,10 +72,10 @@ function PlanCard({ plan, onUpgrade, buttonLabel, disabled = false }) {
 
   return (
     <div
-      className={`flex min-h-0 flex-col rounded-[20px] border p-4 sm:min-h-[520px] sm:p-5 transition-colors ${
+      className={`flex min-h-0 flex-col rounded-[32px] border p-5 sm:min-h-[520px] sm:p-7 transition-all duration-300 hover:scale-[1.01] ${
         highlighted
-          ? 'border-[#588157] bg-[linear-gradient(180deg,#f4f8f1,#eaf2e5)] shadow-[0_20px_60px_rgba(88,129,87,0.16)] dark:border-[#6f9b74]/45 dark:bg-[linear-gradient(180deg,#17314a,#202428)] dark:shadow-[0_20px_60px_rgba(11,26,45,0.42)]'
-          : 'border-[#d6d3c9] bg-[linear-gradient(180deg,#ffffff,#f5f5f2)] shadow-[0_20px_60px_rgba(0,0,0,0.08)] dark:border-[#444d57] dark:bg-[linear-gradient(180deg,#22272b,#202428)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.25)]'
+          ? 'border-white/20 bg-gradient-to-b from-[#1a2e1d]/90 to-[#0a140c]/90 text-white shadow-[0_20px_60px_rgba(0,0,0,0.4)] backdrop-blur-xl dark:from-[#112415]/90 dark:to-[#050a06]/90'
+          : 'border-white/40 bg-white/70 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70'
       }`}
     >
       <div>
@@ -83,12 +83,12 @@ function PlanCard({ plan, onUpgrade, buttonLabel, disabled = false }) {
           {highlighted ? <Crown className="h-5 w-5 text-[#588157] dark:text-[#f0c766]" /> : null}
           <h3 className="text-[1.85rem] sm:text-[2rem] font-medium tracking-tight text-[#102a1b] dark:text-white">{plan.name}</h3>
         </div>
-        <div className="mt-5 flex items-start gap-2 sm:mt-6 sm:gap-3 text-[#102a1b] dark:text-white">
-          <span className={`pt-1.5 text-lg sm:pt-2 sm:text-xl ${highlighted ? 'text-[#3a5a40]/80 dark:text-[#d7eef9]' : 'text-[#344e41]/70 dark:text-[#d0d7dd]'}`}>PHP</span>
-          <span className="text-[3.3rem] sm:text-5xl font-semibold leading-none">{plan.amount}</span>
-          <span className={`whitespace-pre-line pt-1.5 text-sm leading-4 sm:pt-2 ${highlighted ? 'text-[#3a5a40]/90 dark:text-[#d7eef9]' : 'text-[#344e41]/85 dark:text-[#d0d7dd]'}`}>{plan.unit}</span>
+        <div className={`mt-5 flex items-start gap-2 sm:mt-6 sm:gap-3 ${highlighted ? 'text-white' : 'text-[#102a1b] dark:text-white'}`}>
+          <span className={`pt-1.5 text-lg sm:pt-2 sm:text-xl ${highlighted ? 'text-white/80' : 'text-[#344e41]/70 dark:text-[#d0d7dd]'}`}>PHP</span>
+          <span className="text-[3.3rem] font-semibold leading-none sm:text-5xl">{plan.amount}</span>
+          <span className={`whitespace-pre-line pt-1.5 text-sm leading-4 sm:pt-2 ${highlighted ? 'text-white/80' : 'text-[#344e41]/85 dark:text-[#d0d7dd]'}`}>{plan.unit}</span>
         </div>
-        <p className={`mt-5 text-[0.98rem] sm:mt-6 sm:text-base ${highlighted ? 'text-[#2f4e39] dark:text-[#eceff2]' : 'text-[#344e41] dark:text-[#d0d7dd]'}`}>{plan.subtitle}</p>
+        <p className={`mt-5 text-[0.98rem] sm:mt-6 sm:text-base ${highlighted ? 'text-white/90' : 'text-[#344e41] dark:text-[#d0d7dd]'}`}>{plan.subtitle}</p>
       </div>
 
       <button
@@ -108,8 +108,8 @@ function PlanCard({ plan, onUpgrade, buttonLabel, disabled = false }) {
 
       <div className="mt-6 space-y-3.5 sm:mt-8 sm:space-y-4">
         {plan.features.map(({ icon: Icon, text }) => (
-          <div key={text} className={`flex items-start gap-3 ${highlighted ? 'text-[#2f4e39] dark:text-[#eceff2]' : 'text-[#344e41] dark:text-[#eceff2]'}`}>
-            <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#588157] dark:text-[#f0c766]" />
+          <div key={text} className={`flex items-start gap-3 ${highlighted ? 'text-white' : 'text-[#344e41] dark:text-[#eceff2]'}`}>
+            <Icon className={`mt-0.5 h-4 w-4 flex-shrink-0 ${highlighted ? 'text-[#a1b898]' : 'text-[#588157] dark:text-[#f0c766]'}`} />
             <span className="text-[0.95rem] leading-6 sm:text-[0.97rem]">{text}</span>
           </div>
         ))}
@@ -616,8 +616,8 @@ export default function UserPremiumPopup({ isOpen, onClose, user, onOpenMerchant
   return (
     <div className="fixed inset-0 z-[60] bg-black/55 backdrop-blur-sm">
       <div className="flex min-h-full items-end justify-center p-2 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:items-center sm:p-4">
-        <div className="flex max-h-[min(92vh,960px)] w-full max-w-5xl flex-col overflow-hidden rounded-[24px] border border-[#a3b18a] bg-[#f8fbf6] shadow-[0_30px_80px_rgba(0,0,0,0.18)] dark:border-[#444d57] dark:bg-[#22272b] dark:shadow-[0_30px_80px_rgba(0,0,0,0.45)] sm:rounded-[28px]">
-          <div className="flex items-start justify-between gap-4 border-b border-[#a3b18a] px-4 py-4 sm:px-5 dark:border-[#444d57]">
+        <div className="flex max-h-[min(92vh,960px)] w-full max-w-5xl flex-col overflow-hidden rounded-[32px] border border-white/40 bg-white/80 shadow-[0_30px_80px_rgba(0,0,0,0.18)] backdrop-blur-2xl dark:border-white/10 dark:bg-[#1a1d20]/80 dark:shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+          <div className="flex items-start justify-between gap-4 border-b border-white/40 px-4 py-4 dark:border-white/10 sm:px-5">
             <div>
               <h2 className="flex items-center gap-2 text-xl sm:text-2xl font-semibold text-[#102a1b] dark:text-white">
                 <Crown className="h-5 w-5 sm:h-6 sm:w-6 text-[#588157] dark:text-[#f0c766]" />

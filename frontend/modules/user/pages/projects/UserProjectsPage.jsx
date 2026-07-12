@@ -230,7 +230,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
         ) : null}
       </div>
 
-      <section className="overflow-hidden rounded-[28px] border border-[#7f9775] bg-[#f8fbf6] px-4 py-5 shadow-[0_18px_50px_rgba(58,90,64,0.1)] dark:border-[#444d57] dark:bg-[#22272b] sm:px-6 lg:px-8">
+      <section className="overflow-hidden rounded-[28px] border border-white/40 bg-white/70 px-4 py-5 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 sm:px-6 lg:px-8">
           {projects.length > 0 ? (
             <>
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -253,7 +253,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
                   return (
                     <article
                       key={project.id}
-                      className={`relative min-h-[168px] overflow-hidden rounded-[24px] border border-white/60 p-5 shadow-[0_16px_30px_rgba(58,90,64,0.16)] ${accentClass}`}
+                      className={`relative min-h-[168px] overflow-hidden rounded-[24px] border border-white/60 p-5 shadow-[0_16px_30px_rgba(0,0,0,0.12)] transition-all hover:scale-[1.02] hover:shadow-[0_20px_40px_rgba(0,0,0,0.18)] ${accentClass}`}
                     >
                       <div className="absolute left-4 top-0 h-5 w-20 rounded-b-[16px] bg-[#f8fbf6]/75 dark:bg-white/10" />
                       <p className="pt-3 text-[10px] font-bold uppercase tracking-[0.22em] opacity-80">Shared Work</p>
@@ -436,7 +436,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
 
       {isModalOpen ? (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] p-6 shadow-xl dark:border-[#353c44] dark:bg-[#22272b]">
+          <div className="w-full max-w-2xl rounded-3xl border border-white/40 bg-white/90 p-6 shadow-[0_20px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/90">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold text-[#3a5a40] dark:text-white">

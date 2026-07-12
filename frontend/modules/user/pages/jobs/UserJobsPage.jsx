@@ -397,7 +397,7 @@ export default function UserJobsPage({
         <div className={`flex flex-col ${hasActiveFilters ? 'gap-4' : 'gap-3'}`}>
           <div className="flex flex-row items-center gap-2 sm:gap-3 w-full">
             <div className="min-w-0 flex-1">
-              <div className="flex w-full items-center rounded-xl border border-[#a3b18a] bg-[#fcfdf8] px-1.5 min-[420px]:px-2 py-1.5 min-[420px]:py-2 transition-colors focus-within:ring-2 focus-within:ring-[#588157] dark:border-[#444d57] dark:bg-[#1a1d20] dark:focus-within:ring-[#6f9b74]">
+              <div className="flex w-full items-center rounded-2xl border border-white/40 bg-white/70 px-2 py-2 shadow-[0_10px_20px_rgba(0,0,0,0.05)] backdrop-blur-xl transition-all focus-within:shadow-[0_10px_20px_rgba(0,0,0,0.08)] dark:border-white/10 dark:bg-[#1a1d20]/70">
                 <input
                   value={filters.q}
                   onChange={(event) => handleFilterChange('q', event.target.value)}
@@ -406,7 +406,7 @@ export default function UserJobsPage({
                 />
                 <button
                   type="submit"
-                  className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#3a5a40] px-3 min-[420px]:px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#344e41] hover:shadow-md hover:shadow-[#344e41]/15 dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] dark:hover:shadow-[#6f9b74]/20"
+                  className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#3a5a40] px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#2d4632] hover:shadow-lg dark:bg-[#6f9b74] dark:hover:bg-[#82ad86]"
                 >
                   <Search className="h-4 w-4" />
                   <span className="hidden min-[380px]:inline">Search</span>
@@ -419,7 +419,7 @@ export default function UserJobsPage({
                 ref={filterButtonRef}
                 type="button"
                 onClick={() => setShowAdvancedFilters((current) => !current)}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#a8b892] bg-[#fcfdf8] px-3 min-[420px]:px-4 py-3 min-[420px]:py-3.5 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#1a1d20] dark:text-white dark:hover:bg-[#353c44]"
+                className="inline-flex h-full items-center justify-center gap-2 rounded-2xl border border-white/40 bg-white/70 px-4 py-3 text-[15px] font-semibold text-[#4a6b57] shadow-[0_10px_20px_rgba(0,0,0,0.05)] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_10px_20px_rgba(0,0,0,0.08)] dark:border-white/10 dark:bg-[#1a1d20]/70 dark:text-[#a8b1ba] dark:hover:bg-[#353c44]/70"
                 aria-expanded={showAdvancedFilters}
                 aria-controls="job-search-filters-modal"
               >
@@ -457,8 +457,8 @@ export default function UserJobsPage({
       {loading ? (
         <JobsSkeleton />
       ) : jobs.length === 0 ? (
-        <div className="bg-[#f8fbf6] dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-6">
-          <p className="text-[#344e41] dark:text-[#d0d7dd]">
+        <div className="rounded-3xl border border-white/40 bg-white/70 p-12 text-center shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70">
+          <p className="text-[15px] text-[#4a6b57] dark:text-[#a8b1ba]">
             {hasActiveFilters ? 'No jobs matched your current filters yet. Try broadening the search.' : 'No jobs available right now.'}
           </p>
         </div>
@@ -647,7 +647,7 @@ function SquareJobCard({ job, profileCompleted = false, onViewCompany, onMoreInf
       dragMomentum={false}
       onDragEnd={draggable ? onDragEnd : undefined}
       whileTap={draggable ? { scale: 0.995 } : undefined}
-      className="aspect-square w-full cursor-grab rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] p-5 shadow-sm transition-colors active:cursor-grabbing dark:border-[#353c44] dark:bg-[#22272b] sm:p-7"
+      className="aspect-square w-full cursor-grab rounded-3xl border border-white/40 bg-white/70 p-6 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl transition-shadow active:cursor-grabbing hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)] dark:border-white/10 dark:bg-[#22272b]/70 sm:p-8"
       style={draggable ? { touchAction: 'pan-y' } : undefined}
     >
       <div className="flex h-full flex-col">

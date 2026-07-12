@@ -26,7 +26,7 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const App = () => {
   return (
-    <div className="flex flex-col min-h-screen bg-[#f7f6f1] text-slate-900 dark:bg-[#121416] dark:text-white">
+    <div className="flex flex-col min-h-screen bg-[#dad7cd] text-slate-900 dark:bg-[#121416] dark:text-white">
       <main className="flex-grow">
         <Suspense fallback={<PageSkeleton />}>
           <Routes>

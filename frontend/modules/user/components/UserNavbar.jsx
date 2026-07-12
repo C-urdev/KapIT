@@ -147,10 +147,10 @@ export default function UserNavbar({
       <nav
         className={`${
           activeNav === 'messages' ? 'fixed left-0 right-0 w-full xl:inset-auto xl:w-auto xl:sticky' : 'sticky'
-        } top-0 z-50 overflow-visible bg-[#f8fbf6] transition-transform duration-150 ease-out dark:bg-[#1c1f24] xl:bg-[#f8fbf6] dark:xl:bg-[#121416] ${
+        } top-0 z-50 overflow-visible bg-white/70 backdrop-blur-xl transition-transform duration-150 ease-out dark:bg-[#22272b]/70 ${
           activeNav === 'messages'
             ? 'border-transparent shadow-none dark:border-transparent dark:shadow-none'
-            : 'border-b border-[#a3b18a] shadow-sm dark:border-white/10 dark:shadow-[0_6px_24px_rgba(0,0,0,0.18)] xl:border-[#a3b18a] xl:shadow-sm dark:xl:border-[#353c44]'
+            : 'border-b border-white/40 shadow-sm dark:border-white/10 dark:shadow-[0_6px_24px_rgba(0,0,0,0.18)] xl:border-white/40 xl:shadow-sm dark:xl:border-white/10'
         } ${mobileHidden && !shouldKeepNavbarVisible ? '-translate-y-full xl:translate-y-0' : 'translate-y-0'}`}
       >
         <div className="mx-auto w-full max-w-[min(100%,1800px)] px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9">
@@ -196,11 +196,11 @@ export default function UserNavbar({
       {searchOpen && (
         <div className="xl:hidden fixed inset-0 z-[80]">
           <div
-            className="absolute inset-0 flex flex-col bg-[#dad7cd] dark:bg-[#1f2125]"
+            className="absolute inset-0 flex flex-col bg-[#f5f7f2]/90 backdrop-blur-2xl dark:bg-[#121416]/90"
             style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
             ref={searchRef}
           >
-            <div className="border-b border-[#c7ceba] bg-[#f8fbf6] px-4 pb-4 pt-3 dark:border-white/10 dark:bg-[#1f2125]">
+            <div className="border-b border-white/40 bg-white/40 px-4 pb-4 pt-3 dark:border-white/10 dark:bg-[#1a1d20]/40">
               <div className="flex items-center gap-3">
                 <button
                   type="button"
@@ -225,13 +225,13 @@ export default function UserNavbar({
                         handleSearchSubmit();
                       }
                     }}
-                    className="w-full rounded-full border border-[#b8c4a4] bg-[#f1f3ec] py-3 pl-11 pr-4 text-base text-[#344e41] outline-none transition-colors placeholder:text-[#6b7280] focus:ring-2 focus:ring-[#588157] dark:border-white/10 dark:bg-[#3a3d42] dark:text-white dark:placeholder:text-white/40 dark:focus:ring-[#4c8dff]"
+                    className="w-full rounded-full border border-white/40 bg-white/50 py-3 pl-11 pr-4 text-base text-[#344e41] outline-none transition-colors placeholder:text-[#6b7280] shadow-sm focus:ring-2 focus:ring-[#588157]/20 focus:bg-white/70 dark:border-white/10 dark:bg-[#1a1d20]/50 dark:text-white dark:placeholder:text-white/40 dark:focus:ring-[#82ad86]/20 dark:focus:bg-[#1a1d20]/70"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto bg-[#dad7cd] px-4 py-4 dark:bg-[#24272b]">
+            <div className="min-h-0 flex-1 overflow-y-auto bg-transparent px-4 py-4">
               {!searchQuery.trim() && (
                 <div className="mb-6 flex items-center justify-between">
                   <h2 className="text-[1.7rem] font-extrabold text-[#3a5a40] dark:text-white">Recent</h2>

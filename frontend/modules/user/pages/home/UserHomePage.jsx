@@ -204,7 +204,7 @@ export default function UserHomePage({ user, userType, onOpenHelp: _onOpenHelp, 
   const isEdgeToEdgeView = isMessagesActive || isSettingsActive;
   const pageBackgroundClass = isMessagesActive
     ? 'bg-[#e7e2d7] dark:bg-[#121212]'
-    : 'bg-[#eef2ec] dark:bg-[#0e1114]';
+    : 'bg-[#e7e2d7] dark:bg-[#121212]';
   const hideMobileChromeForMessages = isTabletViewport && isMessagesActive && mobileThreadOpen;
   const effectiveMobileChromeHidden = mobileChromeHidden || hideMobileChromeForMessages;
   const canAccessPreAssessment = Boolean(user?.isPremium);
@@ -1254,7 +1254,7 @@ export default function UserHomePage({ user, userType, onOpenHelp: _onOpenHelp, 
                 setCanReturnToSettings(false);
                 updateActiveNav('settings-account');
               }}
-              className="inline-flex items-center gap-2 rounded-lg border border-[#a3b18a] bg-[#f8fbf6] px-3.5 py-2 text-sm font-semibold text-[#3a5a40] shadow-sm transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#22272b] dark:text-white dark:hover:bg-[#202428]"
+              className="inline-flex items-center gap-2 rounded-lg border border-[#a3b18a]/30 bg-white/70 px-3.5 py-2 text-sm font-semibold text-[#3a5a40] shadow-sm backdrop-blur-md transition-all hover:bg-white dark:border-[#444d57]/30 dark:bg-[#22272b]/70 dark:text-white dark:hover:bg-[#22272b]"
             >
               <ArrowLeft className="h-4 w-4" />
               Back
@@ -1262,7 +1262,7 @@ export default function UserHomePage({ user, userType, onOpenHelp: _onOpenHelp, 
           </div>
         )}
         {activeNav === 'home' && (
-          <div className="mx-auto grid w-full max-w-[min(100%,1680px)] grid-cols-1 gap-6 xl:grid-cols-12 2xl:gap-8">
+          <div className="mx-auto grid w-full max-w-[min(100%,1680px)] grid-cols-1 gap-6 xl:grid-cols-12 xl:gap-8 2xl:gap-10">
             <aside className="hidden xl:block xl:col-span-3">
               <UserLeftSidebar
                 user={user}

@@ -11,14 +11,14 @@ export default function UserRightSidebar({ userType }) {
   const isDarkMode = theme === 'dark';
 
   const sectionCardClass = isDarkMode
-    ? 'rounded-2xl border border-white/10 bg-[#202428] shadow-[0_14px_32px_rgba(0,0,0,0.18)]'
-    : 'rounded-2xl border border-[#d7e2d4] bg-white shadow-[0_14px_32px_rgba(16,42,27,0.06)]';
-  const sectionHeaderClass = isDarkMode ? 'font-semibold text-white' : 'font-semibold text-[#24412d]';
-  const sectionBodyClass = isDarkMode ? 'text-[#d0d7dd]' : 'text-[#355240]';
-  const recommendationHoverClass = isDarkMode ? 'hover:bg-white/5 hover:border-white/10' : 'hover:bg-[#f4f8f3] hover:border-[#cddac7]';
+    ? 'rounded-3xl border border-white/10 bg-[#22272b]/70 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.15)] transition-shadow hover:shadow-[0_20px_40px_rgba(0,0,0,0.25)]'
+    : 'rounded-3xl border border-white/40 bg-white/70 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.08)] transition-shadow hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)]';
+  const sectionHeaderClass = isDarkMode ? 'font-bold text-white tracking-tight' : 'font-bold text-[#2d4632] tracking-tight';
+  const sectionBodyClass = isDarkMode ? 'text-[#a8b1ba]' : 'text-[#4a6b57]';
+  const recommendationHoverClass = isDarkMode ? 'hover:bg-white/5 hover:border-white/10' : 'hover:bg-white/50 hover:border-white/60';
   const skillChipClass = isDarkMode
-    ? 'border border-white/6 bg-white/6 text-white/88'
-    : 'border border-[#d7e2d4] bg-[#f5f8f4] text-[#355240]';
+    ? 'border border-white/10 bg-white/5 text-white/90'
+    : 'border border-[#3a5a40]/10 bg-[#3a5a40]/5 text-[#3a5a40]';
 
   useEffect(() => {
     if (userType !== 'employee') {
@@ -130,16 +130,16 @@ export default function UserRightSidebar({ userType }) {
         </div>
       </div>
 
-      <div className={`rounded-2xl border p-4 shadow-[0_8px_24px_rgba(105,145,214,0.12)] ${isDarkMode ? 'border-[#30538a] bg-[#202428]' : 'border-[#c8d7f2] bg-[#f8fbff]'}`}>
-        <div className="flex items-start gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#e8f1ff] text-[#4a77c4] dark:bg-[#183154] dark:text-[#8ebbf7]">
-            <TrendingUp className="h-4 w-4" />
+      <div className={`rounded-3xl border p-5 shadow-[0_20px_40px_rgba(0,0,0,0.06)] transition-all hover:-translate-y-1 ${isDarkMode ? 'border-white/10 bg-[#22272b]/70 backdrop-blur-xl' : 'border-[#4a77c4]/20 bg-gradient-to-br from-[#f8fbff] to-[#e8f1ff]/50'}`}>
+        <div className="flex items-start gap-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#4a77c4]/20 to-[#4a77c4]/5 text-[#4a77c4] dark:bg-gradient-to-br dark:from-[#8ebbf7]/20 dark:to-[#8ebbf7]/5 dark:text-[#8ebbf7] border border-[#4a77c4]/10">
+            <TrendingUp className="h-5 w-5" />
           </div>
-          <div className="min-w-0">
-            <h4 className={`${sectionHeaderClass} mb-1`}>
+          <div className="min-w-0 flex-1 pt-0.5">
+            <h4 className={`${sectionHeaderClass} mb-1.5`}>
               {userType === 'employee' ? 'Career Tip' : 'Hiring Tip'}
             </h4>
-            <p className={`text-sm ${sectionBodyClass}`}>
+            <p className={`text-[13px] leading-relaxed ${sectionBodyClass}`}>
               {userType === 'employee'
                 ? 'Showcase live projects in your portfolio. Recruiters spend 6x more time on profiles with working demos.'
                 : 'Candidates with GitHub profiles get 3x more responses. Look for active contributors to find passionate developers.'}

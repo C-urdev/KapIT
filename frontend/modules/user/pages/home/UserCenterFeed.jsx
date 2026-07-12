@@ -76,12 +76,12 @@ export default function CenterFeed(props) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-[#a3b18a] bg-[#f8fbf6] p-4 dark:border-[#353c44] dark:bg-[#22272b]">
-        <div className="flex gap-3">
-          <Avatar profileImage={profileImage} fallback={userInitial} sizeClass="h-10 w-10" />
-          <button onClick={onOpenComposer} className="flex-1 rounded-full border border-[#a3b18a] bg-[#f5f5f2] px-4 py-3 text-left text-[#344e41] transition-colors hover:bg-[#dad7cd] dark:border-[#444d57] dark:bg-[#353c44] dark:text-[#d0d7dd] dark:hover:bg-[#1a1d20]">Share an update or project...</button>
+      <div className="rounded-3xl border border-white/40 bg-white/70 p-5 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 transition-shadow hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)]">
+        <div className="flex gap-4">
+          <Avatar profileImage={profileImage} fallback={userInitial} sizeClass="h-12 w-12 border-2 border-white dark:border-[#353c44] shadow-sm" />
+          <button onClick={onOpenComposer} className="flex-1 rounded-2xl border border-[#a3b18a]/30 bg-white/50 px-5 py-3 text-left text-[15px] font-medium text-[#4a6b57] transition-all hover:bg-white hover:shadow-sm dark:border-[#444d57]/50 dark:bg-[#353c44]/50 dark:text-[#a8b1ba] dark:hover:bg-[#353c44]">Share an update, project, or insight...</button>
         </div>
-        <div className="mt-3 flex items-center justify-between border-t border-[#a3b18a] pt-3 dark:border-[#444d57]">
+        <div className="mt-4 flex items-center justify-between border-t border-black/5 pt-4 dark:border-white/5">
           <ComposerButton icon={Plus} text={userType === 'employee' ? 'Add Project' : 'Post Job'} onClick={onOpenComposer} />
           <ComposerButton icon={Plus} text="Share Update" onClick={onOpenComposer} />
         </div>
@@ -118,14 +118,16 @@ export default function CenterFeed(props) {
           ) : null}
         </>
       ) : (
-        <div className="rounded-xl border border-[#a3b18a] bg-[#f8fbf6] p-12 text-center dark:border-[#353c44] dark:bg-[#22272b]">
-          <div className="mx-auto max-w-sm">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[#f5f5f2] dark:bg-[#353c44]"><Search className="h-10 w-10 text-[#a3b18a] dark:text-[#6f9b74]" /></div>
-            <h3 className="mb-2 text-xl font-semibold text-[#3a5a40] dark:text-white">Try searching to get started</h3>
-            <p className="mb-6 text-[#344e41] dark:text-[#d0d7dd]">Discover IT professionals, companies, and projects in the Philippines</p>
-            <div className="flex flex-col justify-center gap-3 sm:flex-row">
-              <button type="button" onClick={onBrowsePeople} className="rounded-lg bg-[#3a5a40] px-4 py-2 font-semibold text-white transition-colors hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86]">Browse {userType === 'employee' ? 'Companies' : 'Developers'}</button>
-              <button type="button" onClick={onExploreProjects} className="rounded-lg border border-[#a3b18a] px-4 py-2 font-semibold text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:text-white dark:hover:bg-[#353c44]">Explore Projects</button>
+        <div className="rounded-3xl border border-white/40 bg-white/70 p-12 text-center shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 transition-shadow hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)]">
+          <div className="mx-auto max-w-md">
+            <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-[2rem] bg-gradient-to-br from-[#588157]/20 to-[#3a5a40]/20 text-[#3a5a40] shadow-[0_10px_30px_rgba(0,0,0,0.05)] dark:from-[#82ad86]/20 dark:to-[#6f9b74]/20 dark:text-[#82ad86] rotate-[-5deg] transition-transform duration-500 hover:rotate-0">
+              <Search className="h-10 w-10" />
+            </div>
+            <h3 className="mb-3 text-3xl font-bold tracking-tight text-[#2d4632] dark:text-white">Try searching to get started</h3>
+            <p className="mb-8 text-[15px] leading-relaxed text-[#4a6b57] dark:text-[#a8b1ba]">Discover IT professionals, companies, and cutting-edge projects in the Philippines.</p>
+            <div className="flex flex-col justify-center gap-4 sm:flex-row">
+              <button type="button" onClick={onBrowsePeople} className="rounded-xl bg-[#3a5a40] px-6 py-3 font-semibold text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-[#2d4632] hover:shadow-lg dark:bg-[#6f9b74] dark:hover:bg-[#82ad86]">Browse {userType === 'employee' ? 'Companies' : 'Developers'}</button>
+              <button type="button" onClick={onExploreProjects} className="rounded-xl border-2 border-[#3a5a40]/20 bg-white/50 px-6 py-3 font-semibold text-[#3a5a40] transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-md dark:border-white/10 dark:bg-[#353c44]/50 dark:text-white dark:hover:bg-[#353c44]">Explore Projects</button>
             </div>
           </div>
         </div>
