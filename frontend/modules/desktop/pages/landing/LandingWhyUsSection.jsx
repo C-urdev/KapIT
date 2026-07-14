@@ -1,6 +1,5 @@
 import React from 'react';
 import { Check, X } from 'lucide-react';
-import ThinSectionLine from '../../../shared/components/ui/ThinSectionLine';
 
 const COMPARISON_ROWS = [
   { feature: 'IT-Focused', kapit: '100% IT only', others: 'All industries' },
@@ -14,7 +13,6 @@ const COMPARISON_ROWS = [
 export default function LandingWhyUsSection() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-[#f8f4ec] via-[#fbfaf6] to-[#fbfaf6] dark:bg-none dark:bg-[#181a1b]">
-      <ThinSectionLine className="top-0" />
       <div className="landing-desktop-shell relative pt-6 pb-12 sm:pt-10 sm:pb-16 lg:pt-8 lg:pb-16">
         <div className="mb-7 max-w-2xl lg:mb-8">
           <h3 className="text-3xl lg:text-4xl font-bold text-[#102a1b] dark:text-white">
@@ -95,7 +93,6 @@ export default function LandingWhyUsSection() {
 
         </div>
       </div>
-      <ThinSectionLine className="bottom-0" />
     </section>
   );
 }

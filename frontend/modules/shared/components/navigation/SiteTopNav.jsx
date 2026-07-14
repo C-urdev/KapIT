@@ -81,6 +81,7 @@ export default function SiteTopNav({
   const { theme, toggleTheme } = useTheme();
   const [openHeaderDropdown, setOpenHeaderDropdown] = useState(null);
   const [selectedTopNavLabel, setSelectedTopNavLabel] = useState(() => (pathname === '/pricing' ? 'Pricing' : null));
+  const [isScrolled, setIsScrolled] = useState(false);
   const headerDropdownCloseTimerRef = useRef(null);
   const navMenuRef = useRef(null);
 
@@ -146,7 +147,11 @@ export default function SiteTopNav({
   }, [openHeaderDropdown]);
 
   useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
     return () => {
+      window.removeEventListener('scroll', handleScroll);
       if (headerDropdownCloseTimerRef.current) {
         window.clearTimeout(headerDropdownCloseTimerRef.current);
       }
@@ -246,8 +251,11 @@ export default function SiteTopNav({
           opacity: 0;
         }
       `}} />
-      <header className="fixed inset-x-0 top-5 z-50 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] lg:top-6">
-        <div className="landing-desktop-shell relative flex items-center gap-5 py-2 lg:gap-8">
+      <header className="fixed inset-x-0 top-0 z-50 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] pt-5 lg:pt-6 pb-2">
+        {/* Isolated background layer to prevent nested backdrop-filter bugs with dropdowns */}
+        <div className={`absolute inset-0 -z-10 transition-all duration-500 ${isScrolled ? 'backdrop-blur-xl bg-[#FDFBF7]/60 dark:bg-[#181a1b]/60' : 'backdrop-blur-none bg-transparent'}`} />
+        
+        <div className="landing-desktop-shell relative flex items-center gap-5 lg:gap-8">
           <div className="shrink-0">
             {logoNode}
           </div>

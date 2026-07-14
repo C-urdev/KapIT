@@ -1,117 +1,134 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
-import ThinSectionLine from '@sharedComponents/ui/ThinSectionLine';
-import { CATEGORIES } from '../../../../shared/pages/landing/landingData';
+import React from 'react';
+import {
+  BellOff,
+  BriefcaseBusiness,
+  ClipboardList,
+  Clock3,
+  CopyX,
+  FileSearch,
+  Files,
+  Flame,
+  Globe,
+  LayoutDashboard,
+  MailWarning,
+  PenSquare,
+  RefreshCw,
+  ScanSearch,
+  Shield,
+  Sparkles,
+  SquareStack,
+  TrendingUp,
+  UserRoundSearch,
+  WandSparkles,
+} from 'lucide-react';
 
-const TAILORED_DESCRIPTIONS = {
-  'Programming & Tech': "Build robust, scalable software solutions. From frontend interfaces to backend systems, discover roles across the full development stack.",
-  'Cybersecurity': "Protect critical infrastructure and sensitive data. Find roles focused on threat detection, ethical hacking, and network defense.",
-  'UI/UX Design': "Craft intuitive, user-centric digital experiences. Connect with roles that blend visual aesthetics with seamless user journeys.",
-  'Mobile Development': "Create high-performance applications for iOS and Android. Explore opportunities in Swift, Kotlin, React Native, and Flutter.",
-  'AI & Data': "Turn raw data into actionable intelligence. Discover roles in machine learning, data engineering, and predictive analytics.",
-  'Cloud & DevOps': "Design and maintain resilient cloud architectures. Find roles in CI/CD pipeline automation, serverless, and cloud infrastructure.",
-};
+const PROBLEM_CHIPS = [
+  { label: 'Hours applying, no replies?', icon: MailWarning },
+  { label: 'Lost track of applications?', icon: SquareStack },
+  { label: 'Copy-pasting cover letters?', icon: CopyX },
+  { label: 'Rewriting resumes nonstop?', icon: PenSquare },
+  { label: 'Manual spreadsheet tracking?', icon: ClipboardList },
+  { label: 'Endless scrolling for jobs?', icon: BriefcaseBusiness },
+  { label: 'Feeling burnt out?', icon: Flame },
+];
 
-export default function LandingCategoriesSection({ onOpenAccountChoice }) {
-  const [activeCategory, setActiveCategory] = useState(0);
+const BENEFITS = [
+  {
+    title: 'Secure by Design',
+    description: 'Your data and applications stay encrypted and protected.',
+    icon: Shield,
+  },
+  {
+    title: 'Real-Time Sync',
+    description: 'Statuses update automatically, no spreadsheets needed.',
+    icon: RefreshCw,
+  },
+  {
+    title: 'Unified Dashboard',
+    description: 'View every job, status, email, and document in one place.',
+    icon: LayoutDashboard,
+  },
+  {
+    title: 'AI Cover Letters',
+    description: 'Personalized, role-specific cover letters generated in seconds.',
+    icon: WandSparkles,
+  },
+  {
+    title: 'Auto Resume Updates',
+    description: 'Your resume stays current with new skills and experience added to your profile.',
+    icon: Files,
+  },
+  {
+    title: 'AI Insights',
+    description: "See what's working and where you get the best results.",
+    icon: TrendingUp,
+  },
+  {
+    title: 'Seamless Experience',
+    description: 'A fully integrated experience - search, apply, and track in one flow.',
+    icon: Sparkles,
+  },
+  {
+    title: 'Works Everywhere',
+    description: 'Use KapIT across web and mobile - your progress stays perfectly synced.',
+    icon: Globe,
+  },
+];
 
+export default function LandingCategoriesSection() {
   return (
-    <section className="relative bg-gradient-to-b from-[#e2ddcf] via-[#ebe6da] to-[#f7f6f1] dark:bg-gradient-to-b dark:from-[#1a1d20] dark:via-[#202428] dark:to-[#23282e] scroll-mt-24">
-      <div className="landing-desktop-shell pt-6 pb-12 sm:pt-10 sm:pb-16 lg:pt-8 lg:pb-16">
-        <div className="mb-7 max-w-2xl lg:mb-8">
-          <h3 className="text-3xl lg:text-4xl font-bold text-[#102a1b] dark:text-white">
-            Explore categories
+    <section className="relative overflow-hidden bg-gradient-to-b from-[#fbfaf6] via-[#fcfbf8] to-white dark:bg-[#181a1b] scroll-mt-24">
+      <div className="landing-desktop-shell relative py-12 sm:py-14 lg:py-16">
+        <div className="mx-auto max-w-4xl text-center">
+          <h3 className="text-3xl font-semibold tracking-tight text-[#11120f] dark:text-white sm:text-4xl lg:text-[2.5rem]">
+            Tired of endless job searching?{' '}
+            <span className="font-medium text-[#6b6e69] dark:text-[#94a3b8]">
+              Here&apos;s what&apos;s really holding you back.
+            </span>
           </h3>
-        </div>
-        
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
-          {/* Left Side: Category List */}
-          <div className="w-full lg:w-5/12 flex flex-col gap-1">
-            {CATEGORIES.map((cat, idx) => {
-              const isActive = idx === activeCategory;
-              const Icon = cat.icon;
-              return (
-                <button
-                  key={cat.title}
-                  onClick={() => setActiveCategory(idx)}
-                  className={`group flex items-center justify-between w-full text-left py-3.5 px-5 rounded-xl transition-all duration-300 ${
-                    isActive 
-                      ? 'bg-white dark:bg-[#141414] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-transparent dark:border-white/5' 
-                      : 'hover:bg-black/5 dark:hover:bg-white/5'
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors duration-300 ${
-                      isActive 
-                        ? 'bg-[#F6F8F4] dark:bg-[#22C55E]/10' 
-                        : 'bg-transparent group-hover:bg-[#F6F8F4] dark:group-hover:bg-[#22C55E]/5'
-                    }`}>
-                      <Icon className={`h-5 w-5 transition-colors duration-300 ${
-                        isActive ? 'text-[#102a1b] dark:text-[#22C55E]' : 'text-[#5C4D42] dark:text-[#A1A1AA]'
-                      }`} />
-                    </div>
-                    <span className={`text-base font-bold tracking-[-0.02em] transition-colors duration-300 ${
-                      isActive ? 'text-[#102a1b] dark:text-white' : 'text-[#5C4D42] dark:text-[#A1A1AA]'
-                    }`}>
-                      {cat.title}
-                    </span>
-                  </div>
-                  {isActive && (
-                    <motion.div layoutId="activeIndicator" className="h-2 w-2 rounded-full bg-[#102a1b] dark:bg-[#22C55E]" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
 
-          {/* Right Side: Content Area */}
-          <div className="w-full lg:w-7/12 flex items-center">
-            <div className="w-full bg-white dark:bg-[#141414] rounded-3xl p-8 lg:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-[#a3b18a]/20 dark:border-white/5 relative overflow-hidden min-h-[340px] flex flex-col justify-center">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeCategory}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 40 }}
-                  className="relative z-10"
-                >
-                  {(() => {
-                    const activeCat = CATEGORIES[activeCategory];
-                    const Icon = activeCat.icon;
-                    return (
-                      <>
-                        <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F6F8F4] dark:bg-[#22C55E]/10 mb-5">
-                          <Icon className="h-7 w-7 text-[#102a1b] dark:text-[#22C55E]" />
-                        </div>
-                        <h3 className="text-2xl lg:text-3xl font-bold text-[#102a1b] dark:text-white leading-[1.1] tracking-[-0.02em] mb-3">
-                          {activeCat.title}
-                        </h3>
-                        <p className="text-sm leading-relaxed text-[#4a6354] dark:text-[#d0d7dd] max-w-lg mb-8">
-                          {TAILORED_DESCRIPTIONS[activeCat.title]}
-                        </p>
-                        
-                        <button 
-                          onClick={onOpenAccountChoice}
-                          className="group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#102a1b] text-white dark:bg-[#22c55e] dark:text-[#121416] font-semibold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all"
-                        >
-                          <span>Find {activeCat.title} Experts</span>
-                          <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                        </button>
-                      </>
-                    )
-                  })()}
-                </motion.div>
-              </AnimatePresence>
-              
-              {/* Background abstract element for extra minimalist flair */}
-              <div className="absolute right-[-10%] top-[-10%] h-[300px] w-[300px] rounded-full bg-[#102a1b]/5 dark:bg-[#22C55E]/5 blur-3xl pointer-events-none" />
-            </div>
-          </div>
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-[#4d504b] dark:text-[#cbd5e1] sm:text-lg">
+            If you&apos;re still spending hours filling out forms, rewriting resumes, and tracking applications by
+            hand, you&apos;re not alone.
+          </p>
+        </div>
+
+        <div className="mx-auto mt-10 flex max-w-[70rem] flex-wrap items-center justify-center gap-3.5 lg:mt-12">
+          {PROBLEM_CHIPS.map((chip) => {
+            const Icon = chip.icon;
+            return (
+              <div
+                key={chip.label}
+                className="inline-flex min-h-[3.1rem] items-center gap-3 rounded-[1.05rem] border border-[#ece8de] bg-white px-4.5 py-2.5 text-[1rem] font-medium text-[#4f514c] shadow-[0_6px_22px_rgba(28,23,16,0.03)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#d8d2c7] hover:shadow-[0_12px_28px_rgba(28,23,16,0.06)] dark:border-white/10 dark:bg-[#202224] dark:text-[#dde3ea]"
+              >
+                <Icon className="h-[1.15rem] w-[1.15rem] shrink-0 text-[#8d92a0] dark:text-[#b7c0cd]" strokeWidth={1.8} />
+                <span className="whitespace-nowrap">{chip.label}</span>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mx-auto mt-14 h-px max-w-6xl bg-[#efebe2] dark:bg-white/10" />
+
+        <div className="mt-14 grid gap-y-10 gap-x-8 sm:grid-cols-2 xl:grid-cols-4">
+          {BENEFITS.map((benefit) => {
+            const Icon = benefit.icon;
+            return (
+              <article key={benefit.title} className="mx-auto flex max-w-[16.5rem] flex-col items-center text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#e8e3d8] bg-white shadow-[0_6px_18px_rgba(28,23,16,0.04)] dark:border-white/10 dark:bg-[#202224]">
+                  <Icon className="h-5 w-5 text-[#2f7a68] dark:text-[#9ad0c2]" strokeWidth={1.9} />
+                </div>
+                <h4 className="mt-5 text-[1.55rem] font-semibold tracking-[-0.04em] text-[#11120f] dark:text-white">
+                  {benefit.title}
+                </h4>
+                <p className="mt-3 text-[1rem] leading-8 text-[#4d504b] dark:text-[#cbd5e1]">
+                  {benefit.description}
+                </p>
+              </article>
+            );
+          })}
         </div>
       </div>
-      <ThinSectionLine className="bottom-0" />
     </section>
   );
 }

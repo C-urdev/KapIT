@@ -3,9 +3,9 @@ import Footer from '../../../shared/components/branding/Footer';
 import LandingFinalCtaSection from '../../../shared/pages/landing/LandingFinalCtaSection';
 import LandingHeroSection from '../../../shared/pages/landing/LandingHeroSection';
 import LandingHowItWorksSection from '../../../shared/pages/landing/LandingHowItWorksSection';
-import LandingTrustedSection from '../../../shared/pages/landing/LandingTrustedSection';
 import PublicDesktopNav from '../../components/navigation/PublicDesktopNav';
 import LandingCategoriesSection from './categories/LandingCategoriesSection';
+import LandingSuccessStoriesSection from './LandingSuccessStoriesSection';
 import LandingWhyUsSection from './LandingWhyUsSection';
 
 export default function DesktopLandingPage({ onLogoClick, onOpenAccountChoice, onJoinDeveloperClick, onSignIn }) {
@@ -17,7 +17,7 @@ export default function DesktopLandingPage({ onLogoClick, onOpenAccountChoice, o
         onSignIn={onSignIn}
       />
       <LandingHeroSection onGetStarted={onOpenAccountChoice} onJoinDeveloper={onJoinDeveloperClick} />
-      <LandingTrustedSection />
+      <LandingSuccessStoriesSection />
       <LandingCategoriesSection onOpenAccountChoice={onOpenAccountChoice} />
       <LandingHowItWorksSection />
       <LandingWhyUsSection />
