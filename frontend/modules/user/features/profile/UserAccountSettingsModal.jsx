@@ -138,6 +138,8 @@ const EMPTY_FORM = {
 };
 const PROFILE_CACHE_KEY = 'kapit_user_developer_profile';
 const DEBUG_PROFILE_SYNC = import.meta.env.VITE_DEBUG_PROFILE_SYNC === 'true';
+const GLASS_FIELD_CLASS = 'font-sans w-full rounded-xl border border-white/40 dark:border-white/10 bg-white/40 dark:bg-[#22272b]/40 py-2.5 px-3 text-[15px] font-medium text-[#1c2b1f] dark:text-white outline-none transition-all duration-200 focus:bg-white/60 dark:focus:bg-[#22272b]/60 focus:border-[#8ea488] focus:ring-2 focus:ring-[#8ea488]/20 dark:focus:border-[#5e8b67] dark:focus:ring-[#5e8b67]/20 backdrop-blur-md shadow-sm';
+
 
 const parseLocation = (rawLocation, provinceOptions, provinceCodeByLabel, getCitiesForProvince) => {
   const normalized = String(rawLocation || '')
@@ -608,7 +610,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   value={formData.fullName}
                   onChange={(e) => setFormData((p) => ({ ...p, fullName: e.target.value }))}
                   readOnly={isIdentityLocked}
-                  className={`field ${isIdentityLocked ? 'bg-[#edf3e8] dark:bg-[#2f343b]' : ''}`}
+                  className={`\${GLASS_FIELD_CLASS} ${isIdentityLocked ? 'bg-[#edf3e8] dark:bg-[#2f343b]' : ''}`}
                 />
               </Field>
               <Field label="Province">
@@ -618,7 +620,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   options={locationData.provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
                   placeholder="Select a province"
                   searchPlaceholder="Search provinces"
-                  className="field"
+                  className={GLASS_FIELD_CLASS}
                 />
               </Field>
               <Field label="City / Municipality">
@@ -629,7 +631,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   placeholder={formData.provinceCode ? 'Select a city or municipality' : 'Select a province first'}
                   searchPlaceholder="Search cities"
                   disabled={!formData.provinceCode}
-                  className="field"
+                  className={GLASS_FIELD_CLASS}
                 />
               </Field>
               <Field label="Phone Number">
@@ -637,11 +639,11 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   value={formData.phoneNumber}
                   onChange={(e) => setFormData((p) => ({ ...p, phoneNumber: e.target.value }))}
                   readOnly={isIdentityLocked}
-                  className={`field ${isIdentityLocked ? 'bg-[#edf3e8] dark:bg-[#2f343b]' : ''}`}
+                  className={`\${GLASS_FIELD_CLASS} ${isIdentityLocked ? 'bg-[#edf3e8] dark:bg-[#2f343b]' : ''}`}
                 />
               </Field>
               <Field label="Email">
-                <input value={formData.email} readOnly className="field bg-[#edf3e8] dark:bg-[#2f343b]" />
+                <input value={formData.email} readOnly className={`\${GLASS_FIELD_CLASS} bg-[#edf3e8] dark:bg-[#2f343b]`} />
               </Field>
             </div>
           </SettingsCard>
@@ -658,11 +660,11 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   placeholder="Select a job title"
                   searchPlaceholder="Search job titles"
                   allowCustomValue
-                  className="field"
+                  className={GLASS_FIELD_CLASS}
                 />
               </Field>
               <Field label="Years of Experience">
-                <input type="number" min="0" max="60" value={formData.yearsOfExperience} onChange={(e) => setFormData((p) => ({ ...p, yearsOfExperience: e.target.value }))} className="field" />
+                <input type="number" min="0" max="60" value={formData.yearsOfExperience} onChange={(e) => setFormData((p) => ({ ...p, yearsOfExperience: e.target.value }))} className={GLASS_FIELD_CLASS} />
               </Field>
               <Field label="Preferred IT Role" full>
                 <SearchableSelect
@@ -672,7 +674,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   placeholder={resolvedJobTitle ? 'Select a preferred IT role' : 'Select a job title first'}
                   searchPlaceholder="Search roles"
                   disabled={!resolvedJobTitle}
-                  className="field"
+                  className={GLASS_FIELD_CLASS}
                 />
               </Field>
               <Field label="Skills" full>
@@ -699,7 +701,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   options={EDUCATIONAL_ATTAINMENT_OPTIONS}
                   placeholder="Select educational attainment"
                   searchPlaceholder="Search education"
-                  className="field"
+                  className={GLASS_FIELD_CLASS}
                 />
               </Field>
               <Field label="School / University">
@@ -709,26 +711,26 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   options={SCHOOL_OPTIONS}
                   placeholder="Select a school or university"
                   searchPlaceholder="Search schools"
-                  className="field"
+                  className={GLASS_FIELD_CLASS}
                 />
               </Field>
               {requiresVocationalCourse ? (
                 <Field label="Specify Vocational Course">
-                  <input value={formData.vocationalCourse} onChange={(e) => setFormData((p) => ({ ...p, vocationalCourse: e.target.value }))} className="field" />
+                  <input value={formData.vocationalCourse} onChange={(e) => setFormData((p) => ({ ...p, vocationalCourse: e.target.value }))} className={GLASS_FIELD_CLASS} />
                 </Field>
               ) : null}
               {requiresCustomEducation ? (
                 <Field label="Specify Educational Attainment">
-                  <input value={formData.customEducationAttainment} onChange={(e) => setFormData((p) => ({ ...p, customEducationAttainment: e.target.value }))} className="field" />
+                  <input value={formData.customEducationAttainment} onChange={(e) => setFormData((p) => ({ ...p, customEducationAttainment: e.target.value }))} className={GLASS_FIELD_CLASS} />
                 </Field>
               ) : null}
               {requiresCustomSchool ? (
                 <Field label="Specify School / University">
-                  <input value={formData.customSchool} onChange={(e) => setFormData((p) => ({ ...p, customSchool: e.target.value }))} className="field" />
+                  <input value={formData.customSchool} onChange={(e) => setFormData((p) => ({ ...p, customSchool: e.target.value }))} className={GLASS_FIELD_CLASS} />
                 </Field>
               ) : null}
               <Field label="Certifications" full>
-                <input value={formData.certifications} onChange={(e) => setFormData((p) => ({ ...p, certifications: e.target.value }))} className="field" />
+                <input value={formData.certifications} onChange={(e) => setFormData((p) => ({ ...p, certifications: e.target.value }))} className={GLASS_FIELD_CLASS} />
               </Field>
             </div>
           </SettingsCard>
@@ -738,16 +740,16 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
           <SettingsCard title="Socials" icon={UserCircle} plain={asPage}>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Field label="GitHub">
-                <input value={formData.github} onChange={(e) => setFormData((p) => ({ ...p, github: e.target.value }))} className="field" placeholder="https://" />
+                <input value={formData.github} onChange={(e) => setFormData((p) => ({ ...p, github: e.target.value }))} className={GLASS_FIELD_CLASS} placeholder="https://" />
               </Field>
               <Field label="Portfolio Website">
-                <input value={formData.portfolioWebsite} onChange={(e) => setFormData((p) => ({ ...p, portfolioWebsite: e.target.value }))} className="field" placeholder="https://" />
+                <input value={formData.portfolioWebsite} onChange={(e) => setFormData((p) => ({ ...p, portfolioWebsite: e.target.value }))} className={GLASS_FIELD_CLASS} placeholder="https://" />
               </Field>
               <Field label="LinkedIn">
-                <input value={formData.linkedin} onChange={(e) => setFormData((p) => ({ ...p, linkedin: e.target.value }))} className="field" placeholder="https://" />
+                <input value={formData.linkedin} onChange={(e) => setFormData((p) => ({ ...p, linkedin: e.target.value }))} className={GLASS_FIELD_CLASS} placeholder="https://" />
               </Field>
               <Field label="Other Links">
-                <input value={formData.otherLinks} onChange={(e) => setFormData((p) => ({ ...p, otherLinks: e.target.value }))} className="field" placeholder="https://" />
+                <input value={formData.otherLinks} onChange={(e) => setFormData((p) => ({ ...p, otherLinks: e.target.value }))} className={GLASS_FIELD_CLASS} placeholder="https://" />
               </Field>
             </div>
           </SettingsCard>
@@ -784,7 +786,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                 <textarea
                   value={formData.aboutMe}
                   onChange={(e) => setFormData((p) => ({ ...p, aboutMe: e.target.value }))}
-                  className="field min-h-24"
+                  className={`\${GLASS_FIELD_CLASS} min-h-24`}
                   placeholder="Tell employers about your experience and strengths."
                 />
               </Field>
@@ -805,7 +807,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
 
         </main>
 
-        <div className={`${asPage ? 'mt-3 flex justify-end' : 'flex shrink-0 items-center justify-end gap-3 border-t border-[#d8e0cf] bg-[#f2f7ef] p-4 dark:border-[#353c44] dark:bg-[#22272b]'}`}>
+        <div className={`${asPage ? 'relative mt-8' : 'flex shrink-0 items-center justify-end gap-3 border-t border-[#d8e0cf] bg-[#f2f7ef] p-4 dark:border-[#353c44] dark:bg-[#22272b]'}`}>
           {!asPage ? (
             <button type="button" onClick={onClose} className="rounded-xl px-5 py-2 font-semibold text-[#5f6f52] transition-colors hover:bg-black/5 dark:text-[#d0d7dd] dark:hover:bg-white/10">
               Cancel
@@ -815,9 +817,11 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#3a5a40] px-5 py-2 font-semibold text-white shadow-sm transition-transform active:scale-95 disabled:opacity-60 dark:bg-[#6f9b74]"
+            className={asPage 
+              ? "fixed bottom-8 right-8 z-50 flex items-center gap-2 rounded-full bg-[#3a5a40] dark:bg-[#6f9b74] px-6 py-3.5 text-[15px] font-semibold text-white shadow-[0_10px_30px_rgba(58,90,64,0.3)] dark:shadow-[0_10px_30px_rgba(111,155,116,0.3)] transition-all duration-300 hover:scale-105 hover:shadow-[0_15px_40px_rgba(58,90,64,0.4)] active:scale-95 disabled:opacity-60"
+              : "inline-flex items-center gap-2 rounded-xl bg-[#3a5a40] px-5 py-2 font-semibold text-white shadow-sm transition-transform active:scale-95 disabled:opacity-60 dark:bg-[#6f9b74]"}
           >
-            <Save className="h-4 w-4" />
+            <Save className={asPage ? "h-5 w-5" : "h-4 w-4"} />
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
@@ -829,11 +833,16 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
 function SettingsCard({ title, icon: Icon, children, plain = false }) {
   if (plain) {
     return (
-      <section>
-        <div className="mb-3 px-1 text-sm font-bold uppercase tracking-[0.08em] text-[#5f6f52] dark:text-[#b3bcc5]">
-          {title}
+      <section className="bg-white/70 dark:bg-[#22272b]/70 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.08)] overflow-hidden mb-6 transition-all duration-300 hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)]">
+        <div className="flex items-center gap-3 px-6 pt-6 pb-4 border-b border-black/5 dark:border-white/5">
+          <Icon className="h-5 w-5 text-[#3a5a40] dark:text-[#6f9b74]" />
+          <h2 className="text-[17px] font-bold text-[#1c2b1f] dark:text-white tracking-tight">
+            {title}
+          </h2>
         </div>
-        {children}
+        <div className="p-6">
+          {children}
+        </div>
       </section>
     );
   }

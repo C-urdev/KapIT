@@ -70,7 +70,7 @@ export default function SearchableSelect({
   }, [open, searchInTrigger]);
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative font-sans">
       {searchInTrigger ? (
         <div className={`${className} flex w-full items-center gap-3 disabled:cursor-not-allowed disabled:opacity-60 ${hasSelection ? 'bg-[#eef6ee] border-[#7aa27d] dark:bg-[#1f2b23] dark:border-[#5f8a68]' : ''}`}>
           <Search className="h-4 w-4 shrink-0 text-[#6b7280] dark:text-[#adb5be]" />
