@@ -65,8 +65,6 @@ const PAYMENT_PROVIDERS = [
   },
 ];
 
-const localPaymentBypassEnabled = import.meta.env.VITE_ENABLE_LOCAL_PAYMENT_BYPASS === 'true';
-
 function PlanCard({ plan, onUpgrade, buttonLabel, disabled = false }) {
   const highlighted = Boolean(plan.highlighted);
 
@@ -145,16 +143,23 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
   const [verifying, setVerifying] = React.useState(false);
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState('');
+  const [demoPricing, setDemoPricing] = React.useState(null);
+  const [localPaymentBypass, setLocalPaymentBypass] = React.useState({ available: false, reason: '' });
   const [checkoutFallbackUrls, setCheckoutFallbackUrls] = React.useState([]);
   const [completedCheckout, setCompletedCheckout] = React.useState(null);
   const handledReturnRef = React.useRef(false);
 
+  const [wizardStep, setWizardStep] = React.useState(1);
+  const [isFeaturesExpanded, setIsFeaturesExpanded] = React.useState(false);
+
   const selectedProvider = PAYMENT_PROVIDERS.find((provider) => provider.id === paymentMethod) || PAYMENT_PROVIDERS[0];
   const selectedProviderState = providerAvailability?.[selectedProvider.id] || { enabled: true, reason: '' };
   const displayName = user?.fullName || user?.name || user?.username || 'User account';
-  const isLocalhostBypassAvailable =
-    localPaymentBypassEnabled && ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
-  const stepState = success ? 3 : loading || verifying ? 2 : 1;
+  const isLocalhostBypassAvailable = Boolean(localPaymentBypass?.available);
+  const demoChargeAmountLabel = demoPricing?.active && demoPricing?.demoAmountValue
+    ? demoPricing.demoAmountValue
+    : PREMIUM_PLAN.amount.toLocaleString();
+    
   const completedProvider = PAYMENT_PROVIDERS.find((provider) => provider.id === completedCheckout?.providerId) || null;
   const paidAt = completedCheckout?.paidAt ? new Date(completedCheckout.paidAt).toLocaleString() : '';
   const completedAmount = Number(completedCheckout?.amount || 0);
@@ -163,41 +168,33 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
 
   React.useEffect(() => {
     let cancelled = false;
-
     const loadPaymentMeta = async () => {
       try {
         const data = await getUserPremiumPaymentProviders();
         if (!cancelled && data?.providers) {
           setProviderAvailability(data.providers);
+          setDemoPricing(data?.demoPricing || null);
+          setLocalPaymentBypass(data?.localPaymentBypass || { available: false, reason: '' });
           const firstEnabled = PAYMENT_PROVIDERS.find((provider) => data.providers?.[provider.id]?.enabled);
           if (firstEnabled) {
             setPaymentMethod((current) => (data.providers?.[current]?.enabled ? current : firstEnabled.id));
           }
         }
       } catch {
-        // Keep local fallback provider list if payment provider metadata is unavailable.
+        // Keep local fallback
       }
     };
-
     loadPaymentMeta();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   React.useEffect(() => {
-    if (handledReturnRef.current) {
-      return;
-    }
-
+    if (handledReturnRef.current) return;
     const params = new URLSearchParams(window.location.search);
     const checkout = params.get('checkout');
     const paymentId = params.get('payment_id') || '';
 
-    if (!checkout) {
-      return;
-    }
-
+    if (!checkout) return;
     handledReturnRef.current = true;
     setCurrentPaymentId(paymentId);
 
@@ -208,26 +205,23 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
     const handleProviderReturn = async () => {
       if (checkout === 'cancelled') {
         if (paymentId) {
-          try {
-            await cancelUserPremiumCheckout(paymentId);
-          } catch {
-            // Ignore cancellation persistence failures while keeping the user on free plan.
-          }
+          try { await cancelUserPremiumCheckout(paymentId); } catch {}
         }
-        setError('Payment was cancelled. Your account stays on the free plan.');
+        setError('Payment was cancelled.');
+        setWizardStep(2);
+        setVerifying(false);
         cleanupUrl();
         return;
       }
 
       setVerifying(true);
       setError('');
+      setWizardStep(3);
 
       try {
         if (checkout === 'paypal-success') {
           const orderId = params.get('token');
-          if (!orderId || !paymentId) {
-            throw new Error('Missing PayPal order details. Please try the payment again.');
-          }
+          if (!orderId || !paymentId) throw new Error('Missing PayPal details.');
 
           const data = await captureUserPremiumPayPalCheckout({ paymentId, orderId });
           if (data?.user) {
@@ -246,20 +240,18 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
             providerReference: data?.payment?.provider_payment_id || data?.payment?.provider_checkout_id || paymentId,
             paidAt: data?.payment?.paid_at || '',
           });
-          setSuccess('PayPal payment verified. Your premium access is now active.');
+          setSuccess('Payment verified.');
           cleanupUrl();
           return;
         }
-
-        throw new Error('Unknown checkout return state.');
+        throw new Error('Unknown return state.');
       } catch (verificationError) {
-        setError(getPaymentErrorMessageForUser(verificationError, 'Payment verification failed. Please try again.'));
+        setError(getPaymentErrorMessageForUser(verificationError, 'Payment verification failed.'));
         cleanupUrl();
       } finally {
         setVerifying(false);
       }
     };
-
     handleProviderReturn();
   }, [onConfirmUpgrade]);
 
@@ -270,18 +262,11 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
     setCheckoutFallbackUrls([]);
 
     try {
-      if (!selectedProviderState.enabled) {
-        throw new Error(`${selectedProvider.label} is not available yet. Configure it in the server environment first.`);
-      }
+      if (!selectedProviderState.enabled) throw new Error('Provider not available.');
 
-      const data = await createUserPremiumCheckoutSession({
-        provider: paymentMethod,
-      });
-
+      const data = await createUserPremiumCheckoutSession({ provider: paymentMethod });
       const checkoutUrls = resolveCheckoutUrls(data);
-      if (!checkoutUrls.length) {
-        throw new Error('The payment provider did not return a checkout URL.');
-      }
+      if (!checkoutUrls.length) throw new Error('No checkout URL returned.');
 
       const primaryCheckoutUrl = checkoutUrls[0];
       setCurrentPaymentId(data.paymentId || '');
@@ -290,50 +275,41 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
       const checkoutWindow = window.open(primaryCheckoutUrl, 'kapit-paypal-checkout');
       if (checkoutWindow && !checkoutWindow.closed) {
         setLoading(false);
-        setSuccess('PayPal checkout opened in a new tab. Complete payment there, then return here.');
+        setWizardStep(3);
         return;
       }
-
       window.location.assign(primaryCheckoutUrl);
     } catch (checkoutError) {
       setLoading(false);
-      setError(getPaymentErrorMessageForUser(checkoutError, 'Unable to start the payment flow.'));
+      setError(getPaymentErrorMessageForUser(checkoutError, 'Unable to start payment.'));
     }
   };
 
   const handleSampleSuccess = async () => {
-    if (!isLocalhostBypassAvailable) {
-      return;
-    }
-
+    if (!isLocalhostBypassAvailable) return;
     setLoading(true);
     setError('');
-    setSuccess('');
-
     try {
-      const data = await completeUserPremiumLocalBypass({
-        provider: paymentMethod,
-      });
+      const data = await completeUserPremiumLocalBypass({ provider: paymentMethod });
       if (data?.user) {
         await onConfirmUpgrade?.(data.user);
         notifyOpener({ updates: { isPremium: Boolean(data.user?.isPremium) } });
       }
-      setCurrentPaymentId(data?.payment?.id || '');
       setCompletedCheckout({
         providerId: paymentMethod,
         amount: Number(data?.payment?.amount || PREMIUM_PLAN.amount),
         planName: PREMIUM_PLAN.name,
         billingCycle: 'monthly',
         paymentMethod: selectedProvider.label,
-        reference: data?.payment?.provider_payment_id || data?.payment?.provider_checkout_id || `sample-${Date.now()}`,
+        reference: data?.payment?.provider_payment_id || `sample-${Date.now()}`,
         accountHint: selectedProvider.accountHint,
         paymentId: data?.payment?.id || '',
-        providerReference: data?.payment?.provider_payment_id || data?.payment?.provider_checkout_id || `sample-${Date.now()}`,
+        providerReference: data?.payment?.provider_payment_id || `sample-${Date.now()}`,
         paidAt: data?.payment?.paid_at || '',
       });
-      setSuccess('Local sample payment completed and your premium access is now active.');
-    } catch (upgradeError) {
-      setError(getPaymentErrorMessageForUser(upgradeError, 'Unable to complete the local sample payment.'));
+      setSuccess('Sample payment completed.');
+    } catch (err) {
+      setError(getPaymentErrorMessageForUser(err, 'Sample payment failed.'));
     } finally {
       setLoading(false);
     }
@@ -341,272 +317,222 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
 
   const handleCancel = async () => {
     if (currentPaymentId) {
-      try {
-        await cancelUserPremiumCheckout(currentPaymentId);
-      } catch {
-        // Keep closing behavior even if cancellation persistence fails.
-      }
+      try { await cancelUserPremiumCheckout(currentPaymentId); } catch {}
     }
-
     if (standalone) {
       onClose?.();
       return;
     }
-
     onBack?.();
   };
 
-  return (
-    <div className="overflow-y-auto bg-[linear-gradient(180deg,#f7faf5_0%,#f3f7ef_100%)] dark:bg-[linear-gradient(180deg,#11161c_0%,#161d24_100%)] px-4 py-5 sm:px-6 sm:py-6">
-      <div className="mb-5 flex flex-wrap items-center gap-2 sm:flex-nowrap rounded-2xl border border-[#d6e1cf] bg-white/80 px-3 py-3 shadow-[0_10px_28px_rgba(16,42,27,0.06)] dark:border-[#304356] dark:bg-[#1b2128]">
-        {[
-          { key: 1, label: 'Plan' },
-          { key: 2, label: 'Payment' },
-          { key: 3, label: 'Done' },
-        ].map((step, index) => {
-          const active = stepState >= step.key;
-          const complete = stepState > step.key;
-          return (
-            <React.Fragment key={step.key}>
-              <div className="flex items-center gap-2">
-                <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold transition-colors ${
-                  active
-                    ? 'border-[#2f6b4f] bg-[#2f6b4f] text-white dark:border-[#82ad86] dark:bg-[#82ad86] dark:text-[#121416]'
-                    : 'border-[#c7d5c0] bg-[#f8fbf6] text-[#7b8a7f] dark:border-[#35506f] dark:bg-[#102139] dark:text-[#8fa8c4]'
-                }`}>
-                  {complete ? <CheckCircle2 className="h-4 w-4" /> : step.key}
-                </span>
-                <span className={`text-xs sm:text-sm font-medium ${active ? 'text-[#16324f] dark:text-white' : 'text-[#8194a8] dark:text-[#88a3bf]'}`}>
-                  {step.label}
-                </span>
-              </div>
-              {index < 2 ? <div className={`h-px flex-1 min-w-6 ${stepState > step.key ? 'bg-[#2f6b4f] dark:bg-[#82ad86]' : 'bg-[#d8ddd1] dark:bg-[#444d57]'}`} /> : null}
-            </React.Fragment>
-          );
-        })}
-      </div>
-
-      <div className={completedCheckout ? 'flex justify-center' : 'grid gap-4'}>
-        <div className={`${completedCheckout ? 'hidden' : 'space-y-5'} rounded-[24px] border border-[#d6e1cf] dark:border-[#3a4b5e] bg-white/92 dark:bg-[#1a1f26] p-4 sm:p-6 shadow-[0_18px_48px_rgba(16,42,27,0.08)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.28)]`}>
-          <div className="flex flex-col gap-3 border-b border-[#d6d3c9] dark:border-[#444d57] pb-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-[#5f6f52] dark:text-[#b3bcc5]">Selected plan</p>
-              <p className="mt-1 text-2xl sm:text-[1.75rem] font-semibold tracking-tight text-[#102a1b] dark:text-white">PHP {PREMIUM_PLAN.amount.toLocaleString()}</p>
-              <p className="mt-1 text-sm text-[#5f6f52] dark:text-[#b3bcc5]">Premium monthly subscription</p>
+  if (completedCheckout) {
+    return (
+      <div className="px-6 py-10 sm:px-10 flex flex-col items-center justify-center min-h-[400px]">
+        <div className="w-full max-w-lg space-y-8">
+          <div className="text-center">
+            <div className="mx-auto h-12 w-12 rounded-full bg-[#588157]/10 dark:bg-[#82ad86]/10 flex items-center justify-center mb-4">
+               <CheckCircle2 className="h-6 w-6 text-[#2f6b4f] dark:text-[#82ad86]" />
             </div>
-            <div className="rounded-2xl border border-[#bfd0af] dark:border-[#284463] bg-[#f4f8f1] dark:bg-[#12233b] px-3 py-2.5 text-right">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-[#588157] dark:text-[#e2b94d]">Status</p>
-              <p className="text-sm font-semibold text-[#102a1b] dark:text-white">{verifying ? 'Verifying payment' : loading ? 'Processing payment' : success ? 'Activated' : 'Ready'}</p>
+            <h2 className="text-2xl font-semibold text-[#102a1b] dark:text-white">Payment Successful</h2>
+            <p className="mt-2 text-sm text-[#5f6f52] dark:text-[#c0c8d0]">Your premium subscription is now active.</p>
+          </div>
+          
+          <div className="rounded-2xl bg-white/70 dark:bg-[#22272b]/70 backdrop-blur-xl p-6 space-y-4 shadow-[0_20px_40px_rgba(0,0,0,0.06)]">
+            <div className="flex justify-between">
+              <span className="text-sm text-[#5f6f52] dark:text-[#b3bcc5]">Plan</span>
+              <span className="text-sm font-medium text-[#102a1b] dark:text-white">{completedPlanName}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-[#5f6f52] dark:text-[#b3bcc5]">Amount</span>
+              <span className="text-sm font-medium text-[#102a1b] dark:text-white">PHP {completedAmount.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-[#5f6f52] dark:text-[#b3bcc5]">Billed</span>
+              <span className="text-sm font-medium text-[#102a1b] dark:text-white capitalize">{completedBillingCycle}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-[#5f6f52] dark:text-[#b3bcc5]">Provider</span>
+              <span className="text-sm font-medium text-[#102a1b] dark:text-white">{completedCheckout.paymentMethod}</span>
             </div>
           </div>
-
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-semibold text-[#102a1b] dark:text-white">Plan Summary</h2>
-            </div>
-
-            <div className="rounded-[20px] border border-[#76a07b] bg-[linear-gradient(165deg,#f6fbf4,#e9f2e6)] p-4 text-left shadow-[0_16px_40px_rgba(58,90,64,0.14)] dark:border-[#82ad86] dark:bg-[linear-gradient(180deg,#31363d,#202428)]">
-              <div className="flex items-center gap-2">
-                <Crown className="h-5 w-5 text-[#588157] dark:text-[#e2b94d]" />
-                <p className="text-base font-semibold text-[#102a1b] dark:text-white">{PREMIUM_PLAN.name}</p>
-              </div>
-              <p className="mt-1.5 text-2xl font-semibold tracking-tight text-[#102a1b] dark:text-white">PHP {PREMIUM_PLAN.amount.toLocaleString()}</p>
-              <p className="mt-1.5 text-xs leading-5 text-[#5f6f52] dark:text-[#b0c8e0]">{PREMIUM_PLAN.subtitle}</p>
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#588157] dark:text-[#e2b94d]">Billed monthly</span>
-                <span className="rounded-full bg-[#3a5a40] px-2.5 py-1 text-[11px] font-semibold text-white dark:bg-[#82ad86] dark:text-[#121416]">Selected</span>
-              </div>
-            </div>
-
-            <div>
-              <p className="text-sm font-semibold text-[#102a1b] dark:text-white">Premium includes</p>
-              <div className="mt-3 space-y-2">
-                {PREMIUM_PLAN.features.map(({ text }) => (
-                  <div
-                    key={text}
-                    className="flex items-center gap-2 rounded-xl border border-[#bfd0af] bg-[#f8fbf6] px-3 py-2.5 text-xs font-medium text-[#344e41] dark:border-[#4b5560] dark:bg-[#1f2328] dark:text-[#eceff2]"
-                  >
-                    <CheckCircle2 className="h-4 w-4 text-[#588157] dark:text-[#82ad86]" />
-                    <span>{text}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-          </div>
-
-          <div className="space-y-2.5">
-            <div>
-              <h2 className="text-xl font-semibold text-[#102a1b] dark:text-white">Payment Methods</h2>
-              <p className="mt-1 text-sm text-[#5f6f52] dark:text-[#c0c8d0]">Choose the payment method you trust and complete the secure checkout.</p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {PAYMENT_PROVIDERS.map((provider) => {
-                const Icon = provider.icon;
-                const selected = paymentMethod === provider.id;
-                return (
-                  <button
-                    key={provider.id}
-                    type="button"
-                    onClick={() => setPaymentMethod(provider.id)}
-                    className={`rounded-[20px] border p-4 text-left transition-all duration-200 ${
-                      selected
-                        ? 'border-[#588157] bg-[#eef6ee] shadow-[0_12px_30px_rgba(88,129,87,0.14)] dark:border-[#82ad86] dark:bg-[#2a2f35]'
-                        : 'border-[#d6d3c9] bg-[#fbfcfa] hover:bg-[#f5f5f2] hover:-translate-y-[1px] dark:border-[#444d57] dark:bg-[#202428] dark:hover:bg-[#132844]'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3">
-                        <div className="rounded-xl border border-[#d6d3c9] dark:border-[#4b5560] bg-[#f8fbf6] dark:bg-[#1a1d20] p-2">
-                          <Icon className="h-5 w-5 text-[#3a5a40] dark:text-[#e2b94d]" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-[#102a1b] dark:text-white">PayPal</p>
-                          <p className="mt-1 text-xs leading-5 text-[#5f6f52] dark:text-[#c0c8d0]">{provider.description}</p>
-                        </div>
-                      </div>
-                      <span className={`mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border ${
-                        selected
-                          ? 'border-[#588157] bg-[#588157] text-white dark:border-[#82ad86] dark:bg-[#82ad86] dark:text-[#121416]'
-                          : 'border-[#c8d6e4] dark:border-[#345170]'
-                      }`}>
-                        {selected ? <BadgeCheck className="h-3.5 w-3.5" /> : null}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-          {success && (
-            <div className="rounded-[22px] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
-              {success}
-            </div>
-          )}
-          {checkoutFallbackUrls.length ? (
-            <div className="rounded-[22px] border border-[#bfd0af] dark:border-[#4b5560] bg-[#f8fbf6] dark:bg-[#202428] p-4 text-sm text-[#344e41] dark:text-[#eceff2]">
-              <p>If PayPal does not load, open this alternate secure checkout link:</p>
-              <a
-                href={checkoutFallbackUrls[0]}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 inline-flex items-center gap-2 font-semibold text-[#2f6b4f] dark:text-[#9fd7a6] underline underline-offset-2"
-              >
-                Open alternate PayPal checkout
-              </a>
-            </div>
-          ) : null}
-
-          <div className="flex flex-col gap-3 border-t border-[#e3ebf3] dark:border-[#444d57] pt-4 sm:flex-row sm:flex-wrap">
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="w-full rounded-2xl border border-[#a3b18a] px-5 py-3 text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#4b5560] dark:text-white dark:hover:bg-[#31363d] sm:w-auto"
-            >
-              {standalone ? 'Cancel' : 'Back to plans'}
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirm}
-              disabled={loading || verifying}
-              className="w-full rounded-2xl bg-[linear-gradient(180deg,#3f6c46,#2f5a36)] px-6 py-3 font-semibold text-white transition-all hover:brightness-105 disabled:opacity-60 dark:bg-[#82ad86] dark:text-[#121416] dark:hover:bg-[#9bc49f] sm:w-auto sm:min-w-[260px]"
-            >
-              {loading ? 'Processing payment...' : `Pay PHP ${PREMIUM_PLAN.amount.toLocaleString()} with ${selectedProvider.label}`}
-            </button>
-            {isLocalhostBypassAvailable ? (
-              <button
-                type="button"
-                onClick={handleSampleSuccess}
-                disabled={loading}
-                className="w-full rounded-2xl border border-dashed border-[#588157] bg-[#f4f8f1] px-5 py-3 font-semibold text-[#3a5a40] transition-colors hover:bg-[#ecf4e7] disabled:opacity-60 dark:border-[#82ad86] dark:bg-[#202428] dark:text-[#d0d7dd] dark:hover:bg-[#31363d] sm:w-auto"
-              >
-                Sample success
-              </button>
-            ) : null}
-          </div>
+          
+          <button onClick={handleCancel} className="w-full rounded-full bg-[#3a5a40] text-white hover:bg-[#344e41] dark:bg-[#6f9b74] dark:text-[#121416] dark:hover:bg-[#82ad86] py-3 font-medium transition-colors">
+            Return to Dashboard
+          </button>
         </div>
+      </div>
+    );
+  }
 
-        {completedCheckout ? (
-          <div className="w-full max-w-4xl space-y-4 rounded-[24px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6]/92 dark:bg-[#1b1f23] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#588157] dark:text-[#e2b94d]">Post payment information</p>
-              <h2 className="mt-1 text-xl font-semibold text-[#102a1b] dark:text-white">
-                {completedProvider?.merchantName || 'KapIT Payment Receipt'}
-              </h2>
-              <p className="mt-2 text-sm text-[#5f6f52] dark:text-[#c0c8d0]">
-                Payment is complete. Step 3 is now done and premium access is active.
-              </p>
+  return (
+    <div className="px-6 py-8 sm:px-10">
+      <div className="mx-auto max-w-xl">
+        
+        {wizardStep === 1 && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="rounded-3xl bg-white/70 dark:bg-[#22272b]/70 backdrop-blur-xl p-6 space-y-4 shadow-[0_20px_40px_rgba(0,0,0,0.08)]">
+               <div className="flex items-center justify-between">
+                 <div className="flex items-center gap-3">
+                    <Crown className="h-5 w-5 text-[#588157] dark:text-[#f0c766]" />
+                    <span className="font-medium text-[#2d4632] dark:text-white">{PREMIUM_PLAN.name}</span>
+                 </div>
+                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#3a5a40]/70 dark:text-[#82ad86]/70">Monthly</span>
+               </div>
+               <div className="pt-2">
+                 <p className="text-4xl font-semibold tracking-tight text-[#2d4632] dark:text-white">PHP {PREMIUM_PLAN.amount.toLocaleString()}</p>
+                 <p className="mt-1 text-[13px] text-[#4a6b57] dark:text-[#a8b1ba] leading-relaxed">{PREMIUM_PLAN.subtitle}</p>
+               </div>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
-              <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4 space-y-3 text-sm">
-                <h3 className="text-base font-semibold text-[#102a1b] dark:text-white">What You Paid For</h3>
-                <div>
-                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Paid plan</p>
-                  <p className="font-semibold text-[#102a1b] dark:text-white">{completedPlanName}</p>
+            <div className="rounded-3xl bg-white/70 dark:bg-[#22272b]/70 backdrop-blur-xl overflow-hidden shadow-[0_20px_40px_rgba(0,0,0,0.06)]">
+              <button 
+                onClick={() => setIsFeaturesExpanded(!isFeaturesExpanded)}
+                className="w-full flex items-center justify-between p-4 text-sm font-medium text-[#2d4632] dark:text-white hover:bg-black/[0.02] dark:hover:bg-white/[0.03] transition-colors"
+              >
+                <span>View what's included</span>
+                <span className="text-[#588157] dark:text-[#82ad86]">{isFeaturesExpanded ? '−' : '+'}</span>
+              </button>
+              {isFeaturesExpanded && (
+                <div className="px-4 pb-4 space-y-3 border-t border-black/5 dark:border-white/5 pt-4">
+                  {PREMIUM_PLAN.features.map(({ text }) => (
+                    <div key={text} className="flex items-start gap-3">
+                      <CheckCircle2 className="h-4 w-4 text-[#588157] dark:text-[#82ad86] mt-0.5 shrink-0" />
+                      <span className="text-[13px] text-[#344e41] dark:text-[#d0d7dd] leading-relaxed">{text}</span>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Plan amount</p>
-                  <p className="font-semibold text-[#102a1b] dark:text-white">PHP {completedAmount.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Billing cycle</p>
-                  <p className="font-semibold text-[#102a1b] dark:text-white">{completedBillingCycle}</p>
-                </div>
-                <div>
-                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Activated for</p>
-                  <p className="font-semibold text-[#102a1b] dark:text-white">{displayName}</p>
-                </div>
-              </div>
-
-              <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4 space-y-3 text-sm">
-                <h3 className="text-base font-semibold text-[#102a1b] dark:text-white">Billing Information</h3>
-                <div>
-                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Payment provider</p>
-                  <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout.paymentMethod}</p>
-                </div>
-                <div>
-                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Payment status</p>
-                  <p className="font-semibold text-emerald-700 dark:text-emerald-300">Verified and paid</p>
-                </div>
-                <div>
-                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Payment record</p>
-                  <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout.paymentId || completedCheckout.reference || '--'}</p>
-                </div>
-                <div>
-                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Provider reference</p>
-                  <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout.providerReference || completedCheckout.reference || '--'}</p>
-                </div>
-                <div>
-                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Receiving account</p>
-                  <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout.accountHint}</p>
-                </div>
-                <div>
-                  <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Paid on</p>
-                  <p className="font-semibold text-[#102a1b] dark:text-white">{paidAt || 'Just now'}</p>
-                </div>
-              </div>
+              )}
             </div>
 
-            <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4">
-              <p className="text-sm font-semibold text-[#102a1b] dark:text-white">Premium includes</p>
-              <ul className="mt-2.5 space-y-1.5 text-sm text-[#344e41] dark:text-[#eceff2]">
-                {PREMIUM_PLAN.features.map(({ text }) => (
-                  <li key={`premium-done-feature-${text}`} className="flex items-start gap-2">
-                    <span className="mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full bg-[#588157] dark:bg-[#82ad86]" />
-                    <span>{text}</span>
-                  </li>
-                ))}
-              </ul>
+            <div className="pt-4 flex gap-3">
+               <button onClick={handleCancel} className="px-6 py-3 rounded-full text-[#344e41] dark:text-white font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.05] transition-colors">
+                 Cancel
+               </button>
+               <button onClick={() => setWizardStep(2)} className="flex-1 bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white dark:text-[#121416] py-3 rounded-full font-medium transition-colors">
+                 Continue to Payment
+               </button>
             </div>
           </div>
-        ) : null}
+        )}
+
+        {wizardStep === 2 && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+             <div className="flex items-center gap-3">
+                <button onClick={() => setWizardStep(1)} className="p-2 -ml-2 rounded-lg hover:bg-black/[0.03] dark:hover:bg-white/[0.05] transition-colors text-[#5f6f52] dark:text-[#a8b1ba]">
+                   <span className="sr-only">Back</span>
+                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <div>
+                  <h2 className="text-xl font-medium text-[#2d4632] dark:text-white tracking-tight">Payment Method</h2>
+                </div>
+             </div>
+
+             <div className="space-y-3">
+                {PAYMENT_PROVIDERS.map((provider) => {
+                  const Icon = provider.icon;
+                  const selected = paymentMethod === provider.id;
+                  return (
+                    <button
+                      key={provider.id}
+                      onClick={() => setPaymentMethod(provider.id)}
+                      className={`w-full flex items-center justify-between p-4 rounded-3xl transition-all duration-300 ${selected ? 'bg-white/70 dark:bg-[#22272b]/70 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.08)]' : 'bg-white/40 dark:bg-[#22272b]/40 hover:bg-white/60 dark:hover:bg-[#22272b]/60 hover:shadow-[0_12px_30px_rgba(0,0,0,0.06)]'}`}
+                    >
+                       <div className="flex items-center gap-4">
+                          <div className="p-2.5 bg-[#588157]/10 dark:bg-[#82ad86]/10 rounded-2xl">
+                            <Icon className="h-5 w-5 text-[#3a5a40] dark:text-[#82ad86]" />
+                          </div>
+                          <div className="text-left">
+                            <p className="font-medium text-[#2d4632] dark:text-white">{provider.label}</p>
+                            <p className="text-xs text-[#4a6b57] dark:text-[#a8b1ba]">{provider.description}</p>
+                          </div>
+                       </div>
+                       <div className={`h-5 w-5 rounded-full flex items-center justify-center transition-colors ${selected ? 'bg-[#588157] dark:bg-[#82ad86]' : 'bg-black/10 dark:bg-white/10'}`}>
+                          {selected && <div className="h-2 w-2 rounded-full bg-white dark:bg-[#121416]" />}
+                       </div>
+                    </button>
+                  );
+                })}
+             </div>
+
+             {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+             {demoPricing?.active ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+                  Demo pricing is active. PayPal will charge PHP {demoPricing.demoAmountValue} for this local checkout while the Premium plan stays PHP {PREMIUM_PLAN.amount.toLocaleString()} in internal records.
+                </div>
+             ) : null}
+             
+             {checkoutFallbackUrls.length > 0 && (
+                <div className="p-4 bg-white/50 dark:bg-[#22272b]/50 backdrop-blur-xl rounded-2xl text-sm">
+                  <p className="text-[#344e41] dark:text-[#d0d7dd]">If the checkout doesn't open automatically:</p>
+                  <a href={checkoutFallbackUrls[0]} target="_blank" rel="noreferrer" className="inline-block mt-2 font-medium underline text-[#2f6b4f] dark:text-[#9fd7a6]">
+                    Click here to open checkout
+                  </a>
+                </div>
+             )}
+
+             <div className="pt-4 space-y-3">
+               <button 
+                 onClick={handleConfirm}
+                 disabled={loading || verifying}
+                 className="w-full bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white dark:text-[#121416] py-4 rounded-full font-semibold transition-colors disabled:opacity-50"
+               >
+                 {verifying ? 'Verifying...' : loading ? 'Processing...' : `Pay PHP ${demoChargeAmountLabel}`}
+               </button>
+               {isLocalhostBypassAvailable && (
+                 <button 
+                   onClick={handleSampleSuccess}
+                   disabled={loading || verifying}
+                   className="w-full bg-black/[0.03] dark:bg-white/[0.05] text-[#3a5a40] dark:text-[#d0d7dd] py-3 rounded-full font-medium hover:bg-black/[0.06] dark:hover:bg-white/[0.08] transition-colors disabled:opacity-50"
+                 >
+                   Sample success (Local Only)
+                 </button>
+               )}
+             </div>
+
+          </div>
+        )}
+
+        {wizardStep === 3 && (
+          <div className="flex flex-col items-center justify-center min-h-[360px] animate-in fade-in duration-500">
+            <div className="relative mb-8">
+              <div className="h-16 w-16 rounded-full bg-[#588157]/10 dark:bg-[#82ad86]/10 flex items-center justify-center">
+                <div className="h-16 w-16 rounded-full border-2 border-[#588157]/20 dark:border-[#82ad86]/20 border-t-[#588157] dark:border-t-[#82ad86] animate-spin absolute inset-0" />
+                <CreditCard className="h-6 w-6 text-[#588157] dark:text-[#82ad86]" />
+              </div>
+            </div>
+            <h2 className="text-xl font-semibold text-[#2d4632] dark:text-white tracking-tight">
+              {verifying ? 'Verifying payment' : 'Waiting for payment'}
+            </h2>
+            <p className="mt-2 text-[13px] text-[#4a6b57] dark:text-[#a8b1ba] text-center max-w-xs leading-relaxed">
+              {verifying
+                ? 'We\'re confirming your payment with the provider. This will only take a moment.'
+                : 'Complete the payment in the PayPal window. This page will update automatically.'}
+            </p>
+
+            <div className="mt-8 flex items-center gap-2">
+              <div className="h-1.5 w-1.5 rounded-full bg-[#588157] dark:bg-[#82ad86] animate-pulse" />
+              <div className="h-1.5 w-1.5 rounded-full bg-[#588157]/60 dark:bg-[#82ad86]/60 animate-pulse" style={{ animationDelay: '0.2s' }} />
+              <div className="h-1.5 w-1.5 rounded-full bg-[#588157]/30 dark:bg-[#82ad86]/30 animate-pulse" style={{ animationDelay: '0.4s' }} />
+            </div>
+
+            {!verifying && (
+              <button
+                onClick={() => setWizardStep(2)}
+                className="mt-8 text-sm text-[#5f6f52] dark:text-[#a8b1ba] hover:text-[#2d4632] dark:hover:text-white transition-colors"
+              >
+                Back to payment methods
+              </button>
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   );
 }
+
+
 
 export default function UserPremiumPopup({ isOpen, onClose, user, onOpenMerchantWindow }) {
   if (!isOpen) return null;
@@ -662,23 +588,14 @@ export default function UserPremiumPopup({ isOpen, onClose, user, onOpenMerchant
 export function UserPremiumPaymentWindow({ user, onUpgrade }) {
   React.useEffect(() => {
     const handleNestedCheckoutMessage = (event) => {
-      if (event.origin !== window.location.origin) {
-        return;
-      }
-
-      if (event?.data?.type !== USER_PREMIUM_PAYMENT_SUCCESS) {
-        return;
-      }
-
+      if (event.origin !== window.location.origin) return;
+      if (event?.data?.type !== USER_PREMIUM_PAYMENT_SUCCESS) return;
       if (window.opener && !window.opener.closed) {
         window.opener.postMessage(event.data, window.location.origin);
       }
     };
-
     window.addEventListener('message', handleNestedCheckoutMessage);
-    return () => {
-      window.removeEventListener('message', handleNestedCheckoutMessage);
-    };
+    return () => window.removeEventListener('message', handleNestedCheckoutMessage);
   }, []);
 
   const handleClose = () => {
@@ -690,38 +607,31 @@ export function UserPremiumPaymentWindow({ user, onUpgrade }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#dad7cd] dark:bg-[#121416] px-3 py-3 text-[#344e41] dark:text-white transition-colors duration-300 sm:px-4 sm:py-4">
-      <div className="min-h-[calc(100vh-1.5rem)] flex items-center justify-center sm:min-h-[calc(100vh-2rem)]">
-        <div className="w-full max-w-6xl overflow-hidden rounded-[28px] border border-[#a3b18a] dark:border-[#444d57] bg-[rgba(255,255,255,0.88)] dark:bg-[rgba(12,24,40,0.9)] backdrop-blur-2xl shadow-[0_30px_90px_rgba(58,90,64,0.14)] dark:shadow-[0_30px_90px_rgba(0,0,0,0.45)]">
-          <div className="border-b border-[#ccd5c0] dark:border-[#1f3857] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(245,247,240,0.78))] dark:bg-[linear-gradient(180deg,rgba(18,35,58,0.95),rgba(10,21,35,0.82))] px-5 py-4 sm:px-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#588157] dark:text-[#e2b94d]">Secure checkout</p>
-                <h1 className="mt-1.5 text-2xl sm:text-[2rem] font-semibold tracking-tight text-[#102a1b] dark:text-white">Complete Premium Payment</h1>
-                <p className="mt-1.5 max-w-2xl text-sm text-[#5f6f52] dark:text-[#c0c8d0]">Choose a payment method and we'll activate premium only after payment is successfully confirmed.</p>
-              </div>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ccd5c0] dark:border-[#4b5560] bg-[#f8fbf6]/80 dark:bg-[#2a2f35] text-[#5f6f52] dark:text-[#d3e3f4] hover:bg-[#f8fbf6] dark:hover:bg-[#31363d] transition-colors"
-                aria-label="Close premium payment popup"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-
-          <MerchantCheckout
-            user={user}
-            onBack={handleClose}
-            onClose={handleClose}
-            onConfirmUpgrade={onUpgrade}
-            standalone
-          />
+    <div className="min-h-screen bg-[#dad7cd] dark:bg-[#121416] px-4 py-6 sm:p-8 flex items-center justify-center transition-colors duration-300">
+      <div className="w-full max-w-2xl bg-white/70 dark:bg-[#22272b]/70 backdrop-blur-2xl rounded-3xl overflow-hidden shadow-[0_20px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_40px_rgba(0,0,0,0.3)] border border-white/40 dark:border-white/10">
+        <div className="px-6 py-6 sm:px-10 sm:pt-10 flex items-start justify-between">
+           <div>
+             <h1 className="text-2xl font-bold tracking-tight text-[#2d4632] dark:text-white">Complete Premium Payment</h1>
+           </div>
+           <button 
+             onClick={handleClose}
+             className="p-2 -mr-2 text-[#5f6f52] dark:text-[#a8b1ba] hover:text-[#2d4632] dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.05] rounded-xl transition-colors"
+           >
+             <X className="h-5 w-5" />
+           </button>
         </div>
+        <MerchantCheckout
+          user={user}
+          onBack={handleClose}
+          onClose={handleClose}
+          onConfirmUpgrade={onUpgrade}
+          standalone
+        />
       </div>
     </div>
   );
 }
+
+
 
 export { USER_PREMIUM_PAYMENT_PATH, USER_PREMIUM_PAYMENT_SUCCESS, USER_PREMIUM_PAYMENT_STORAGE_KEY };

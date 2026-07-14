@@ -1,9 +1,11 @@
 const pool = require('../config/database');
 const { ensureBaseUserSchemaReady, ensureHiringSchemaReady } = require('../config/runtimeSchema');
 const { logger } = require('../config/logger');
+const { getLocalPaymentBypassAvailability } = require('../config/localBypass');
 const {
   JOB_POST_PLANS,
   getPaymentProviderAvailability,
+  getPaymentPresentationMeta,
   getPaymentRecordForCompany,
   getOrCreateCompanyForUserId,
   normalizeProvider,
@@ -57,7 +59,12 @@ const listJobPostingPlans = async (req, res) => {
 
 const listPaymentProviders = async (req, res) => {
   try {
-    return res.json({ success: true, providers: getPaymentProviderAvailability() });
+    return res.json({
+      success: true,
+      providers: getPaymentProviderAvailability(),
+      ...getPaymentPresentationMeta(),
+      localPaymentBypass: getLocalPaymentBypassAvailability(req),
+    });
   } catch (error) {
     logger.error('List payment providers error:', error);
     return res.status(500).json({ success: false, message: 'Server error while loading payment providers' });

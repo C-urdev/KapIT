@@ -1,5 +1,10 @@
 type RequestLike = import('express').Request;
 
+interface LocalBypassAvailability {
+  available: boolean;
+  reason: string;
+}
+
 const toLower = (value: unknown): string => String(value || '').trim().toLowerCase();
 
 const isLoopbackHostname = (raw: unknown): boolean => {
@@ -32,7 +37,7 @@ const isLocalAuthBypassEnabled = () =>
 const isLocalPaymentBypassEnabled = () =>
   isDevelopmentRuntime() && isFeatureEnabled('ENABLE_LOCAL_PAYMENT_BYPASS');
 
-const assertLoopbackRequest = (req: RequestLike, label: string): void => {
+const isLoopbackRequest = (req: RequestLike): boolean => {
   const hostHeader = req.get('x-forwarded-host') || req.get('host') || req.hostname;
   const originHeader = req.get('origin');
   const refererHeader = req.get('referer');
@@ -43,7 +48,11 @@ const assertLoopbackRequest = (req: RequestLike, label: string): void => {
   const refererAllowed = !refererHeader || isLoopbackHostname(refererHeader);
   const ipAllowed = isLoopbackIp(requestIp);
 
-  if (!hostAllowed || !originAllowed || !refererAllowed || !ipAllowed) {
+  return hostAllowed && originAllowed && refererAllowed && ipAllowed;
+};
+
+const assertLoopbackRequest = (req: RequestLike, label: string): void => {
+  if (!isLoopbackRequest(req)) {
     throw new Error(`${label} is only allowed from localhost.`);
   }
 };
@@ -62,10 +71,32 @@ const assertLocalPaymentBypassAllowed = (req: RequestLike): void => {
   assertLoopbackRequest(req, 'Local payment bypass');
 };
 
+const getLocalPaymentBypassAvailability = (req: RequestLike): LocalBypassAvailability => {
+  if (!isLocalPaymentBypassEnabled()) {
+    return {
+      available: false,
+      reason: 'Local payment bypass is disabled. Enable NODE_ENV=development and ENABLE_LOCAL_PAYMENT_BYPASS=true.',
+    };
+  }
+
+  if (!isLoopbackRequest(req)) {
+    return {
+      available: false,
+      reason: 'Local payment bypass is only allowed from localhost.',
+    };
+  }
+
+  return {
+    available: true,
+    reason: '',
+  };
+};
+
 module.exports = {
   isDevelopmentRuntime,
   isLocalAuthBypassEnabled,
   isLocalPaymentBypassEnabled,
+  getLocalPaymentBypassAvailability,
   assertLocalAuthBypassAllowed,
   assertLocalPaymentBypassAllowed,
 };

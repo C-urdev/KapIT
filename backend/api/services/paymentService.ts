@@ -52,6 +52,21 @@ const getPaymentProviderAvailability = () => {
   };
 };
 
+const getPaymentPresentationMeta = () => {
+  const status = resolveDemoPricingForAmount(0);
+  return {
+    demoPricing: {
+      enabled: Boolean(status.demoEnabledFlag),
+      active: Boolean(status.isDemoActive),
+      demoAmountPhp: status.demoAmountPhp == null ? null : Number(status.demoAmountPhp),
+      demoAmountValue: status.demoAmountPhp == null ? null : formatPhpAmount(status.demoAmountPhp),
+      expiresAt: status.expiresAt || null,
+      expired: Boolean(status.isExpired),
+      mode: status.effectiveMode,
+    },
+  };
+};
+
 const toMinorPhp = (amount) => Math.round(Number(amount || 0) * 100);
 
 const parseProviderPayload = (value) => {
@@ -1732,6 +1747,7 @@ module.exports = {
   JOB_POST_PLANS,
   USER_PREMIUM_PLAN,
   getPaymentProviderAvailability,
+  getPaymentPresentationMeta,
   getPaymentRecordForCompany,
   getUserPremiumPaymentRecord,
   getOrCreateCompanyForUserId,

@@ -10,7 +10,6 @@ import { getPaymentErrorMessageForUser } from '@sharedUtils/paymentErrorMessages
 const STORAGE_KEY = 'company-post-job-draft';
 const PAYMENT_MESSAGE_TYPE = 'company-post-job-payment-success';
 const PAYMENT_CANCEL_MESSAGE_TYPE = 'company-post-job-payment-cancelled';
-const localPaymentBypassEnabled = import.meta.env.VITE_ENABLE_LOCAL_PAYMENT_BYPASS === 'true';
 const createPaymentIdempotencyKey = () => {
   if (typeof window !== 'undefined' && window.crypto?.randomUUID) {
     return `checkout-${window.crypto.randomUUID()}`;
@@ -51,13 +50,14 @@ export default function CompanyPostJobPaymentPage() {
   const [verifying, setVerifying] = React.useState(false);
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState('');
+  const [demoPricing, setDemoPricing] = React.useState(null);
+  const [localPaymentBypass, setLocalPaymentBypass] = React.useState({ available: false, reason: '' });
   const [checkoutFallbackUrls, setCheckoutFallbackUrls] = React.useState([]);
   const [completedCheckout, setCompletedCheckout] = React.useState(null);
   const handledReturnRef = React.useRef(false);
   const paymentCompletedRef = React.useRef(false);
   const pendingCheckoutIdempotencyKeyRef = React.useRef('');
-  const isLocalhostBypassAvailable =
-    localPaymentBypassEnabled && ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+  const isLocalhostBypassAvailable = Boolean(localPaymentBypass?.available);
 
   React.useEffect(() => {
     try {
@@ -95,6 +95,8 @@ export default function CompanyPostJobPaymentPage() {
 
         if (!cancelled && providersData?.providers) {
           setProviderAvailability(providersData.providers);
+          setDemoPricing(providersData?.demoPricing || null);
+          setLocalPaymentBypass(providersData?.localPaymentBypass || { available: false, reason: '' });
           const firstEnabled = PAYMENT_PROVIDERS.find((provider) => providersData.providers?.[provider.id]?.enabled);
           if (firstEnabled) {
             setPaymentMethod((current) => (providersData.providers?.[current]?.enabled ? current : firstEnabled.id));
@@ -218,6 +220,11 @@ export default function CompanyPostJobPaymentPage() {
   const selectedProviderState = providerAvailability?.[selectedProvider.id] || { enabled: true, reason: '' };
   const selectedPlan = plans.find((plan) => plan.id === selectedPlanId) || null;
   const stepState = success ? 3 : verifying || loading ? 2 : 1;
+  const demoChargeAmountLabel = demoPricing?.active && demoPricing?.demoAmountValue
+    ? demoPricing.demoAmountValue
+    : selectedPlan
+      ? Number(selectedPlan.price || 0).toLocaleString()
+      : null;
   const completedProvider = PAYMENT_PROVIDERS.find((provider) => provider.id === completedCheckout?.payment?.provider || provider.id === completedCheckout?.providerId) || null;
   const completedPlan = plans.find((plan) => plan.id === completedCheckout?.payment?.plan_id) || JOB_POST_PLANS.find((plan) => plan.id === completedCheckout?.payment?.plan_id) || null;
   const paidPlanLabel = completedCheckout?.payment?.plan_label || completedPlan?.label || '--';
@@ -521,6 +528,12 @@ export default function CompanyPostJobPaymentPage() {
                 The draft stays saved until payment is verified. If checkout fails or is cancelled, the job remains unpublished and you can safely try again.
               </div>
 
+              {demoPricing?.active ? (
+                <div className="rounded-[22px] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+                  Demo pricing is active. PayPal will charge PHP {demoPricing.demoAmountValue} for this local checkout while the selected posting plan amount and entitlements stay unchanged in internal records.
+                </div>
+              ) : null}
+
               {!selectedProviderState.enabled ? (
                 <div className="rounded-[22px] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
                   {selectedProviderState.reason || `${selectedProvider.label} is not configured yet.`} Add the required server env keys, then refresh this popup.
@@ -566,7 +579,7 @@ export default function CompanyPostJobPaymentPage() {
                     : verifying
                       ? 'Verifying payment...'
                       : selectedPlan
-                        ? `Pay PHP ${Number(selectedPlan.price || 0).toLocaleString()} with ${selectedProvider.label}`
+                        ? `Pay PHP ${demoChargeAmountLabel} with ${selectedProvider.label}`
                         : 'Select a plan to continue'}
                 </button>
                 {isLocalhostBypassAvailable ? (

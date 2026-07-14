@@ -1,10 +1,12 @@
 ﻿const pool = require('../config/database');
 const { ensureBaseUserSchemaReady } = require('../config/runtimeSchema');
 const { logger } = require('../config/logger');
+const { getLocalPaymentBypassAvailability } = require('../config/localBypass');
 const { serializeUser } = require('../utils/authUserSerializer');
 const {
   USER_PREMIUM_PLAN,
   getPaymentProviderAvailability,
+  getPaymentPresentationMeta,
   getUserPremiumPaymentRecord,
   normalizeProvider,
   assertLocalBypassAllowed,
@@ -52,6 +54,8 @@ const listUserPremiumPaymentProviders = async (req, res) => {
       success: true,
       plan: USER_PREMIUM_PLAN,
       providers: getPaymentProviderAvailability(),
+      ...getPaymentPresentationMeta(),
+      localPaymentBypass: getLocalPaymentBypassAvailability(req),
     });
   } catch (error) {
     logger.error('List user premium payment providers error:', error);
