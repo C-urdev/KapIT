@@ -27,15 +27,15 @@ export default function UserLeftSidebar({ user, userType, onOpenPremium, onOpenM
                 <span className="text-3xl font-bold text-white">{userInitial}</span>
               )}
             </div>
-            {isPremium && (
-               <div className="mb-2 mr-1">
-                 <PremiumBadge compact />
-               </div>
-            )}
           </div>
           
           <div className="flex flex-col gap-0.5 mb-1">
-            <h3 className="font-bold text-[#2d4632] dark:text-white text-xl tracking-tight">{displayName}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-[#2d4632] dark:text-white text-xl tracking-tight">{displayName}</h3>
+              {isPremium && (
+                 <PremiumBadge compact />
+              )}
+            </div>
           </div>
           {userType === 'employee' ? (
             <>
