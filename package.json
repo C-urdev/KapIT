@@ -24,6 +24,8 @@
     "build:vercel": "pnpm --dir frontend install --frozen-lockfile && pnpm --dir frontend run build",
     "test": "pnpm --dir backend run test",
     "lint": "pnpm --dir frontend run lint",
+    "sync-skills": "node --require ./backend/node_modules/tsx/dist/cjs/index.cjs scripts/sync-skills.ts",
+    "sync-skills:test": "node --require ./backend/node_modules/tsx/dist/cjs/index.cjs --test scripts/tests/sync-skills.test.ts",
     "fastapi:dev": "pnpm --dir backend run fastapi:dev",
     "db:migrate:dry": "node --require ./backend/node_modules/tsx/dist/cjs/index.cjs scripts/apply-db-migrations.ts --dry-run",
     "db:migrate:staging": "node --require ./backend/node_modules/tsx/dist/cjs/index.cjs scripts/apply-db-migrations.ts --env=STAGING_DATABASE_URL"
