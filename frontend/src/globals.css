@@ -5,7 +5,7 @@
 @layer base {
   :root {
     --font-mobile: 'SF Pro Display', 'Geist Sans', 'Helvetica Neue', 'Switzer', sans-serif;
-    --font-desktop: 'SF Pro Display', 'Geist Sans', 'Helvetica Neue', 'Switzer', sans-serif;
+    --font-desktop: 'SF Pro Display', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
     --font-weight-body: 400;
     --font-weight-button: 500;
     --font-weight-heading: 600;

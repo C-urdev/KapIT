@@ -72,6 +72,15 @@ scratch_*.ts
 scratch_*.jsx
 scratch_*.tsx
 scratch_*.sql
+/scratch_*.cjs
+/temp_*.js
+/temp_*.cjs
+/tmp_*.js
+/tmp_*.cjs
+/debug_*.js
+/debug_*.cjs
+/update_*.js
+/update_*.cjs
 temp_*.sql
 test_*.sql
 cleanup_*.sql
@@ -79,4 +88,8 @@ cleanup_*.sql
 *-audit*.md
 *readiness-review*.md
 *schema-audit*.md
-test_*.ts
+backend/api/tests/*.local.test.ts
+backend/api/tests/**/*.local.test.ts
+backend/api/tests/local-bypass.guard.test.ts
+backend/api/tests/payment-env.test.ts
+backend/api/tests/payment.presentation.test.ts
