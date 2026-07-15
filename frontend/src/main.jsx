@@ -15,6 +15,10 @@ const buildVersion = String(
 ).trim();
 
 const getInitialTheme = () => {
+  if (document.documentElement.classList.contains('dark')) {
+    return 'dark';
+  }
+
   const match = document.cookie.match(/(?:^|;\s*)theme=([^;]*)/);
   return match && match[1] === 'dark' ? 'dark' : 'light';
 };
