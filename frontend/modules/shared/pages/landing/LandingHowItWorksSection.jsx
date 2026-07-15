@@ -30,13 +30,10 @@ const STEPS = [
 
 export default function LandingHowItWorksSection() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#fbfaf6] via-[#fbfaf6] via-[97%] to-[#f8f4ec] dark:bg-[#181a1b]">
-      <div className="landing-desktop-shell relative py-14 sm:py-16 lg:py-20">
+    <section className="relative overflow-hidden bg-[linear-gradient(180deg,#fffefd_0%,#fcfaf6_34%,#f6eee2_100%)] dark:bg-[#181a1b]">
+      <div className="landing-desktop-shell relative py-[6rem] sm:py-24 lg:py-32">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-[0.78rem] font-semibold uppercase tracking-[0.24em] text-[#6a8b6a] dark:text-[#cdd7d1]">
-            How it works
-          </p>
-          <h3 className="mt-4 text-[2.5rem] font-semibold tracking-[-0.05em] text-[#102a1b] dark:text-white sm:text-[3rem]">
+          <h3 className="text-[2.5rem] font-semibold tracking-[-0.05em] text-[#102a1b] dark:text-white sm:text-[3rem]">
             How KapIT works
           </h3>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-[#4e5f54] dark:text-[#cbd5e1]">
@@ -44,7 +41,7 @@ export default function LandingHowItWorksSection() {
           </p>
         </div>
 
-        <div className="mt-12 grid gap-5 lg:grid-cols-3 lg:gap-6">
+        <div className="mt-16 grid gap-6 lg:grid-cols-3 lg:gap-7">
           {STEPS.map((step, index) => {
             const Icon = step.icon;
             const isMiddle = index === 1;
@@ -56,7 +53,7 @@ export default function LandingHowItWorksSection() {
                   isMiddle ? 'lg:translate-y-10' : ''
                 }`}
               >
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(111,155,116,0.08),rgba(111,155,116,0))] opacity-70 dark:bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.04),rgba(255,255,255,0))]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(190,171,144,0.12),rgba(190,171,144,0))] opacity-70 dark:bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.04),rgba(255,255,255,0))]" />
 
                 <div className="relative flex items-start justify-between gap-4">
                   <div>

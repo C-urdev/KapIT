@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import ThinSectionLine from '@sharedComponents/ui/ThinSectionLine';
 
 const beamTransition = {
   delay: 0.25,
@@ -61,9 +60,8 @@ function BlurBeam({ side }) {
 export function LampContainer({ children, className = '' }) {
   return (
     <div
-      className={`relative z-0 flex min-h-[26rem] w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#f8f4ec] via-[#f0ebe0] to-[#eee9de] [--lamp-beam:#588157] [--lamp-glow:#6f9b74] [--lamp-mask:#f0ebe0] dark:from-[#1a1d20] dark:via-[#1d2226] dark:to-[#23282e] dark:[--lamp-beam:#6f9b74] dark:[--lamp-glow:#82ad86] dark:[--lamp-mask:#1d2226] sm:min-h-[30rem] ${className}`}
+      className={`relative z-0 flex min-h-[28rem] w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#f8f4ec] via-[#f0ebe0] to-[#eee9de] [--lamp-beam:#588157] [--lamp-glow:#6f9b74] [--lamp-mask:#f0ebe0] dark:from-[#1a1d20] dark:via-[#1d2226] dark:to-[#23282e] dark:[--lamp-beam:#6f9b74] dark:[--lamp-glow:#82ad86] dark:[--lamp-mask:#1d2226] sm:min-h-[32rem] ${className}`}
     >
-      <ThinSectionLine className="top-0 z-[60]" />
       <div className="relative isolate z-0 flex min-h-[15rem] w-full flex-1 scale-y-125 items-center justify-center sm:min-h-[17rem]">
         <ConicBeam side="left" />
         <ConicBeam side="right" />
@@ -100,7 +98,7 @@ export function LampContainer({ children, className = '' }) {
         />
       </div>
 
-      <div className="landing-desktop-shell relative z-50 -mt-24 flex w-full flex-col items-center pb-12 text-center sm:-mt-28 sm:pb-14">
+      <div className="landing-desktop-shell relative z-50 -mt-24 flex w-full flex-col items-center pb-16 text-center sm:-mt-28 sm:pb-20">
         {children}
       </div>
     </div>

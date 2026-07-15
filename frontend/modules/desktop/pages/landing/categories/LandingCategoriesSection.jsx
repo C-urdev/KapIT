@@ -23,77 +23,77 @@ import {
 } from 'lucide-react';
 
 const PROBLEM_CHIPS = [
-  { label: 'Hours applying, no replies?', icon: MailWarning },
+  { label: 'Applying on generic job boards?', icon: MailWarning },
   { label: 'Lost track of applications?', icon: SquareStack },
-  { label: 'Copy-pasting cover letters?', icon: CopyX },
-  { label: 'Rewriting resumes nonstop?', icon: PenSquare },
-  { label: 'Manual spreadsheet tracking?', icon: ClipboardList },
-  { label: 'Endless scrolling for jobs?', icon: BriefcaseBusiness },
-  { label: 'Feeling burnt out?', icon: Flame },
+  { label: 'Portfolio links getting ignored?', icon: CopyX },
+  { label: 'Rewriting resumes for every role?', icon: PenSquare },
+  { label: 'Tracking updates in spreadsheets?', icon: ClipboardList },
+  { label: 'Unsure which jobs really fit?', icon: BriefcaseBusiness },
+  { label: 'Switching between too many tools?', icon: Flame },
 ];
 
 const BENEFITS = [
   {
-    title: 'Secure by Design',
-    description: 'Your data and applications stay encrypted and protected.',
+    title: 'IT-Focused Platform',
+    description: 'Built for Filipino tech talent and the companies hiring for technical roles.',
     icon: Shield,
   },
   {
-    title: 'Real-Time Sync',
-    description: 'Statuses update automatically, no spreadsheets needed.',
+    title: 'Portfolio-Ready Profiles',
+    description: 'Show your skills, experience, and past work in one profile employers can review quickly.',
     icon: RefreshCw,
   },
   {
-    title: 'Unified Dashboard',
-    description: 'View every job, status, email, and document in one place.',
+    title: 'ATS-Optimized Resumes',
+    description: 'Keep resume versions that are easier to review, score, and share when applying.',
     icon: LayoutDashboard,
   },
   {
-    title: 'AI Cover Letters',
-    description: 'Personalized, role-specific cover letters generated in seconds.',
+    title: 'Skill Match Percentages',
+    description: 'See clearer match signals so you can focus on roles that actually fit your background.',
     icon: WandSparkles,
   },
   {
-    title: 'Auto Resume Updates',
-    description: 'Your resume stays current with new skills and experience added to your profile.',
+    title: 'Application Tracking',
+    description: 'Follow jobs, statuses, emails, and documents from one dashboard instead of scattered notes.',
     icon: Files,
   },
   {
-    title: 'AI Insights',
-    description: "See what's working and where you get the best results.",
+    title: 'Company Hiring Tools',
+    description: 'Post IT roles with clear requirements and review stronger-fit candidates faster.',
     icon: TrendingUp,
   },
   {
-    title: 'Seamless Experience',
-    description: 'A fully integrated experience - search, apply, and track in one flow.',
+    title: 'Unified Workflow',
+    description: 'Move from profile setup to job search, applications, and follow-ups in one flow.',
     icon: Sparkles,
   },
   {
-    title: 'Works Everywhere',
-    description: 'Use KapIT across web and mobile - your progress stays perfectly synced.',
+    title: 'Web and Mobile Access',
+    description: 'Use KapIT across devices and pick up where you left off whenever you need to.',
     icon: Globe,
   },
 ];
 
 export default function LandingCategoriesSection() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#fbfaf6] via-[#fcfbf8] to-white dark:bg-[#181a1b] scroll-mt-24">
-      <div className="landing-desktop-shell relative py-12 sm:py-14 lg:py-16">
+    <section className="relative overflow-hidden bg-[linear-gradient(180deg,#fffdfa_0%,#fcfaf5_56%,#f8f3ea_100%)] dark:bg-[#181a1b] scroll-mt-24">
+      <div className="landing-desktop-shell relative py-[4.5rem] sm:py-20 lg:py-24">
         <div className="mx-auto max-w-4xl text-center">
           <h3 className="text-3xl font-semibold tracking-tight text-[#11120f] dark:text-white sm:text-4xl lg:text-[2.5rem]">
-            Tired of endless job searching?{' '}
+            Finding the right tech role or candidate is harder{' '}
             <span className="font-medium text-[#6b6e69] dark:text-[#94a3b8]">
-              Here&apos;s what&apos;s really holding you back.
+              when everything is spread across different tools.
             </span>
           </h3>
 
           <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-[#4d504b] dark:text-[#cbd5e1] sm:text-lg">
-            If you&apos;re still spending hours filling out forms, rewriting resumes, and tracking applications by
-            hand, you&apos;re not alone.
+            KapIT brings portfolio-ready profiles, ATS-optimized resumes, skill match percentages, and application
+            tracking into one focused experience for Filipino IT talent and hiring teams.
           </p>
         </div>
 
-        <div className="mx-auto mt-10 flex max-w-[70rem] flex-wrap items-center justify-center gap-3.5 lg:mt-12">
+        <div className="mx-auto mt-12 flex max-w-[70rem] flex-wrap items-center justify-center gap-3.5 lg:mt-14">
           {PROBLEM_CHIPS.map((chip) => {
             const Icon = chip.icon;
             return (
@@ -108,9 +108,9 @@ export default function LandingCategoriesSection() {
           })}
         </div>
 
-        <div className="mx-auto mt-14 h-px max-w-6xl bg-[#efebe2] dark:bg-white/10" />
+        <div className="mx-auto mt-16 h-px max-w-6xl bg-[#efebe2] dark:bg-white/10" />
 
-        <div className="mt-14 grid gap-y-10 gap-x-8 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-16 grid gap-y-12 gap-x-8 sm:grid-cols-2 xl:grid-cols-4">
           {BENEFITS.map((benefit) => {
             const Icon = benefit.icon;
             return (

@@ -12,9 +12,9 @@ const COMPARISON_ROWS = [
 
 export default function LandingWhyUsSection() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#f8f4ec] via-[#fbfaf6] to-[#fbfaf6] dark:bg-none dark:bg-[#181a1b]">
-      <div className="landing-desktop-shell relative pt-6 pb-12 sm:pt-10 sm:pb-16 lg:pt-8 lg:pb-16">
-        <div className="mb-7 max-w-2xl lg:mb-8">
+    <section className="relative overflow-hidden bg-[linear-gradient(180deg,#fffefd_0%,#fcfbf8_48%,#f8f2e9_100%)] dark:bg-[#181a1b]">
+      <div className="landing-desktop-shell relative py-[6rem] sm:py-24 lg:py-32">
+        <div className="mx-auto mb-12 max-w-2xl text-center lg:mb-14">
           <h3 className="text-3xl lg:text-4xl font-bold text-[#102a1b] dark:text-white">
             Why Us?
           </h3>

@@ -1,135 +1,137 @@
 import React from 'react';
 import { Star } from 'lucide-react';
 
-const BRAND_WORDMARKS = [
-  { label: 'airbnb', className: 'text-[2.15rem] tracking-[-0.05em]' },
-  { label: 'Meta', className: 'text-[2.3rem] tracking-[-0.08em]' },
-  { label: 'Tesla', className: 'text-[2rem] tracking-[0.18em] uppercase' },
-  { label: 'SpaceX', className: 'text-[1.75rem] tracking-[0.2em]' },
-  { label: 'Google', className: 'text-[2.45rem] tracking-[-0.06em]' },
-  { label: 'Apple', className: 'text-[2.4rem] tracking-[-0.05em]' },
+const EMPLOYER_WORDMARKS = [
+  { label: 'SM', className: 'text-[1.95rem] tracking-[-0.04em]' },
+  { label: 'Accenture', className: 'text-[1.75rem] tracking-[-0.03em]' },
+  { label: 'Ayala', className: 'text-[1.95rem] tracking-[0.04em]' },
+  { label: 'STI Colleges', className: 'text-[1.55rem] tracking-[-0.02em]' },
+  { label: 'BDO Unibank', className: 'text-[1.65rem] tracking-[-0.03em]' },
+  { label: 'PLDT', className: 'text-[1.9rem] tracking-[0.08em]' },
+  { label: 'Philippine Airlines', className: 'text-[1.45rem] tracking-[-0.02em]' },
 ];
 
 const REVIEWS = [
   {
-    id: 'mika',
-    rating: 4.5,
-    quote:
-      'We started getting great applicants right away. The quality and fit were both impressive.',
-    name: 'Mika R.',
-    role: 'Hiring Lead',
-    avatar: 'MR',
-    avatarClassName: 'from-[#d9e6d4] to-[#f3ede2]',
-  },
-  {
-    id: 'paolo',
-    rating: 4.7,
-    quote:
-      'Shortlisting was easier than expected. We found strong matches without extra back-and-forth.',
-    name: 'Paolo S.',
-    role: 'Product Manager',
-    avatar: 'PS',
-    avatarClassName: 'from-[#dce7ef] to-[#f2ebe2]',
-  },
-  {
-    id: 'janelle',
+    id: 'celine',
+    name: 'Celine Navarro',
+    role: 'Frontend developer',
     rating: 4.1,
+    image:
+      'https://randomuser.me/api/portraits/women/68.jpg',
     quote:
-      'The platform feels clean, fast, and very trustworthy. We loved the positive candidate flow.',
-    name: 'Janelle P.',
-    role: 'Startup Founder',
-    avatar: 'JP',
-    avatarClassName: 'from-[#ead7cb] to-[#f4eee8]',
+      'KapIT feels more focused than generic job sites. My profile, resume, and applications are all in one place, so applying feels much less scattered.',
+  },
+  {
+    id: 'marco',
+    name: 'Marco Villanueva',
+    role: 'Engineering manager',
+    rating: 4.6,
+    image:
+      'https://randomuser.me/api/portraits/men/32.jpg',
+    quote:
+      'The fit signals and cleaner candidate profiles made shortlisting easier on our side. We spend less time guessing and more time reviewing relevant people.',
+  },
+  {
+    id: 'danica',
+    name: 'Danica Reyes',
+    role: 'Product designer',
+    rating: 4.3,
+    image:
+      'https://randomuser.me/api/portraits/women/52.jpg',
+    quote:
+      'I like that KapIT shows the practical parts of the search clearly. The resume flow, application tracking, and mobile access all feel simple to keep up with.',
   },
 ];
 
-const renderRatingStars = (rating) => {
+function RatingStars({ rating }) {
   const clampedRating = Math.max(0, Math.min(5, rating));
 
   return (
-    <span className="inline-flex items-center gap-0.5 text-[#f0c766]" aria-label={`${clampedRating.toFixed(1)} out of 5 stars`}>
+    <span className="inline-flex items-center gap-0.5 text-[#e4b54f]" aria-label={`${clampedRating.toFixed(1)} out of 5 stars`}>
       {Array.from({ length: 5 }).map((_, index) => {
         const fillAmount = Math.max(0, Math.min(1, clampedRating - index));
+
         return (
           <span key={`success-rating-star-${index}`} className="relative inline-flex h-4 w-4 shrink-0">
-            <Star className="absolute inset-0 h-4 w-4 text-[#ddd6c8]" strokeWidth={1.6} aria-hidden="true" />
+            <Star className="absolute inset-0 h-4 w-4 text-[#d8d1c3]" strokeWidth={1.65} aria-hidden="true" />
             <span className="absolute inset-0 overflow-hidden" style={{ width: `${fillAmount * 100}%` }}>
-              <Star className="h-4 w-4 fill-current text-[#f0c766]" strokeWidth={1.6} aria-hidden="true" />
+              <Star className="h-4 w-4 fill-current text-[#e4b54f]" strokeWidth={1.65} aria-hidden="true" />
             </span>
           </span>
         );
       })}
     </span>
   );
-};
+}
 
 export default function LandingSuccessStoriesSection() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#e5ddcf] via-[#ece4d7] to-[#f8f5ee] dark:bg-[#181a1b]">
-      <div className="landing-desktop-shell relative py-14 sm:py-18 lg:py-20">
+    <section className="relative overflow-hidden bg-[linear-gradient(180deg,#fdfbf7_0%,#fdfbf7_18%,#f6f1e8_30%,#ece4d7_50%,#e9e0d2_68%,#f8f5ee_100%)] dark:bg-[linear-gradient(180deg,#181a1b_0%,#181a1b_18%,#1a1d1d_32%,#181a1b_100%)]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(253,251,247,0.94)_22%,rgba(250,247,242,0.68)_48%,rgba(245,238,228,0.14)_82%,rgba(245,238,228,0)_100%)] dark:bg-[linear-gradient(180deg,rgba(24,26,27,0.98)_0%,rgba(24,26,27,0.84)_24%,rgba(24,26,27,0.34)_58%,rgba(24,26,27,0)_100%)]" />
+      <div className="pointer-events-none absolute left-1/2 top-[-0.75rem] h-32 w-[66%] -translate-x-1/2 rounded-[999px] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.82)_0%,rgba(244,250,247,0.46)_40%,rgba(244,250,247,0)_76%)] blur-[22px] dark:bg-[radial-gradient(circle_at_center,rgba(239,247,243,0.14)_0%,rgba(84,123,111,0.08)_40%,rgba(84,123,111,0)_76%)]" />
+
+      <div className="landing-desktop-shell relative py-[4.5rem] sm:py-20 lg:py-24">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-[1.65rem] font-semibold tracking-[-0.03em] text-[#151714] dark:text-white sm:text-[1.85rem]">
-            Helped thousands of users land jobs at top companies
-          </p>
-          <p className="mt-3 text-[1.02rem] leading-relaxed text-[#5f5b53] dark:text-[#cbd5e1]">
-            From new grads to senior executives
-          </p>
+          <h3 className="mt-4 text-balance text-[1.85rem] font-semibold tracking-[-0.04em] text-[#151714] dark:text-white sm:text-[2.15rem]">
+            Made for candidates aiming at serious roles in the Philippines
+          </h3>
         </div>
 
-        <div className="mx-auto mt-12 flex max-w-5xl flex-wrap items-center justify-center gap-x-10 gap-y-6 text-[#8a8781] dark:text-[#c7ced6] sm:gap-x-12 lg:mt-14 lg:flex-nowrap lg:gap-x-14">
-          {BRAND_WORDMARKS.map((brand) => (
-            <span
-              key={brand.label}
-              className={`select-none whitespace-nowrap font-semibold opacity-95 ${brand.className}`}
-            >
-              {brand.label}
-            </span>
-          ))}
+        <div className="mx-auto mt-14 max-w-5xl text-center lg:mt-16">
+          <p className="mx-auto max-w-2xl text-balance text-[1.08rem] font-medium tracking-[-0.02em] text-[#3b3a35] dark:text-[#d6dde3]">
+            Built for applicants who want to stand out to leading employers across the Philippines
+          </p>
+
+          <div className="mx-auto mt-7 flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-5 text-[#8f897f] dark:text-[#c7ced6] sm:gap-x-10 lg:gap-x-12">
+            {EMPLOYER_WORDMARKS.map((company) => (
+              <span
+                key={company.label}
+                className={`select-none whitespace-nowrap font-semibold opacity-90 ${company.className}`}
+              >
+                {company.label}
+              </span>
+            ))}
+          </div>
         </div>
 
-        <div className="mx-auto mt-12 h-px max-w-6xl bg-[#d2ccbf] dark:bg-white/10" />
+        <div className="mx-auto mt-14 h-px max-w-6xl bg-[#d2ccbf] dark:bg-white/10" />
 
-        <div className="mt-10 grid gap-6 lg:grid-cols-3">
-          {REVIEWS.map((review) => (
+        <div className="mt-14 grid gap-6 lg:grid-cols-3">
+          {REVIEWS.map((review, index) => (
             <article
               key={review.id}
-              className="flex h-full min-h-[19.75rem] flex-col rounded-[1.45rem] border border-[#dbd4c8] bg-white/95 p-6 shadow-[0_10px_28px_rgba(44,34,19,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_38px_rgba(44,34,19,0.08)] dark:border-white/10 dark:bg-[#202224]"
+              className={`group relative overflow-hidden rounded-[2rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.58))] p-5 shadow-[0_18px_45px_rgba(63,46,24,0.06)] transition-[transform,box-shadow,background-color] duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_22px_50px_rgba(63,46,24,0.1)] dark:bg-[linear-gradient(180deg,rgba(33,36,38,0.82),rgba(28,31,33,0.65))] dark:shadow-[0_20px_44px_rgba(0,0,0,0.18)] ${
+                index === 1 ? 'lg:translate-y-8' : ''
+              }`}
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="truncate text-[1.02rem] font-semibold text-[#161815] dark:text-white">{review.name}</p>
-                  <p className="truncate text-sm text-[#6a655c] dark:text-[#cbd5e1]">{review.role}</p>
-                </div>
+              <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.58),rgba(255,255,255,0))] dark:bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.06),rgba(255,255,255,0))]" />
 
-                <div className="flex shrink-0 items-center gap-2">
-                  {renderRatingStars(review.rating)}
-                  <span className="text-[0.78rem] font-semibold tracking-[0.14em] text-[#6f715f] dark:text-[#d3d8df]">
-                    {review.rating.toFixed(1)}
-                  </span>
-                </div>
-              </div>
-
-              <p className="mt-6 text-[1.05rem] leading-[1.8] text-[#161815] dark:text-[#f3f4f6]">
-                "{review.quote}"
-              </p>
-
-              <div className="mt-auto flex items-end justify-between gap-4 pt-8">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${review.avatarClassName} text-sm font-semibold text-[#23211d] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] dark:text-white`}
-                  >
-                    {review.avatar}
-                  </div>
+              <div className="relative">
+                <div className="flex items-center gap-4">
+                  <img
+                    src={review.image}
+                    alt={`${review.name} sample reviewer portrait`}
+                    className="h-14 w-14 rounded-[1.2rem] object-cover object-center shadow-[0_10px_24px_rgba(30,22,15,0.12)] ring-1 ring-black/5"
+                  />
 
                   <div className="min-w-0">
-                    <p className="truncate text-[1.02rem] font-semibold text-[#161815] dark:text-white">{review.name}</p>
-                    <p className="truncate text-sm text-[#6a655c] dark:text-[#cbd5e1]">{review.role}</p>
+                    <div className="flex items-center gap-2">
+                      <RatingStars rating={review.rating} />
+                      <span className="font-mono text-[0.76rem] font-semibold tracking-[0.16em] text-[#7e786f] dark:text-[#cfd6dc]">
+                        {review.rating.toFixed(1)}
+                      </span>
+                    </div>
+                    <p className="mt-2 truncate text-[1.08rem] font-semibold tracking-[-0.03em] text-[#171915] dark:text-white">
+                      {review.name}
+                    </p>
+                    <p className="truncate text-[0.92rem] text-[#645f56] dark:text-[#c3ccd3]">{review.role}</p>
                   </div>
                 </div>
 
-                <div className="shrink-0 text-right text-[0.82rem] font-medium uppercase tracking-[0.16em] text-[#9d978f] dark:text-[#a6adb5]">
-                  KapIT Review
-                </div>
+                <p className="mt-6 text-pretty text-[1.06rem] leading-[1.9] text-[#1d1f1c] dark:text-[#edf1f3]">
+                  "{review.quote}"
+                </p>
               </div>
             </article>
           ))}

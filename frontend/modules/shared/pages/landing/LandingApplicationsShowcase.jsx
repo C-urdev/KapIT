@@ -165,7 +165,8 @@ export default function LandingApplicationsShowcase() {
   return (
     <div className="relative mx-auto hidden w-full max-w-[72rem] px-3 min-[1100px]:block">
       <div className="pointer-events-none absolute inset-x-10 top-5 h-[78%] rounded-[2rem] bg-[radial-gradient(circle_at_top,rgba(198,238,227,0.95),rgba(62,126,110,0.82)_58%,rgba(27,76,64,0.9))] blur-[2px]" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-[-3.5rem] h-32 bg-[linear-gradient(180deg,rgba(253,251,247,0)_0%,rgba(253,251,247,0.84)_56%,#FDFBF7_100%)] dark:bg-[linear-gradient(180deg,rgba(24,26,27,0)_0%,rgba(24,26,27,0.72)_56%,#181a1b_100%)]" />
+      <div className="pointer-events-none absolute left-1/2 bottom-[-4.75rem] h-52 w-[92%] -translate-x-1/2 rounded-[999px] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,1)_0%,rgba(255,255,255,0.98)_28%,rgba(253,251,247,0.94)_52%,rgba(250,247,241,0.58)_72%,rgba(253,251,247,0)_88%)] blur-[32px] dark:bg-[radial-gradient(ellipse_at_center,rgba(239,247,243,0.22)_0%,rgba(52,63,58,0.34)_42%,rgba(24,26,27,0)_84%)]" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-[-4.5rem] h-52 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.18)_16%,rgba(255,255,255,0.62)_42%,rgba(253,251,247,0.94)_70%,#FDFBF7_100%)] dark:bg-[linear-gradient(180deg,rgba(24,26,27,0)_0%,rgba(24,26,27,0.14)_18%,rgba(24,26,27,0.48)_44%,rgba(24,26,27,0.76)_70%,#181a1b_100%)]" />
 
       <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-[rgba(252,255,253,0.58)] p-4 shadow-[0_45px_100px_rgba(32,85,71,0.22)] backdrop-blur-[10px] dark:border-white/10 dark:bg-[rgba(28,35,31,0.72)]">
         <div className="overflow-hidden rounded-[1.6rem] border border-[#d4e1d9] bg-[#fbfdfc] shadow-[0_28px_60px_rgba(24,63,52,0.08)] dark:border-white/10 dark:bg-[#101714]">
@@ -230,7 +231,7 @@ export default function LandingApplicationsShowcase() {
           </div>
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(180deg,rgba(251,253,252,0)_0%,rgba(251,253,252,0.88)_72%,#fbfdfc_100%)] dark:bg-[linear-gradient(180deg,rgba(16,23,20,0)_0%,rgba(16,23,20,0.88)_72%,#101714_100%)]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.2)_14%,rgba(255,255,255,0.56)_34%,rgba(251,253,252,0.94)_68%,#fbfdfc_100%)] dark:bg-[linear-gradient(180deg,rgba(16,23,20,0)_0%,rgba(16,23,20,0.12)_14%,rgba(16,23,20,0.42)_34%,rgba(16,23,20,0.84)_68%,#101714_100%)]" />
       </div>
     </div>
   );

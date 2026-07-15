@@ -25,7 +25,7 @@ export default function LandingHeroSection({ onGetStarted, onJoinDeveloper }) {
         </div>
       )}
       {/* Editorial Split: Left Side Typography */}
-      <div className="landing-desktop-shell relative z-20 flex w-full flex-1 flex-col justify-center py-16 sm:py-20 min-[1100px]:min-h-[100dvh] min-[1100px]:items-center min-[1100px]:justify-start min-[1100px]:pt-52 min-[1100px]:pb-14">
+      <div className="landing-desktop-shell relative z-20 flex w-full flex-1 flex-col justify-center py-[4.5rem] sm:py-[5.5rem] min-[1100px]:min-h-[100dvh] min-[1100px]:items-center min-[1100px]:justify-start min-[1100px]:pt-[11.5rem] min-[1100px]:pb-[4.5rem]">
         <style dangerouslySetInnerHTML={{ __html: `
           @keyframes heroSlideUp {
             to { opacity: 1; transform: translateY(0); }
@@ -35,7 +35,7 @@ export default function LandingHeroSection({ onGetStarted, onJoinDeveloper }) {
           }
         `}} />
 
-        <div className="relative flex w-full max-w-[34rem] flex-col gap-8 min-[1100px]:max-w-[52rem] min-[1100px]:items-center min-[1100px]:gap-10">
+        <div className="relative flex w-full max-w-[34rem] flex-col gap-10 min-[1100px]:max-w-[52rem] min-[1100px]:items-center min-[1100px]:gap-12">
           
           {/* Halo Effect for Text Readability */}
           <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[120%] w-[140%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] bg-[#FDFBF7] opacity-95 blur-[60px] dark:bg-[#181a1b] dark:opacity-90 min-[1100px]:h-[160%] min-[1100px]:w-[120%]" />
@@ -85,8 +85,8 @@ export default function LandingHeroSection({ onGetStarted, onJoinDeveloper }) {
             </button>
           </div>
 
-          <div className="translate-y-8 opacity-0 animate-[heroSlideUp_1s_cubic-bezier(0.32,0.72,0,1)_0.38s_forwards] min-[1100px]:mt-1">
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 px-4 pt-5 text-[0.98rem] text-[#31453a] min-[1100px]:gap-x-8 dark:text-[#c8d0c7]">
+          <div className="translate-y-8 opacity-0 animate-[heroSlideUp_1s_cubic-bezier(0.32,0.72,0,1)_0.38s_forwards] min-[1100px]:mt-2">
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 px-4 pt-6 text-[0.98rem] text-[#31453a] min-[1100px]:gap-x-8 dark:text-[#c8d0c7]">
             <div className="inline-flex items-center gap-2.5">
               <Users className="h-4.5 w-4.5 text-[#2f5d50]" />
               <span>Used by 750,000+ job seekers</span>
@@ -103,7 +103,7 @@ export default function LandingHeroSection({ onGetStarted, onJoinDeveloper }) {
         </div>
         </div>
 
-        <div className="w-full translate-y-8 opacity-0 animate-[heroSlideUp_1.05s_cubic-bezier(0.32,0.72,0,1)_0.45s_forwards] min-[1100px]:pt-3">
+        <div className="w-full translate-y-8 opacity-0 animate-[heroSlideUp_1.05s_cubic-bezier(0.32,0.72,0,1)_0.45s_forwards] min-[1100px]:pt-5">
           <LandingApplicationsShowcase />
         </div>
       </div>
