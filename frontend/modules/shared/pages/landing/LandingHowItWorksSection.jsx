@@ -7,23 +7,23 @@ const STEPS = [
     step: 'Step 1',
     title: 'Create your profile',
     description:
-      "Sign up and complete your developer profile or set up your company account. Let us know what you're looking for.",
+      "Sign up, add your skills and experience, and tell employers what kind of IT role you're looking for.",
     icon: Users,
   },
   {
     id: 'showcase',
     step: 'Step 2',
-    title: 'Showcase work',
+    title: 'Showcase your work',
     description:
-      'Developers can showcase their portfolios and past work, while companies can post IT projects with clear requirements.',
+      'Bring your portfolio, projects, resume, and technical strengths into one profile employers can review.',
     icon: Code2,
   },
   {
     id: 'connect',
     step: 'Step 3',
-    title: 'Connect and collaborate',
+    title: 'Find and track roles',
     description:
-      'Reach out to matches, interview smoothly on our platform, and start collaborating seamlessly to build great things.',
+      'Focus on relevant openings, follow each application, and keep interview conversations moving in one place.',
     icon: ArrowRight,
   },
 ];

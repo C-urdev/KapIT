@@ -66,7 +66,7 @@ export default function LandingHeroSection({ onGetStarted, onJoinDeveloper }) {
 
             <div>
               <p className="max-w-[30rem] text-[1.0625rem] font-normal leading-[1.75] text-[#324336] text-pretty min-[1100px]:mx-auto min-[1100px]:max-w-[34rem] min-[1100px]:text-[1.125rem] min-[1100px]:leading-[1.8] xl:max-w-[38rem] dark:text-[#c8d0c7]">
-              The Philippine IT job board with portfolio-ready profiles, ATS-optimized resumes, and skill match percentages, helping companies hire qualified Filipino developers and talent land roles that actually fit.
+              The Philippine IT job board for portfolio-ready profiles, ATS-optimized resumes, skill match percentages, and organized applications to roles that fit.
               </p>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import UserNavbar from '@userComponents/UserNavbar';
 import UserLeftSidebar from '@userComponents/UserLeftSidebar';
-import UserRightSidebar from '@userComponents/UserRightSidebar';
+
 import CenterFeed from './UserCenterFeed';
 import { USER_PREMIUM_PAYMENT_PATH, USER_PREMIUM_PAYMENT_SUCCESS, USER_PREMIUM_PAYMENT_STORAGE_KEY } from '@userPages/premium/UserPremiumPopup';
 import UserMobileBottomNav from '@userComponents/navigation/mobile/UserMobileBottomNav';
@@ -1280,7 +1280,7 @@ export default function UserHomePage({ user, userType, onOpenHelp: _onOpenHelp, 
                 onOpenApplications={() => updateActiveNav('applications')}
               />
             </aside>
-            <main className="xl:col-span-9 2xl:col-span-6">
+            <main className="xl:col-span-9">
               <CenterFeed
                 loading={loadingPosts}
                 loadingMorePosts={loadingMorePosts}
@@ -1301,9 +1301,7 @@ export default function UserHomePage({ user, userType, onOpenHelp: _onOpenHelp, 
                 onExploreProjects={() => updateActiveNav('projects')}
               />
             </main>
-            <aside className="hidden 2xl:block 2xl:col-span-3">
-              <UserRightSidebar userType={userType} />
-            </aside>
+
           </div>
         )}
 

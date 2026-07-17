@@ -35,7 +35,7 @@ const PROBLEM_CHIPS = [
 const BENEFITS = [
   {
     title: 'IT-Focused Platform',
-    description: 'Built for Filipino tech talent and the companies hiring for technical roles.',
+    description: 'Built for Filipino tech professionals looking for focused technical opportunities.',
     icon: Shield,
   },
   {
@@ -59,8 +59,8 @@ const BENEFITS = [
     icon: Files,
   },
   {
-    title: 'Company Hiring Tools',
-    description: 'Post IT roles with clear requirements and review stronger-fit candidates faster.',
+    title: 'Focused Job Discovery',
+    description: 'Explore technical roles with clearer requirements and stronger signals about fit.',
     icon: TrendingUp,
   },
   {
@@ -81,7 +81,7 @@ export default function LandingCategoriesSection() {
       <div className="landing-desktop-shell relative py-[4.5rem] sm:py-20 lg:py-24">
         <div className="mx-auto max-w-4xl text-center">
           <h3 className="text-3xl font-semibold tracking-tight text-[#11120f] dark:text-white sm:text-4xl lg:text-[2.5rem]">
-            Finding the right tech role or candidate is harder{' '}
+            Finding the right tech role is harder{' '}
             <span className="font-medium text-[#6b6e69] dark:text-[#94a3b8]">
               when everything is spread across different tools.
             </span>
@@ -89,7 +89,7 @@ export default function LandingCategoriesSection() {
 
           <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-[#4d504b] dark:text-[#cbd5e1] sm:text-lg">
             KapIT brings portfolio-ready profiles, ATS-optimized resumes, skill match percentages, and application
-            tracking into one focused experience for Filipino IT talent and hiring teams.
+            tracking into one focused experience for Filipino IT professionals.
           </p>
         </div>
 

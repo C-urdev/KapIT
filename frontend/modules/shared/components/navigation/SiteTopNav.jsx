@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, Moon, Sun, Building2, UserRound, BriefcaseBusiness, FileText, LifeBuoy, UsersRound, ShieldCheck, CircleHelp } from 'lucide-react';
+import { ChevronDown, Moon, Sun, UserRound, BriefcaseBusiness, FileText, LifeBuoy, UsersRound, ShieldCheck, CircleHelp } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import Link from '../../../../components/shared/Link';
 import { useTheme } from '@sharedContext/ThemeContext';
@@ -7,6 +7,7 @@ import KapITLogo from '@sharedComponents/branding/KapITLogo';
 
 const TOP_NAV_LINKS = [
   { label: 'Solutions', hasDropdown: true, footerItem: 'Find talent' },
+  { label: 'For Employers', hasDropdown: false, href: '/for-employers' },
   { label: 'Resources', hasDropdown: true, footerItem: 'Help Center' },
   { label: 'Pricing', hasDropdown: false, href: '/pricing', footerItem: 'Pricing' },
   // Keep docs access in-platform until a dedicated /docs route exists.
@@ -34,23 +35,6 @@ const TOP_NAV_DROPDOWNS = {
           title: 'Projects',
           description: 'Join projects and collaborate with hiring companies.',
           footerItem: 'Projects',
-          icon: BriefcaseBusiness,
-        },
-      ],
-    },
-    {
-      heading: 'COMPANIES',
-      items: [
-        {
-          title: 'Find talent',
-          description: 'Search and connect with the right IT candidates.',
-          footerItem: 'Find talent',
-          icon: Building2,
-        },
-        {
-          title: 'Post projects',
-          description: 'Publish job posts and receive qualified applicants.',
-          footerItem: 'Post projects',
           icon: BriefcaseBusiness,
         },
       ],
@@ -376,38 +360,26 @@ export default function SiteTopNav({
                       }`}
                     />
                     {openHeaderDropdown === 'Solutions' ? (
-                      <>
-                        <p className={`text-[0.68rem] font-semibold tracking-[0.2em] ${dropdownHeadingClass}`}>
-                          {TOP_NAV_DROPDOWNS.Solutions[1].heading}
-                        </p>
-                        <div className="mt-3.5 space-y-1">
-                          {TOP_NAV_DROPDOWNS.Solutions[1].items.map((item, index) => {
-                            const ItemIcon = item.icon;
-                            return (
-                              <button
-                                key={item.title}
-                                type="button"
-                                onClick={() => {
-                                  handleTopNavClick(item.footerItem);
-                                  handleHeaderDropdownClose();
-                                }}
-                                className={`group flex w-full items-start gap-3 rounded-[0.95rem] px-3 py-2.5 text-left transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] animate-nav-item ${dropdownItemClass}`}
-                                style={{ animationDelay: `${(index + TOP_NAV_DROPDOWNS.Solutions[0].items.length) * 50}ms` }}
-                              >
-                                <span className={`mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[0.8rem] border transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105 ${dropdownIconClass}`}>
-                                  <ItemIcon className="h-4.5 w-4.5" />
-                                </span>
-                                <span className="min-w-0">
-                                  <span className={`block text-[0.98rem] font-semibold ${dropdownTitleClass}`}>{item.title}</span>
-                                  <span className={`mt-0.5 block text-[0.9rem] leading-6 ${dropdownDescriptionClass}`}>
-                                    {item.description}
-                                  </span>
-                                </span>
-                              </button>
-                            );
-                          })}
+                      <div className="flex h-full flex-col justify-between">
+                        <div>
+                          <p className={`text-[0.68rem] font-semibold tracking-[0.2em] ${dropdownHeadingClass}`}>
+                            HIRING FOR YOUR TEAM?
+                          </p>
+                          <p className={`mt-4 text-xl font-semibold tracking-[-0.035em] ${dropdownTitleClass}`}>
+                            Meet KapIT for Employers
+                          </p>
+                          <p className={`mt-2 text-sm leading-6 ${dropdownDescriptionClass}`}>
+                            Search Filipino IT talent, publish roles, and manage applicants in a dedicated employer workspace.
+                          </p>
                         </div>
-                      </>
+                        <Link
+                          href="/for-employers"
+                          onClick={handleHeaderDropdownClose}
+                          className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-[#3a5a40] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#2f4a36] dark:bg-[#7fab82] dark:text-[#0f1710] dark:hover:bg-[#8fbd92]"
+                        >
+                          For Employers
+                        </Link>
+                      </div>
                     ) : (
                       <>
                         <p className={`text-[0.68rem] font-semibold tracking-[0.2em] ${dropdownHeadingClass}`}>
