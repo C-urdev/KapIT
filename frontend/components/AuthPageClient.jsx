@@ -345,6 +345,7 @@ export default function AuthPageClient({ initialMode = 'login' }) {
         initialMode={normalizedInitialMode}
         socialNoAccountProvider={socialNoAccountProvider}
         onBack={() => router.push('/')}
+        onRequestLogin={() => router.push('/auth/login')}
         onRequestAccountType={() => router.push('/?accountTypeModal=1')}
         onForgotPassword={() => router.push('/forgot-password')}
         onBeginSignup={handleBeginSignup}

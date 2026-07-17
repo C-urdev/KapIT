@@ -13,6 +13,7 @@ export default function AuthPage({
   socialNoAccountProvider = '',
   onLogin,
   onBeginSignup,
+  onRequestLogin,
   onRequestAccountType,
   onBack,
   onForgotPassword,
@@ -433,7 +434,16 @@ export default function AuthPage({
     }
   };
 
+  const returnToSignupEmailStep = () => {
+    setSignupStep('email');
+    setError('');
+    setFormData((current) => ({ ...current, password: '', confirmPassword: '' }));
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+  };
+
   const isDarkTheme = theme === 'dark';
+  const isSignupMode = authMode === 'signup';
   const brandTitleClass = isDarkTheme ? 'text-white' : 'text-[#344e41]';
   const brandLinkClass = isDarkTheme
     ? 'group flex items-center gap-3.5 rounded-full py-1 pr-3 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8fb995]'
@@ -447,14 +457,29 @@ export default function AuthPage({
 
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#f8faf8] dark:bg-[#121416]">
-      {/* Soft background glow effects */}
-      <div className="absolute top-[-15%] left-[-10%] w-[60%] h-[60%] rounded-full bg-[#a3b18a]/20 blur-[120px] pointer-events-none dark:bg-[#444d57]/10" />
-      <div className="absolute bottom-[-15%] right-[-10%] w-[60%] h-[60%] rounded-full bg-[#588157]/15 blur-[120px] pointer-events-none dark:bg-[#344e41]/15" />
-      <div className="absolute top-[20%] right-[-5%] w-[40%] h-[40%] rounded-full bg-[#dad7cd]/40 blur-[100px] pointer-events-none dark:hidden" />
+    <div className={`min-h-screen flex flex-col relative overflow-hidden ${isSignupMode ? 'bg-[#e9e1d3] dark:bg-[#0f1112]' : 'bg-[#f8faf8] dark:bg-[#121416]'}`}>
+      {isSignupMode ? (
+        <>
+          <div className="absolute inset-0">
+            <img
+              src={theme === 'dark' ? '/hero_visual_dark.png' : '/hero_visual_light_taste_stretched.png'}
+              alt=""
+              className="h-full w-full scale-[1.04] object-cover object-center opacity-70 dark:opacity-30"
+            />
+          </div>
+          <div className="absolute inset-0 bg-[#f7f2ea]/58 backdrop-blur-[12px] dark:bg-[#101314]/74 dark:backdrop-blur-[16px]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.3),transparent_44%),radial-gradient(circle_at_bottom,rgba(88,129,87,0.12),transparent_40%)] dark:bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_40%),radial-gradient(circle_at_bottom,rgba(88,129,87,0.18),transparent_42%)]" />
+        </>
+      ) : (
+        <>
+          <div className="absolute top-[-15%] left-[-10%] w-[60%] h-[60%] rounded-full bg-[#a3b18a]/20 blur-[120px] pointer-events-none dark:bg-[#444d57]/10" />
+          <div className="absolute bottom-[-15%] right-[-10%] w-[60%] h-[60%] rounded-full bg-[#588157]/15 blur-[120px] pointer-events-none dark:bg-[#344e41]/15" />
+          <div className="absolute top-[20%] right-[-5%] w-[40%] h-[40%] rounded-full bg-[#dad7cd]/40 blur-[100px] pointer-events-none dark:hidden" />
+        </>
+      )}
 
       {/* Header — matched exactly to SiteTopNav */}
-      <header className="absolute inset-x-0 top-5 z-50 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] lg:top-6">
+      <header className={`absolute inset-x-0 top-5 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] lg:top-6 ${isSignupMode ? 'z-20 opacity-65' : 'z-50'}`}>
         <div className="landing-desktop-shell relative flex items-center justify-between py-2 lg:gap-8">
           <button type="button" onClick={onBack} className={brandLinkClass} aria-label="Back to home">
             <KapITLogo className={logoClass} />
@@ -473,11 +498,21 @@ export default function AuthPage({
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-12 relative z-10">
+      <main className={`relative flex-1 px-4 py-12 sm:px-6 ${isSignupMode ? 'z-20 flex items-center justify-center' : 'z-10 flex flex-col items-center justify-center'}`}>
         
         {/* Auth Card */}
-        <div className="w-full max-w-[420px]">
-          <div className="rounded-[24px] bg-white/95 dark:bg-[#1a1d20]/95 shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_20px_40px_rgb(0,0,0,0.4)] border border-[#a3b18a]/15 dark:border-[#444d57]/30 backdrop-blur-xl px-7 py-9 sm:px-8 sm:py-10">
+        <div className={`w-full ${isSignupMode ? 'max-w-[400px]' : 'max-w-[420px]'}`}>
+          <div className={`rounded-[24px] border backdrop-blur-xl px-7 py-9 sm:px-8 sm:py-10 ${isSignupMode ? 'relative overflow-hidden bg-white/95 shadow-[0_16px_40px_rgba(0,0,0,0.18)] border-[#a3b18a]/20 animate-in zoom-in-95 duration-200 dark:bg-[#1a1d20]/95 dark:border-[#444d57]/30 dark:shadow-[0_20px_48px_rgba(0,0,0,0.45)]' : 'bg-white/95 shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:bg-[#1a1d20]/95 dark:shadow-[0_20px_40px_rgb(0,0,0,0.4)] border-[#a3b18a]/15 dark:border-[#444d57]/30'}`}>
+            {isSignupMode ? (
+              <button
+                type="button"
+                onClick={() => onBack?.()}
+                className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full text-[#3a5a40]/60 transition-colors hover:bg-[#eef4ea] hover:text-[#344e41] dark:text-[#adb5be] dark:hover:bg-white/5 dark:hover:text-white"
+                aria-label="Close sign up"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            ) : null}
 
             {/* Error Message */}
             {error && (
@@ -719,11 +754,7 @@ export default function AuthPage({
                   Already have an account?{' '}
                   <button
                     onClick={() => {
-                      setAuthMode('login');
-                      setSignupStep('email');
-                      setError('');
-                      setInfoMessage('');
-                      setShowRegisterPrompt(false);
+                      onRequestLogin?.();
                     }}
                     className="text-[#588157] dark:text-[#6f9b74] hover:text-[#344e41] dark:hover:text-white font-medium hover:underline transition-colors"
                   >
@@ -738,50 +769,26 @@ export default function AuthPage({
             {/* ============================================ */}
             {authMode === 'signup' && signupStep === 'password' && (
               <>
-                {/* Header with back */}
-                <div className="mb-7">
+                <div className="mb-8">
                   <button
                     type="button"
-                    onClick={() => {
-                      setSignupStep('email');
-                      setError('');
-                      setFormData({ ...formData, password: '', confirmPassword: '' });
-                      setShowPassword(false);
-                      setShowConfirmPassword(false);
-                    }}
-                    className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#3a5a40]/60 dark:text-[#adb5be]/60 hover:text-[#344e41] dark:hover:text-white transition-colors mb-4"
+                    onClick={returnToSignupEmailStep}
+                    className="inline-flex min-h-10 items-center gap-1.5 text-[13px] font-medium text-[#3a5a40]/60 transition-colors hover:text-[#344e41] dark:text-[#adb5be]/70 dark:hover:text-white"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     Back
                   </button>
-                  <h2 className="text-[22px] sm:text-2xl font-semibold text-[#344e41] tracking-tight dark:text-white mb-2">
-                    Set your password
-                  </h2>
-                  {/* Email display chip */}
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#f0f5ef] dark:bg-[#1f2b23]/50 border border-[#a3b18a]/20 dark:border-[#444d57]/30">
-                    <span className="text-[13px] text-[#344e41] dark:text-[#e7f4ea] font-medium">{formData.email}</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSignupStep('email');
-                        setError('');
-                        setFormData({ ...formData, password: '', confirmPassword: '' });
-                        setShowPassword(false);
-                        setShowConfirmPassword(false);
-                      }}
-                      className="text-[#3a5a40]/40 hover:text-[#344e41] dark:text-[#adb5be]/40 dark:hover:text-white transition-colors"
-                      aria-label="Change email"
-                    >
-                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                        <path d="m15 5 4 4" />
-                      </svg>
-                    </button>
+                  <div className="mt-5 text-center">
+                    <h2 className="text-2xl font-semibold tracking-tight text-[#344e41] dark:text-white">
+                      Create your account
+                    </h2>
+                    <p className="mt-3 text-[14px] leading-relaxed text-[#3a5a40]/80 dark:text-[#adb5be]">
+                      Set a password to finish your KapIT signup.
+                    </p>
                   </div>
                 </div>
 
-                {/* Password form */}
-                <form onSubmit={handleSubmit} className="space-y-3.5">
+                <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <label className="block text-[13px] font-medium text-[#344e41]/80 dark:text-[#adb5be] mb-1.5">Password</label>
                     <div className="relative">
@@ -790,7 +797,7 @@ export default function AuthPage({
                         value={formData.password}
                         onChange={(e) => setFormData({...formData, password: e.target.value})}
                         placeholder="Min. 8 characters"
-                        className="w-full px-4 py-3 pr-11 bg-[#f8faf8] dark:bg-[#1f2b23]/40 border border-[#a3b18a]/30 dark:border-[#5f8a68]/30 rounded-xl text-[#344e41] dark:text-[#e7f4ea] placeholder:text-[#3a5a40]/35 dark:placeholder:text-[#adb5be]/35 focus:outline-none focus:ring-2 focus:ring-[#588157]/20 focus:border-[#588157]/60 transition-all text-[14px]"
+                        className="w-full rounded-xl border border-[#a3b18a]/40 bg-[#f8faf8] px-4 py-3.5 pr-11 text-[14px] text-[#344e41] shadow-sm transition-all placeholder:text-[#3a5a40]/50 focus:outline-none focus:ring-2 focus:ring-[#588157]/20 focus:border-[#588157] dark:border-[#5f8a68]/40 dark:bg-[#1f2b23]/50 dark:text-[#e7f4ea] dark:placeholder:text-[#adb5be]/50"
                         required
                         autoFocus
                       />
@@ -804,7 +811,7 @@ export default function AuthPage({
                       </button>
                     </div>
                     {formData.password ? (
-                      <div className="mt-2.5 space-y-1">
+                      <div className="mt-2.5 space-y-1.5">
                         <div className="flex gap-1">
                           {[1, 2, 3, 4, 5].map((value) => (
                             <div
@@ -828,7 +835,7 @@ export default function AuthPage({
                         value={formData.confirmPassword}
                         onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
                         placeholder="Re-enter your password"
-                        className="w-full px-4 py-3 pr-11 bg-[#f8faf8] dark:bg-[#1f2b23]/40 border border-[#a3b18a]/30 dark:border-[#5f8a68]/30 rounded-xl text-[#344e41] dark:text-[#e7f4ea] placeholder:text-[#3a5a40]/35 dark:placeholder:text-[#adb5be]/35 focus:outline-none focus:ring-2 focus:ring-[#588157]/20 focus:border-[#588157]/60 transition-all text-[14px]"
+                        className="w-full rounded-xl border border-[#a3b18a]/40 bg-[#f8faf8] px-4 py-3.5 pr-11 text-[14px] text-[#344e41] shadow-sm transition-all placeholder:text-[#3a5a40]/50 focus:outline-none focus:ring-2 focus:ring-[#588157]/20 focus:border-[#588157] dark:border-[#5f8a68]/40 dark:bg-[#1f2b23]/50 dark:text-[#e7f4ea] dark:placeholder:text-[#adb5be]/50"
                         required
                       />
                       <button
@@ -856,7 +863,7 @@ export default function AuthPage({
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-[#344e41] hover:bg-[#1f3a2a] dark:bg-[#588157] dark:hover:bg-[#344e41] text-white font-medium py-3 rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-[14px] mt-1"
+                    className="mt-2 flex w-full items-center justify-center rounded-xl bg-[#344e41] py-3.5 text-[14px] font-medium text-white shadow-md transition-all hover:bg-[#1f3a2a] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#588157] dark:hover:bg-[#344e41]"
                   >
                     {loading ? (
                       <span className="flex items-center gap-2">
@@ -870,16 +877,11 @@ export default function AuthPage({
                   </button>
                 </form>
 
-                {/* Toggle to login */}
-                <div className="mt-6 text-center text-[14px] text-[#3a5a40]/65 dark:text-[#adb5be]">
+                <div className="mt-6 text-center text-[14px] text-[#3a5a40]/80 dark:text-[#adb5be]">
                   Already have an account?{' '}
                   <button
                     onClick={() => {
-                      setAuthMode('login');
-                      setSignupStep('email');
-                      setError('');
-                      setInfoMessage('');
-                      setShowRegisterPrompt(false);
+                      onRequestLogin?.();
                     }}
                     className="text-[#588157] dark:text-[#6f9b74] hover:text-[#344e41] dark:hover:text-white font-medium hover:underline transition-colors"
                   >
