@@ -1,6 +1,5 @@
 import {
   BriefcaseBusiness,
-  Building2,
   CircleHelp,
   FileText,
   LifeBuoy,
@@ -11,6 +10,7 @@ import {
 
 export const PUBLIC_NAV_LINKS = [
   { label: 'Solutions', hasDropdown: true, footerItem: 'Find talent' },
+  { label: 'For Employers', hasDropdown: false, href: '/for-employers' },
   { label: 'Resources', hasDropdown: true, footerItem: 'Help Center' },
   { label: 'Pricing', hasDropdown: false, href: '/pricing', footerItem: 'Pricing' },
   { label: 'Documentation', hasDropdown: false, footerItem: 'Help Center' },
@@ -37,23 +37,6 @@ export const PUBLIC_NAV_DROPDOWNS = {
           title: 'Projects',
           description: 'Stay visible for contract, freelance, and full-time work.',
           footerItem: 'Projects',
-          icon: BriefcaseBusiness,
-        },
-      ],
-    },
-    {
-      heading: 'Companies',
-      items: [
-        {
-          title: 'Find talent',
-          description: 'Source focused IT candidates without broad, noisy marketplaces.',
-          footerItem: 'Find talent',
-          icon: Building2,
-        },
-        {
-          title: 'Post projects',
-          description: 'Launch openings fast and keep hiring teams aligned on responses.',
-          footerItem: 'Post projects',
           icon: BriefcaseBusiness,
         },
       ],

@@ -22,8 +22,9 @@ const LINK_GROUPS = [
   {
     title: 'Companies',
     links: [
-      { label: 'Find Talent', href: '/auth/register' },
-      { label: 'Post Projects', href: '/auth/register' },
+      { label: 'For Employers', href: '/for-employers' },
+      { label: 'Create Company Account', href: '/auth/register?type=company' },
+      { label: 'Post IT Roles', href: '/auth/register?type=company' },
       { label: 'Help Center', href: 'mailto:support@kapit.online' },
       { label: 'Safety', href: '/privacy-policy' },
     ],
