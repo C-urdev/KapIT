@@ -178,6 +178,31 @@ test('PATCH /api/auth/profile rejects isPremium self-upgrade attempts', async ()
   assert.equal(Boolean(poolMock.__users[0].is_premium), false);
 });
 
+test('/api/auth/me keeps question-first developer onboarding complete without phone or location', async () => {
+  const { app, poolMock } = loadAppForProfileSecurity();
+  const user = poolMock.__users[0];
+  user.profile_completed = true;
+  user.terms_accepted = true;
+  user.name = 'Question Flow User';
+  user.username = 'question_flow_user';
+  user.email = 'questionflow@example.com';
+  user.education = 'Bachelor of Science in Information Technology';
+  user.desired_job = 'Backend Engineer';
+  user.bio = 'I build backend systems for web products.';
+  user.phone = '';
+  user.address = '';
+
+  const token = createDeveloperToken(user.id);
+  const response = await request(app)
+    .get('/api/auth/me')
+    .set('Authorization', `Bearer ${token}`);
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.success, true);
+  assert.equal(response.body.user.profileCompleted, true);
+  assert.equal(poolMock.__users[0].profile_completed, true);
+});
+
 test('PATCH /api/auth/profile with mixed payload does not change premium or profile fields when isPremium is present', async () => {
   const { app, poolMock } = loadAppForProfileSecurity();
   const userId = poolMock.__users[0].id;

@@ -285,10 +285,9 @@ const computeProfileCompleted = (userType, merged, accountType) => {
   return Boolean(
     String(merged.name || '').trim() &&
       String(merged.username || '').trim() &&
-      String(merged.address || '').trim() &&
       String(merged.education || '').trim() &&
       String(merged.desired_job || '').trim() &&
-      String(merged.phone || '').trim() &&
+      String(merged.bio || '').trim() &&
       String(merged.email || '').trim()
   );
 };
@@ -656,11 +655,30 @@ const getPublicProfile = async (req, res) => {
     const { id } = req.params;
 
     const result = await client.query(
-      `SELECT id, username, email, user_type, is_premium, created_at,
-              profile_completed, bio, socials, profile_image, address,
-              education, desired_job, company_name, industry, company_size, website, hiring_for
-       FROM users
-       WHERE id = $1`,
+      `SELECT u.id,
+              u.username,
+              u.email,
+              u.user_type,
+              u.is_premium,
+              u.created_at,
+              u.profile_completed,
+              u.bio,
+              u.socials,
+              u.profile_image,
+              u.address,
+              u.education,
+              u.desired_job,
+              u.company_name,
+              u.industry,
+              u.company_size,
+              u.website,
+              u.hiring_for,
+              COALESCE(dp.full_name, u.name, u.username, '') AS full_name,
+              COALESCE(dp.preferred_it_role, u.desired_job, '') AS preferred_it_role,
+              COALESCE(dp.preferred_it_roles, ARRAY[]::text[]) AS preferred_it_roles
+       FROM users u
+       LEFT JOIN developer_profiles dp ON dp.user_id = u.id
+       WHERE u.id = $1`,
       [id]
     );
 
@@ -781,12 +799,15 @@ const getPublicProfile = async (req, res) => {
         type: user.user_type,
         isPremium: user.is_premium,
         profileCompleted: Boolean(user.profile_completed),
+        fullName: user.full_name || '',
         bio: user.bio || '',
         socials: normalizeSocialsText(user.socials),
         profileImage: companyLogo,
         address: companyLocation,
         education: user.education || '',
         desiredJob: user.desired_job || '',
+        preferredRole: user.preferred_it_role || user.desired_job || '',
+        preferredRoles: Array.isArray(user.preferred_it_roles) ? user.preferred_it_roles : [],
         companyName: user.company_name || '',
         industry: user.industry || '',
         companySize: user.company_size || '',

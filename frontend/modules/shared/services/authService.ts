@@ -111,6 +111,7 @@ const pickLocalProfileFields = (user) => ({
   yearsOfExperience: user?.yearsOfExperience || '',
   skills: Array.isArray(user?.skills) ? user.skills : [],
   preferredRole: user?.preferredRole || '',
+  preferredRoles: Array.isArray(user?.preferredRoles) ? user.preferredRoles : [],
   educationAttainment: user?.educationAttainment || '',
   school: user?.school || '',
   certifications: user?.certifications || '',

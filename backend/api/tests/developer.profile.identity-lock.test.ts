@@ -159,6 +159,7 @@ const createDeveloperProfilePoolMock = () => {
           experienceYears,
           skills,
           preferredRole,
+          preferredRoles,
           education,
           bio,
           github,
@@ -168,6 +169,13 @@ const createDeveloperProfilePoolMock = () => {
           profilePhotoUrl,
           otherLinks,
           workPreference,
+          activelyLooking,
+          roleCategories,
+          jobPriorities,
+          salaryExpectationMin,
+          salaryExpectationMax,
+          jobSearchGoal,
+          experienceLevel,
           certifications,
           school,
         ] = params;
@@ -182,6 +190,7 @@ const createDeveloperProfilePoolMock = () => {
           experience_years: experienceYears,
           skills,
           preferred_it_role: preferredRole,
+          preferred_it_roles: preferredRoles,
           education,
           bio,
           github_link: github,
@@ -191,6 +200,13 @@ const createDeveloperProfilePoolMock = () => {
           profile_photo_url: profilePhotoUrl,
           other_links: otherLinks,
           work_preference: workPreference,
+          actively_looking: activelyLooking,
+          role_categories: roleCategories,
+          job_priorities: jobPriorities,
+          salary_expectation_min: salaryExpectationMin,
+          salary_expectation_max: salaryExpectationMax,
+          job_search_goal: jobSearchGoal,
+          experience_level: experienceLevel,
           certifications,
           school_university: school,
         });
@@ -214,9 +230,9 @@ const loadApp = () => {
   clearServerModuleCache();
   const poolMock = createDeveloperProfilePoolMock();
 
-  mockServerModule('config/database.js', poolMock);
-  mockServerModule('services/authSessionService.js', createAuthSessionServiceMock());
-  mockServerModule('config/runtimeSchema.js', {
+  mockServerModule('config/database.ts', poolMock);
+  mockServerModule('services/authSessionService.ts', createAuthSessionServiceMock());
+  mockServerModule('config/runtimeSchema.ts', {
     warmRuntimeSchemas: async () => {},
     ensureBaseUserSchemaReady: async () => {},
     ensureHiringSchemaReady: async () => {},
@@ -224,7 +240,7 @@ const loadApp = () => {
   });
 
   return {
-    app: require('../app').createApp(),
+    app: require('../app.ts').createApp(),
     poolMock,
   };
 };
@@ -252,6 +268,28 @@ const buildValidPayload = () => ({
   aboutMe: 'About me text',
   yearsOfExperience: '2',
   skills: ['React'],
+});
+
+const buildQuestionFlowPayload = () => ({
+  fullName: 'Question Flow User',
+  username: 'question_flow_user',
+  location: '',
+  phoneNumber: '',
+  email: 'questionflow@example.com',
+  jobTitle: 'Software Engineer',
+  preferredRole: 'Backend Engineer',
+  preferredRoles: ['Backend Engineer', 'Fullstack Engineer', 'DevOps Engineer'],
+  educationAttainment: 'Bachelor of Science in Information Technology',
+  aboutMe: 'I build backend systems for web products.',
+  yearsOfExperience: '2',
+  skills: ['Node.js', 'React'],
+  activelyLooking: 'yes',
+  roleCategories: ['Software Engineering', 'Cloud & DevOps'],
+  workPreference: 'remote',
+  jobPriorities: ['Flexible hours', 'Meaningful work'],
+  salaryExpectationMin: 45000,
+  salaryExpectationMax: 90000,
+  jobSearchGoal: 'land-asap',
 });
 
 test('developer profile save keeps identity immutable for existing users', async () => {
@@ -302,4 +340,32 @@ test('developer profile save accepts longer profile image data-url payloads', as
   assert.equal(response.status, 200);
   assert.equal(response.body.success, true);
   assert.equal(poolMock.__users[1].profile_image, payload.profileImage);
+});
+
+test('developer onboarding save allows missing location and phone for question-first onboarding', async () => {
+  const { app } = loadApp();
+  const token = createDeveloperToken('dev-new-1');
+
+  const response = await request(app)
+    .put('/api/developer/profile')
+    .set('Authorization', `Bearer ${token}`)
+    .send(buildQuestionFlowPayload());
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.success, true);
+});
+
+test('developer profile save persists up to 3 preferred roles while keeping the first role primary', async () => {
+  const { app, poolMock } = loadApp();
+  const token = createDeveloperToken('dev-new-1');
+
+  const response = await request(app)
+    .put('/api/developer/profile')
+    .set('Authorization', `Bearer ${token}`)
+    .send(buildQuestionFlowPayload());
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.success, true);
+  assert.deepEqual(poolMock.__profiles.get('dev-new-1')?.preferred_it_roles, ['Backend Engineer', 'Fullstack Engineer', 'DevOps Engineer']);
+  assert.equal(poolMock.__users[1].desired_job, 'Backend Engineer');
 });

@@ -34,6 +34,18 @@ export default function UserMyProfilePage({
 }) {
   const toast = useToast();
   const displayName = user?.fullName || user?.name || user?.username || 'User';
+  const preferredRoles = useMemo(() => {
+    if (Array.isArray(user?.preferredRoles) && user.preferredRoles.length) {
+      return user.preferredRoles.filter(Boolean).slice(0, 3);
+    }
+    if (user?.preferredRole) {
+      return [user.preferredRole];
+    }
+    if (user?.desiredJob) {
+      return [user.desiredJob];
+    }
+    return [];
+  }, [user?.desiredJob, user?.preferredRole, user?.preferredRoles]);
   const initial = displayName.charAt(0).toUpperCase();
   const profileImage = user?.profileImage || '';
   const projectCount = Array.isArray(user?.projects)
@@ -98,8 +110,8 @@ export default function UserMyProfilePage({
     if (user?.type === 'company') {
       return 'Company Profile';
     }
-    return user?.desiredJob || user?.education || 'IT Professional';
-  }, [user?.type, user?.desiredJob, user?.education]);
+    return preferredRoles[0] || user?.education || 'IT Professional';
+  }, [preferredRoles, user?.type, user?.education]);
 
   const ownPosts = useMemo(() => {
     const viewerId = String(user?.id || '').trim();
@@ -224,6 +236,18 @@ export default function UserMyProfilePage({
                   {user?.isPremium ? <PremiumBadge /> : null}
                 </div>
                 <p className="text-[1rem] sm:text-[1.05rem] leading-[1.15] font-medium text-[#2f4e39] dark:text-[#d0d7dd]">{profileSubtitle}</p>
+                {preferredRoles.length ? (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {preferredRoles.map((role) => (
+                      <span
+                        key={role}
+                        className="inline-flex items-center rounded-full border border-[#c7d6bf] bg-[#f4f9f1] px-3 py-1 text-[12px] font-semibold text-[#3a5a40] dark:border-[#4a545f] dark:bg-[#2b3137] dark:text-[#e6f1e8]"
+                      >
+                        {role}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
                 <p className="text-[0.92rem] sm:text-[0.95rem] leading-[1.15] text-[#2f4e39] dark:text-[#d0d7dd]">
                   {projectCount} project{projectCount === 1 ? '' : 's'}
                 </p>

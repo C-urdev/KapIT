@@ -70,6 +70,17 @@ const normalizeSkills = (skills) => {
   return [];
 };
 
+const normalizeTextList = (value, limit = 20) => {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return [...new Set(value.map((entry) => String(entry || '').trim()).filter(Boolean))].slice(0, limit);
+  }
+  if (typeof value === 'string') {
+    return [...new Set(value.split(',').map((entry) => entry.trim()).filter(Boolean))].slice(0, limit);
+  }
+  return [];
+};
+
 const serializeUser = (user) => ({
   id: user.id,
   username: user.username,
@@ -218,6 +229,7 @@ const getMyDeveloperProfile = async (req, res) => {
               dp.experience_years,
               COALESCE(dp.skills, ARRAY[]::text[]) AS skills,
               COALESCE(dp.preferred_it_role, u.desired_job, '') AS preferred_it_role,
+              COALESCE(dp.preferred_it_roles, ARRAY[]::text[]) AS preferred_it_roles,
               COALESCE(dp.education, u.education, '') AS education,
               COALESCE(dp.bio, u.bio, '') AS bio,
               COALESCE(dp.github_link, '') AS github_link,
@@ -230,6 +242,13 @@ const getMyDeveloperProfile = async (req, res) => {
               COALESCE(dp.profile_photo_url, u.profile_image, '') AS profile_photo_url,
               COALESCE(dp.other_links, '') AS other_links,
               COALESCE(dp.work_preference, '') AS work_preference,
+              COALESCE(dp.actively_looking, false) AS actively_looking,
+              COALESCE(dp.role_categories, ARRAY[]::text[]) AS role_categories,
+              COALESCE(dp.job_priorities, ARRAY[]::text[]) AS job_priorities,
+              dp.salary_expectation_min,
+              dp.salary_expectation_max,
+              COALESCE(dp.job_search_goal, '') AS job_search_goal,
+              COALESCE(dp.experience_level, '') AS experience_level,
               COALESCE(dp.certifications, '') AS certifications,
               COALESCE(dp.school_university, '') AS school_university,
               COALESCE(dp.created_at, CURRENT_TIMESTAMP) AS created_at,
@@ -280,15 +299,24 @@ const upsertMyDeveloperProfile = async (req, res) => {
     }
 
     const body = req.body || {};
+    const currentProfileResult = await client.query(
+      `SELECT *
+       FROM developer_profiles
+       WHERE user_id = $1
+       LIMIT 1`,
+      [req.user.id]
+    );
+    const currentProfile = currentProfileResult.rows[0] || {};
     logProfileSync('settings-save-request-body', {
       userId: req.user.id,
       body,
     });
+    const hasField = (fieldName) => Object.prototype.hasOwnProperty.call(body, fieldName);
     const requestedFullName = String(body.fullName || '').trim();
     const requestedUsername = String(body.username || '').trim();
-    const location = String(body.location || '').trim();
+    const location = hasField('location') ? String(body.location || '').trim() : String(current.address || '').trim();
     const requestedPhoneNumber = String(body.phoneNumber || '').trim();
-    const requestedEmail = String(body.email || '').trim();
+    const requestedEmail = hasField('email') ? String(body.email || '').trim() : String(current.email || '').trim();
     const identityLocked = Boolean(
       String(current.name || '').trim() &&
       String(current.phone || '').trim() &&
@@ -296,16 +324,19 @@ const upsertMyDeveloperProfile = async (req, res) => {
     );
     const fullName = identityLocked ? String(current.name || requestedFullName || '').trim() : requestedFullName;
     const username = identityLocked ? String(current.username || requestedUsername || '').trim() : requestedUsername;
-    const phoneNumber = identityLocked ? String(current.phone || requestedPhoneNumber || '').trim() : requestedPhoneNumber;
+    const phoneNumber = identityLocked
+      ? String(current.phone || requestedPhoneNumber || '').trim()
+      : (hasField('phoneNumber') ? requestedPhoneNumber : String(current.phone || '').trim());
     const email = identityLocked
       ? String(current.email || requestedEmail || '').trim()
       : String(requestedEmail || current.email || '').trim();
     const jobTitle = String(body.jobTitle || '').trim();
-    const preferredRole = String(body.preferredRole || '').trim();
+    const preferredRoles = normalizeTextList(body.preferredRoles, 3);
+    const preferredRole = String(preferredRoles[0] || body.preferredRole || currentProfile.preferred_it_role || '').trim();
     const educationAttainment = String(body.educationAttainment || '').trim();
     const aboutMe = String(body.aboutMe || '').trim();
 
-    if (!fullName || !username || !location || !phoneNumber || !email || !jobTitle || !preferredRole || !educationAttainment || !aboutMe) {
+    if (!fullName || !username || !email || !jobTitle || !preferredRole || !educationAttainment || !aboutMe) {
       await client.query('ROLLBACK');
       return res.status(400).json({ success: false, message: 'Please fill in the required fields.' });
     }
@@ -314,10 +345,25 @@ const upsertMyDeveloperProfile = async (req, res) => {
     const yearsOfExperience = Number.isFinite(years) ? Math.max(0, Math.trunc(years)) : null;
     const skills = normalizeSkills(body.skills);
 
-    const github = String(body.github || '').trim();
-    const portfolioWebsite = String(body.portfolioWebsite || '').trim();
-    const linkedin = String(body.linkedin || '').trim();
-    const otherLinks = String(body.otherLinks || '').trim();
+    const github = hasField('github') ? String(body.github || '').trim() : String(currentProfile.github_link || '').trim();
+    const portfolioWebsite = hasField('portfolioWebsite') ? String(body.portfolioWebsite || '').trim() : String(currentProfile.portfolio_link || '').trim();
+    const linkedin = hasField('linkedin') ? String(body.linkedin || '').trim() : String(currentProfile.linkedin_link || '').trim();
+    const otherLinks = hasField('otherLinks') ? String(body.otherLinks || '').trim() : String(currentProfile.other_links || '').trim();
+    const activelyLooking = hasField('activelyLooking')
+      ? (typeof body.activelyLooking === 'string'
+        ? String(body.activelyLooking).trim().toLowerCase() === 'yes'
+        : Boolean(body.activelyLooking))
+      : Boolean(currentProfile.actively_looking);
+    const roleCategories = hasField('roleCategories') ? normalizeTextList(body.roleCategories, 6) : normalizeTextList(currentProfile.role_categories, 6);
+    const jobPriorities = hasField('jobPriorities') ? normalizeTextList(body.jobPriorities, 6) : normalizeTextList(currentProfile.job_priorities, 6);
+    const salaryExpectationMin = hasField('salaryExpectationMin') && body.salaryExpectationMin !== ''
+      ? Number(body.salaryExpectationMin)
+      : (currentProfile.salary_expectation_min ?? null);
+    const salaryExpectationMax = hasField('salaryExpectationMax') && body.salaryExpectationMax !== ''
+      ? Number(body.salaryExpectationMax)
+      : (currentProfile.salary_expectation_max ?? null);
+    const jobSearchGoal = hasField('jobSearchGoal') ? String(body.jobSearchGoal || '').trim() : String(currentProfile.job_search_goal || '').trim();
+    const experienceLevel = hasField('experienceLevel') ? String(body.experienceLevel || '').trim() : String(currentProfile.experience_level || '').trim();
 
     const socialsPayload = {
       github,
@@ -327,8 +373,10 @@ const upsertMyDeveloperProfile = async (req, res) => {
     };
     const hasSocialLinks = Object.values(socialsPayload).some((value) => String(value || '').trim().length > 0);
 
-    const nextProfileImage = body.profileImage ? String(body.profileImage) : '';
-    const workPreference = String(body.workPreference || '').trim().toLowerCase();
+    const nextProfileImage = hasField('profileImage') && body.profileImage ? String(body.profileImage) : '';
+    const workPreference = hasField('workPreference')
+      ? String(body.workPreference || '').trim().toLowerCase()
+      : String(currentProfile.work_preference || '').trim().toLowerCase();
 
     const userUpdateResult = await client.query(
       `UPDATE users
@@ -373,6 +421,7 @@ const upsertMyDeveloperProfile = async (req, res) => {
          experience_years,
          skills,
          preferred_it_role,
+         preferred_it_roles,
          education,
          bio,
          github_link,
@@ -382,11 +431,18 @@ const upsertMyDeveloperProfile = async (req, res) => {
          profile_photo_url,
          other_links,
          work_preference,
+         actively_looking,
+         role_categories,
+         job_priorities,
+         salary_expectation_min,
+         salary_expectation_max,
+         job_search_goal,
+         experience_level,
          certifications,
          school_university,
          updated_at
        )
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,CURRENT_TIMESTAMP)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,CURRENT_TIMESTAMP)
        ON CONFLICT (user_id) DO UPDATE SET
          full_name = EXCLUDED.full_name,
          username = EXCLUDED.username,
@@ -397,6 +453,7 @@ const upsertMyDeveloperProfile = async (req, res) => {
          experience_years = EXCLUDED.experience_years,
          skills = EXCLUDED.skills,
          preferred_it_role = EXCLUDED.preferred_it_role,
+         preferred_it_roles = EXCLUDED.preferred_it_roles,
          education = EXCLUDED.education,
          bio = EXCLUDED.bio,
          github_link = EXCLUDED.github_link,
@@ -406,10 +463,17 @@ const upsertMyDeveloperProfile = async (req, res) => {
          profile_photo_url = EXCLUDED.profile_photo_url,
          other_links = EXCLUDED.other_links,
          work_preference = EXCLUDED.work_preference,
+         actively_looking = EXCLUDED.actively_looking,
+         role_categories = EXCLUDED.role_categories,
+         job_priorities = EXCLUDED.job_priorities,
+         salary_expectation_min = EXCLUDED.salary_expectation_min,
+         salary_expectation_max = EXCLUDED.salary_expectation_max,
+         job_search_goal = EXCLUDED.job_search_goal,
+         experience_level = EXCLUDED.experience_level,
          certifications = EXCLUDED.certifications,
          school_university = EXCLUDED.school_university,
          updated_at = CURRENT_TIMESTAMP
-       RETURNING user_id, full_name, username, location, phone_number, email, job_title, experience_years, skills, preferred_it_role, education, bio, github_link, portfolio_link, linkedin_link, resume_url, profile_photo_url, other_links, work_preference, certifications, school_university, created_at, updated_at`,
+       RETURNING user_id, full_name, username, location, phone_number, email, job_title, experience_years, skills, preferred_it_role, preferred_it_roles, education, bio, github_link, portfolio_link, linkedin_link, resume_url, profile_photo_url, other_links, work_preference, actively_looking, role_categories, job_priorities, salary_expectation_min, salary_expectation_max, job_search_goal, experience_level, certifications, school_university, created_at, updated_at`,
       [
         req.user.id,
         fullName,
@@ -421,6 +485,7 @@ const upsertMyDeveloperProfile = async (req, res) => {
         yearsOfExperience,
         skills,
         preferredRole,
+        preferredRoles,
         educationAttainment,
         aboutMe,
         github || null,
@@ -430,6 +495,13 @@ const upsertMyDeveloperProfile = async (req, res) => {
         nextProfileImage || null,
         otherLinks || null,
         workPreference || null,
+        activelyLooking,
+        roleCategories,
+        jobPriorities,
+        Number.isFinite(Number(salaryExpectationMin)) ? Number(salaryExpectationMin) : null,
+        Number.isFinite(Number(salaryExpectationMax)) ? Number(salaryExpectationMax) : null,
+        jobSearchGoal || null,
+        experienceLevel || null,
         String(body.certifications || '').trim() || null,
         String(body.school || '').trim() || null,
       ]
@@ -596,6 +668,7 @@ const analyzeMyResume = async (req, res) => {
       `SELECT u.id,
               COALESCE(dp.full_name, u.name, u.username) AS full_name,
               COALESCE(dp.preferred_it_role, u.desired_job, dp.job_title) AS preferred_role,
+              COALESCE(dp.preferred_it_roles, ARRAY[]::text[]) AS preferred_roles,
               COALESCE(dp.job_title, '') AS job_title,
               COALESCE(dp.bio, u.bio, '') AS bio,
               COALESCE(dp.resume_url, '') AS resume_url,

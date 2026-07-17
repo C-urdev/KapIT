@@ -122,6 +122,7 @@ const EMPTY_FORM = {
   yearsOfExperience: '',
   skills: [],
   preferredRole: '',
+  preferredRoles: [],
   educationAttainment: '',
   vocationalCourse: '',
   customEducationAttainment: '',
@@ -232,6 +233,9 @@ const deriveFormFromProfile = ({ user, profile }) => {
     yearsOfExperience: source.experience_years == null ? '' : String(source.experience_years),
     skills: Array.isArray(source.skills) ? source.skills : Array.isArray(user?.skills) ? user.skills : [],
     preferredRole: source.preferred_it_role || user?.preferredRole || user?.desiredJob || '',
+    preferredRoles: Array.isArray(source.preferred_it_roles)
+      ? source.preferred_it_roles.filter(Boolean).slice(0, 3)
+      : (user?.preferredRoles || (source.preferred_it_role || user?.preferredRole || user?.desiredJob ? [source.preferred_it_role || user?.preferredRole || user?.desiredJob] : [])),
     educationAttainment: isSavedVocational ? VOCATIONAL_EDUCATION_OPTION : isSavedCustomEducation ? OTHER_EDUCATION_OPTION : savedEducation,
     vocationalCourse: savedVocationalCourse,
     customEducationAttainment: isSavedCustomEducation ? savedEducation : '',
@@ -401,16 +405,22 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
 
   useEffect(() => {
     if (!resolvedJobTitle) {
-      if (formData.preferredRole) {
-        setFormData((prev) => ({ ...prev, preferredRole: '' }));
+      if (formData.preferredRole || formData.preferredRoles.length) {
+        setFormData((prev) => ({ ...prev, preferredRole: '', preferredRoles: [] }));
       }
       return;
     }
 
-    if (preferredRoleOptions.length && !preferredRoleOptions.includes(formData.preferredRole)) {
-      setFormData((prev) => ({ ...prev, preferredRole: preferredRoleOptions[0] }));
+    const nextPreferredRoles = formData.preferredRoles.filter((role) => preferredRoleOptions.includes(role)).slice(0, 3);
+    const nextPrimaryRole = nextPreferredRoles[0] || '';
+    if (nextPrimaryRole !== formData.preferredRole || nextPreferredRoles.length !== formData.preferredRoles.length) {
+      setFormData((prev) => ({
+        ...prev,
+        preferredRole: nextPrimaryRole,
+        preferredRoles: nextPreferredRoles,
+      }));
     }
-  }, [formData.preferredRole, preferredRoleOptions, resolvedJobTitle]);
+  }, [formData.preferredRole, formData.preferredRoles, preferredRoleOptions, resolvedJobTitle]);
 
   useEffect(() => {
     if (!locationData.provinceOptions.length) {
@@ -475,7 +485,8 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
       jobTitle: resolvedJobTitle,
       yearsOfExperience: formData.yearsOfExperience,
       skills: formData.skills,
-      preferredRole: formData.preferredRole,
+      preferredRole: formData.preferredRoles[0] || formData.preferredRole,
+      preferredRoles: formData.preferredRoles,
       educationAttainment,
       school,
       certifications: formData.certifications,
@@ -519,6 +530,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
         yearsOfExperience: payload.yearsOfExperience,
         skills: payload.skills,
         preferredRole: payload.preferredRole,
+        preferredRoles: payload.preferredRoles,
         desiredJob: payload.preferredRole || payload.jobTitle,
         educationAttainment,
         education: educationAttainment,
@@ -546,6 +558,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
         experience_years: payload.yearsOfExperience === '' ? null : Number(payload.yearsOfExperience),
         skills: Array.isArray(payload.skills) ? payload.skills : [],
         preferred_it_role: payload.preferredRole,
+        preferred_it_roles: Array.isArray(payload.preferredRoles) ? payload.preferredRoles : [],
         education: educationAttainment,
         bio: payload.aboutMe,
         github_link: payload.github || null,
@@ -610,7 +623,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   value={formData.fullName}
                   onChange={(e) => setFormData((p) => ({ ...p, fullName: e.target.value }))}
                   readOnly={isIdentityLocked}
-                  className={`\${GLASS_FIELD_CLASS} ${isIdentityLocked ? 'bg-[#edf3e8] dark:bg-[#2f343b]' : ''}`}
+                  className={`${GLASS_FIELD_CLASS} ${isIdentityLocked ? 'bg-[#edf3e8] dark:bg-[#2f343b]' : ''}`}
                 />
               </Field>
               <Field label="Province">
@@ -639,11 +652,11 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   value={formData.phoneNumber}
                   onChange={(e) => setFormData((p) => ({ ...p, phoneNumber: e.target.value }))}
                   readOnly={isIdentityLocked}
-                  className={`\${GLASS_FIELD_CLASS} ${isIdentityLocked ? 'bg-[#edf3e8] dark:bg-[#2f343b]' : ''}`}
+                  className={`${GLASS_FIELD_CLASS} ${isIdentityLocked ? 'bg-[#edf3e8] dark:bg-[#2f343b]' : ''}`}
                 />
               </Field>
               <Field label="Email">
-                <input value={formData.email} readOnly className={`\${GLASS_FIELD_CLASS} bg-[#edf3e8] dark:bg-[#2f343b]`} />
+                <input value={formData.email} readOnly className={`${GLASS_FIELD_CLASS} bg-[#edf3e8] dark:bg-[#2f343b]`} />
               </Field>
             </div>
           </SettingsCard>
@@ -666,16 +679,41 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
               <Field label="Years of Experience">
                 <input type="number" min="0" max="60" value={formData.yearsOfExperience} onChange={(e) => setFormData((p) => ({ ...p, yearsOfExperience: e.target.value }))} className={GLASS_FIELD_CLASS} />
               </Field>
-              <Field label="Preferred IT Role" full>
-                <SearchableSelect
-                  value={formData.preferredRole}
-                  onChange={(preferredRole) => setFormData((p) => ({ ...p, preferredRole }))}
-                  options={preferredRoleOptions}
-                  placeholder={resolvedJobTitle ? 'Select a preferred IT role' : 'Select a job title first'}
-                  searchPlaceholder="Search roles"
-                  disabled={!resolvedJobTitle}
-                  className={GLASS_FIELD_CLASS}
-                />
+              <Field label="Preferred IT Roles" full>
+                <p className="mb-2 text-xs text-[#5f6f52] dark:text-[#b3bcc5]">Select up to 3 preferred roles for your profile.</p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {preferredRoleOptions.map((role) => {
+                    const selected = formData.preferredRoles.includes(role);
+                    const disabled = !selected && formData.preferredRoles.length >= 3;
+                    return (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => {
+                          if (disabled) return;
+                          setFormData((current) => {
+                            const nextRoles = selected
+                              ? current.preferredRoles.filter((entry) => entry !== role)
+                              : [...current.preferredRoles, role].slice(0, 3);
+                            return {
+                              ...current,
+                              preferredRoles: nextRoles,
+                              preferredRole: nextRoles[0] || '',
+                            };
+                          });
+                        }}
+                        disabled={!resolvedJobTitle || disabled}
+                        className={`rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-all ${
+                          selected
+                            ? 'border-[#588157] bg-[#eef6ee] text-[#3a5a40] dark:border-[#6f9b74] dark:bg-[#353c44] dark:text-white'
+                            : 'border-[#dce5d4] bg-[#f8fbf6] text-[#344e41] dark:border-[#3d454e] dark:bg-[#121416] dark:text-[#eceff2]'
+                        } ${(!resolvedJobTitle || disabled) ? 'cursor-not-allowed opacity-50' : 'hover:border-[#8ea488] dark:hover:border-[#6f9b74]'}`}
+                      >
+                        {role}
+                      </button>
+                    );
+                  })}
+                </div>
               </Field>
               <Field label="Skills" full>
                 <SkillTags value={formData.skills} onChange={(skills) => setFormData((p) => ({ ...p, skills }))} />
@@ -786,7 +824,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                 <textarea
                   value={formData.aboutMe}
                   onChange={(e) => setFormData((p) => ({ ...p, aboutMe: e.target.value }))}
-                  className={`\${GLASS_FIELD_CLASS} min-h-24`}
+                  className={`${GLASS_FIELD_CLASS} min-h-24`}
                   placeholder="Tell employers about your experience and strengths."
                 />
               </Field>

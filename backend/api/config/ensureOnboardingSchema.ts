@@ -19,6 +19,7 @@ const ensureOnboardingSchema = async () => {
         experience_years INTEGER,
         skills TEXT[] DEFAULT ARRAY[]::TEXT[],
         preferred_it_role VARCHAR(160),
+        preferred_it_roles TEXT[] DEFAULT ARRAY[]::TEXT[],
         education TEXT,
         bio TEXT,
         github_link TEXT,
@@ -31,6 +32,13 @@ const ensureOnboardingSchema = async () => {
         profile_photo_url TEXT,
         other_links TEXT,
         work_preference VARCHAR(20),
+        actively_looking BOOLEAN DEFAULT false,
+        role_categories TEXT[] DEFAULT ARRAY[]::TEXT[],
+        job_priorities TEXT[] DEFAULT ARRAY[]::TEXT[],
+        salary_expectation_min INTEGER,
+        salary_expectation_max INTEGER,
+        job_search_goal VARCHAR(80),
+        experience_level VARCHAR(40),
         certifications TEXT,
         school_university TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -88,6 +96,7 @@ const ensureOnboardingSchema = async () => {
     await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS experience_years INTEGER;');
     await client.query("ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS skills TEXT[] DEFAULT ARRAY[]::TEXT[];");
     await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS preferred_it_role VARCHAR(160);');
+    await client.query("ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS preferred_it_roles TEXT[] DEFAULT ARRAY[]::TEXT[];");
     await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS education TEXT;');
     await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS bio TEXT;');
     await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS github_link TEXT;');
@@ -100,6 +109,13 @@ const ensureOnboardingSchema = async () => {
     await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS profile_photo_url TEXT;');
     await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS other_links TEXT;');
     await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS work_preference VARCHAR(20);');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS actively_looking BOOLEAN DEFAULT false;');
+    await client.query("ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS role_categories TEXT[] DEFAULT ARRAY[]::TEXT[];");
+    await client.query("ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS job_priorities TEXT[] DEFAULT ARRAY[]::TEXT[];");
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS salary_expectation_min INTEGER;');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS salary_expectation_max INTEGER;');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS job_search_goal VARCHAR(80);');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS experience_level VARCHAR(40);');
     await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS certifications TEXT;');
     await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS school_university TEXT;');
     await client.query('ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS company_name VARCHAR(160);');
