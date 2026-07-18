@@ -1,6 +1,7 @@
 'use client';
 
 import { lazy, Suspense, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useRouter, useSearchParams } from '@shared/hooks/useAppRouter';
 import EmployerLandingPage from '@sharedPages/employers/EmployerLandingPage';
 import { getCurrentUser, getStoredUser, isCompanyAccount, updateStoredUser } from '@sharedServices/authService';
@@ -14,6 +15,7 @@ const resolveDashboardPath = (user) => (
 
 export default function EmployerLandingPageClient() {
   const router = useRouter();
+  const location = useLocation();
   const searchParams = useSearchParams();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(searchParams.get('login') === '1');
 
@@ -42,6 +44,15 @@ export default function EmployerLandingPageClient() {
       cancelled = true;
     };
   }, [router]);
+
+  useEffect(() => {
+    const hash = String(location.hash || '').replace(/^#/, '');
+    if (!hash) return;
+
+    window.requestAnimationFrame(() => {
+      document.getElementById(hash)?.scrollIntoView({ block: 'start' });
+    });
+  }, [location.hash]);
 
   const closeLogin = () => {
     setIsLoginModalOpen(false);

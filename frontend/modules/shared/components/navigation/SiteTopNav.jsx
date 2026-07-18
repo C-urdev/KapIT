@@ -7,7 +7,6 @@ import KapITLogo from '@sharedComponents/branding/KapITLogo';
 
 const TOP_NAV_LINKS = [
   { label: 'Solutions', hasDropdown: true, footerItem: 'Find talent' },
-  { label: 'For Employers', hasDropdown: false, href: '/for-employers' },
   { label: 'Resources', hasDropdown: true, footerItem: 'Help Center' },
   { label: 'Pricing', hasDropdown: false, href: '/pricing', footerItem: 'Pricing' },
   // Keep docs access in-platform until a dedicated /docs route exists.
@@ -207,6 +206,9 @@ export default function SiteTopNav({
   const actionButtonClass = isDarkTheme
     ? 'relative z-10 inline-flex min-h-[3rem] items-center justify-center rounded-full border border-white/10 bg-[#7fab82] px-6 py-3 text-[1rem] font-bold tracking-[-0.01em] text-[#0f1710] shadow-[0_14px_30px_rgba(0,0,0,0.26),inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-[#8fbd92] hover:shadow-[0_18px_34px_rgba(0,0,0,0.32),inset_0_1px_0_rgba(255,255,255,0.28)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8fbd92] active:translate-y-0 active:scale-[0.98]'
     : 'relative z-10 inline-flex min-h-[3rem] items-center justify-center rounded-full border border-[#314d37]/15 bg-[#3a5a40] px-6 py-3 text-[1rem] font-bold tracking-[-0.01em] text-white shadow-[0_14px_30px_rgba(58,90,64,0.26),inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-[#2f4a36] hover:shadow-[0_18px_34px_rgba(58,90,64,0.32),inset_0_1px_0_rgba(255,255,255,0.2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#3a5a40] active:translate-y-0 active:scale-[0.98]';
+  const employerActionLinkClass = isDarkTheme
+    ? 'relative z-10 inline-flex min-h-[2.75rem] items-center justify-center rounded-full border border-transparent px-4 py-2.5 text-[0.98rem] font-medium text-[#d0d7dd] transition-[background-color,border-color,box-shadow,color,transform] duration-300 hover:-translate-y-0.5 hover:border-white/10 hover:bg-[#202428]/90 hover:text-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_10px_22px_rgba(0,0,0,0.24)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8fbd92] active:translate-y-0 active:scale-[0.98]'
+    : 'relative z-10 inline-flex min-h-[2.75rem] items-center justify-center rounded-full border border-transparent px-4 py-2.5 text-[0.98rem] font-medium text-[#344e41] transition-[background-color,border-color,box-shadow,color,transform] duration-300 hover:-translate-y-0.5 hover:border-[#dce6d4] hover:bg-white/86 hover:text-[#102a1b] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_22px_rgba(58,90,64,0.13)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#3a5a40] active:translate-y-0 active:scale-[0.98]';
   const themeToggleClass = isDarkTheme
     ? 'relative z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-[#202428]/88 text-[#e2e6e9] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-xl transition-colors hover:bg-[#2a2f35]'
     : 'relative z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d7e2ce] bg-white/86 text-[#344e41] shadow-[0_10px_22px_rgba(58,90,64,0.12)] backdrop-blur-xl transition-colors hover:bg-[#eef4ea]';
@@ -414,6 +416,9 @@ export default function SiteTopNav({
           </nav>
 
           <div className="ml-auto flex shrink-0 items-center gap-2.5 lg:gap-3">
+            <Link href="/for-employers" className={employerActionLinkClass} style={{ fontFamily: 'var(--font-desktop)' }}>
+              For Employers
+            </Link>
             {renderActionButton(
               'Sign In',
               signInHref,

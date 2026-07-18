@@ -5,10 +5,10 @@ import KapITLogo from '@sharedComponents/branding/KapITLogo';
 import { useTheme } from '@sharedContext/ThemeContext';
 
 const MOBILE_LINKS = [
-  { label: 'Why KapIT', href: '#why-kapit' },
-  { label: 'How it works', href: '#how-it-works' },
-  { label: 'Hiring tools', href: '#hiring-tools' },
-  { label: 'Pricing', href: '#employer-pricing' },
+  { label: 'Why KapIT', href: '/for-employers#why-kapit' },
+  { label: 'How it works', href: '/for-employers#how-it-works' },
+  { label: 'Hiring tools', href: '/for-employers#hiring-tools' },
+  { label: 'Pricing', href: '/for-employers/pricing' },
 ];
 
 export default function EmployerMobileNav({ onCreateAccount, onSignIn }) {
@@ -57,9 +57,9 @@ export default function EmployerMobileNav({ onCreateAccount, onSignIn }) {
           <div className="absolute inset-x-0 bottom-0 top-[5.5rem] overflow-y-auto rounded-t-[2rem] border border-[#d7e2d3] bg-[#fbfdf9] px-6 pb-8 pt-8 dark:border-white/10 dark:bg-[#131719]">
             <nav className="grid gap-1" aria-label="Employer mobile navigation">
               {MOBILE_LINKS.map((link) => (
-                <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)} className="flex min-h-12 items-center rounded-xl px-3 text-lg font-semibold text-[#173225] hover:bg-[#edf3ea] dark:text-white dark:hover:bg-white/5">
+                <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)} className="flex min-h-12 items-center rounded-xl px-3 text-lg font-semibold text-[#173225] hover:bg-[#edf3ea] dark:text-white dark:hover:bg-white/5">
                   {link.label}
-                </a>
+                </Link>
               ))}
             </nav>
 
@@ -68,12 +68,24 @@ export default function EmployerMobileNav({ onCreateAccount, onSignIn }) {
                 For IT Professionals
               </Link>
               <div className="mt-5 grid gap-3">
-                <button type="button" onClick={() => closeThen(onSignIn)} className="min-h-12 rounded-full border border-[#cad8c6] bg-white px-5 font-semibold text-[#173225] dark:border-white/10 dark:bg-white/5 dark:text-white">
-                  Sign in
-                </button>
-                <button type="button" onClick={() => closeThen(onCreateAccount)} className="min-h-12 rounded-full bg-[#31572c] px-5 font-semibold text-white dark:bg-[#8db692] dark:text-[#102115]">
-                  Create company account
-                </button>
+                {onSignIn ? (
+                  <button type="button" onClick={() => closeThen(onSignIn)} className="min-h-12 rounded-full border border-[#cad8c6] bg-white px-5 font-semibold text-[#173225] dark:border-white/10 dark:bg-white/5 dark:text-white">
+                    Sign in
+                  </button>
+                ) : (
+                  <Link href="/auth/login" onClick={() => setMenuOpen(false)} className="inline-flex min-h-12 items-center justify-center rounded-full border border-[#cad8c6] bg-white px-5 font-semibold text-[#173225] dark:border-white/10 dark:bg-white/5 dark:text-white">
+                    Sign in
+                  </Link>
+                )}
+                {onCreateAccount ? (
+                  <button type="button" onClick={() => closeThen(onCreateAccount)} className="min-h-12 rounded-full bg-[#31572c] px-5 font-semibold text-white dark:bg-[#8db692] dark:text-[#102115]">
+                    Create company account
+                  </button>
+                ) : (
+                  <Link href="/auth/register?type=company" onClick={() => setMenuOpen(false)} className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#31572c] px-5 font-semibold text-white dark:bg-[#8db692] dark:text-[#102115]">
+                    Create company account
+                  </Link>
+                )}
               </div>
             </div>
           </div>
