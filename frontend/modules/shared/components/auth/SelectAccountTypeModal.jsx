@@ -1,27 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { Briefcase, Building2, X, ArrowRight } from 'lucide-react';
-
-const ACCOUNT_TYPES = [
-  {
-    id: 'developer',
-    title: 'IT Professional',
-    description: 'Find jobs, showcase skills, and connect with companies.',
-    icon: Briefcase,
-  },
-  {
-    id: 'company',
-    title: 'Company',
-    description: 'Hire skilled Filipino developers and manage projects.',
-    icon: Building2,
-  },
-];
+import React, { useEffect } from 'react';
+import { Briefcase, Building2, X } from 'lucide-react';
 
 export default function SelectAccountTypeModal({ open, onClose, onSelect }) {
-  const [hovered, setHovered] = useState(null);
-
   useEffect(() => {
     if (!open) return;
-    setHovered(null);
     const onKeyDown = (e) => {
       if (e.key === 'Escape') onClose?.();
     };

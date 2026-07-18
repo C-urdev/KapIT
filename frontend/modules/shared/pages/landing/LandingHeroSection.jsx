@@ -3,7 +3,7 @@ import { ArrowRight, Clock3, Star, Users } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 import LandingApplicationsShowcase from './LandingApplicationsShowcase';
 
-export default function LandingHeroSection({ onGetStarted, onJoinDeveloper }) {
+export default function LandingHeroSection({ onGetStarted }) {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
 

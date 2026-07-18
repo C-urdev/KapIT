@@ -1,11 +1,8 @@
 import React from 'react';
 import {
-  BellOff,
   BriefcaseBusiness,
   ClipboardList,
-  Clock3,
   CopyX,
-  FileSearch,
   Files,
   Flame,
   Globe,
@@ -13,12 +10,10 @@ import {
   MailWarning,
   PenSquare,
   RefreshCw,
-  ScanSearch,
   Shield,
   Sparkles,
   SquareStack,
   TrendingUp,
-  UserRoundSearch,
   WandSparkles,
 } from 'lucide-react';
 

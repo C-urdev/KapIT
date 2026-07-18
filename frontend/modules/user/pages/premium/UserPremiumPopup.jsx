@@ -133,7 +133,7 @@ const notifyOpener = (payload) => {
   }
 };
 
-function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone = false }) {
+function MerchantCheckout({ user: _user, onBack, onClose, onConfirmUpgrade, standalone = false }) {
   const [paymentMethod, setPaymentMethod] = React.useState('paypal');
   const [providerAvailability, setProviderAvailability] = React.useState({
     paypal: { enabled: true, label: 'PayPal', reason: '' },
@@ -142,7 +142,7 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
   const [loading, setLoading] = React.useState(false);
   const [verifying, setVerifying] = React.useState(false);
   const [error, setError] = React.useState('');
-  const [success, setSuccess] = React.useState('');
+  const [_success, setSuccess] = React.useState('');
   const [demoPricing, setDemoPricing] = React.useState(null);
   const [localPaymentBypass, setLocalPaymentBypass] = React.useState({ available: false, reason: '' });
   const [checkoutFallbackUrls, setCheckoutFallbackUrls] = React.useState([]);
@@ -154,14 +154,11 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
 
   const selectedProvider = PAYMENT_PROVIDERS.find((provider) => provider.id === paymentMethod) || PAYMENT_PROVIDERS[0];
   const selectedProviderState = providerAvailability?.[selectedProvider.id] || { enabled: true, reason: '' };
-  const displayName = user?.fullName || user?.name || user?.username || 'User account';
   const isLocalhostBypassAvailable = Boolean(localPaymentBypass?.available);
   const demoChargeAmountLabel = demoPricing?.active && demoPricing?.demoAmountValue
     ? demoPricing.demoAmountValue
     : PREMIUM_PLAN.amount.toLocaleString();
     
-  const completedProvider = PAYMENT_PROVIDERS.find((provider) => provider.id === completedCheckout?.providerId) || null;
-  const paidAt = completedCheckout?.paidAt ? new Date(completedCheckout.paidAt).toLocaleString() : '';
   const completedAmount = Number(completedCheckout?.amount || 0);
   const completedPlanName = completedCheckout?.planName || PREMIUM_PLAN.name;
   const completedBillingCycle = completedCheckout?.billingCycle || 'monthly';
@@ -205,7 +202,9 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
     const handleProviderReturn = async () => {
       if (checkout === 'cancelled') {
         if (paymentId) {
-          try { await cancelUserPremiumCheckout(paymentId); } catch {}
+          try { await cancelUserPremiumCheckout(paymentId); } catch {
+            // Best-effort cancellation; the user-facing state is already cancelled.
+          }
         }
         setError('Payment was cancelled.');
         setWizardStep(2);
@@ -317,7 +316,9 @@ function MerchantCheckout({ user, onBack, onClose, onConfirmUpgrade, standalone 
 
   const handleCancel = async () => {
     if (currentPaymentId) {
-      try { await cancelUserPremiumCheckout(currentPaymentId); } catch {}
+      try { await cancelUserPremiumCheckout(currentPaymentId); } catch {
+        // Best-effort cancellation; closing the popup should not be blocked.
+      }
     }
     if (standalone) {
       onClose?.();
