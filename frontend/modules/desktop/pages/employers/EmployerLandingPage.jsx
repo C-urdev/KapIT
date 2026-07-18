@@ -23,15 +23,14 @@ export default function EmployerLandingPage({ onCreateAccount, onSignIn }) {
         <meta property="og:type" content="website" />
       </Helmet>
 
-      <EmployerDesktopNav onCreateAccount={onCreateAccount} onSignIn={onSignIn} />
+      <EmployerDesktopNav onSignIn={onSignIn} />
 
       <main>
         <section className="relative min-h-[100dvh] overflow-hidden pt-32">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_20%,rgba(127,171,130,0.22),transparent_32%),linear-gradient(180deg,#f7faf5_0%,#edf4ea_100%)] dark:bg-[radial-gradient(circle_at_78%_18%,rgba(127,171,130,0.13),transparent_30%),linear-gradient(180deg,#121416_0%,#171d19_100%)]" />
           <div className="relative mx-auto grid max-w-[1400px] grid-cols-2 items-center gap-12 px-8 pb-20 pt-8">
             <div className="max-w-[42rem]">
-              <p className="text-sm font-semibold text-[#58705a] dark:text-[#a8b7ac]">Employer workspace for Philippine tech hiring</p>
-              <h1 className="mt-6 text-balance text-[clamp(3.2rem,4.4vw,4.5rem)] font-bold leading-[0.96] tracking-[-0.06em] text-[#102a1b] dark:text-white">
+              <h1 className="text-balance text-[clamp(3.2rem,4.4vw,4.5rem)] font-bold leading-[0.96] tracking-[-0.06em] text-[#102a1b] dark:text-white">
                 Find stronger-fit Filipino IT talent.
               </h1>
               <p className="mt-7 max-w-[34rem] text-pretty text-lg leading-8 text-[#4b6251] dark:text-[#c6d0c9]">
@@ -133,7 +132,7 @@ export default function EmployerLandingPage({ onCreateAccount, onSignIn }) {
               <h2 className="mt-5 max-w-[15ch] text-5xl font-bold leading-[1.02] tracking-[-0.055em]">Choose a posting plan when the role is ready.</h2>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-[#c9d8cc]">Review current options before publishing. Final payable amounts remain part of the checkout flow.</p>
             </div>
-            <Link href="/pricing" className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-[#f2f7ef] px-7 font-semibold text-[#173225] transition-[background-color,transform] duration-200 hover:bg-white active:scale-[0.98]">
+            <Link href="/for-employers/pricing" className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-[#f2f7ef] px-7 font-semibold text-[#173225] transition-[background-color,transform] duration-200 hover:bg-white active:scale-[0.98]">
               View pricing <ArrowRight className="h-4.5 w-4.5" />
             </Link>
           </div>

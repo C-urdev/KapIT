@@ -110,7 +110,7 @@ export default function EmployerLandingPage({ onCreateAccount, onSignIn }) {
           <p className="text-sm font-semibold text-[#b8cfba]">Current employer posting options</p>
           <h2 className="mt-5 text-[2.6rem] font-bold leading-[1.02] tracking-[-0.055em]">Choose a posting plan when the role is ready.</h2>
           <p className="mt-5 leading-7 text-[#c9d8cc]">Review current options before publishing. Final payable amounts remain part of checkout.</p>
-          <Link href="/pricing" className="mt-8 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#f2f7ef] px-6 font-semibold text-[#173225] active:scale-[0.98]">
+          <Link href="/for-employers/pricing" className="mt-8 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#f2f7ef] px-6 font-semibold text-[#173225] active:scale-[0.98]">
             View pricing <ArrowRight className="h-4.5 w-4.5" />
           </Link>
         </section>
