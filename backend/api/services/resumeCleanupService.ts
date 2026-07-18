@@ -137,4 +137,7 @@ const startResumeCleanupJob = () => {
 
 module.exports = {
   startResumeCleanupJob,
+  __resetResumeCleanupWarningForTests: () => {
+    lastCleanupDbWarningAt = 0;
+  },
 };

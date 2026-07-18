@@ -12,6 +12,8 @@ const {
 const { enqueueAtsOptimization } = require('../queues/resumeQueue');
 const { onResumeJobEvent } = require('../services/resumeJobEvents');
 
+const RESUME_VISIBILITY_SCOPES = new Set(['private', 'applications_only', 'public_profile']);
+
 const uploadResume = async (req, res) => {
   try {
     const contentType = String(req.get('content-type') || '').toLowerCase().split(';')[0].trim();
@@ -85,10 +87,17 @@ const patchResume = async (req, res) => {
     values.push(body.is_public);
   }
   if (typeof body.visibility_scope === 'string') {
+    const visibilityScope = body.visibility_scope.trim();
+    if (!RESUME_VISIBILITY_SCOPES.has(visibilityScope)) {
+      return res.status(400).json({ success: false, message: 'Invalid resume visibility scope.' });
+    }
     fields.push(`visibility_scope = $${fields.length + 3}`);
-    values.push(body.visibility_scope);
+    values.push(visibilityScope);
   }
   if (typeof body.original_filename === 'string') {
+    if (!body.original_filename.trim()) {
+      return res.status(400).json({ success: false, message: 'Resume file name cannot be empty.' });
+    }
     fields.push(`original_filename = $${fields.length + 3}`);
     values.push(body.original_filename.trim());
   }
@@ -104,7 +113,8 @@ const patchResume = async (req, res) => {
       fields.push(`is_primary = $${fields.length + 3}`);
       values.push(true);
     }
-    const query = `UPDATE resumes SET ${fields.join(', ') || 'updated_at = updated_at'}, updated_at=CURRENT_TIMESTAMP WHERE id=$1 AND user_id=$2 AND archived_at IS NULL RETURNING *`;
+    const updateFields = fields.length ? `${fields.join(', ')}, updated_at=CURRENT_TIMESTAMP` : 'updated_at=CURRENT_TIMESTAMP';
+    const query = `UPDATE resumes SET ${updateFields} WHERE id=$1 AND user_id=$2 AND archived_at IS NULL RETURNING *`;
     const result = await client.query(query, [resumeId, req.user.id, ...values]);
     if (!result.rows.length) throw Object.assign(new Error('Resume not found'), { statusCode: 404 });
     await client.query('COMMIT');
@@ -141,15 +151,13 @@ const streamSignedResumeFile = async (req, res) => {
   if (!row) return res.status(404).json({ success: false, message: 'Resume not found.' });
   
   if (row.storage_provider === 'r2') {
-    const { getR2ObjectStream, generatePresignedDownloadUrl } = require('../services/r2UploadService');
+    const { getR2ObjectStream } = require('../services/r2UploadService');
     const { isR2Enabled } = require('../config/r2');
     
     if (!isR2Enabled()) {
       return res.status(503).json({ success: false, message: 'Cloud storage is currently disabled.' });
     }
 
-    // `row.pdf_url` might be `/api/developer/resumes/r2:object_key_encoded`
-    // Wait, the DB stores `r2_object_key`.
     const objectKey = row.r2_object_key;
     if (!objectKey) return res.status(404).json({ success: false, message: 'File missing in cloud storage.' });
 

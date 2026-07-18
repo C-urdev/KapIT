@@ -1,5 +1,6 @@
 const fs = require('fs/promises');
 const path = require('path');
+const os = require('os');
 const crypto = require('crypto');
 const { logger } = require('../config/logger');
 const pool = require('../config/database');
@@ -34,6 +35,50 @@ const verifyDownload = ({ resumeId, fileKind, userId, exp, sig }) => {
   const given = String(sig || '');
   if (given.length !== expected.length) return false;
   return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(given));
+};
+
+const readStreamBuffer = async (stream) => {
+  const chunks = [];
+  for await (const chunk of stream) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+};
+
+const parseR2ResumeText = async (source) => {
+  if (!source.r2_object_key) {
+    throw Object.assign(new Error('Source file not available.'), { statusCode: 404 });
+  }
+
+  const { getR2ObjectStream } = require('./r2UploadService');
+  const ext = path.extname(String(source.r2_object_key || source.original_filename || '.pdf')) || '.pdf';
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'kapit-r2-resume-'));
+  const tempPath = path.join(tempDir, `source${ext}`);
+
+  try {
+    const streamData = await getR2ObjectStream({ objectKey: source.r2_object_key });
+    const buffer = await readStreamBuffer(streamData.body);
+    await fs.writeFile(tempPath, buffer, { flag: 'wx' });
+    return await parseResumeText({ absolutePath: tempPath, fileName: source.original_filename });
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+  }
+};
+
+const resolveSourceResumeText = async (source) => {
+  if (source.extracted_text) {
+    return source.extracted_text;
+  }
+
+  if (source.storage_provider === 'r2') {
+    return await parseR2ResumeText(source);
+  }
+
+  const sourceUrl = source.pdf_url || source.docx_url;
+  const storedName = getStoredNameFromResumeUrl(sourceUrl);
+  const absolutePath = getStoredResumePath(storedName);
+  if (!absolutePath) throw Object.assign(new Error('Source file not available.'), { statusCode: 404 });
+  return await parseResumeText({ absolutePath, fileName: source.original_filename });
 };
 
 const upsertLegacyProfilePointers = async (client, userId) => {
@@ -99,29 +144,24 @@ const createOriginalResume = async ({ userId, buffer, originalName, contentType 
 };
 
 const runAtsOptimizationJob = async ({ userId, sourceResumeId, jobId }) => {
-  const client = await pool.connect();
+  let client = null;
   try {
-    await client.query('BEGIN');
     emitResumeJobEvent(jobId, { status: 'processing', step: 'extract_text', progress: 10 });
-    await client.query(
+    await pool.query(
       `UPDATE resume_jobs SET status='processing', current_step='extract_text', progress_percent=10, started_at=COALESCE(started_at, CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE id=$1`,
       [jobId]
     );
-    const sourceResult = await client.query(
+    const sourceResult = await pool.query(
       `SELECT * FROM resumes WHERE id = $1 AND user_id = $2 AND archived_at IS NULL LIMIT 1`,
       [sourceResumeId, userId]
     );
     const source = sourceResult.rows[0];
     if (!source) throw Object.assign(new Error('Source resume not found.'), { statusCode: 404 });
-    const sourceUrl = source.pdf_url || source.docx_url;
-    const storedName = getStoredNameFromResumeUrl(sourceUrl);
-    const absolutePath = getStoredResumePath(storedName);
-    if (!absolutePath) throw Object.assign(new Error('Source file not available.'), { statusCode: 404 });
-    const resumeText = source.extracted_text || (await parseResumeText({ absolutePath, fileName: source.original_filename }));
+    const resumeText = await resolveSourceResumeText(source);
 
-    await client.query(`UPDATE resume_jobs SET current_step='gemini_optimize', progress_percent=35, updated_at=CURRENT_TIMESTAMP WHERE id=$1`, [jobId]);
+    await pool.query(`UPDATE resume_jobs SET current_step='gemini_optimize', progress_percent=35, updated_at=CURRENT_TIMESTAMP WHERE id=$1`, [jobId]);
     emitResumeJobEvent(jobId, { status: 'processing', step: 'gemini_optimize', progress: 35 });
-    const roleResult = await client.query(
+    const roleResult = await pool.query(
       `SELECT COALESCE(preferred_it_role, '') AS preferred_role
        FROM developer_profiles
        WHERE user_id = $1
@@ -130,7 +170,7 @@ const runAtsOptimizationJob = async ({ userId, sourceResumeId, jobId }) => {
     );
     const preferredRole = String(roleResult.rows[0]?.preferred_role || '').trim();
     const atsData = await callGeminiForResume({ resumeText, preferredRole });
-    await client.query(`UPDATE resume_jobs SET current_step='generate_docx', progress_percent=55, updated_at=CURRENT_TIMESTAMP WHERE id=$1`, [jobId]);
+    await pool.query(`UPDATE resume_jobs SET current_step='generate_docx', progress_percent=55, updated_at=CURRENT_TIMESTAMP WHERE id=$1`, [jobId]);
     const docxBuffer = await buildDocxBuffer({ fullName: 'Candidate', role: '', structured: atsData });
     const docxStored = await storeGeneratedResumeArtifact({ buffer: docxBuffer, fileName: buildGeneratedFileName('ats-resume', '.docx') });
     const docxScan = await scanFile({ absolutePath: docxStored.absolutePath });
@@ -139,7 +179,7 @@ const runAtsOptimizationJob = async ({ userId, sourceResumeId, jobId }) => {
       throw new Error(`Generated DOCX quarantined: ${docxScan.reason}`);
     }
 
-    await client.query(`UPDATE resume_jobs SET current_step='convert_pdf', progress_percent=70, updated_at=CURRENT_TIMESTAMP WHERE id=$1`, [jobId]);
+    await pool.query(`UPDATE resume_jobs SET current_step='convert_pdf', progress_percent=70, updated_at=CURRENT_TIMESTAMP WHERE id=$1`, [jobId]);
     emitResumeJobEvent(jobId, { status: 'processing', step: 'convert_pdf', progress: 70 });
     const converted = await convertDocxToPdf({ docxAbsolutePath: docxStored.absolutePath, context: { userId, sourceResumeId, jobId } });
     
@@ -157,10 +197,12 @@ const runAtsOptimizationJob = async ({ userId, sourceResumeId, jobId }) => {
       pdfStoredUrl = pdfStored.url;
     }
 
+    client = await pool.connect();
+    await client.query('BEGIN');
     await client.query(`UPDATE resumes SET is_primary=FALSE WHERE user_id=$1 AND resume_type='ats_optimized' AND is_primary=TRUE`, [userId]);
     const insertAts = await client.query(
       `INSERT INTO resumes (user_id, resume_type, source_resume_id, original_filename, storage_provider, pdf_url, docx_url, extracted_text, ats_score, ats_data_json, is_primary, is_public, visibility_scope, processing_status)
-       VALUES ($1,'ats_optimized',$2,$3,'local',$4,$5,$6,$7,$8::jsonb,TRUE,TRUE,'public_profile','completed')
+       VALUES ($1,'ats_optimized',$2,$3,'local',$4,$5,$6,$7,$8::jsonb,TRUE,FALSE,'private','completed')
        RETURNING id`,
       [userId, sourceResumeId, 'ats-resume.docx', pdfStoredUrl, docxStored.url, resumeText, Number(atsData?.atsScore || 60), JSON.stringify(atsData)]
     );
@@ -173,10 +215,14 @@ const runAtsOptimizationJob = async ({ userId, sourceResumeId, jobId }) => {
     );
     await upsertLegacyProfilePointers(client, userId);
     await client.query('COMMIT');
+    client.release();
+    client = null;
     emitResumeJobEvent(jobId, { status: 'completed', step: 'completed', progress: 100, resultResumeId: atsResumeId });
     return atsResumeId;
   } catch (error) {
-    await client.query('ROLLBACK');
+    if (client) {
+      await client.query('ROLLBACK').catch(() => {});
+    }
     await pool.query(
       `UPDATE resume_jobs SET status='failed', error_message=$2, updated_at=CURRENT_TIMESTAMP WHERE id=$1`,
       [jobId, error?.message || 'Job failed']
@@ -184,7 +230,9 @@ const runAtsOptimizationJob = async ({ userId, sourceResumeId, jobId }) => {
     emitResumeJobEvent(jobId, { status: 'failed', step: 'failed', progress: 100, error: error?.message || 'Job failed' });
     throw error;
   } finally {
-    client.release();
+    if (client) {
+      client.release();
+    }
   }
 };
 
@@ -201,18 +249,32 @@ const createResumeJob = async ({ userId, resumeId }) => {
 
 const listUserVisibleResume = async ({ resumeId, requester }) => {
   const result = await pool.query(
-    `SELECT r.*, u.account_type, u.user_type
+    `SELECT r.*,
+            u.account_type,
+            u.user_type,
+            EXISTS (
+              SELECT 1
+              FROM companies c
+              JOIN jobs j ON j.company_id = c.id
+              JOIN applications a ON a.job_id = j.id
+              WHERE c.user_id = $2
+                AND a.resume_id = r.id
+            ) AS requester_company_has_application
      FROM resumes r
      JOIN users u ON u.id = r.user_id
      WHERE r.id = $1 AND r.archived_at IS NULL
      LIMIT 1`,
-    [resumeId]
+    [resumeId, requester?.id || null]
   );
   const row = result.rows[0];
   if (!row) return null;
   const isOwner = requester && row.user_id === requester.id;
   const isCompany = requester && (requester.accountType === 'company' || requester.userType === 'company');
-  const canView = isOwner || row.is_public || (isCompany && row.visibility_scope !== 'private');
+  const canView =
+    isOwner ||
+    row.is_public ||
+    (isCompany && row.visibility_scope === 'public_profile') ||
+    (isCompany && row.visibility_scope === 'applications_only' && row.requester_company_has_application);
   if (!canView) return { forbidden: true };
   return row;
 };

@@ -51,6 +51,38 @@ const ensureResumeSchema = async (): Promise<void> => {
     await client.query('CREATE INDEX IF NOT EXISTS idx_resume_jobs_user_created ON resume_jobs(user_id, created_at DESC);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_applications_resume_id ON applications(resume_id);');
   });
+
+  await runMigration('002_resume_primary_per_type', async (client: PoolClient) => {
+    await client.query('DROP INDEX IF EXISTS uq_resumes_user_primary_active;');
+    await client.query(`
+      WITH ranked_primary_resumes AS (
+        SELECT id,
+               ROW_NUMBER() OVER (
+                 PARTITION BY user_id, resume_type
+                 ORDER BY updated_at DESC, created_at DESC, id DESC
+               ) AS primary_rank
+        FROM resumes
+        WHERE is_primary = TRUE
+          AND archived_at IS NULL
+      )
+      UPDATE resumes r
+      SET is_primary = FALSE,
+          updated_at = CURRENT_TIMESTAMP
+      FROM ranked_primary_resumes ranked
+      WHERE r.id = ranked.id
+        AND ranked.primary_rank > 1;
+    `);
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_resumes_user_type_primary_active
+      ON resumes(user_id, resume_type)
+      WHERE is_primary = TRUE AND archived_at IS NULL;
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_resumes_public
+      ON resumes(is_public, visibility_scope)
+      WHERE archived_at IS NULL;
+    `);
+  });
 };
 
 module.exports = { ensureResumeSchema };

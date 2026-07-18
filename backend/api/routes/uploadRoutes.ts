@@ -4,6 +4,8 @@ const { presignRateLimiter } = require('../middleware/security');
 const { requestPresignedUrl, confirmUpload } = require('../controllers/uploadController');
 const { logger } = require('../config/logger');
 
+const buildProfileImagePrefix = (userId) => `uploads/${userId}/profile_images/`;
+
 const router = express.Router();
 
 // Two-phase upload flow:
@@ -41,7 +43,7 @@ router.post(
       }
 
       const objectKey = String(req.body?.objectKey || '').trim();
-      if (!objectKey || !objectKey.startsWith('uploads/')) {
+      if (!objectKey || !objectKey.startsWith(buildProfileImagePrefix(req.user.id))) {
         return res.status(400).json({ success: false, error: 'Invalid object key.' });
       }
 

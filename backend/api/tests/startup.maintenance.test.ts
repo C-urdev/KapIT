@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const path = require('node:path');
 
 const pool = require('../config/database');
 const {
@@ -8,9 +9,27 @@ const {
 } = require('../config/database');
 const { logger } = require('../config/logger');
 const { startPasswordResetCleanupJob } = require('../services/authService');
-const { startResumeCleanupJob } = require('../services/resumeCleanupService');
 
 const waitForImmediateWork = () => new Promise((resolve) => setTimeout(resolve, 25));
+const serverRoot = path.resolve(__dirname, '..');
+
+const mockServerModule = (relativePath, exportsValue) => {
+  const modulePath = require.resolve(path.join(serverRoot, relativePath));
+  require.cache[modulePath] = {
+    id: modulePath,
+    filename: modulePath,
+    loaded: true,
+    exports: exportsValue,
+  } as NodeJS.Module;
+};
+
+const loadResumeCleanupServiceForTest = () => {
+  delete require.cache[require.resolve('../services/resumeCleanupService')];
+  mockServerModule('config/runtimeSchema.ts', {
+    ensureResumeSchemaReady: async () => {},
+  });
+  return require('../services/resumeCleanupService');
+};
 
 const createConnectivityAggregateError = () => {
   const nestedError = Object.assign(new Error('connect EACCES 127.0.0.1:5432'), { code: 'EACCES' });
@@ -70,7 +89,7 @@ test('password reset cleanup skips missing password_reset_tokens table without l
 
   pool.query = async () => {
     const error = new Error('relation "password_reset_tokens" does not exist');
-    error.code = '42P01';
+    (error as NodeJS.ErrnoException).code = '42P01';
     throw error;
   };
   logger.warn = (...args) => warnCalls.push(args);
@@ -99,6 +118,8 @@ test('resume cleanup logs a single warning for temporary database connectivity i
   const originalError = logger.error;
   const warnCalls = [];
   const errorCalls = [];
+  const { startResumeCleanupJob, __resetResumeCleanupWarningForTests } = loadResumeCleanupServiceForTest();
+  __resetResumeCleanupWarningForTests();
 
   pool.query = async () => {
     throw createConnectivityAggregateError();
