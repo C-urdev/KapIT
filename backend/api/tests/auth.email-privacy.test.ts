@@ -75,9 +75,18 @@ const createPrivacyPoolMock = () => {
     query: async (sql, params = []) => {
       const normalized = String(sql).replace(/\s+/g, ' ').trim();
 
-      if (normalized.startsWith('SELECT id, username, email, user_type, is_premium, created_at,')) {
+      if (normalized.startsWith('SELECT u.id, u.username, u.email, u.user_type,')) {
         const user = users[String(params[0])];
-        return { rows: user ? [user] : [] };
+        return {
+          rows: user
+            ? [{
+                ...user,
+                full_name: user.username,
+                preferred_it_role: user.desired_job,
+                preferred_it_roles: [],
+              }]
+            : [],
+        };
       }
 
       if (normalized.startsWith('SELECT id, username, email, company_name FROM users WHERE id = $1 LIMIT 1')) {

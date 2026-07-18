@@ -72,6 +72,8 @@ const createProfilePoolMock = () => {
       account_type: 'developer',
       role: 'employee',
       is_premium: false,
+      terms_accepted: false,
+      terms_accepted_at: null,
       profile_completed: false,
       bio: '',
       socials: '',
