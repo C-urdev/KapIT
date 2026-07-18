@@ -1,57 +1,47 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { ArrowRight, Check } from 'lucide-react';
 import Link from '../../../../components/shared/Link';
 import Footer from '../../../shared/components/branding/Footer';
 import PublicDesktopNav from '../../components/navigation/PublicDesktopNav';
-import { buildCompanyPlans, PRICING_PAGE_META, USER_BILLING_PLANS } from '../../../shared/data/publicPricing';
+import EmployerDesktopNav from '../../components/navigation/EmployerDesktopNav';
+import { buildCompanyPlans, COMPANY_PRICING_PAGE_META, USER_BILLING_PLANS, USER_PRICING_PAGE_META } from '../../../shared/data/publicPricing';
 import { SEO_SITE_NAME, toAbsoluteUrl } from '../../../../lib/seo';
 
-export default function DesktopPricingPage() {
-  const [audience, setAudience] = useState('company');
+export default function DesktopPricingPage({ audience = 'user', onSignIn }) {
+  const isCompanyAudience = audience === 'company';
   const companyPlans = useMemo(() => buildCompanyPlans(), []);
-  const plans = audience === 'user' ? USER_BILLING_PLANS : companyPlans;
-  const pageUrl = toAbsoluteUrl('/pricing');
+  const plans = isCompanyAudience ? companyPlans : USER_BILLING_PLANS;
+  const pageMeta = isCompanyAudience ? COMPANY_PRICING_PAGE_META : USER_PRICING_PAGE_META;
+  const pageUrl = toAbsoluteUrl(isCompanyAudience ? '/for-employers/pricing' : '/pricing');
 
   return (
     <div className="min-h-screen bg-[#edf2ec] text-[#102a1b] dark:bg-[#101416] dark:text-white">
       <Helmet>
-        <title>{PRICING_PAGE_META.title}</title>
-        <meta name="description" content={PRICING_PAGE_META.description} />
-        <meta name="keywords" content={PRICING_PAGE_META.keywords} />
+        <title>{pageMeta.title}</title>
+        <meta name="description" content={pageMeta.description} />
+        <meta name="keywords" content={pageMeta.keywords} />
         <link rel="canonical" href={pageUrl} />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content={SEO_SITE_NAME} />
-        <meta property="og:title" content={PRICING_PAGE_META.title} />
-        <meta property="og:description" content={PRICING_PAGE_META.description} />
+        <meta property="og:title" content={pageMeta.title} />
+        <meta property="og:description" content={pageMeta.description} />
         <meta property="og:url" content={pageUrl} />
       </Helmet>
 
-      <PublicDesktopNav />
+      {isCompanyAudience ? <EmployerDesktopNav onSignIn={onSignIn} /> : <PublicDesktopNav />}
 
       <main className="pb-24 pt-36">
         <section className="mx-auto max-w-[1320px] px-6">
           <div className="flex flex-col items-center">
-            <h1 className="text-[2.6rem] font-semibold tracking-[-0.05em] text-[#173225] dark:text-white">Pricing</h1>
-            <div className="mt-5 inline-flex rounded-full border border-[#d0d9cd] bg-[#eef3e9] p-1 dark:border-white/10 dark:bg-white/5">
-              {['company', 'user'].map((option) => {
-                const active = audience === option;
-                return (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => setAudience(option)}
-                    className={`rounded-full px-5 py-2.5 text-sm font-semibold capitalize transition-colors ${
-                      active
-                        ? 'bg-[#163828] text-white dark:bg-[#95c09b] dark:text-[#102115]'
-                        : 'text-[#345542] dark:text-[#c6cfca]'
-                    }`}
-                  >
-                    {option}
-                  </button>
-                );
-              })}
-            </div>
+            <h1 className="text-[2.6rem] font-semibold tracking-[-0.05em] text-[#173225] dark:text-white">
+              {isCompanyAudience ? 'Employer pricing' : 'Pricing'}
+            </h1>
+            <p className="mt-4 max-w-2xl text-center text-base leading-7 text-[#4f6858] dark:text-[#b7c2bb]">
+              {isCompanyAudience
+                ? 'Choose the job posting window that fits your current hiring cycle.'
+                : 'Choose the applicant tools that match how you search, apply, and track IT opportunities.'}
+            </p>
           </div>
         </section>
 
@@ -67,10 +57,7 @@ export default function DesktopPricingPage() {
                 }`}
               >
                 <div className="min-h-[180px]">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#627a69] dark:text-[#9eb0a2]">
-                      {audience === 'user' ? 'Applicant plan' : 'Company plan'}
-                    </span>
+                  <div className="flex min-h-7 items-center justify-end">
                     {plan.popular ? (
                       <span className="rounded-full bg-[#163828] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white dark:bg-[#95c09b] dark:text-[#102115]">
                         Recommended

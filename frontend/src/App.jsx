@@ -5,6 +5,7 @@ import PageSkeleton from '../components/shared/PageSkeleton';
 // Lazy-loaded page components
 const LandingPageClient = lazy(() => import('../components/LandingPageClient'));
 const EmployerLandingPageClient = lazy(() => import('../components/EmployerLandingPageClient'));
+const EmployerPricingPage = lazy(() => import('./pages/EmployerPricingPage'));
 const AuthPage = lazy(() => import('./pages/AuthPage'));
 const SocialSignupPage = lazy(() => import('./pages/SocialSignupPage'));
 const GoogleCallbackPage = lazy(() => import('./pages/GoogleCallbackPage'));
@@ -34,6 +35,7 @@ const App = () => {
             {/* Public routes */}
             <Route index element={<LandingPageClient />} />
             <Route path="/for-employers" element={<EmployerLandingPageClient />} />
+            <Route path="/for-employers/pricing" element={<EmployerPricingPage />} />
             <Route path="/auth/login" element={<Navigate to="/?login=1" replace />} />
             <Route path="/auth/register" element={<AuthPage mode="signup" />} />
             <Route path="/auth/social-signup" element={<SocialSignupPage />} />

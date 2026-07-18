@@ -1,64 +1,46 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { ArrowRight, Check } from 'lucide-react';
 import Link from '../../../../components/shared/Link';
 import Footer from '../../../shared/components/branding/Footer';
 import PublicMobileNav from '../../components/navigation/PublicMobileNav';
-import { buildCompanyPlans, PRICING_PAGE_META, USER_BILLING_PLANS } from '../../../shared/data/publicPricing';
+import EmployerMobileNav from '../../components/navigation/EmployerMobileNav';
+import { buildCompanyPlans, COMPANY_PRICING_PAGE_META, USER_BILLING_PLANS, USER_PRICING_PAGE_META } from '../../../shared/data/publicPricing';
 import { SEO_SITE_NAME, toAbsoluteUrl } from '../../../../lib/seo';
 
-export default function MobilePricingPage() {
-  const [audience, setAudience] = useState('company');
+export default function MobilePricingPage({ audience = 'user', onCreateAccount, onSignIn }) {
+  const isCompanyAudience = audience === 'company';
   const companyPlans = useMemo(() => buildCompanyPlans(), []);
-  const plans = audience === 'user' ? USER_BILLING_PLANS : companyPlans;
-  const pageUrl = toAbsoluteUrl('/pricing');
+  const plans = isCompanyAudience ? companyPlans : USER_BILLING_PLANS;
+  const pageMeta = isCompanyAudience ? COMPANY_PRICING_PAGE_META : USER_PRICING_PAGE_META;
+  const pageUrl = toAbsoluteUrl(isCompanyAudience ? '/for-employers/pricing' : '/pricing');
 
   return (
     <div className="min-h-screen bg-[#f4f7f0] text-[#102a1b] dark:bg-[#0f1416] dark:text-white">
       <Helmet>
-        <title>{PRICING_PAGE_META.title}</title>
-        <meta name="description" content={PRICING_PAGE_META.description} />
-        <meta name="keywords" content={PRICING_PAGE_META.keywords} />
+        <title>{pageMeta.title}</title>
+        <meta name="description" content={pageMeta.description} />
+        <meta name="keywords" content={pageMeta.keywords} />
         <link rel="canonical" href={pageUrl} />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content={SEO_SITE_NAME} />
-        <meta property="og:title" content={PRICING_PAGE_META.title} />
-        <meta property="og:description" content={PRICING_PAGE_META.description} />
+        <meta property="og:title" content={pageMeta.title} />
+        <meta property="og:description" content={pageMeta.description} />
         <meta property="og:url" content={pageUrl} />
       </Helmet>
 
-      <PublicMobileNav />
+      {isCompanyAudience ? <EmployerMobileNav onCreateAccount={onCreateAccount} onSignIn={onSignIn} /> : <PublicMobileNav />}
 
       <main className="pb-20 pt-28">
         <section className="px-6 pb-2 pt-10 text-center flex flex-col items-center">
           <h1 className="text-[3.5rem] font-semibold leading-none tracking-tighter text-[#102a1b] dark:text-white">
-            Pricing
+            {isCompanyAudience ? 'Employer pricing' : 'Pricing'}
           </h1>
           <h2 className="mt-5 max-w-sm text-[15px] leading-relaxed text-[#4f6858] dark:text-[#a5b4ac]">
-            KapIT offers the exact same premium IT job seeking and talent sourcing tools as leading platforms but at <strong className="font-semibold text-[#102a1b] dark:text-[#d4ddd7]">50-60% less cost</strong>. Honest, transparent, and built to scale.
+            {isCompanyAudience
+              ? 'Choose a posting window for the role, hiring cycle, or campaign your team needs right now.'
+              : 'Compare Free and Premium tools for searching, applying, and keeping your IT job hunt organized.'}
           </h2>
-        </section>
-
-        <section className="mt-4 px-6">
-          <div className="inline-flex w-full rounded-full border border-[#d1dacf] bg-[#eef3e9] p-1.5 dark:border-white/10 dark:bg-white/5">
-            {['company', 'user'].map((option) => {
-              const active = audience === option;
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setAudience(option)}
-                  className={`flex-1 rounded-full px-4 py-3 text-[15px] font-semibold capitalize transition-all ${
-                    active
-                      ? 'bg-[#163828] text-white shadow-sm dark:bg-[#95c09b] dark:text-[#102115]'
-                      : 'text-[#345542] dark:text-[#c7d0cb]'
-                  }`}
-                >
-                  {option}
-                </button>
-              );
-            })}
-          </div>
         </section>
 
         <section className="mt-6 space-y-4 px-4">
@@ -73,10 +55,7 @@ export default function MobilePricingPage() {
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#5d7563] dark:text-[#9fb1a4]">
-                    {audience === 'user' ? 'Applicant plan' : 'Company plan'}
-                  </p>
-                  <h2 className="mt-3 text-[1.8rem] font-semibold tracking-[-0.05em]">{plan.name}</h2>
+                  <h2 className="text-[1.8rem] font-semibold tracking-[-0.05em]">{plan.name}</h2>
                 </div>
                 {plan.popular ? (
                   <span className="rounded-full bg-[#163828] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white dark:bg-[#95c09b] dark:text-[#102115]">

@@ -44,7 +44,7 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
 
   useEffect(() => {
     if (pathname === COMPANY_PATHS.premium) {
-      navigate('/pricing');
+      navigate('/for-employers/pricing');
     }
   }, [pathname]);
 
@@ -117,7 +117,7 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
           user={user}
           onHelp={onHelp}
           onLogout={onLogout}
-          onOpenPricing={() => navigate('/pricing')}
+          onOpenPricing={() => navigate('/for-employers/pricing')}
           onToggleSidebarCollapsed={() => setSidebarCollapsed((value) => !value)}
           unreadNotificationCount={unreadNotificationCount}
         />
