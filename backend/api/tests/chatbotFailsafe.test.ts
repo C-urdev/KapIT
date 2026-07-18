@@ -7,9 +7,7 @@ const repoRoot = path.resolve(__dirname, '..', '..', '..');
 const safetyModuleUrl = pathToFileURL(
   path.join(repoRoot, 'frontend', 'modules', 'shared', 'components', 'support', 'chatbotSafety.ts')
 ).href;
-const boundaryModuleUrl = pathToFileURL(
-  path.join(repoRoot, 'frontend', 'components', 'ChatbotErrorBoundary.js')
-).href;
+const boundaryModulePath = path.join(repoRoot, 'frontend', 'components', 'ChatbotErrorBoundary.tsx');
 
 const withWindowMock = async (windowMock, run) => {
   const previousWindow = global.window;
@@ -87,7 +85,7 @@ test('playNotificationSound safely skips when AudioContext constructor throws', 
 });
 
 test('ChatbotErrorBoundary can hide chatbot without affecting sibling content', async () => {
-  const boundaryModule = await import(boundaryModuleUrl);
+  const boundaryModule = require(boundaryModulePath);
   const ChatbotErrorBoundary = boundaryModule.default;
 
   const siblingContent = 'page content';

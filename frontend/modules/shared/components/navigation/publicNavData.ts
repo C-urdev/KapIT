@@ -7,8 +7,28 @@ import {
   UserRound,
   UsersRound,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
-export const PUBLIC_NAV_LINKS = [
+type PublicNavLink = {
+  label: string;
+  hasDropdown: boolean;
+  href?: string;
+  footerItem?: string;
+};
+
+type PublicNavDropdownItem = {
+  title: string;
+  description: string;
+  footerItem: string;
+  icon: LucideIcon;
+};
+
+type PublicNavDropdownGroup = {
+  heading: string;
+  items: PublicNavDropdownItem[];
+};
+
+export const PUBLIC_NAV_LINKS: PublicNavLink[] = [
   { label: 'Solutions', hasDropdown: true, footerItem: 'Find talent' },
   { label: 'For Employers', hasDropdown: false, href: '/for-employers' },
   { label: 'Resources', hasDropdown: true, footerItem: 'Help Center' },
@@ -16,7 +36,7 @@ export const PUBLIC_NAV_LINKS = [
   { label: 'Documentation', hasDropdown: false, footerItem: 'Help Center' },
 ];
 
-export const PUBLIC_NAV_DROPDOWNS = {
+export const PUBLIC_NAV_DROPDOWNS: Record<string, PublicNavDropdownGroup[]> = {
   Solutions: [
     {
       heading: 'Developers',
@@ -55,7 +75,7 @@ export const PUBLIC_NAV_DROPDOWNS = {
   ],
 };
 
-export function openPublicFooterItem(footerItem) {
+export function openPublicFooterItem(footerItem: string): void {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent('kapit:footer-info-open', { detail: { item: footerItem } }));
 }

@@ -27,7 +27,7 @@ if (fs.existsSync(tsconfigPath)) {
   }
 }
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(() => {
   const proxyTarget = `http://localhost:${process.env.PORT || 5000}`;
   const devHost = process.env.VITE_HOST || "127.0.0.1";
   const devPort = Number(process.env.VITE_PORT || 5173);
