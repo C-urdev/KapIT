@@ -3,6 +3,8 @@ import { useRouter } from '@shared/hooks/useAppRouter';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { isCompanyAccount, loginWithGoogle } from '@sharedServices/authService';
 
+const OAUTH_LOGIN_AUDIENCE_STORAGE_KEY = 'kapit_oauth_login_account_type_hint';
+
 const resolvePostAuthPath = (user) => {
   if (user?.profileCompleted === false) {
     return isCompanyAccount(user)
@@ -13,6 +15,13 @@ const resolvePostAuthPath = (user) => {
   return isCompanyAccount(user)
     ? '/company/dashboard'
     : '/dashboard/user';
+};
+
+const resolveLoginEntryPath = (audience, params = '') => {
+  const suffix = params ? `&${params.replace(/^\?/, '').replace(/^&/, '')}` : '';
+  return audience === 'company'
+    ? `/for-employers?login=1${suffix}`
+    : `/?login=1${suffix}`;
 };
 
 function parseHashParams() {
@@ -38,8 +47,18 @@ function GoogleCallbackContent() {
       }
     };
 
+    const getAndClearOauthLoginAudience = () => {
+      try {
+        const value = String(window.sessionStorage.getItem(OAUTH_LOGIN_AUDIENCE_STORAGE_KEY) || '').trim().toLowerCase();
+        window.sessionStorage.removeItem(OAUTH_LOGIN_AUDIENCE_STORAGE_KEY);
+        return value === 'company' ? 'company' : value === 'developer' ? 'developer' : '';
+      } catch {
+        return '';
+      }
+    };
+
     const redirectToSafeLogin = () => {
-      router.replace('/auth/login?authError=social');
+      router.replace(resolveLoginEntryPath(getAndClearOauthLoginAudience(), 'authError=social'));
     };
 
     const params = parseHashParams();
@@ -61,6 +80,7 @@ function GoogleCallbackContent() {
       try {
         const data = await loginWithGoogle(idToken, { state });
         if (data?.success && data?.user) {
+          getAndClearOauthLoginAudience();
           router.replace(resolvePostAuthPath(data.user));
           return;
         }
@@ -69,11 +89,16 @@ function GoogleCallbackContent() {
         const responseCode = String(error?.data?.code || '').trim();
         if (responseCode === 'SOCIAL_ACCOUNT_NOT_REGISTERED') {
           const startMode = getAndClearOauthStartMode();
+          const audience = getAndClearOauthLoginAudience();
           if (startMode === 'signup') {
             router.replace('/auth/social-signup');
             return;
           }
-          router.replace('/auth/login?socialNoAccount=google');
+          router.replace(resolveLoginEntryPath(audience, 'socialNoAccount=google'));
+          return;
+        }
+        if (responseCode === 'SOCIAL_LOGIN_ACCOUNT_TYPE_MISMATCH') {
+          router.replace(resolveLoginEntryPath(getAndClearOauthLoginAudience(), 'authError=accountType'));
           return;
         }
         if (responseCode === 'SOCIAL_SIGNUP_ACCOUNT_TYPE_MISMATCH') {

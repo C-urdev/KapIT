@@ -73,7 +73,7 @@ export default function EmployerMobileNav({ onCreateAccount, onSignIn }) {
                     Sign in
                   </button>
                 ) : (
-                  <Link href="/auth/login" onClick={() => setMenuOpen(false)} className="inline-flex min-h-12 items-center justify-center rounded-full border border-[#cad8c6] bg-white px-5 font-semibold text-[#173225] dark:border-white/10 dark:bg-white/5 dark:text-white">
+                  <Link href="/for-employers?login=1" onClick={() => setMenuOpen(false)} className="inline-flex min-h-12 items-center justify-center rounded-full border border-[#cad8c6] bg-white px-5 font-semibold text-[#173225] dark:border-white/10 dark:bg-white/5 dark:text-white">
                     Sign in
                   </Link>
                 )}

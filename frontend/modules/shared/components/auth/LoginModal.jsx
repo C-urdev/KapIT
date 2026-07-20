@@ -1,14 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { X, GitFork, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
-import { createOAuthState, loginUser } from '@sharedServices/authService';
+import {
+  createOAuthState,
+  getUserAccountType,
+  loginUser,
+  logoutUser,
+  normalizeAccountType,
+} from '@sharedServices/authService';
 
-export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterClick }) {
+const OAUTH_LOGIN_AUDIENCE_STORAGE_KEY = 'kapit_oauth_login_account_type_hint';
+
+const getAudienceErrorMessage = (accountType) => (
+  accountType === 'company'
+    ? 'This sign-in is for employer accounts. Use the user landing page for developer accounts.'
+    : accountType === 'developer'
+      ? 'This sign-in is for user accounts. Use the employer landing page for employer accounts.'
+      : ''
+);
+
+export default function LoginModal({ open, accountType, initialError, onClose, onLoginSuccess, onRegisterClick }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const isLocalAuthBypassEnabled = import.meta.env.VITE_ENABLE_LOCAL_AUTH_BYPASS === 'true';
+  const normalizedAccountType = normalizeAccountType(accountType);
 
   const isLoopbackHost = () => {
     const host = String(window.location.hostname || '').trim().toLowerCase();
@@ -21,8 +38,13 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
       setPassword('');
       setError('');
       setShowPassword(false);
+      return;
     }
-  }, [open]);
+
+    if (initialError === 'accountType') {
+      setError(getAudienceErrorMessage(normalizedAccountType));
+    }
+  }, [initialError, normalizedAccountType, open]);
 
   if (!open) return null;
 
@@ -37,8 +59,18 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
     setError('');
 
     try {
-      const data = await loginUser({ email, password });
+      const data = await loginUser({
+        email,
+        password,
+        ...(normalizedAccountType ? { accountTypeHint: normalizedAccountType } : {}),
+      });
       if (data?.user) {
+        if (normalizedAccountType && getUserAccountType(data.user) !== normalizedAccountType) {
+          await logoutUser().catch(() => {});
+          setError(getAudienceErrorMessage(normalizedAccountType));
+          return;
+        }
+
         onLoginSuccess?.(data.user);
       } else {
         throw new Error('Invalid response from server');
@@ -67,6 +99,11 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
     try {
       window.sessionStorage.setItem('oauth_in_progress', '1');
       window.sessionStorage.setItem('oauth_start_mode', 'login');
+      if (normalizedAccountType) {
+        window.sessionStorage.setItem(OAUTH_LOGIN_AUDIENCE_STORAGE_KEY, normalizedAccountType);
+      } else {
+        window.sessionStorage.removeItem(OAUTH_LOGIN_AUDIENCE_STORAGE_KEY);
+      }
     } catch {
       // Ignore
     }
@@ -88,7 +125,11 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
     setLoading(true);
     let state;
     try {
-      const oauthState = await createOAuthState({ provider: 'google', mode: 'login' });
+      const oauthState = await createOAuthState({
+        provider: 'google',
+        mode: 'login',
+        accountTypeHint: normalizedAccountType,
+      });
       state = String(oauthState?.state || '').trim();
       if (!state) throw new Error('Unable to verify request.');
     } catch (err) {
@@ -124,7 +165,11 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
     setLoading(true);
     let state;
     try {
-      const oauthState = await createOAuthState({ provider: 'github', mode: 'login' });
+      const oauthState = await createOAuthState({
+        provider: 'github',
+        mode: 'login',
+        accountTypeHint: normalizedAccountType,
+      });
       state = String(oauthState?.state || '').trim();
       if (!state) throw new Error('Unable to verify request.');
     } catch (err) {

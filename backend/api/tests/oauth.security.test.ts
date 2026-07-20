@@ -239,3 +239,25 @@ test('OAuth signup blocks account-type mismatch for existing email accounts', as
   assert.equal(response.body.success, false);
   assert.equal(response.body.code, 'SOCIAL_SIGNUP_ACCOUNT_TYPE_MISMATCH');
 });
+
+test('OAuth login blocks account-type mismatch before issuing a session', async () => {
+  const app = loadApp({
+    existingUserByEmail: {
+      id: 'existing-user-id',
+      email: 'mismatch@example.com',
+      username: 'existing-user',
+      user_type: 'employee',
+      account_type: 'developer',
+      profile_completed: false,
+    },
+  });
+  const agent = createLocalAgent(app);
+  const state = await createOAuthState({ agent, provider: 'github', mode: 'login' });
+
+  const response = await postLocal(agent, '/api/auth/github')
+    .send({ code: 'mock-github-mismatch', state });
+
+  assert.equal(response.status, 403);
+  assert.equal(response.body.success, false);
+  assert.equal(response.body.code, 'SOCIAL_LOGIN_ACCOUNT_TYPE_MISMATCH');
+});

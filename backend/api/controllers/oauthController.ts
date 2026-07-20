@@ -379,6 +379,25 @@ const handleSocialLogin = async ({ email, name, provider, providerId, accountTyp
       });
     }
 
+    if (oauthMode === 'login') {
+      const existingAccountType = getUserAccountType(existingUser);
+      const normalizedHint = normalizeAccountType(accountTypeHint);
+
+      if (normalizedHint && normalizedHint !== existingAccountType) {
+        return {
+          success: false,
+          statusCode: 403,
+          code: 'SOCIAL_LOGIN_ACCOUNT_TYPE_MISMATCH',
+          message: normalizedHint === 'company'
+            ? 'Use the user sign-in page for this account.'
+            : 'Use the employer sign-in page for this account.',
+          error: normalizedHint === 'company'
+            ? 'Use the user sign-in page for this account.'
+            : 'Use the employer sign-in page for this account.',
+        };
+      }
+    }
+
     if (oauthMode === 'signup' && existingMatchType === 'email') {
       const existingAccountType = getUserAccountType(existingUser);
       const normalizedHint = normalizeAccountType(accountTypeHint);
@@ -542,7 +561,7 @@ const createOAuthStateSession = async (req, res) => {
     state,
     provider,
     mode,
-    accountTypeHint: mode === 'signup' ? accountTypeHint : null,
+    accountTypeHint,
     expiresAt,
   });
   writeOAuthStateStore(res, entries);
@@ -592,7 +611,7 @@ const googleLogin = async (req, res) => {
       error: 'Unable to verify sign-in request. Please try again.',
     });
   }
-  const normalizedAccountTypeHint = stateCheck.mode === 'signup' ? stateCheck.accountTypeHint : null;
+  const normalizedAccountTypeHint = stateCheck.accountTypeHint;
 
   if (!GOOGLE_CLIENT_ID && typeof credential === 'string' && credential.includes('mock-google-')) {
     try {
@@ -662,7 +681,7 @@ const githubLogin = async (req, res) => {
       error: 'Unable to verify sign-in request. Please try again.',
     });
   }
-  const normalizedAccountTypeHint = stateCheck.mode === 'signup' ? stateCheck.accountTypeHint : null;
+  const normalizedAccountTypeHint = stateCheck.accountTypeHint;
 
   const clientId = process.env.GITHUB_CLIENT_ID;
   const clientSecret = process.env.GITHUB_CLIENT_SECRET;

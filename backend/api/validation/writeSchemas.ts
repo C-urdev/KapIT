@@ -136,7 +136,7 @@ const writeSchemas = {
       })
       .strict()
   ),
-  authLogin: schema(z.object({ email, password: z.string().min(1).max(128) }).strict()),
+  authLogin: schema(z.object({ email, password: z.string().min(1).max(128), accountTypeHint: accountType.optional() }).strict()),
   authForgotPassword: schema(z.object({ email }).strict()),
   authResetPassword: schema(z.object({ token: z.string().min(32).max(512), new_password: password }).strict()),
   authSendOtp: schema(z.object({ email }).strict()),

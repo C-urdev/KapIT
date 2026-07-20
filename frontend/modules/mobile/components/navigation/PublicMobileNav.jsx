@@ -27,7 +27,7 @@ export default function PublicMobileNav({
   logoHref = '/',
   onSignIn,
   onGetStarted,
-  signInHref = '/auth/login',
+  signInHref = '/?login=1',
   getStartedHref = '/auth/register',
 }) {
   const { pathname } = useLocation();

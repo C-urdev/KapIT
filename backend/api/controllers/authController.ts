@@ -91,6 +91,17 @@ const deriveAccountTypeAndUserType = ({ accountType, userType }) => {
   return { accountType: '', userType: '' };
 };
 
+const getAccountTypeForUserRow = (user) => {
+  const normalizedAccountType = normalizeAccountType(user?.account_type);
+  if (normalizedAccountType) {
+    return normalizedAccountType;
+  }
+
+  return String(user?.user_type || '').trim().toLowerCase() === 'company'
+    ? 'company'
+    : 'developer';
+};
+
 const serializeSavedJobRow = (row) => ({
   id: row.job_id,
   title: row.title || 'Untitled job',
@@ -442,6 +453,7 @@ const login = async (req, res) => {
   try {
     client = await pool.connect();
     const { email, password } = req.body;
+    const requestedAccountType = normalizeAccountType(req.body?.accountTypeHint);
 
     const result = await client.query(
       `SELECT *
@@ -468,6 +480,19 @@ const login = async (req, res) => {
 
     if (!isPasswordValid) {
       return genericFailure();
+    }
+
+    const actualAccountType = getAccountTypeForUserRow(user);
+    if (requestedAccountType && requestedAccountType !== actualAccountType) {
+      const message = requestedAccountType === 'company'
+        ? 'Use the user sign-in page for this account.'
+        : 'Use the employer sign-in page for this account.';
+      return res.status(403).json({
+        success: false,
+        code: 'LOGIN_ACCOUNT_TYPE_MISMATCH',
+        message,
+        error: message,
+      });
     }
 
     const computedProfileCompleted = computeProfileCompleted(user.user_type, user, user.account_type);

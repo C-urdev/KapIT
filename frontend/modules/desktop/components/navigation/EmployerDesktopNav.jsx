@@ -75,7 +75,7 @@ export default function EmployerDesktopNav({ onSignIn }) {
             </button>
           ) : (
             <Link
-              href="/auth/login"
+              href="/for-employers?login=1"
               className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#cad8c6] bg-white/70 px-4 text-sm font-semibold text-[#173225] transition-[background-color,transform] duration-200 hover:bg-white active:scale-[0.98] dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/8"
             >
               Sign in

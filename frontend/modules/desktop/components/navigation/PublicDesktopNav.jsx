@@ -5,7 +5,7 @@ export default function PublicDesktopNav({
   logoHref = '/',
   onSignIn,
   onGetStarted,
-  signInHref = '/auth/login',
+  signInHref = '/?login=1',
   getStartedHref = '/auth/register',
 }) {
   return (

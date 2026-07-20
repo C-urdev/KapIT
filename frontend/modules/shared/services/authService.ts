@@ -24,6 +24,17 @@ const clearLegacyBrowserAuthStateOnce = () => {
 };
 
 const getErrorMessage = (error, fallbackMessage) => error?.message || fallbackMessage;
+const isUnsupportedAccountTypeHintError = (error) => {
+  if (Number(error?.status) !== 400) {
+    return false;
+  }
+
+  const details = Array.isArray(error?.data?.details) ? error.data.details : [];
+  return details.some((detail) => (
+    String(detail?.path || '').trim() === 'body' &&
+    String(detail?.message || '').toLowerCase().includes('accounttypehint')
+  ));
+};
 const normalizeAccountType = (value) => {
   const normalized = String(value || '').trim().toLowerCase();
   if (normalized === 'company') return 'company';
@@ -229,11 +240,27 @@ export const registerUser = async (userData) => {
 };
 
 export const loginUser = async (credentials) => {
-  const data = await authRequest('/login', {
-    method: 'POST',
-    body: JSON.stringify(credentials),
-    retryOnUnauthorized: false,
-  });
+  const payload = { ...(credentials || {}) };
+
+  const requestLogin = async (body) =>
+    authRequest('/login', {
+      method: 'POST',
+      body: JSON.stringify(body),
+      retryOnUnauthorized: false,
+    });
+
+  let data;
+  try {
+    data = await requestLogin(payload);
+  } catch (error) {
+    if (!payload.accountTypeHint || !isUnsupportedAccountTypeHintError(error)) {
+      throw error;
+    }
+
+    const legacyPayload = { ...payload };
+    delete legacyPayload.accountTypeHint;
+    data = await requestLogin(legacyPayload);
+  }
 
   if (data?.user) {
     data.user = persistUser(data.user);
@@ -297,7 +324,7 @@ export const createOAuthState = async ({ provider, mode, accountTypeHint } = {})
     body: JSON.stringify({
       provider: normalizedProvider,
       mode: normalizedMode,
-      ...(normalizedHint && normalizedMode === 'signup' ? { accountTypeHint: normalizedHint } : {}),
+      ...(normalizedHint ? { accountTypeHint: normalizedHint } : {}),
     }),
     retryOnUnauthorized: false,
   });

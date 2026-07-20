@@ -18,6 +18,7 @@ export default function EmployerLandingPageClient() {
   const location = useLocation();
   const searchParams = useSearchParams();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(searchParams.get('login') === '1');
+  const loginError = searchParams.get('authError') === 'accountType' ? 'accountType' : '';
 
   useEffect(() => {
     let cancelled = false;
@@ -70,6 +71,8 @@ export default function EmployerLandingPageClient() {
         {isLoginModalOpen ? (
           <LoginModal
             open={isLoginModalOpen}
+            accountType="company"
+            initialError={loginError}
             onClose={closeLogin}
             onLoginSuccess={(user) => {
               setIsLoginModalOpen(false);

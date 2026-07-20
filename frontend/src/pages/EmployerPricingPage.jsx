@@ -29,6 +29,7 @@ export default function EmployerPricingPage() {
         {isLoginModalOpen ? (
           <LoginModal
             open={isLoginModalOpen}
+            accountType="company"
             onClose={() => setIsLoginModalOpen(false)}
             onLoginSuccess={(user) => {
               setIsLoginModalOpen(false);

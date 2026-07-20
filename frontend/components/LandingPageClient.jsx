@@ -20,6 +20,7 @@ export default function LandingPageClient() {
   const searchParams = useSearchParams();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const shouldOpenLoginModal = searchParams.get('login') === '1';
+  const loginError = searchParams.get('authError') === 'accountType' ? 'accountType' : '';
 
   useEffect(() => {
     let cancelled = false;
@@ -76,6 +77,8 @@ export default function LandingPageClient() {
         {isLoginModalOpen ? (
           <LoginModal
             open={isLoginModalOpen}
+            accountType="developer"
+            initialError={loginError}
             onClose={closeLoginModal}
             onLoginSuccess={(user) => {
               setIsLoginModalOpen(false);
