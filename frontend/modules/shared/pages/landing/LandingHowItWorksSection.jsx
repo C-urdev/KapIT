@@ -30,7 +30,7 @@ const STEPS = [
 
 export default function LandingHowItWorksSection() {
   return (
-    <section className="relative overflow-hidden bg-[linear-gradient(180deg,#fffefd_0%,#fcfaf6_34%,#f6eee2_100%)] dark:bg-[#181a1b]">
+    <section className="relative overflow-hidden bg-[linear-gradient(180deg,#fffefd_0%,#fcfaf6_34%,#f6eee2_100%)] dark:bg-none dark:bg-[#181a1b]">
       <div className="landing-desktop-shell relative py-[6rem] sm:py-24 lg:py-32">
         <div className="mx-auto max-w-3xl text-center">
           <h3 className="text-[2.5rem] font-semibold tracking-[-0.05em] text-[#102a1b] dark:text-white sm:text-[3rem]">

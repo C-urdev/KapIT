@@ -72,7 +72,7 @@ const BENEFITS = [
 
 export default function LandingCategoriesSection() {
   return (
-    <section className="relative overflow-hidden bg-[linear-gradient(180deg,#fffdfa_0%,#fcfaf5_56%,#f8f3ea_100%)] dark:bg-[#181a1b] scroll-mt-24">
+    <section className="relative overflow-hidden bg-[linear-gradient(180deg,#fffdfa_0%,#fcfaf5_56%,#f8f3ea_100%)] dark:bg-none dark:bg-[#101714] scroll-mt-24">
       <div className="landing-desktop-shell relative py-[4.5rem] sm:py-20 lg:py-24">
         <div className="mx-auto max-w-4xl text-center">
           <h3 className="text-3xl font-semibold tracking-tight text-[#11120f] dark:text-white sm:text-4xl lg:text-[2.5rem]">
