@@ -255,7 +255,7 @@ export default function FeedPostCard({ post, user, displayName, profileImage, us
 
   if (isHidden) {
     return (
-      <article className="overflow-hidden rounded-[1.4rem] border border-[#bfd0af] bg-[#f8fbf6] text-[#344e41] shadow-[0_16px_36px_rgba(58,90,64,0.1)] dark:border-[#2f3438] dark:bg-[#23272b] dark:text-white dark:shadow-[0_16px_36px_rgba(0,0,0,0.24)]">
+      <article className="overflow-hidden rounded-[1.4rem] border border-[#bfd0af] bg-[#f8fbf6] text-[#344e41] shadow-[0_16px_36px_rgba(58,90,64,0.1)] dark:border-[#2f3438] dark:bg-[#23272b] dark:text-white dark:shadow-[0_16px_36px_rgba(0,0,0,0.24)] xl:rounded-lg xl:border-[var(--user-border)] xl:bg-[var(--user-surface)] xl:text-[var(--user-text-strong)] xl:shadow-none xl:dark:border-[var(--user-border)] xl:dark:bg-[var(--user-surface)] xl:dark:shadow-none">
         <div className="flex items-start justify-between gap-4 px-6 pb-5 pt-6">
           <div>
             <div className="flex items-center gap-2 text-[#6b7dbb] dark:text-[#9fb4ff]">
@@ -317,7 +317,7 @@ export default function FeedPostCard({ post, user, displayName, profileImage, us
 
   return (
     <>
-      <article ref={cardRef} className="overflow-hidden rounded-[1.4rem] border border-[#a3b18a] bg-[#f8fbf6] shadow-[0_16px_36px_rgba(58,90,64,0.08)] dark:border-[#353c44] dark:bg-[#22272b] dark:shadow-[0_16px_36px_rgba(0,0,0,0.2)]">
+      <article ref={cardRef} className="overflow-hidden rounded-[1.4rem] border border-[#a3b18a] bg-[#f8fbf6] shadow-[0_16px_36px_rgba(58,90,64,0.08)] dark:border-[#353c44] dark:bg-[#22272b] dark:shadow-[0_16px_36px_rgba(0,0,0,0.2)] xl:rounded-lg xl:border-[var(--user-border)] xl:bg-[var(--user-surface)] xl:shadow-none xl:dark:border-[var(--user-border)] xl:dark:bg-[var(--user-surface)] xl:dark:shadow-none">
         <div className="flex items-start justify-between gap-3 px-4 pb-3 pt-4">
           <div className="flex min-w-0 items-center gap-3">
             <Avatar profileImage={authorProfileImage} fallback={authorInitial} sizeClass="h-11 w-11" />

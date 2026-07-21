@@ -132,7 +132,7 @@ export default function PublicProfilePage({ profile, onBack, onMessage, onMore, 
         </div>
       </div>
 
-      <section className="bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl overflow-hidden">
+      <section className="user-desktop-flat-surface bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl overflow-hidden">
         <div className="h-20 bg-gradient-to-r from-[#588157] to-[#3a5a40] dark:from-[#82ad86] dark:to-[#6f9b74]" />
         <div className="px-5 sm:px-8 py-5 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex w-full min-w-0 flex-col items-start gap-4 sm:flex-row sm:items-center">
@@ -192,7 +192,7 @@ export default function PublicProfilePage({ profile, onBack, onMessage, onMore, 
 
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-5">
         <aside className="space-y-4">
-          <section className="bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-4">
+          <section className="user-desktop-flat-surface bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-4">
             <h2 className="text-lg font-semibold text-[#3a5a40] dark:text-white mb-3">Info</h2>
             <InfoRow icon={User} text={displayName} />
             {profile?.email && <InfoRow icon={Mail} text={profile.email} />}
@@ -202,7 +202,7 @@ export default function PublicProfilePage({ profile, onBack, onMessage, onMore, 
           </section>
 
           {isCompany && (
-            <section className="bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-4">
+            <section className="user-desktop-flat-surface bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-4">
               <h2 className="text-lg font-semibold text-[#3a5a40] dark:text-white mb-3">Related Companies</h2>
               {relatedCompanies.length === 0 ? (
                 <p className="text-sm text-[#344e41] dark:text-[#d0d7dd]">No related companies listed yet.</p>
@@ -227,7 +227,7 @@ export default function PublicProfilePage({ profile, onBack, onMessage, onMore, 
         </aside>
 
         <main className="space-y-4">
-          <section className="bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-4">
+          <section className="user-desktop-flat-surface bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-4">
             <h2 className="text-lg font-semibold text-[#3a5a40] dark:text-white mb-3">Posts</h2>
             {posts.length === 0 ? (
               <p className="text-sm text-[#344e41] dark:text-[#d0d7dd]">No posts yet.</p>

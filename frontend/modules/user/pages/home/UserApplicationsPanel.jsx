@@ -1,116 +1,248 @@
-import React from 'react';
-import { Building2, FileCheck2, MapPin } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { CalendarDays, MapPin, Sparkles } from 'lucide-react';
+
+const APPLICATION_BOARD_COLUMNS = [
+  {
+    key: 'applied',
+    title: 'Applied',
+    emptyText: 'No applied roles yet.',
+    pillClass: 'border-[var(--user-border)] bg-[var(--user-surface)] text-[var(--user-primary)]',
+  },
+  {
+    key: 'interview',
+    title: 'Interview',
+    emptyText: 'No interviews yet.',
+    pillClass: 'bg-[#efe1ff] text-[#7c3aed]',
+  },
+  {
+    key: 'result',
+    title: 'Result',
+    emptyText: 'No results yet.',
+    pillClass: 'bg-[#e0e8ff] text-[#3158e8]',
+  },
+];
+
+const INTERVIEW_STATUSES = new Set(['interview', 'interviewing', 'interview scheduled', 'scheduled', 'reviewing']);
+const RESULT_STATUSES = new Set(['accepted', 'hired', 'offer', 'offered', 'rejected', 'declined', 'result']);
 
 export default function UserApplicationsPanel({ applications = [], embedded = false }) {
-  const [activeTab, setActiveTab] = React.useState('all');
   const safeApplications = Array.isArray(applications) ? applications : [];
-
-  const tabs = [
-    { key: 'all', label: 'All', count: safeApplications.length },
-    { key: 'pending', label: 'Pending', count: safeApplications.filter((a) => (a.status || 'pending').toLowerCase() === 'pending').length },
-    { key: 'accepted', label: 'Accepted', count: safeApplications.filter((a) => ['accepted', 'hired'].includes((a.status || '').toLowerCase())).length },
-    { key: 'rejected', label: 'Rejected', count: safeApplications.filter((a) => ['rejected', 'declined'].includes((a.status || '').toLowerCase())).length },
-  ];
-
-  const filtered = activeTab === 'all'
-    ? safeApplications
-    : safeApplications.filter((a) => (a.status || 'pending').toLowerCase() === activeTab);
-
-  const statusStyle = (status) => {
-    const s = (status || 'pending').toLowerCase();
-    if (s === 'accepted' || s === 'hired') return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300';
-    if (s === 'rejected' || s === 'declined') return 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300';
-    if (s === 'reviewing' || s === 'interview') return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300';
-    return 'bg-[#eef6ee] text-[#3a5a40] dark:bg-[#2a2f35] dark:text-[#e2b94d]';
-  };
+  const columns = useMemo(
+    () => APPLICATION_BOARD_COLUMNS.map((column) => ({
+      ...column,
+      items: safeApplications.filter((application) => getApplicationColumnKey(application) === column.key),
+    })),
+    [safeApplications]
+  );
 
   return (
     <div
-      className={`w-full rounded-3xl border border-white/40 bg-white/70 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 ${
-        embedded ? '' : 'mx-auto max-w-[min(100%,820px)]'
+      className={`user-desktop-flat-surface w-full overflow-hidden rounded-[20px] border border-[var(--user-border)] bg-[var(--user-surface)] ${
+        embedded ? '' : 'mx-auto max-w-[min(100%,1040px)]'
       }`}
     >
       {!embedded ? (
-        <div className="px-5 pb-3 pt-5">
-          <h2 className="text-[22px] font-bold tracking-tight text-[#1c2b1f] dark:text-white">Applications</h2>
+        <div className="px-5 pb-1 pt-5 xl:px-6 xl:pt-6">
+          <h2 className="text-[22px] font-semibold tracking-tight text-[var(--user-text-strong)] xl:text-3xl">Applications</h2>
+          <p className="mt-1 text-sm text-[var(--user-text-muted)]">Track every role and its current hiring status.</p>
         </div>
       ) : null}
 
-      <div className="border-b border-white/40 px-4 py-3 dark:border-white/10 sm:px-5">
-        <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-nowrap sm:items-center sm:overflow-x-auto sm:pb-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`inline-flex w-full items-center justify-center gap-1 rounded-full px-2 py-1.5 text-[11px] font-semibold transition-colors max-[360px]:px-1.5 sm:w-auto sm:shrink-0 sm:px-4 sm:text-[13px]
-                ${activeTab === tab.key
-                  ? 'bg-[#3a5a40] text-white shadow-md dark:bg-[#6f9b74]'
-                  : 'bg-white/50 text-[#3a5a40] hover:bg-white hover:shadow-sm dark:bg-[#1a1d20]/50 dark:text-[#eceff2] dark:hover:bg-[#353c44]'
-                }`}
-            >
-              {tab.label}
-              <span className={`rounded-full px-1.5 text-[10px] ${activeTab === tab.key ? 'bg-white/20' : 'bg-[#3a5a40]/10 dark:bg-white/10'}`}>
-                {tab.count}
-              </span>
-            </button>
-          ))}
+      <div className="grid gap-0 px-4 pb-5 pt-4 md:grid-cols-3 md:px-5" aria-label="Application board">
+        {columns.map((column, index) => (
+          <ApplicationColumn
+            key={column.key}
+            column={column}
+            isFirst={index === 0}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ApplicationColumn({ column, isFirst }) {
+  return (
+    <section className={`min-w-0 px-0 pb-4 md:px-4 md:pb-0 ${isFirst ? '' : 'md:border-l md:border-[var(--user-border)]'}`}>
+      <div className="px-1 text-center">
+        <h3 className="text-xs font-medium text-[var(--user-text-strong)]">
+          {column.title} ({column.items.length})
+        </h3>
+        <div className="mt-3 h-px w-full bg-[var(--user-border)]" />
+      </div>
+
+      <div className="mt-4 space-y-4">
+        {column.items.length > 0 ? (
+          column.items.map((application) => (
+            <ApplicationCard
+              key={application.jobId || `${application.title}-${application.appliedAt}`}
+              application={application}
+              column={column}
+            />
+          ))
+        ) : (
+          <div className="rounded-2xl border border-dashed border-[var(--user-border)] px-4 py-8 text-center text-xs text-[var(--user-text-muted)]">
+            {column.emptyText}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ApplicationCard({ application, column }) {
+  const companyName = getCompanyName(application);
+  const title = String(application?.title || '').trim() || 'Untitled role';
+  const location = String(application?.location || '').trim() || 'Remote';
+  const activityDate = application?.updatedAt || application?.lastActivityAt || application?.appliedAt;
+  const appliedDate = application?.appliedAt || application?.createdAt;
+  const avatar = getAvatarMeta(companyName || title);
+
+  return (
+    <article className="rounded-2xl border border-[var(--user-border)] bg-[var(--user-surface)] p-4 shadow-[0_14px_34px_rgba(25,42,28,0.05)] transition-[border-color,background-color,box-shadow] duration-150 hover:border-[var(--user-border-strong)] hover:shadow-[0_18px_40px_rgba(25,42,28,0.08)]">
+      <div className="flex items-start gap-3">
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg font-semibold ${avatar.className}`}>
+          {avatar.initial}
+        </div>
+        <div className="min-w-0">
+          <h3 className="truncate text-sm font-semibold leading-5 text-[var(--user-text-strong)]">{title}</h3>
+          <p className="truncate text-xs leading-5 text-[var(--user-text-muted)]">{companyName}</p>
         </div>
       </div>
 
-      {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center px-6 py-16 sm:py-20">
-          <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-white/50 shadow-sm dark:bg-[#1a1d20]/50">
-            <FileCheck2 className="h-10 w-10 text-[#588157] dark:text-[#6f9b74]" />
-          </div>
-          <p className="max-w-[260px] text-center text-[15px] font-medium text-[#4a6b57] dark:text-[#a8b1ba]">
-            {activeTab === 'all' ? 'No applications yet. Start applying to jobs.' : `No ${activeTab} applications.`}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-2 p-4 sm:p-5">
-          {filtered.map((application) => (
-            <div
-              key={application.jobId}
-              className="rounded-2xl border border-white/60 bg-white/50 p-5 shadow-sm backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-md dark:border-white/10 dark:bg-[#1a1d20]/50 dark:hover:bg-[#22272b]/80"
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#eef6ee] text-[#3a5a40] dark:bg-[#2b3138] dark:text-[#e9c86b]">
-                  <Building2 className="h-4 w-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="line-clamp-1 text-[15px] font-semibold leading-tight text-[#1c2b1f] dark:text-white">
-                    {application.title}
-                  </h3>
-                  <p className="mt-0.5 line-clamp-1 text-sm text-[#6b7c6a] dark:text-[#b3bcc5]">
-                    {application.company?.name || 'Company'}
-                  </p>
-                </div>
-              </div>
+      <div className="mt-4 space-y-2.5">
+        <ApplicationMeta icon={MapPin} text={location} />
+        <ApplicationMeta icon={Sparkles} text={`Last activity ${formatRelativeDate(activityDate)}`} />
+        <p className="pl-5 text-xs leading-5 text-[var(--user-text-muted)]">{getActivityLabel(application)}</p>
+      </div>
 
-              <span className={`mt-3 inline-flex self-start rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.06em] ${statusStyle(application.status)}`}>
-                {application.status || 'pending'}
-              </span>
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <ApplicationMeta icon={CalendarDays} text={`Applied ${formatRelativeDate(appliedDate)}`} />
+        <span className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium ${column.pillClass}`}>
+          {getStatusLabel(application)}
+        </span>
+      </div>
+    </article>
+  );
+}
 
-              <div className="mt-3 flex flex-wrap gap-2">
-                {application.location && (
-                  <span className="inline-flex items-center gap-1 text-xs text-[#5f6f52] dark:text-[#a8b1ba]">
-                    <MapPin className="h-3.5 w-3.5 shrink-0" /> {application.location}
-                  </span>
-                )}
-                {application.type && (
-                  <span className="rounded-full bg-[#eef6ee] px-2.5 py-0.5 text-xs font-medium text-[#3a5a40] dark:bg-[#2b3138] dark:text-[#e9c86b]">
-                    {application.type}
-                  </span>
-                )}
-              </div>
-
-              <p className="mt-2 text-xs text-[#9aa8ad] dark:text-[#adb5be]">
-                {new Date(application.appliedAt).toLocaleDateString()}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
+function ApplicationMeta({ icon: Icon, text }) {
+  return (
+    <div className="flex min-w-0 items-center gap-2 text-xs leading-5 text-[var(--user-text)]">
+      <Icon className="h-3.5 w-3.5 shrink-0 text-[var(--user-text-muted)]" />
+      <span className="truncate">{text}</span>
     </div>
   );
+}
+
+function getApplicationColumnKey(application) {
+  const status = normalizeStatus(application?.status);
+  if (RESULT_STATUSES.has(status)) {
+    return 'result';
+  }
+  if (INTERVIEW_STATUSES.has(status)) {
+    return 'interview';
+  }
+  return 'applied';
+}
+
+function getCompanyName(application) {
+  const company = application?.company;
+  if (typeof company === 'string') {
+    return company.trim() || 'Company';
+  }
+  return String(company?.name || application?.companyName || 'Company').trim() || 'Company';
+}
+
+function normalizeStatus(status) {
+  return String(status || 'pending').trim().toLowerCase().replace(/[_-]+/g, ' ');
+}
+
+function getActivityLabel(application) {
+  const status = normalizeStatus(application?.status);
+  if (status === 'interview' || status === 'interviewing' || status === 'interview scheduled' || status === 'scheduled') {
+    return 'Interview Scheduled';
+  }
+  if (status === 'accepted' || status === 'hired' || status === 'offer' || status === 'offered') {
+    return 'Email Received';
+  }
+  if (status === 'rejected' || status === 'declined') {
+    return 'Result Received';
+  }
+  if (status === 'reviewing') {
+    return 'Application Reviewed';
+  }
+  return 'Awaiting Response';
+}
+
+function getStatusLabel(application) {
+  const status = normalizeStatus(application?.status);
+  if (status === 'interview' || status === 'interviewing' || status === 'interview scheduled' || status === 'scheduled') {
+    return 'Interview';
+  }
+  if (status === 'accepted' || status === 'hired' || status === 'offer' || status === 'offered') {
+    return 'Offer';
+  }
+  if (status === 'rejected' || status === 'declined') {
+    return 'Closed';
+  }
+  if (status === 'reviewing') {
+    return 'Reviewing';
+  }
+  return status === 'pending' ? 'Awaiting Response' : toTitleCase(status);
+}
+
+function getAvatarMeta(label) {
+  const initial = String(label || 'A').trim().charAt(0).toUpperCase() || 'A';
+  const palette = [
+    'bg-[#12100f] text-white',
+    'bg-[#ff674d] text-white',
+    'bg-[var(--user-surface-subtle)] text-[var(--user-text-strong)] border border-[var(--user-border)]',
+  ];
+  const index = initial.charCodeAt(0) % palette.length;
+  return {
+    initial,
+    className: palette[index],
+  };
+}
+
+function formatRelativeDate(value) {
+  const timestamp = value ? new Date(value).getTime() : Date.now();
+  if (!Number.isFinite(timestamp)) {
+    return 'just now';
+  }
+
+  const diffMs = Math.max(0, Date.now() - timestamp);
+  const minuteMs = 60 * 1000;
+  const hourMs = 60 * minuteMs;
+  const dayMs = 24 * hourMs;
+  const weekMs = 7 * dayMs;
+  const monthMs = 30 * dayMs;
+
+  if (diffMs < minuteMs) {
+    return 'just now';
+  }
+  if (diffMs < dayMs) {
+    const hours = Math.max(1, Math.round(diffMs / hourMs));
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
+  }
+  if (diffMs < weekMs) {
+    const days = Math.max(1, Math.round(diffMs / dayMs));
+    return `${days} ${days === 1 ? 'day' : 'days'} ago`;
+  }
+  if (diffMs < monthMs) {
+    const weeks = Math.max(1, Math.round(diffMs / weekMs));
+    return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
+  }
+
+  const months = Math.max(1, Math.round(diffMs / monthMs));
+  return `${months} ${months === 1 ? 'month' : 'months'} ago`;
+}
+
+function toTitleCase(value) {
+  return String(value || '')
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }

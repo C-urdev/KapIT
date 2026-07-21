@@ -871,7 +871,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
 function SettingsCard({ title, icon: Icon, children, plain = false }) {
   if (plain) {
     return (
-      <section className="bg-white/70 dark:bg-[#22272b]/70 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.08)] overflow-hidden mb-6 transition-all duration-300 hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)]">
+      <section className="user-desktop-flat-surface bg-white/70 dark:bg-[#22272b]/70 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.08)] overflow-hidden mb-6 transition-all duration-300 hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)]">
         <div className="flex items-center gap-3 px-6 pt-6 pb-4 border-b border-black/5 dark:border-white/5">
           <Icon className="h-5 w-5 text-[#3a5a40] dark:text-[#6f9b74]" />
           <h2 className="text-[17px] font-bold text-[#1c2b1f] dark:text-white tracking-tight">

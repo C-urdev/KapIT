@@ -1,25 +1,13 @@
 import React from 'react';
-import { Search, Home, Briefcase, FolderKanban, MessageCircle, Bell, LogOut, HelpCircle, Settings } from 'lucide-react';
-import { useTheme } from '@sharedContext/ThemeContext';
-import KapITLogo from '@sharedComponents/branding/KapITLogo';
+import {
+  Bell,
+  Crown,
+  Search,
+} from 'lucide-react';
 import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
-import PillNavButton from '@sharedComponents/navigation/PillNavButton';
-
-const USER_DESKTOP_NAV_ITEMS = [
-  { key: 'home', label: 'Home', icon: Home },
-  { key: 'jobs', label: 'Jobs', icon: Briefcase },
-  { key: 'projects', label: 'Projects', icon: FolderKanban },
-  { key: 'messages', label: 'Messages', icon: MessageCircle },
-  { key: 'notifications', label: 'Notifications', icon: Bell, badgeCount: true },
-];
 
 export default function UserDesktopNavbar({
-  activeNav,
-  setActiveNav,
-  user,
-  profileMenuOpen,
-  setProfileMenuOpen,
-  profileMenuRef,
+  hideProfileControl = false,
   searchRef,
   searchQuery,
   setSearchQuery,
@@ -30,209 +18,125 @@ export default function UserDesktopNavbar({
   searchResults,
   onSearchResultSelect,
   onSearchSubmit,
-  onHelp,
-  onLogout,
-  onOpenSettings,
+  onOpenPremium,
+  onOpenNotifications,
   unreadNotificationCount = 0,
 }) {
-  const { theme } = useTheme();
-  const isDarkMode = theme === 'dark';
-  const displayName = user?.fullName || user?.name || user?.username || 'User';
-  const userInitial = displayName.charAt(0).toUpperCase();
-  const profileImage = user?.profileImage || '';
-  const accountLabel = user?.headline || user?.title || 'User Account';
-  const navShellClass = isDarkMode
-    ? 'border border-white/10 bg-[#22272b]/70 shadow-[0_16px_34px_rgba(0,0,0,0.24)]'
-    : 'border border-white/40 bg-white/70 shadow-[0_16px_34px_rgba(0,0,0,0.08)]';
-  const activeNavButtonClass = isDarkMode
-    ? 'bg-[#1a1d20]/50 text-[#82ad86] shadow-sm'
-    : 'bg-white/60 text-[#3a5a40] shadow-sm';
-  const inactiveNavButtonClass = isDarkMode
-    ? 'text-[#d0d7dd] hover:bg-[#1a1d20]/30 hover:text-white'
-    : 'text-[#344e41] hover:bg-white/40 hover:text-[#3a5a40]';
-  const activeLabelClass = isDarkMode ? 'font-semibold text-white' : 'font-semibold text-[#3a5a40]';
-  const inactiveLabelClass = isDarkMode ? 'font-normal text-white/70' : 'font-normal text-[#344e41]';
-  const inactiveIconClass = isDarkMode ? 'text-white/70' : 'text-[#4b5563]';
-  const activeIconClass = isDarkMode ? 'text-white' : 'text-[#3a5a40]';
   return (
-    <div className="hidden h-20 w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 xl:grid 2xl:gap-6">
-      <div className="relative z-20 flex min-w-0 items-center gap-3 2xl:gap-4">
-        <button
-          type="button"
-          onClick={() => setActiveNav('home')}
-          className="flex min-w-0 shrink-0 items-center gap-2.5 rounded-xl px-2 py-2 transition-colors hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] sm:gap-3 sm:px-2.5"
-          aria-label="Go to home"
-        >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/40 bg-white/50 shadow-sm dark:border-white/10 dark:bg-[#1a1d20]/50 sm:h-11 sm:w-11">
-            <KapITLogo className="h-full w-full scale-[1.05] object-contain" alt="KapIT" />
-          </div>
-          <div className="hidden min-w-0 text-left min-[1180px]:block">
-            <div className="truncate text-[1.05rem] font-bold leading-tight text-[#3a5a40] dark:text-white">KapIT</div>
-          </div>
-        </button>
+    <div className="hidden h-[68px] min-w-0 items-center justify-between gap-4 xl:flex 2xl:gap-6">
+      {/* Search */}
+      <div className="flex min-w-0 flex-1 max-w-[620px] items-center gap-4">
+        <div ref={searchRef} className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[var(--user-text-muted)]" />
+          <input
+            type="search"
+            placeholder="Search people, companies, projects, or jobs"
+            value={searchQuery}
+            onChange={(event) => {
+              setSearchQuery(event.target.value);
+              setSearchOpen(true);
+            }}
+            onFocus={() => setSearchOpen(true)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                onSearchSubmit?.({ query: searchQuery, scope: 'all' });
+              }
+            }}
+            className="h-10 w-full rounded-lg border border-[var(--user-border)] bg-[var(--user-surface-subtle)] py-2 pl-10 pr-3 text-sm text-[var(--user-text-strong)] outline-none transition-[border-color,background-color,box-shadow] duration-150 placeholder:text-[var(--user-text-muted)] focus:border-[var(--user-primary)] focus:bg-[var(--user-surface)] focus:ring-2 focus:ring-[var(--user-primary-soft)]"
+          />
 
-        <div className="relative z-20 min-w-0 max-w-[min(420px,calc(100vw-28rem))] flex-1 xl:max-w-[min(440px,32vw)] 2xl:max-w-[min(480px,28vw)]">
-          <div className="relative" ref={searchRef}>
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-[#344e41] dark:text-[#adb5be]" />
-            <input
-              type="text"
-              placeholder="Search skills, users, companies..."
-              value={searchQuery}
-              onChange={(event) => {
-                setSearchQuery(event.target.value);
-                setSearchOpen(true);
-              }}
-              onFocus={() => setSearchOpen(true)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  onSearchSubmit?.({ query: searchQuery, scope: 'all' });
-                }
-              }}
-              className="w-full rounded-full border border-white/40 bg-white/50 py-3 pl-11 pr-4 text-[0.98rem] text-[#344e41] shadow-sm transition-all placeholder:text-[#5f6f52] focus:bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#588157]/20 dark:border-white/10 dark:bg-[#1a1d20]/50 dark:text-white dark:placeholder:text-[#adb5be] dark:focus:bg-[#1a1d20]/70 dark:focus:ring-[#82ad86]/20"
-            />
-            {searchOpen && searchQuery.trim() && (
-              <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-2xl border border-white/40 bg-white/80 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/80">
-                {searchLoading && (
-                  <p className="px-4 py-3 text-sm text-[#344e41] dark:text-[#d0d7dd]">Searching...</p>
-                )}
+          {searchOpen && searchQuery.trim() ? (
+            <div className="user-workspace-elevated absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto p-1.5">
+              {searchLoading ? (
+                <p className="px-3 py-3 text-sm text-[var(--user-text-muted)]">Searching...</p>
+              ) : null}
 
-                {!searchLoading && searchError && (
-                  <p className="px-4 py-3 text-sm text-red-600 dark:text-red-400">{searchError}</p>
-                )}
+              {!searchLoading && searchError ? (
+                <p className="px-3 py-3 text-sm text-[var(--user-danger)]">{searchError}</p>
+              ) : null}
 
-                {!searchLoading && !searchError && searchResults.length === 0 && (
-                  <p className="px-4 py-3 text-sm text-[#344e41] dark:text-[#d0d7dd]">No users or companies found.</p>
-                )}
+              {!searchLoading && !searchError && searchResults.length === 0 ? (
+                <p className="px-3 py-3 text-sm text-[var(--user-text-muted)]">No matching accounts found.</p>
+              ) : null}
 
-                {!searchLoading && !searchError && searchResults.map((result) => (
-                  <button
-                    key={result.id}
-                    type="button"
-                    onPointerDown={(event) => {
-                      event.preventDefault();
-                      onSearchResultSelect?.(result);
-                    }}
-                    onClick={() => onSearchResultSelect?.(result)}
-                    className="w-full text-left px-4 py-3 border-b last:border-b-0 border-[#d6d3c9] dark:border-[#353c44] hover:bg-[#f1f5eb] dark:hover:bg-[#353c44] transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-[#588157] dark:bg-[#6f9b74] text-white flex items-center justify-center overflow-hidden shrink-0 font-bold">
+              {!searchLoading && !searchError
+                ? searchResults.map((result) => (
+                    <button
+                      key={result.id}
+                      type="button"
+                      onPointerDown={(event) => {
+                        event.preventDefault();
+                        onSearchResultSelect?.(result);
+                      }}
+                      onClick={() => onSearchResultSelect?.(result)}
+                      className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors duration-150 hover:bg-[var(--user-surface-selected)]"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--user-primary)] text-sm font-semibold text-white">
                         {result.profileImage ? (
-                          <img src={result.profileImage} alt={`${result.username || result.email || 'Account'} profile`} className="w-full h-full object-cover" />
+                          <img src={result.profileImage} alt="" className="h-full w-full object-cover" />
                         ) : (
                           (result.username || result.email || 'A').charAt(0).toUpperCase()
                         )}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-[#3a5a40] dark:text-white truncate">{result.companyName || result.fullName || result.username || result.email}</p>
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2">
+                          <span className="truncate text-sm font-semibold text-[var(--user-text-strong)]">
+                            {result.companyName || result.fullName || result.username || result.email}
+                          </span>
                           {result.isPremium ? <PremiumBadge compact /> : null}
-                        </div>
-                        <p className="text-xs text-[#344e41] dark:text-[#d0d7dd]">{result.type === 'company' ? 'Company' : 'User'} - {result.email}</p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+                        </span>
+                        <span className="block truncate text-xs text-[var(--user-text-muted)]">
+                          {result.type === 'company' ? 'Company' : 'User'}{result.email ? ` - ${result.email}` : ''}
+                        </span>
+                      </span>
+                    </button>
+                  ))
+                : null}
+            </div>
+          ) : null}
         </div>
       </div>
 
-      <div className="relative z-10 flex shrink-0 justify-center px-1 overflow-visible">
-        <div className={`flex items-center gap-1.5 rounded-full p-1.5 backdrop-blur-2xl ${navShellClass}`}>
-          {USER_DESKTOP_NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeNav === item.key;
-
-            return (
-              <PillNavButton
-                key={item.key}
-                layoutId="user-desktop-nav-lamp"
-                icon={Icon}
-                label={item.label}
-                active={isActive}
-                onClick={() => setActiveNav(item.key)}
-                variant="stacked"
-                indicatorMode="line"
-                className="min-w-[4.2rem] px-3 py-2"
-                iconClassName={isActive ? activeIconClass : inactiveIconClass}
-                labelClassName="text-[0.73rem] tracking-[0.01em]"
-                activeLabelClassName={activeLabelClass}
-                inactiveLabelClassName={inactiveLabelClass}
-                activeClassName={activeNavButtonClass}
-                inactiveClassName={inactiveNavButtonClass}
-                title={item.label}
-                badgeCount={item.badgeCount ? unreadNotificationCount : 0}
-              />
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="relative z-20 flex min-w-0 items-center justify-end gap-2 sm:gap-2.5">
-        <div className="relative" ref={profileMenuRef}>
+      {!hideProfileControl ? (
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setProfileMenuOpen((prev) => !prev)}
-            className="hidden min-[1380px]:flex items-center gap-2 overflow-hidden rounded-full border border-white/40 bg-white/50 py-1.5 pl-1.5 pr-2.5 shadow-sm transition-all hover:bg-white/70 hover:ring-2 hover:ring-[#588157]/20 dark:border-white/10 dark:bg-[#1a1d20]/50 dark:hover:bg-[#1a1d20]/70 dark:hover:ring-[#82ad86]/20 2xl:py-2 2xl:pl-2 2xl:pr-3"
-            aria-label="Open profile menu"
+            aria-label="Buy Premium"
+            onClick={onOpenPremium}
+            className="flex h-10 items-center gap-2 rounded-lg bg-[var(--user-premium)] px-4 text-sm font-semibold text-[var(--user-premium-ink)] transition-[background-color,box-shadow,transform] duration-150 hover:brightness-105 hover:shadow-md active:scale-[0.98]"
           >
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#588157] text-sm font-bold text-white dark:bg-[#6f9b74] 2xl:h-8 2xl:w-8">
-              {profileImage ? <img src={profileImage} alt="" className="h-full w-full object-cover" /> : userInitial}
-            </div>
-            <div className="min-w-0 text-left">
-              <div className="max-w-[7rem] truncate text-xs font-semibold text-[#3a5a40] dark:text-white 2xl:max-w-[180px] 2xl:text-sm">{displayName}</div>
-              <div className="hidden max-w-[7rem] truncate text-[11px] text-[#4b5563] dark:text-[#d0d7dd] 2xl:block 2xl:max-w-[180px] 2xl:text-xs">{accountLabel}</div>
-            </div>
+            <Crown className="h-4 w-4" />
+            <span>Buy Premium</span>
           </button>
-
-          <button
-            type="button"
-            onClick={() => setProfileMenuOpen((prev) => !prev)}
-            className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[#588157] text-sm font-semibold text-white transition-all hover:ring-2 hover:ring-[#588157] dark:bg-[#6f9b74] dark:hover:ring-[#82ad86] min-[1380px]:hidden"
-            aria-label="Open profile menu"
-          >
-            {profileImage ? <img src={profileImage} alt="" className="h-full w-full object-cover" /> : userInitial}
-          </button>
-
-          {profileMenuOpen && (
-            <div className="absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-2xl border border-white/40 bg-white/80 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/80">
-              <button
-                onClick={() => {
-                  setProfileMenuOpen(false);
-                  onOpenSettings?.();
-                }}
-                className="w-full text-left px-4 py-3 flex items-center gap-2 text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors"
-              >
-                <Settings className="w-4 h-4 text-[#588157] dark:text-[#6f9b74]" />
-                Settings
-              </button>
-              <button
-                onClick={() => {
-                  setProfileMenuOpen(false);
-                  onHelp?.();
-                }}
-                className="w-full text-left px-4 py-3 flex items-center gap-2 text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors"
-              >
-                <HelpCircle className="w-4 h-4 text-[#588157] dark:text-[#6f9b74]" />
-                Help
-              </button>
-              <button
-                onClick={() => {
-                  setProfileMenuOpen(false);
-                  onLogout?.();
-                }}
-                className="w-full text-left px-4 py-3 flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                Log out
-              </button>
-            </div>
-          )}
+          <HeaderIconButton
+            icon={Bell}
+            label="Notifications"
+            ariaLabel="Open notifications"
+            onClick={onOpenNotifications}
+            badgeCount={unreadNotificationCount}
+          />
         </div>
-      </div>
+      ) : null}
     </div>
+  );
+}
+
+function HeaderIconButton({ icon: Icon, label, ariaLabel, onClick, badgeCount = 0 }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      title={label}
+      className="relative flex h-10 w-10 items-center justify-center rounded-md border border-transparent text-[var(--user-text-muted)] transition-[background-color,border-color,color,transform] duration-150 hover:border-[var(--user-border)] hover:bg-[var(--user-surface-subtle)] hover:text-[var(--user-text-strong)] active:scale-[0.96]"
+    >
+      <Icon className="h-[18px] w-[18px]" />
+      {badgeCount > 0 ? (
+        <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#e63946] px-1 text-[10px] font-bold leading-none text-white">
+          {badgeCount > 99 ? '99+' : badgeCount}
+        </span>
+      ) : null}
+    </button>
   );
 }

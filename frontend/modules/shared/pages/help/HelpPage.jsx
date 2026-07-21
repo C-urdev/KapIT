@@ -1,38 +1,37 @@
 import React, { useState } from 'react';
-import { ArrowLeft, HelpCircle, Mail, MessageSquare, Clock3 } from 'lucide-react';
+import { ArrowLeft, Clock3, HelpCircle, Mail, MessageSquare, Send } from 'lucide-react';
 
 export default function HelpPage({ onBack }) {
   const [question, setQuestion] = useState('');
 
   return (
-    <div className="min-h-screen bg-[#dad7cd] dark:bg-[#121416]">
-      <header className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6">
-        <div className="py-3 sm:py-4">
-          <div className="flex items-start justify-between gap-3 sm:items-center">
-            <button
-              type="button"
-              onClick={onBack}
-              aria-label="Go back"
-              className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-[#9caf97] bg-[#d9ddcf] text-[#344e41] transition-colors hover:bg-[#dde2d4] hover:border-[#8ea488] dark:border-[#5e8b67] dark:bg-transparent dark:text-white dark:hover:bg-[#353c44]"
-            >
-              <ArrowLeft className="h-5 w-5 shrink-0" />
-            </button>
+    <div className="mx-auto w-full max-w-[min(100%,1040px)] py-3 xl:py-6">
+      <button
+        type="button"
+        onClick={onBack}
+        className="mb-4 inline-flex h-10 items-center gap-2 rounded-lg border border-[var(--user-border)] bg-[var(--user-surface)] px-3.5 text-sm font-semibold text-[var(--user-text)] transition-[background-color,border-color,color,transform] duration-150 hover:border-[var(--user-primary)]/40 hover:bg-[var(--user-surface-selected)] hover:text-[var(--user-primary)] active:scale-[0.98]"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back
+      </button>
 
-            <div className="min-w-0 flex-1 text-right">
-              <h1 className="text-lg font-semibold text-[#3a5a40] dark:text-white">Help</h1>
+      <section className="user-desktop-flat-surface overflow-hidden rounded-[24px] border border-[var(--user-border)] bg-[var(--user-surface)]">
+        <div className="px-6 py-6 sm:px-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--user-text-strong)] sm:text-3xl">Help</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--user-text-muted)]">
+                Find answers and contact the KapIT support team.
+              </p>
+            </div>
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--user-primary-soft)] text-[var(--user-primary)]">
+              <HelpCircle className="h-5 w-5" />
             </div>
           </div>
         </div>
-      </header>
 
-      <main className="max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-10">
-        <div className="mx-auto w-full max-w-[min(100%,1100px)] bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-2xl p-4 sm:p-8 shadow-[0_18px_45px_rgba(16,42,27,0.08)] dark:shadow-[0_18px_45px_rgba(0,0,0,0.28)]">
-          <div className="flex items-start gap-3 mb-4 sm:mb-5">
-            <HelpCircle className="mt-0.5 h-5 w-5 shrink-0 text-[#588157] dark:text-[#6f9b74]" />
-            <h2 className="min-w-0 text-lg sm:text-xl font-bold text-[#3a5a40] dark:text-white">Need Help?</h2>
-          </div>
-
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-3 mb-5 sm:mb-6">
+        <div className="space-y-6 px-6 pb-6 sm:px-8">
+          <div className="grid gap-3 md:grid-cols-3">
             <InfoCard
               icon={Mail}
               title="Email Support"
@@ -50,41 +49,44 @@ export default function HelpPage({ onBack }) {
             />
           </div>
 
-          <label className="block text-sm font-medium text-[#3a5a40] dark:text-white mb-2.5">
-            Need help question
-          </label>
-          <textarea
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Type your question here..."
-            rows={6}
-            className="w-full min-h-[170px] sm:min-h-[180px] rounded-xl border border-[#a3b18a] dark:border-[#444d57] bg-[#f5f5f2] dark:bg-[#353c44] text-[#344e41] dark:text-white placeholder-[#3a5a40] dark:placeholder-[#adb5be] px-4 py-3 text-sm sm:text-base outline-none focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74] resize-y"
-          />
+          <div>
+            <label htmlFor="user-help-question" className="text-sm font-semibold text-[var(--user-text-strong)]">
+              Need help question
+            </label>
+            <textarea
+              id="user-help-question"
+              value={question}
+              onChange={(event) => setQuestion(event.target.value)}
+              placeholder="Type your question here..."
+              rows={7}
+              className="mt-3 w-full resize-none rounded-2xl border border-[var(--user-border)] bg-[var(--user-surface-subtle)] px-4 py-3 text-sm leading-6 text-[var(--user-text-strong)] outline-none transition-[background-color,border-color,box-shadow] duration-150 placeholder:text-[var(--user-text-muted)] focus:border-[var(--user-primary)] focus:bg-[var(--user-surface)] focus:ring-2 focus:ring-[var(--user-primary-soft)]"
+            />
+          </div>
 
-          <div className="mt-4 flex justify-stretch sm:justify-end">
+          <div className="flex justify-end">
             <button
               type="button"
-              className="w-full sm:w-auto px-5 py-3 rounded-xl font-semibold bg-[#588157] hover:bg-[#3a5a40] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white transition-colors"
+              disabled={!question.trim()}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[var(--user-primary)] px-5 text-sm font-semibold text-white transition-[background-color,box-shadow,opacity,transform] duration-150 hover:bg-[var(--user-primary-hover)] hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none"
             >
+              <Send className="h-4 w-4" />
               Submit
             </button>
           </div>
         </div>
-      </main>
+      </section>
     </div>
   );
 }
 
 function InfoCard({ icon: Icon, title, text }) {
   return (
-    <div className="p-3.5 sm:p-4 min-h-[124px] sm:min-h-[156px]">
-      <div className="mb-2 flex h-9 w-9 items-center justify-center">
-        <Icon className="h-4 w-4 text-[#588157] dark:text-[#6f9b74]" />
-      </div>
-      <h3 className="text-sm font-semibold text-[#3a5a40] dark:text-white">{title}</h3>
-      <p className="mt-1 text-xs leading-relaxed text-[#5f6f52] dark:text-[#d0d7dd]">{text}</p>
+    <div className="min-h-[112px] rounded-2xl border border-[var(--user-border)] bg-[var(--user-surface-subtle)] p-4">
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--user-primary-soft)] text-[var(--user-primary)]">
+        <Icon className="h-4 w-4" />
+      </span>
+      <h3 className="mt-3 text-sm font-semibold text-[var(--user-text-strong)]">{title}</h3>
+      <p className="mt-1 text-xs leading-5 text-[var(--user-text-muted)]">{text}</p>
     </div>
   );
 }
-
-

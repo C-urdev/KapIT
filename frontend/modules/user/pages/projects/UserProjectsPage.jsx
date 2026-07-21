@@ -209,7 +209,16 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
   const featuredProjects = projects.slice(0, 6);
 
   return (
-    <div className="mx-auto w-full max-w-[min(100%,1120px)]">
+    <>
+      <DesktopProjectsWorkspace
+        userType={userType}
+        projects={projects}
+        onCreate={openCreateModal}
+        onEdit={openEditModal}
+        onDelete={handleDeleteProject}
+      />
+
+      <div className="mx-auto w-full max-w-[min(100%,1120px)] xl:hidden">
       <div className="mb-6 flex flex-row items-center justify-between gap-4">
         <div>
           <h1 className="text-[1.75rem] min-[420px]:text-[2.15rem] font-black tracking-[-0.03em] text-[#3a5a40] dark:text-white">
@@ -230,7 +239,7 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
         ) : null}
       </div>
 
-      <section className="overflow-hidden rounded-[28px] border border-white/40 bg-white/70 px-4 py-5 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 sm:px-6 lg:px-8">
+      <section className="user-desktop-flat-surface overflow-hidden rounded-[28px] border border-white/40 bg-white/70 px-4 py-5 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 sm:px-6 lg:px-8">
           {projects.length > 0 ? (
             <>
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -434,9 +443,11 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
           )}
       </section>
 
+      </div>
+
       {isModalOpen ? (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-3xl border border-white/40 bg-white/90 p-6 shadow-[0_20px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/90">
+          <div className="user-workspace-elevated w-full max-w-2xl rounded-3xl border border-white/40 bg-white/90 p-6 shadow-[0_20px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/90 xl:rounded-lg xl:border-[var(--user-border)] xl:bg-[var(--user-surface)] xl:shadow-[var(--user-elevated-shadow)] xl:backdrop-blur-none">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold text-[#3a5a40] dark:text-white">
@@ -527,6 +538,98 @@ export default function UserProjectsPage({ userType, user, onUpdateUser }) {
           </div>
         </div>
       ) : null}
+    </>
+  );
+}
+
+function DesktopProjectsWorkspace({ userType, projects, onCreate, onEdit, onDelete }) {
+  return (
+    <div className="hidden w-full xl:block">
+      <header className="mb-5 flex items-end justify-between gap-6">
+        <div>
+          <h1 className="user-workspace-page-title mt-1">{userType === 'employee' ? 'Projects' : 'Projects library'}</h1>
+          <p className="mt-1 text-sm text-[var(--user-text-muted)]">Show the work, tools, and outcomes that represent your experience.</p>
+        </div>
+        {userType === 'employee' ? (
+          <button type="button" onClick={onCreate} className="user-workspace-primary-button inline-flex items-center gap-2 px-4 text-sm font-semibold">
+            <Plus className="h-4 w-4" />
+            New project
+          </button>
+        ) : null}
+      </header>
+
+      {projects.length > 0 ? (
+        <section>
+          <div className="mb-4 flex items-center justify-between border-b border-[var(--user-border)] pb-3">
+            <p className="text-sm text-[var(--user-text-muted)]">{projects.length} {projects.length === 1 ? 'project' : 'projects'}</p>
+            <p className="text-xs text-[var(--user-text-muted)]">Keep descriptions concise and link to working examples.</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 2xl:grid-cols-3">
+            {projects.map((project) => {
+              const stackItems = formatTechStack(project.techStack);
+              return (
+                <article key={project.id} className="user-workspace-surface flex min-h-[260px] min-w-0 flex-col p-5 transition-colors duration-150 hover:border-[var(--user-border-strong)]">
+                  <div className="flex items-start justify-between gap-4">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[var(--user-primary-soft)] text-[var(--user-primary)]">
+                      <FolderKanban className="h-[18px] w-[18px]" />
+                    </span>
+                    <div className="flex items-center gap-1">
+                      {project.liveUrl ? (
+                        <a href={project.liveUrl} target="_blank" rel="noreferrer" className="flex h-10 w-10 items-center justify-center rounded-md text-[var(--user-text-muted)] transition-colors duration-150 hover:bg-[var(--user-surface-selected)] hover:text-[var(--user-primary)]" aria-label={`Open live demo for ${project.title}`} title="Open live demo">
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      ) : null}
+                      {project.githubUrl ? (
+                        <a href={project.githubUrl} target="_blank" rel="noreferrer" className="flex h-10 w-10 items-center justify-center rounded-md text-[var(--user-text-muted)] transition-colors duration-150 hover:bg-[var(--user-surface-selected)] hover:text-[var(--user-primary)]" aria-label={`Open source code for ${project.title}`} title="Open source code">
+                          <FileCode2 className="h-4 w-4" />
+                        </a>
+                      ) : null}
+                      {userType === 'employee' ? (
+                        <>
+                          <button type="button" onClick={() => onEdit(project)} className="flex h-10 w-10 items-center justify-center rounded-md text-[var(--user-text-muted)] transition-colors duration-150 hover:bg-[var(--user-surface-selected)] hover:text-[var(--user-primary)]" aria-label={`Edit ${project.title}`} title="Edit project">
+                            <PencilLine className="h-4 w-4" />
+                          </button>
+                          <button type="button" onClick={() => onDelete(project.id)} className="flex h-10 w-10 items-center justify-center rounded-md text-[var(--user-danger)] transition-colors duration-150 hover:bg-red-50 dark:hover:bg-red-950/30" aria-label={`Delete ${project.title}`} title="Delete project">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 min-w-0">
+                    <h2 className="truncate text-lg font-semibold text-[var(--user-text-strong)]">{project.title}</h2>
+                    <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--user-text)]">{project.description}</p>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {stackItems.length > 0 ? stackItems.slice(0, 5).map((item) => (
+                      <span key={`${project.id}-${item}`} className="rounded-md border border-[var(--user-border)] bg-[var(--user-surface-subtle)] px-2.5 py-1 text-xs font-medium text-[var(--user-text)]">{item}</span>
+                    )) : <span className="text-xs text-[var(--user-text-muted)]">No technology stack added</span>}
+                  </div>
+
+                  <div className="mt-auto flex items-center gap-2 border-t border-[var(--user-border)] pt-4 text-xs text-[var(--user-text-muted)]">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    Updated {formatDateLabel(project.createdAt)}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      ) : (
+        <section className="user-workspace-surface flex min-h-[380px] items-center justify-center px-8 py-12 text-center">
+          <div className="max-w-md">
+            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-[var(--user-primary-soft)] text-[var(--user-primary)]"><FolderKanban className="h-6 w-6" /></span>
+            <h2 className="mt-4 text-xl font-semibold text-[var(--user-text-strong)]">Start your project portfolio</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--user-text-muted)]">Add work that demonstrates your role, tools, decisions, and results.</p>
+            {userType === 'employee' ? (
+              <button type="button" onClick={onCreate} className="user-workspace-primary-button mt-5 inline-flex items-center gap-2 px-5 text-sm font-semibold"><Plus className="h-4 w-4" />Add your first project</button>
+            ) : null}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

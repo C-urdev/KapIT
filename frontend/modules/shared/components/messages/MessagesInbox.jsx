@@ -458,10 +458,10 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
   }
 
   return (
-    <div className={`mx-auto flex h-full min-h-0 w-full ${isCompanyVariant ? 'max-w-[min(100%,1560px)] px-0 xl:px-4' : 'max-w-[min(100%,1420px)] px-0'} justify-center xl:transition-all xl:duration-300 xl:ease-out ${introReady ? 'xl:translate-y-0 xl:opacity-100' : 'xl:translate-y-1 xl:opacity-0'}`}>
-      <div className={`flex h-full min-h-0 w-full overflow-hidden rounded-none border-0 border-white/40 bg-white/70 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 xl:rounded-[2rem] xl:border`}>
+    <div className={`mx-auto flex h-full min-h-0 w-full ${isCompanyVariant ? 'max-w-[min(100%,1560px)] px-0 xl:px-4' : 'user-messages-workspace max-w-[min(100%,1420px)] px-0'} justify-center xl:transition-all xl:duration-300 xl:ease-out ${introReady ? 'xl:translate-y-0 xl:opacity-100' : 'xl:translate-y-1 xl:opacity-0'}`}>
+      <div className="user-messages-frame flex h-full min-h-0 w-full overflow-hidden rounded-none border-0 border-white/40 bg-white/70 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 xl:rounded-[2rem] xl:border">
         {/* Narrow icon rail — layout only; KapIT palette */}
-        <aside className="hidden w-[52px] shrink-0 flex-col items-center border-r border-white/40 bg-white/40 py-3 backdrop-blur-sm dark:border-white/10 dark:bg-[#1a1d20]/40 md:flex md:w-14">
+        <aside className="user-messages-utility-rail hidden w-[52px] shrink-0 flex-col items-center border-r border-white/40 bg-white/40 py-3 backdrop-blur-sm dark:border-white/10 dark:bg-[#1a1d20]/40 md:flex md:w-14">
           <button
             type="button"
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#353c44] dark:text-[#e2b94d]"
@@ -477,7 +477,7 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
 
         {/* Conversation list */}
         <div
-          className={`flex h-full min-h-0 w-full min-w-0 shrink-0 flex-col border-white/40 bg-white/40 backdrop-blur-sm ${isCompanyVariant ? 'sm:max-w-[min(100%,340px)] md:w-[320px]' : 'sm:max-w-[min(100%,320px)] md:w-[300px]'} dark:border-white/10 dark:bg-[#1a1d20]/40 md:border-r ${
+          className={`user-messages-list flex h-full min-h-0 w-full min-w-0 shrink-0 flex-col border-white/40 bg-white/40 backdrop-blur-sm ${isCompanyVariant ? 'sm:max-w-[min(100%,340px)] md:w-[320px]' : 'sm:max-w-[min(100%,320px)] md:w-[300px]'} dark:border-white/10 dark:bg-[#1a1d20]/40 md:border-r ${
             listHiddenOnMobile ? 'hidden lg:flex' : 'flex'
           }`}
         >
@@ -520,7 +520,8 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
                       <button
                         type="button"
                         onClick={() => handleSelectConversation(conversation)}
-                        className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${
+                        data-active={active ? 'true' : 'false'}
+                        className={`user-message-row flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${
                           active
                             ? 'bg-[#eef6ee] dark:bg-[#353c44]'
                             : isCompanyVariant
@@ -555,14 +556,14 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
 
         {/* Thread */}
         <div
-          className={`min-h-0 min-w-0 flex-1 flex-col bg-transparent ${
+          className={`user-messages-thread min-h-0 min-w-0 flex-1 flex-col bg-transparent ${
             threadHiddenOnMobile ? 'hidden lg:flex' : 'flex'
           }`}
         >
           {selectedConversation ? (
             <>
               <header
-                className="flex shrink-0 items-center gap-2 border-b border-white/40 bg-white/30 px-3 pb-3 pt-3 backdrop-blur-md dark:border-white/10 dark:bg-[#1a1d20]/30 sm:gap-4 sm:px-5"
+                className="user-messages-thread-header flex shrink-0 items-center gap-2 border-b border-white/40 bg-white/30 px-3 pb-3 pt-3 backdrop-blur-md dark:border-white/10 dark:bg-[#1a1d20]/30 sm:gap-4 sm:px-5"
                 style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}
               >
                 <button
@@ -598,7 +599,7 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
                   {threadMessages.map((message) => (
                     <div key={message.id} className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
                       <div
-                        className={`max-w-[min(100%,420px)] px-4 py-2.5 shadow-sm backdrop-blur-md ${
+                        className={`user-message-bubble max-w-[min(100%,420px)] px-4 py-2.5 shadow-sm backdrop-blur-md ${
                           message.sender === 'me'
                             ? 'rounded-[24px] rounded-br-md bg-[#588157]/90 text-white dark:bg-[#82ad86]/90'
                             : 'rounded-[24px] rounded-bl-md border border-white/40 bg-white/70 text-[#344e41] dark:border-white/10 dark:bg-[#22272b]/70 dark:text-white'
@@ -622,7 +623,7 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
                 </div>
               </div>
 
-              <footer className="shrink-0 border-t border-white/40 bg-white/40 px-3 py-3 backdrop-blur-md dark:border-white/10 dark:bg-[#1a1d20]/40 sm:px-5 sm:py-4" ref={composerRef}>
+              <footer className="user-messages-composer shrink-0 border-t border-white/40 bg-white/40 px-3 py-3 backdrop-blur-md dark:border-white/10 dark:bg-[#1a1d20]/40 sm:px-5 sm:py-4" ref={composerRef}>
                 <div className="mx-auto flex max-w-3xl items-end gap-2 sm:gap-3">
                   <div className="relative shrink-0">
                     <ComposerIconButton label="Attach image or link" onClick={() => setAttachMenuOpen((current) => !current)}>
@@ -723,7 +724,7 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
             </>
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center px-6 py-8 text-center lg:px-10">
-              <div className="w-full max-w-[440px] rounded-[2rem] border border-white/40 bg-white/70 p-10 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70">
+              <div className="user-messages-empty w-full max-w-[440px] rounded-[2rem] border border-white/40 bg-white/70 p-10 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70">
                 <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white/50 text-[#588157] shadow-sm dark:bg-[#1a1d20]/50 dark:text-[#82ad86]">
                   <MessageCircle className="h-10 w-10" />
                 </div>

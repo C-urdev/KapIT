@@ -212,13 +212,13 @@ export default function UserMyProfilePage({
 
   return (
     <div className="mx-auto w-full max-w-[min(100%,1180px)] space-y-5">
-      <div className="rounded-3xl border border-white/40 bg-white/70 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 overflow-hidden transition-shadow hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)]">
-        <div className="h-24 sm:h-32 bg-gradient-to-r from-[#588157] to-[#3a5a40] dark:from-[#82ad86] dark:to-[#6f9b74] opacity-90" />
-        <div className="px-6 sm:px-8 py-6 min-h-[170px]">
+      <div className="user-desktop-flat-surface rounded-3xl border border-white/40 bg-white/70 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 overflow-hidden transition-shadow hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)] xl:overflow-visible">
+        <div className="h-24 sm:h-32 bg-gradient-to-r from-[#588157] to-[#3a5a40] dark:from-[#82ad86] dark:to-[#6f9b74] opacity-90 xl:hidden" />
+        <div className="px-6 sm:px-8 py-6 min-h-[170px] xl:min-h-0 xl:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-5">
-              <div className="relative w-32 h-32 sm:w-36 sm:h-36 -mt-12 sm:-mt-16">
-                <div className="w-full h-full rounded-full border-[6px] border-white/90 dark:border-[#22272b]/90 bg-[#588157] dark:bg-[#6f9b74] text-white flex items-center justify-center text-5xl font-bold overflow-hidden shadow-sm backdrop-blur-md">
+              <div className="relative w-32 h-32 sm:w-36 sm:h-36 -mt-12 sm:-mt-16 xl:mt-0 xl:h-28 xl:w-28">
+                <div className="w-full h-full rounded-full border-[6px] border-white/90 dark:border-[#22272b]/90 bg-[#588157] dark:bg-[#6f9b74] text-white flex items-center justify-center text-5xl font-bold overflow-hidden shadow-sm backdrop-blur-md xl:border xl:border-[var(--user-border)] xl:bg-[var(--user-primary)] xl:text-3xl xl:shadow-none xl:backdrop-blur-none dark:xl:bg-[var(--user-primary)]">
                 {profileImage ? (
                   <img src={profileImage} alt={`${displayName} profile`} className="w-full h-full object-cover" />
                 ) : (
@@ -232,7 +232,7 @@ export default function UserMyProfilePage({
               </div>
               <div className="space-y-0.5 max-w-[460px]">
                 <div className="mb-2 sm:mb-2.5 flex flex-wrap items-center gap-2">
-                  <h1 className="text-[1.7rem] min-[420px]:text-[2rem] sm:text-[2.2rem] font-bold text-[#1f3a2a] dark:text-white leading-[1.05] -mt-1 sm:-mt-1.5">{displayName}</h1>
+                  <h1 className="text-[1.7rem] min-[420px]:text-[2rem] sm:text-[2.2rem] font-bold text-[#1f3a2a] dark:text-white leading-[1.05] -mt-1 sm:-mt-1.5 xl:mt-0 xl:text-3xl xl:font-semibold xl:leading-9 xl:text-[var(--user-text-strong)]">{displayName}</h1>
                   {user?.isPremium ? <PremiumBadge /> : null}
                 </div>
                 <p className="text-[1rem] sm:text-[1.05rem] leading-[1.15] font-medium text-[#2f4e39] dark:text-[#d0d7dd]">{profileSubtitle}</p>
@@ -274,7 +274,7 @@ export default function UserMyProfilePage({
         </div>
       </div>
 
-      <div className="rounded-3xl border border-white/40 bg-white/70 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 p-5 sm:p-6 transition-shadow hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)]">
+      <div className="user-desktop-flat-surface rounded-3xl border border-white/40 bg-white/70 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 p-5 sm:p-6 transition-shadow hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)]">
         <button
           onClick={onOpenComposer}
           className="w-full text-left px-5 py-3.5 bg-white/50 dark:bg-[#353c44]/50 border border-[#a3b18a]/30 dark:border-[#444d57]/50 rounded-2xl text-[15px] text-[#4a6b57] dark:text-[#a8b1ba] font-medium transition-all hover:bg-white hover:shadow-sm dark:hover:bg-[#353c44]"
@@ -284,7 +284,7 @@ export default function UserMyProfilePage({
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-5">
-        <div className="rounded-3xl border border-white/40 bg-white/70 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 p-6 space-y-4 min-h-[280px]">
+        <div className="user-desktop-flat-surface rounded-3xl border border-white/40 bg-white/70 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 p-6 space-y-4 min-h-[280px]">
           <h3 className="text-lg font-semibold text-[#3a5a40] dark:text-white">Personal details</h3>
           <InfoRow icon={User} text={displayName} />
           {user?.address && <InfoRow icon={MapPin} text={user.address} />}
@@ -312,7 +312,7 @@ export default function UserMyProfilePage({
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-3xl border border-white/40 bg-white/70 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 p-6">
+          <div className="user-desktop-flat-surface rounded-3xl border border-white/40 bg-white/70 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 p-6">
             <h3 className="text-xl font-bold tracking-tight text-[#2d4632] dark:text-white">Posts</h3>
           </div>
 

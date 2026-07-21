@@ -175,6 +175,202 @@ html::-webkit-scrollbar-thumb {
   scrollbar-width: none;
 }
 
+@media (min-width: 1280px) {
+  .user-dashboard-shell {
+    --user-canvas: #f4f6f5;
+    --user-surface: #ffffff;
+    --user-surface-subtle: #f8faf9;
+    --user-surface-selected: #edf4ef;
+    --user-text-strong: #18211c;
+    --user-text: #34413a;
+    --user-text-muted: #66736c;
+    --user-border: #dce3df;
+    --user-border-strong: #c6d0ca;
+    --user-primary: #356447;
+    --user-primary-hover: #294f38;
+    --user-primary-soft: #ddeadf;
+    --user-premium: #e2b93f;
+    --user-premium-ink: #332a0a;
+    --user-danger: #b42318;
+    --user-elevated-shadow: 0 14px 36px rgba(24, 33, 28, 0.1);
+    background: var(--user-canvas);
+    color: var(--user-text);
+  }
+
+  html.dark .user-dashboard-shell {
+    --user-canvas: #09090b;
+    --user-surface: #121212;
+    --user-surface-subtle: #18181b;
+    --user-surface-selected: #27272a;
+    --user-text-strong: #fafafa;
+    --user-text: #e4e4e7;
+    --user-text-muted: #a1a1aa;
+    --user-border: #27272a;
+    --user-border-strong: #3f3f46;
+    --user-primary: #7db08a;
+    --user-primary-hover: #93c19e;
+    --user-primary-soft: #243b2b;
+    --user-premium: #e8c24d;
+    --user-premium-ink: #211b07;
+    --user-danger: #ff9b91;
+    --user-elevated-shadow: 0 16px 42px rgba(0, 0, 0, 0.4);
+  }
+
+  .user-dashboard-shell .user-desktop-flat-surface,
+  .user-dashboard-shell .user-workspace-surface {
+    background: var(--user-surface);
+    border: 1px solid var(--user-border);
+    border-radius: 8px;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .user-dashboard-shell .user-workspace-surface-subtle {
+    background: var(--user-surface-subtle);
+    border: 1px solid var(--user-border);
+    border-radius: 8px;
+  }
+
+  .user-dashboard-shell .user-workspace-elevated {
+    background: var(--user-surface);
+    border: 1px solid var(--user-border);
+    border-radius: 8px;
+    box-shadow: var(--user-elevated-shadow);
+  }
+
+  .user-dashboard-shell .user-workspace-page-title {
+    color: var(--user-text-strong);
+    font-size: 1.875rem;
+    font-weight: 600;
+    line-height: 2.375rem;
+    letter-spacing: 0;
+  }
+
+  .user-dashboard-shell h1,
+  .user-dashboard-shell h2,
+  .user-dashboard-shell h3,
+  .user-dashboard-shell h4 {
+    letter-spacing: 0 !important;
+  }
+
+  .user-dashboard-shell .user-workspace-section-title {
+    color: var(--user-text-strong);
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.75rem;
+    letter-spacing: 0;
+  }
+
+  .user-dashboard-shell .user-workspace-text {
+    color: var(--user-text);
+  }
+
+  .user-dashboard-shell .user-workspace-muted {
+    color: var(--user-text-muted);
+  }
+
+  .user-dashboard-shell .user-workspace-primary-button {
+    min-height: 40px;
+    border-radius: 6px;
+    background: var(--user-primary);
+    color: #fff;
+    transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  }
+
+  html.dark .user-dashboard-shell .user-workspace-primary-button {
+    color: #09090b;
+  }
+
+  .user-dashboard-shell .user-workspace-primary-button:hover {
+    background: var(--user-primary-hover);
+  }
+
+  .user-dashboard-shell .user-workspace-primary-button:active {
+    transform: translateY(1px);
+  }
+
+  .user-dashboard-shell .user-messages-workspace {
+    max-width: 1600px;
+    padding: 20px 24px 24px;
+  }
+
+  .user-dashboard-shell .user-messages-workspace .user-messages-frame {
+    overflow: hidden;
+    border: 1px solid var(--user-border);
+    border-radius: 8px;
+    background: var(--user-surface);
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .user-dashboard-shell .user-messages-workspace .user-messages-utility-rail {
+    display: none;
+  }
+
+  .user-dashboard-shell .user-messages-workspace .user-messages-list {
+    width: 360px;
+    max-width: 360px;
+    border-color: var(--user-border);
+    background: var(--user-surface-subtle);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .user-dashboard-shell .user-messages-workspace .user-message-row {
+    border-radius: 0;
+    color: var(--user-text);
+  }
+
+  .user-dashboard-shell .user-messages-workspace .user-message-row[data-active='true'] {
+    background: var(--user-surface-selected);
+    box-shadow: inset 3px 0 0 var(--user-primary);
+  }
+
+  .user-dashboard-shell .user-messages-workspace .user-messages-thread,
+  .user-dashboard-shell .user-messages-workspace .user-messages-thread-header,
+  .user-dashboard-shell .user-messages-workspace .user-messages-composer {
+    border-color: var(--user-border);
+    background: var(--user-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .user-dashboard-shell .user-messages-workspace .user-message-bubble {
+    border-radius: 8px;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .user-dashboard-shell .user-messages-workspace .user-messages-empty {
+    max-width: 360px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .user-dashboard-shell :is(button, a, input, select, textarea):focus-visible {
+    outline: 2px solid var(--user-primary);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .user-dashboard-shell *,
+    .user-dashboard-shell *::before,
+    .user-dashboard-shell *::after {
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
+}
+
 @keyframes glowPulse {
   0% {
     transform: translate3d(0, 0, 0) scale(1);
@@ -254,6 +450,11 @@ html::-webkit-scrollbar-thumb {
 }
 
 @media (min-width: 1100px) {
+  .chatbot-fab-anchor--dashboard {
+    bottom: max(1rem, calc(env(safe-area-inset-bottom) + 1rem));
+    right: max(1rem, calc(env(safe-area-inset-right) + 1rem));
+  }
+
   .chatbot-fab-anchor--landing {
     right: clamp(10rem, 13vw, 14rem);
     bottom: clamp(7rem, 18vh, 9rem);

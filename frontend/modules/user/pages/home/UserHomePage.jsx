@@ -15,6 +15,7 @@ import {
   UserAccountSettingsModal,
   UserApplicationsPanel,
   UserApplicationsSettingsPage,
+  UserFeedbackPage,
   UserFaqModal,
   UserJobDetailPage,
   UserJobsPage,
@@ -61,7 +62,7 @@ const USER_NAV_QUERY_KEY = 'tab';
 const FEED_PAGE_SIZE = 10;
 const USER_PROFILE_QUERY_KEY = 'profileId';
 const USER_JOB_QUERY_KEY = 'jobId';
-const USER_NAV_TABS = new Set(['home', 'jobs', 'job-detail', 'pre-assessment', 'projects', 'search', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'resume-viewer', 'help', 'tips', 'verified', 'settings', 'public-profile', 'settings-account', 'settings-career', 'settings-resume-ats', 'settings-notifications', 'settings-saved-jobs', 'settings-applications', 'privacy-settings', 'privacy-change-password', 'privacy-comments', 'privacy-mentions', 'privacy-following', 'privacy-likes']);
+const USER_NAV_TABS = new Set(['home', 'jobs', 'job-detail', 'pre-assessment', 'projects', 'search', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'resume-viewer', 'help', 'feedback', 'tips', 'verified', 'settings', 'public-profile', 'settings-account', 'settings-career', 'settings-resume-ats', 'settings-notifications', 'settings-saved-jobs', 'settings-applications', 'privacy-settings', 'privacy-change-password', 'privacy-comments', 'privacy-mentions', 'privacy-following', 'privacy-likes']);
 const resolveProfileId = (value) => {
   const normalized = String(value || '').trim();
   return normalized || '';
@@ -130,6 +131,7 @@ const syncUserNavToUrl = (nextNav, options = {}) => {
 
 export default function UserHomePage({ user, userType, onOpenHelp: _onOpenHelp, onLogout, onUpdateUser }) {
   const [activeNav, setActiveNav] = useState(() => getUserNavFromUrl());
+  const [homeSidebarCollapsed, setHomeSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [premiumPopupOpen, setPremiumPopupOpen] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
@@ -1200,28 +1202,55 @@ export default function UserHomePage({ user, userType, onOpenHelp: _onOpenHelp, 
   const lazyOverlayFallback = null;
 
   return (
-    <div className={`min-h-[100dvh] no-scrollbar transition-colors duration-150 ease-out ${pageBackgroundClass} ${isResumeAtsPreviewActive ? 'overflow-hidden' : ''}`}>
-      <UserNavbar
-        activeNav={activeNav}
-        setActiveNav={updateActiveNav}
-        user={user}
-        mobileHidden={effectiveMobileChromeHidden}
-        mobileMenuOpen={mobileMenuOpen}
-        setMobileMenuOpen={setMobileMenuOpen}
-        onHelp={() => updateActiveNav('help', { preserveSettingsReturn: true })}
-        onLogout={onLogout}
-        onOpenSettings={() => updateActiveNav('settings')}
-        onOpenTips={() => updateActiveNav('tips')}
-        onOpenVerifiedDirectory={() => updateActiveNav('verified')}
-        onOpenPremium={() => setPremiumPopupOpen(true)}
-        onOpenPublicProfile={handleOpenPublicProfile}
-        onSubmitSearch={handleSubmitSearch}
-        onOpenMyProfile={() => updateActiveNav('my-profile')}
-        onOpenProjects={() => updateActiveNav('projects')}
-        onOpenSavedJobs={() => updateActiveNav('saved-jobs')}
-        onOpenApplications={() => updateActiveNav('applications')}
-        unreadNotificationCount={unreadNotificationCount}
-      />
+    <div className={`user-dashboard-shell min-h-[100dvh] no-scrollbar transition-colors duration-150 ease-out ${pageBackgroundClass} ${isResumeAtsPreviewActive ? 'overflow-hidden' : ''}`}>
+      <div className="xl:flex xl:min-h-[100dvh] xl:items-start">
+        {/* Global Desktop Sidebar */}
+        <aside
+          className="hidden xl:block flex-shrink-0 border-r border-[var(--user-border)] bg-[var(--user-canvas)] transition-[width] duration-200 ease-out xl:sticky xl:top-0 xl:h-[100dvh] overflow-y-auto no-scrollbar z-[60]"
+          style={{ width: homeSidebarCollapsed ? '4.5rem' : '18rem' }}
+        >
+          <UserLeftSidebar
+            user={user}
+            userType={userType}
+            collapsed={homeSidebarCollapsed}
+            onToggleCollapsed={() => setHomeSidebarCollapsed((current) => !current)}
+            onOpenMyProfile={() => updateActiveNav('my-profile')}
+            onOpenSettings={() => updateActiveNav('settings')}
+            onOpenHelp={() => updateActiveNav('help', { preserveSettingsReturn: true })}
+            onOpenFeedback={() => updateActiveNav('feedback')}
+            onOpenProjects={() => updateActiveNav('projects')}
+            onOpenSavedJobs={() => updateActiveNav('saved-jobs')}
+            onOpenApplications={() => updateActiveNav('applications')}
+            activeNav={activeNav}
+            setActiveNav={updateActiveNav}
+            onLogout={onLogout}
+          />
+        </aside>
+
+        {/* Main Content Area */}
+        <div className="flex-1 min-w-0 flex flex-col min-h-[100dvh]">
+          <UserNavbar
+            activeNav={activeNav}
+            setActiveNav={updateActiveNav}
+            user={user}
+            hideDesktopProfileControl={false}
+            mobileHidden={effectiveMobileChromeHidden}
+            mobileMenuOpen={mobileMenuOpen}
+            setMobileMenuOpen={setMobileMenuOpen}
+            onHelp={() => updateActiveNav('help', { preserveSettingsReturn: true })}
+            onLogout={onLogout}
+            onOpenSettings={() => updateActiveNav('settings')}
+            onOpenTips={() => updateActiveNav('tips')}
+            onOpenVerifiedDirectory={() => updateActiveNav('verified')}
+            onOpenPremium={() => setPremiumPopupOpen(true)}
+            onOpenPublicProfile={handleOpenPublicProfile}
+            onSubmitSearch={handleSubmitSearch}
+            onOpenMyProfile={() => updateActiveNav('my-profile')}
+            onOpenProjects={() => updateActiveNav('projects')}
+            onOpenSavedJobs={() => updateActiveNav('saved-jobs')}
+            onOpenApplications={() => updateActiveNav('applications')}
+            unreadNotificationCount={unreadNotificationCount}
+          />
 
       <div
         className={`mx-auto w-full ${
@@ -1268,19 +1297,8 @@ export default function UserHomePage({ user, userType, onOpenHelp: _onOpenHelp, 
           </div>
         )}
         {activeNav === 'home' && (
-          <div className="mx-auto grid w-full max-w-[min(100%,1680px)] grid-cols-1 gap-6 xl:grid-cols-12 xl:gap-8 2xl:gap-10">
-            <aside className="hidden xl:block xl:col-span-3">
-              <UserLeftSidebar
-                user={user}
-                userType={userType}
-                onOpenPremium={() => setPremiumPopupOpen(true)}
-                onOpenMyProfile={() => updateActiveNav('my-profile')}
-                onOpenProjects={() => updateActiveNav('projects')}
-                onOpenSavedJobs={() => updateActiveNav('saved-jobs')}
-                onOpenApplications={() => updateActiveNav('applications')}
-              />
-            </aside>
-            <main className="xl:col-span-9">
+          <div className="mx-auto w-full grid grid-cols-1 gap-6 xl:gap-6 2xl:gap-8">
+            <main className="min-w-0">
               <CenterFeed
                 loading={loadingPosts}
                 loadingMorePosts={loadingMorePosts}
@@ -1428,6 +1446,11 @@ export default function UserHomePage({ user, userType, onOpenHelp: _onOpenHelp, 
         {activeNav === 'help' && (
           <Suspense fallback={lazyViewFallback}>
             <HelpPage onBack={() => updateActiveNav('home')} />
+          </Suspense>
+        )}
+        {activeNav === 'feedback' && (
+          <Suspense fallback={lazyViewFallback}>
+            <UserFeedbackPage user={user} onBack={() => updateActiveNav('home')} />
           </Suspense>
         )}
         {activeNav === 'tips' && <TipsPanel />}
@@ -1739,6 +1762,8 @@ export default function UserHomePage({ user, userType, onOpenHelp: _onOpenHelp, 
         hiddenOnScroll={effectiveMobileChromeHidden}
         unreadNotificationCount={unreadNotificationCount}
       />
+      </div>
+      </div>
     </div>
   );
 }

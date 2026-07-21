@@ -75,17 +75,30 @@ export default function CenterFeed(props) {
   }, [hasMorePosts, loading, loadingMorePosts, onLoadMorePosts]);
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-3xl border border-white/40 bg-white/70 p-5 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 transition-shadow hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)]">
-        <div className="flex gap-4">
-          <Avatar profileImage={profileImage} fallback={userInitial} sizeClass="h-12 w-12 border-2 border-white dark:border-[#353c44] shadow-sm" />
-          <button onClick={onOpenComposer} className="flex-1 rounded-2xl border border-[#a3b18a]/30 bg-white/50 px-5 py-3 text-left text-[15px] font-medium text-[#4a6b57] transition-all hover:bg-white hover:shadow-sm dark:border-[#444d57]/50 dark:bg-[#353c44]/50 dark:text-[#a8b1ba] dark:hover:bg-[#353c44]">Share an update, project, or insight...</button>
+    <div className="space-y-5">
+      <header className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="user-workspace-page-title mt-1">Welcome back, {displayName.split(' ')[0]}</h1>
+          <p className="mt-1 text-sm text-[var(--user-text-muted)]">Keep your profile active and your next opportunity moving.</p>
         </div>
-        <div className="mt-4 flex items-center justify-between border-t border-black/5 pt-4 dark:border-white/5">
+      </header>
+
+      <section className="user-desktop-flat-surface p-4" aria-label="Create an update">
+        <div className="flex gap-3">
+          <Avatar profileImage={profileImage} fallback={userInitial} sizeClass="h-10 w-10 border border-[var(--user-border)]" />
+          <button
+            type="button"
+            onClick={onOpenComposer}
+            className="min-h-10 flex-1 rounded-md border border-[var(--user-border)] bg-[var(--user-surface-subtle)] px-4 py-2 text-left text-sm text-[var(--user-text-muted)] transition-colors duration-150 hover:border-[var(--user-border-strong)] hover:bg-[var(--user-surface)]"
+          >
+            Share an update, project, or insight...
+          </button>
+        </div>
+        <div className="mt-3 flex items-center justify-between border-t border-[var(--user-border)] pt-3">
           <ComposerButton icon={Plus} text={userType === 'employee' ? 'Add Project' : 'Post Job'} onClick={onOpenComposer} />
           <ComposerButton icon={Plus} text="Share Update" onClick={onOpenComposer} />
         </div>
-      </div>
+      </section>
 
       {loading ? (
         <FeedSkeleton />
@@ -118,19 +131,19 @@ export default function CenterFeed(props) {
           ) : null}
         </>
       ) : (
-        <div className="rounded-3xl border border-white/40 bg-white/70 p-12 text-center shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 transition-shadow hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)]">
-          <div className="mx-auto max-w-md">
-            <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-[2rem] bg-gradient-to-br from-[#588157]/20 to-[#3a5a40]/20 text-[#3a5a40] shadow-[0_10px_30px_rgba(0,0,0,0.05)] dark:from-[#82ad86]/20 dark:to-[#6f9b74]/20 dark:text-[#82ad86] rotate-[-5deg] transition-transform duration-500 hover:rotate-0">
-              <Search className="h-10 w-10" />
+        <section className="user-desktop-flat-surface px-6 py-10 text-center">
+          <div className="mx-auto max-w-lg">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-[var(--user-primary-soft)] text-[var(--user-primary)]">
+              <Search className="h-6 w-6" />
             </div>
-            <h3 className="mb-3 text-3xl font-bold tracking-tight text-[#2d4632] dark:text-white">Try searching to get started</h3>
-            <p className="mb-8 text-[15px] leading-relaxed text-[#4a6b57] dark:text-[#a8b1ba]">Discover IT professionals, companies, and cutting-edge projects in the Philippines.</p>
-            <div className="flex flex-col justify-center gap-4 sm:flex-row">
-              <button type="button" onClick={onBrowsePeople} className="rounded-xl bg-[#3a5a40] px-6 py-3 font-semibold text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-[#2d4632] hover:shadow-lg dark:bg-[#6f9b74] dark:hover:bg-[#82ad86]">Browse {userType === 'employee' ? 'Companies' : 'Developers'}</button>
-              <button type="button" onClick={onExploreProjects} className="rounded-xl border-2 border-[#3a5a40]/20 bg-white/50 px-6 py-3 font-semibold text-[#3a5a40] transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-md dark:border-white/10 dark:bg-[#353c44]/50 dark:text-white dark:hover:bg-[#353c44]">Explore Projects</button>
+            <h2 className="mt-4 text-xl font-semibold text-[var(--user-text-strong)]">Build your professional network</h2>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--user-text-muted)]">Discover IT companies, professionals, and projects while you wait for new updates.</p>
+            <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
+              <button type="button" onClick={onBrowsePeople} className="user-workspace-primary-button px-5 py-2 text-sm font-semibold">Browse {userType === 'employee' ? 'Companies' : 'Developers'}</button>
+              <button type="button" onClick={onExploreProjects} className="min-h-10 rounded-md border border-[var(--user-border-strong)] bg-[var(--user-surface)] px-5 py-2 text-sm font-semibold text-[var(--user-text-strong)] transition-colors duration-150 hover:bg-[var(--user-surface-subtle)]">Explore Projects</button>
             </div>
           </div>
-        </div>
+        </section>
       )}
     </div>
   );
@@ -153,5 +166,5 @@ function BottomFeedLoader() {
 }
 
 function ComposerButton({ icon: Icon, text, onClick }) {
-  return <button onClick={onClick} className="flex items-center gap-2 rounded-lg px-4 py-2 text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:text-[#d0d7dd] dark:hover:bg-[#353c44]"><Icon className="h-4 w-4" /><span className="text-sm font-medium">{text}</span></button>;
+  return <button type="button" onClick={onClick} className="flex min-h-10 items-center gap-2 rounded-md px-3 py-2 text-[var(--user-text)] transition-colors duration-150 hover:bg-[var(--user-surface-selected)] hover:text-[var(--user-primary)]"><Icon className="h-4 w-4" /><span className="text-sm font-medium">{text}</span></button>;
 }

@@ -9,6 +9,7 @@ export default function UserNavbar({
   activeNav,
   setActiveNav,
   user,
+  hideDesktopProfileControl = false,
   mobileHidden = false,
   mobileMenuOpen,
   setMobileMenuOpen,
@@ -26,8 +27,6 @@ export default function UserNavbar({
   onOpenApplications,
   unreadNotificationCount = 0,
 }) {
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const profileMenuRef = useRef(null);
   const searchRef = useRef(null);
   const mobileSearchInputRef = useRef(null);
   const searchRequestRef = useRef(0);
@@ -41,9 +40,6 @@ export default function UserNavbar({
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
-        setProfileMenuOpen(false);
-      }
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setSearchOpen(false);
       }
@@ -137,31 +133,25 @@ export default function UserNavbar({
 
   const shouldKeepNavbarVisible = searchOpen || mobileMenuVisible;
 
-  // Fully hide the primary navbar in focused full-page views.
-  if (activeNav === 'settings' || activeNav === 'search') {
-    return null;
-  }
+  const desktopOnlyNavbar = activeNav === 'settings' || activeNav === 'search';
 
   return (
     <>
       <nav
         className={`${
           activeNav === 'messages' ? 'fixed left-0 right-0 w-full xl:inset-auto xl:w-auto xl:sticky' : 'sticky'
-        } top-0 z-50 overflow-visible bg-white/70 backdrop-blur-xl transition-transform duration-150 ease-out dark:bg-[#22272b]/70 ${
+        } top-0 z-50 overflow-visible bg-white/70 backdrop-blur-xl transition-transform duration-150 ease-out dark:bg-[#22272b]/70 xl:border-b xl:border-[var(--user-border)] xl:bg-[var(--user-surface)] xl:shadow-none xl:backdrop-blur-none ${
           activeNav === 'messages'
             ? 'border-transparent shadow-none dark:border-transparent dark:shadow-none'
-            : 'border-b border-white/40 shadow-sm dark:border-white/10 dark:shadow-[0_6px_24px_rgba(0,0,0,0.18)] xl:border-white/40 xl:shadow-sm dark:xl:border-white/10'
-        } ${mobileHidden && !shouldKeepNavbarVisible ? '-translate-y-full xl:translate-y-0' : 'translate-y-0'}`}
+            : 'border-b border-white/40 shadow-sm dark:border-white/10 dark:shadow-[0_6px_24px_rgba(0,0,0,0.18)]'
+        } ${desktopOnlyNavbar ? 'hidden xl:block' : ''} ${mobileHidden && !shouldKeepNavbarVisible ? '-translate-y-full xl:translate-y-0' : 'translate-y-0'}`}
       >
-        <div className="mx-auto w-full max-w-[min(100%,1800px)] px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9">
+        <div className="mx-auto w-full max-w-[1600px] px-3 sm:px-5 lg:px-6 xl:px-6 2xl:px-10">
           <div className="hidden min-w-0 xl:block">
             <UserDesktopNavbar
               activeNav={activeNav}
               setActiveNav={setActiveNav}
-              user={user}
-              profileMenuOpen={profileMenuOpen}
-              setProfileMenuOpen={setProfileMenuOpen}
-              profileMenuRef={profileMenuRef}
+              hideProfileControl={hideDesktopProfileControl}
               searchRef={searchRef}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
@@ -172,9 +162,8 @@ export default function UserNavbar({
               searchResults={searchResults}
               onSearchResultSelect={handleSearchResultSelect}
               onSearchSubmit={handleSearchSubmit}
-              onHelp={onHelp}
-              onLogout={onLogout}
-              onOpenSettings={onOpenSettings}
+              onOpenPremium={onOpenPremium}
+              onOpenNotifications={() => setActiveNav?.('notifications')}
               unreadNotificationCount={unreadNotificationCount}
             />
           </div>

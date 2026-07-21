@@ -59,10 +59,11 @@ export default function FaqChatbot() {
   const pathname = usePathname();
   const router = useRouter();
   const isLandingPage = pathname === '/';
-  const isDashboardPage = String(pathname || '').startsWith('/dashboard/') || String(pathname || '').startsWith('/company/');
-  const useLandingPosition = isLandingPage || isDashboardPage;
+  const isUserDashboardPage = String(pathname || '').startsWith('/dashboard/');
+  const isCompanyPage = String(pathname || '').startsWith('/company/');
+  const useLandingPosition = isLandingPage || isCompanyPage;
   const isPricingPage = pathname === '/pricing' || pathname === '/for-employers/pricing';
-  const anchorClassName = `chatbot-fab-anchor${useLandingPosition ? ' chatbot-fab-anchor--landing' : ''}${isPricingPage ? ' chatbot-fab-anchor--pricing' : ''}`;
+  const anchorClassName = `chatbot-fab-anchor${useLandingPosition ? ' chatbot-fab-anchor--landing' : ''}${isUserDashboardPage ? ' chatbot-fab-anchor--dashboard' : ''}${isPricingPage ? ' chatbot-fab-anchor--pricing' : ''}`;
   const launcherButtonClass = isDark
     ? 'group relative z-10 inline-flex h-[52px] w-[52px] items-center justify-center rounded-full border border-white/12 bg-[#202428]/92 text-[#e2e6e9] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_18px_38px_rgba(0,0,0,0.34)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-[#2a2f35] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_22px_42px_rgba(0,0,0,0.4)] active:scale-[0.98]'
     : 'group relative z-10 inline-flex h-[52px] w-[52px] items-center justify-center rounded-full border border-[#9ab896] bg-[#bcd3af]/96 text-[#2f4a36] shadow-[0_16px_34px_rgba(58,90,64,0.18),inset_0_1px_0_rgba(255,255,255,0.52)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-[#c8dcbf] hover:shadow-[0_20px_40px_rgba(58,90,64,0.24),inset_0_1px_0_rgba(255,255,255,0.58)] active:scale-[0.98]';
