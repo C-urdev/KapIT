@@ -460,6 +460,11 @@ html::-webkit-scrollbar-thumb {
     bottom: clamp(7rem, 18vh, 9rem);
   }
 
+  .chatbot-fab-anchor--public-landing {
+    right: clamp(2.5rem, 5vw, 5.5rem);
+    bottom: clamp(2.25rem, 5vh, 3rem);
+  }
+
   .chatbot-fab-anchor--pricing {
     right: max(3rem, calc((100vw - min(100vw, 1440px)) / 2 + 3rem));
     bottom: 2.5rem;
@@ -471,12 +476,22 @@ html::-webkit-scrollbar-thumb {
     right: clamp(11rem, 14vw, 15rem);
     bottom: clamp(7.5rem, 18.5vh, 9.5rem);
   }
+
+  .chatbot-fab-anchor--public-landing {
+    right: clamp(3rem, 5vw, 5.75rem);
+    bottom: clamp(2.5rem, 5vh, 3.25rem);
+  }
 }
 
 @media (min-width: 1680px) {
   .chatbot-fab-anchor--landing {
     right: clamp(12rem, 15vw, 16rem);
     bottom: clamp(8rem, 19vh, 10rem);
+  }
+
+  .chatbot-fab-anchor--public-landing {
+    right: clamp(3.5rem, 5vw, 6rem);
+    bottom: clamp(2.75rem, 5vh, 3.5rem);
   }
 }
 

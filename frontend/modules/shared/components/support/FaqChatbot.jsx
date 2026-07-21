@@ -63,10 +63,16 @@ export default function FaqChatbot() {
   const isCompanyPage = String(pathname || '').startsWith('/company/');
   const useLandingPosition = isLandingPage || isCompanyPage;
   const isPricingPage = pathname === '/pricing' || pathname === '/for-employers/pricing';
-  const anchorClassName = `chatbot-fab-anchor${useLandingPosition ? ' chatbot-fab-anchor--landing' : ''}${isUserDashboardPage ? ' chatbot-fab-anchor--dashboard' : ''}${isPricingPage ? ' chatbot-fab-anchor--pricing' : ''}`;
+  const anchorClassName = `chatbot-fab-anchor${useLandingPosition ? ' chatbot-fab-anchor--landing' : ''}${isLandingPage ? ' chatbot-fab-anchor--public-landing' : ''}${isUserDashboardPage ? ' chatbot-fab-anchor--dashboard' : ''}${isPricingPage ? ' chatbot-fab-anchor--pricing' : ''}`;
   const launcherButtonClass = isDark
-    ? 'group relative z-10 inline-flex h-[52px] w-[52px] items-center justify-center rounded-full border border-white/12 bg-[#202428]/92 text-[#e2e6e9] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_18px_38px_rgba(0,0,0,0.34)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-[#2a2f35] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_22px_42px_rgba(0,0,0,0.4)] active:scale-[0.98]'
+    ? 'group relative z-10 inline-flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#202428]/92 text-[#e2e6e9] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_38px_rgba(0,0,0,0.34)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-[#2a2f35] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_22px_42px_rgba(0,0,0,0.4)] active:scale-[0.98]'
     : 'group relative z-10 inline-flex h-[52px] w-[52px] items-center justify-center rounded-full border border-[#9ab896] bg-[#bcd3af]/96 text-[#2f4a36] shadow-[0_16px_34px_rgba(58,90,64,0.18),inset_0_1px_0_rgba(255,255,255,0.52)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-[#c8dcbf] hover:shadow-[0_20px_40px_rgba(58,90,64,0.24),inset_0_1px_0_rgba(255,255,255,0.58)] active:scale-[0.98]';
+  const landingLauncherClass = isDark
+    ? 'group relative z-10 inline-flex h-12 w-12 items-center justify-center rounded-[1rem] bg-[#dcebd8] px-0 text-sm font-semibold leading-none text-[#102a1b] shadow-[0_18px_44px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.45)] transition-[transform,background-color,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-[#e7f1e3] hover:shadow-[0_22px_52px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.52)] active:scale-[0.98] sm:w-auto sm:gap-3 sm:px-4 sm:pl-5'
+    : 'group relative z-10 inline-flex h-12 w-12 items-center justify-center rounded-[1rem] bg-[#2f4a36] px-0 text-sm font-semibold leading-none text-white shadow-[0_18px_40px_rgba(47,74,54,0.22)] transition-[transform,background-color,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-[#3a5a40] hover:shadow-[0_22px_48px_rgba(47,74,54,0.26)] active:scale-[0.98] sm:w-auto sm:gap-3 sm:px-4 sm:pl-5';
+  const landingLauncherIconClass = isDark
+    ? 'inline-flex h-8 w-8 items-center justify-center rounded-[0.75rem] bg-[#2f4a36] text-[#f4faf1] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]'
+    : 'inline-flex h-8 w-8 items-center justify-center rounded-[0.75rem] bg-[#e5f0df] text-[#2f4a36] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]';
 
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -258,6 +264,14 @@ export default function FaqChatbot() {
     setIsMenuOpen(false);
     setSuggestedPrompts(CHATBOT_DEFAULT_SUGGESTIONS.slice(0, 5));
   }, []);
+
+  const toggleLauncher = () => {
+    if (isMinimized) {
+      setIsMinimized(false);
+      return;
+    }
+    setIsOpen((prev) => !prev);
+  };
 
   return (
     <div className={anchorClassName}>
@@ -469,20 +483,30 @@ export default function FaqChatbot() {
       ) : null}
 
       {(!isOpen || isMinimized) ? (
-        <button
-          type="button"
-          onClick={() => {
-            if (isMinimized) {
-              setIsMinimized(false);
-              return;
-            }
-            setIsOpen((prev) => !prev);
-          }}
-          className={launcherButtonClass}
-          aria-label={isOpen ? 'Toggle chatbot' : 'Open chatbot'}
-        >
-          <ChatbotBrandMark size="lg" isDark={isDark} showStatus={false} shell="none" />
-        </button>
+        <div className="flex items-center justify-end">
+          {isLandingPage ? (
+            <button
+              type="button"
+              onClick={toggleLauncher}
+              className={landingLauncherClass}
+              aria-label={isOpen ? 'Toggle chatbot' : 'Open chatbot'}
+            >
+              <span className="hidden whitespace-nowrap sm:inline">Chat with us now!</span>
+              <span className={landingLauncherIconClass} aria-hidden="true">
+                <ChatbotBrandMark size="md" isDark={isDark} emphasis={isDark} showStatus={false} shell="none" />
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={toggleLauncher}
+              className={launcherButtonClass}
+              aria-label={isOpen ? 'Toggle chatbot' : 'Open chatbot'}
+            >
+              <ChatbotBrandMark size="lg" isDark={isDark} showStatus={false} shell="none" />
+            </button>
+          )}
+        </div>
       ) : null}
     </div>
   );

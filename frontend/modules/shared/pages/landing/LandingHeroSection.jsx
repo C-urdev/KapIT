@@ -3,6 +3,27 @@ import { ArrowRight, Clock3, Star, Users } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 import LandingApplicationsShowcase from './LandingApplicationsShowcase';
 
+const DARK_HERO_BACKGROUNDS = [
+  {
+    src: '/hero_visual_dark.png',
+    className:
+      'absolute left-[9.5rem] top-[10rem] w-[clamp(20rem,29vw,29rem)]',
+    imageClassName: 'opacity-[0.88]',
+  },
+  {
+    src: '/hero_visual_dark_2.png',
+    className:
+      'absolute right-[9rem] top-[21.75rem] w-[clamp(20rem,29vw,29rem)]',
+    imageClassName: 'opacity-[0.82]',
+  },
+  {
+    src: '/hero_visual_dark_3.png',
+    className:
+      'absolute left-[6.5rem] top-[40.5rem] w-[clamp(20rem,29vw,29rem)]',
+    imageClassName: 'opacity-[0.78]',
+  },
+];
+
 export default function LandingHeroSection({ onGetStarted }) {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -17,11 +38,33 @@ export default function LandingHeroSection({ onGetStarted }) {
       {/* Restored Background Image */}
       {mounted && (
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-          <img
-            src={theme === 'dark' ? '/hero_visual_dark.png' : '/hero_visual_light_taste_stretched.png'}
-            alt="Hero Background"
-            className="h-full w-full object-cover object-center opacity-60 transition-opacity duration-1000 dark:opacity-10"
-          />
+          {theme === 'dark' ? (
+            <>
+              {DARK_HERO_BACKGROUNDS.map(({ src, className, imageClassName }) => (
+                <div
+                  key={src}
+                  className={`${className} hidden aspect-[16/9] overflow-hidden rounded-[1.25rem] bg-[#0d1110] shadow-[0_28px_80px_rgba(0,0,0,0.35)] ring-1 ring-white/10 min-[1100px]:block`}
+                >
+                  <img
+                    src={src}
+                    alt=""
+                    aria-hidden="true"
+                    className={`h-full w-full scale-[1.02] object-cover object-center transition-opacity duration-1000 ${imageClassName}`}
+                  />
+                  <div className="absolute inset-0 bg-[#181a1b]/5" />
+                </div>
+              ))}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(24,26,27,0.72)_0%,rgba(24,26,27,0.46)_38%,rgba(24,26,27,0.08)_64%,rgba(24,26,27,0.16)_100%)]" />
+              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(24,26,27,0)_0%,rgba(24,26,27,0.08)_24%,rgba(24,26,27,0.82)_48%,rgba(24,26,27,0.72)_70%,rgba(24,26,27,0.32)_100%)]" />
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(24,26,27,0.18)_0%,rgba(24,26,27,0.12)_42%,rgba(24,26,27,0.28)_76%,#181a1b_100%)]" />
+            </>
+          ) : (
+            <img
+              src="/hero_visual_light_taste_stretched.png"
+              alt="Hero Background"
+              className="h-full w-full object-cover object-center opacity-60 transition-opacity duration-1000"
+            />
+          )}
         </div>
       )}
       {/* Editorial Split: Left Side Typography */}
@@ -29,9 +72,6 @@ export default function LandingHeroSection({ onGetStarted }) {
         <style dangerouslySetInnerHTML={{ __html: `
           @keyframes heroSlideUp {
             to { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes heroFadeIn {
-            to { opacity: 1; }
           }
         `}} />
 
@@ -108,60 +148,6 @@ export default function LandingHeroSection({ onGetStarted }) {
         </div>
       </div>
 
-      {/* Editorial Split: Right Side Visual */}
-      {mounted && theme === 'dark' ? (
-        <div className="relative z-10 flex min-h-[60vh] w-full items-center justify-center p-4 py-14 opacity-0 animate-[heroFadeIn_1s_ease-out_forwards] lg:min-h-[68vh] lg:p-6 lg:py-10 min-[1100px]:min-h-[100dvh] min-[1100px]:w-[45%] min-[1100px]:py-6 min-[1100px]:p-10 xl:w-1/2">
-          {/* Subtle background ambient gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#181a1b] via-transparent to-[#181a1b] lg:bg-gradient-to-l opacity-75 pointer-events-none" />
-          
-          <div className="relative z-10 mx-auto flex w-full max-w-[420px] flex-col gap-6 sm:gap-8 lg:max-w-[500px] xl:max-w-[580px]">
-            {/* IMG 1: Top Left */}
-            <div 
-              className="w-[85%] sm:w-[80%] self-start aspect-[16/9] rounded-[1rem] sm:rounded-[1.25rem] bg-[#111] ring-1 ring-white/10 p-1.5 sm:p-2 shadow-xl animate-[heroSlideUp_1.2s_cubic-bezier(0.32,0.72,0,1)_forwards]"
-              style={{ opacity: 0 }}
-            >
-              <div className="relative w-full h-full rounded-[calc(1rem-0.375rem)] sm:rounded-[calc(1.25rem-0.5rem)] overflow-hidden bg-[#111]">
-                <img
-                  src="/hero_visual_dark.png"
-                  alt="Top Left Primary"
-                  className="w-full h-full object-cover object-center"
-                />
-              </div>
-            </div>
-
-            {/* IMG 2: Middle Right */}
-            <div 
-              className="w-[85%] sm:w-[80%] self-end aspect-[16/9] rounded-[1rem] sm:rounded-[1.25rem] bg-[#111] ring-1 ring-white/10 p-1.5 sm:p-2 shadow-xl animate-[heroSlideUp_1.4s_cubic-bezier(0.32,0.72,0,1)_forwards]"
-              style={{ opacity: 0 }}
-            >
-              <div className="relative w-full h-full rounded-[calc(1rem-0.375rem)] sm:rounded-[calc(1.25rem-0.5rem)] overflow-hidden bg-[#111]">
-                <div className="absolute inset-0 bg-black/20 z-10 pointer-events-none transition-opacity duration-500 hover:opacity-0" />
-                <img
-                  src="/hero_visual_dark_2.png"
-                  alt="Middle Right Workspace"
-                  className="w-full h-full object-cover object-center"
-                />
-              </div>
-            </div>
-
-            {/* IMG 3: Bottom Left */}
-            <div 
-              className="w-[85%] sm:w-[80%] self-start aspect-[16/9] rounded-[1rem] sm:rounded-[1.25rem] bg-[#111] ring-1 ring-white/10 p-1.5 sm:p-2 shadow-xl animate-[heroSlideUp_1.6s_cubic-bezier(0.32,0.72,0,1)_forwards]"
-              style={{ opacity: 0 }}
-            >
-              <div className="relative w-full h-full rounded-[calc(1rem-0.375rem)] sm:rounded-[calc(1.25rem-0.5rem)] overflow-hidden bg-[#111]">
-                <div className="absolute inset-0 bg-black/20 z-10 pointer-events-none transition-opacity duration-500 hover:opacity-0" />
-                <img
-                  src="/hero_visual_dark_3.png"
-                  alt="Bottom Left Workspace"
-                  className="w-full h-full object-cover object-center"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
-      
     </section>
   );
 }
