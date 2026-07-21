@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Building2, ChevronDown, ChevronLeft, ChevronRight, MapPin, Search, SlidersHorizontal, X } from 'lucide-react';
+import { Bookmark, Building2, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, MapPin, Search, SlidersHorizontal, X } from 'lucide-react';
 import { getJobsFeed, getSavedJobs } from '@sharedServices/authService';
 import { formatJobStatus, statusBadgeClass } from '@companyFeatures/companyUtils';
 import { syncApplicationsForUser } from '@userFeatures/activity/userActivityStorage';
@@ -118,6 +118,7 @@ export default function UserJobsPage({
   const [swipeDirection, setSwipeDirection] = useState(0);
   const filterPopupRef = useRef(null);
   const filterButtonRef = useRef(null);
+  const desktopFilterButtonRef = useRef(null);
   const lastAutoOpenRef = useRef('');
   const savedJobIdsRef = useRef(savedJobIds);
 
@@ -142,10 +143,11 @@ export default function UserJobsPage({
           return;
         }
 
+        const resolvedJobs = Array.isArray(jobsData?.jobs) ? jobsData.jobs : [];
         const knownSavedIds = savedJobIdsRef.current || [];
-        const nextJobs = (Array.isArray(jobsData?.jobs) ? jobsData.jobs : [])
+        const nextJobs = resolvedJobs
           .map((job) => applyStateToJob(job, knownSavedIds, jobCardStateById));
-        syncApplicationsForUser(user, nextJobs);
+        syncApplicationsForUser(user, resolvedJobs);
         setJobs(nextJobs);
         setActiveIndex((current) => Math.max(0, Math.min(current, Math.max(0, nextJobs.length - 1))));
         setSwipeDirection(0);
@@ -159,7 +161,7 @@ export default function UserJobsPage({
               .map((entry) => resolveJobId(entry?.id))
               .filter((id) => Number.isInteger(id));
             setSavedJobIds(nextSavedIds);
-            const jobsWithSavedState = (Array.isArray(jobsData?.jobs) ? jobsData.jobs : [])
+            const jobsWithSavedState = resolvedJobs
               .map((job) => applyStateToJob(job, nextSavedIds, jobCardStateById));
             setJobs(jobsWithSavedState);
           })
@@ -203,7 +205,8 @@ export default function UserJobsPage({
     if (!showAdvancedFilters) return undefined;
 
     const updatePopupPosition = () => {
-      const trigger = filterButtonRef.current;
+      const trigger = [desktopFilterButtonRef.current, filterButtonRef.current]
+        .find((candidate) => candidate?.getBoundingClientRect().width > 0);
       if (!trigger) return;
 
       const rect = trigger.getBoundingClientRect();
@@ -301,6 +304,20 @@ export default function UserJobsPage({
     lastAutoOpenRef.current = '';
   };
 
+  const handleApplyFilters = () => {
+    setAppliedFilters({
+      q: String(filters.q || '').trim(),
+      location: String(filters.location || '').trim(),
+      jobType: String(filters.jobType || '').trim(),
+      workPreference: String(filters.workPreference || '').trim(),
+      skill: String(filters.skill || '').trim(),
+      salaryCurrency: String(filters.salaryCurrency || '').trim(),
+      salaryRange: String(filters.salaryRange || '').trim(),
+      experienceLevel: String(filters.experienceLevel || '').trim(),
+    });
+    setShowAdvancedFilters(false);
+  };
+
   const advanceJob = useCallback((direction) => {
     if (jobs.length <= 1) {
       return;
@@ -386,7 +403,28 @@ export default function UserJobsPage({
   };
 
   return (
-    <div className="mx-auto w-full max-w-[min(100%,1040px)] space-y-6">
+    <>
+      <DesktopJobsWorkspace
+        userType={userType}
+        user={user}
+        jobs={jobs}
+        loading={loading}
+        error={error}
+        filters={filters}
+        hasActiveFilters={hasActiveFilters}
+        currentJobIndex={currentJobIndex}
+        currentJob={currentJob}
+        onSelectJob={setActiveIndex}
+        onFilterChange={handleFilterChange}
+        onSearch={handleSearch}
+        onOpenFilters={() => setShowAdvancedFilters(true)}
+        filterButtonRef={desktopFilterButtonRef}
+        onReset={handleReset}
+        onOpenCompany={handleOpenCompany}
+        onOpenDetail={handleOpenDetail}
+      />
+
+      <div className="mx-auto w-full max-w-[min(100%,1040px)] space-y-6 xl:hidden">
       <div>
         <h1 className="text-3xl font-bold text-[#3a5a40] dark:text-white">
           {userType === 'employee' ? 'Browse Jobs' : 'Posted Jobs'}
@@ -587,22 +625,252 @@ export default function UserJobsPage({
           onChange={handleFilterChange}
           onClose={() => setShowAdvancedFilters(false)}
           onReset={handleReset}
-          onApply={() => {
-            setAppliedFilters({
-              q: String(filters.q || '').trim(),
-              location: String(filters.location || '').trim(),
-              jobType: String(filters.jobType || '').trim(),
-              workPreference: String(filters.workPreference || '').trim(),
-              skill: String(filters.skill || '').trim(),
-              salaryCurrency: String(filters.salaryCurrency || '').trim(),
-              salaryRange: String(filters.salaryRange || '').trim(),
-              experienceLevel: String(filters.experienceLevel || '').trim(),
-            });
-            setShowAdvancedFilters(false);
-          }}
+          onApply={handleApplyFilters}
         />
       ) : null}
+      </div>
+
+      <div className="hidden xl:block">
+        {showAdvancedFilters ? (
+          <FilterPopup
+            popupRef={filterPopupRef}
+            position={filterPopupPosition}
+            filters={filters}
+            onChange={handleFilterChange}
+            onClose={() => setShowAdvancedFilters(false)}
+            onReset={handleReset}
+            onApply={handleApplyFilters}
+          />
+        ) : null}
+      </div>
+    </>
+  );
+}
+
+function DesktopJobsWorkspace({
+  userType,
+  user,
+  jobs,
+  loading,
+  error,
+  filters,
+  hasActiveFilters,
+  currentJobIndex,
+  currentJob,
+  onSelectJob,
+  onFilterChange,
+  onSearch,
+  onOpenFilters,
+  filterButtonRef,
+  onReset,
+  onOpenCompany,
+  onOpenDetail,
+}) {
+  return (
+    <div className="hidden w-full xl:block">
+      <header className="mb-5 flex items-end justify-between gap-6">
+        <div>
+          <h1 className="user-workspace-page-title mt-1">{userType === 'employee' ? 'Find your next role' : 'Posted jobs'}</h1>
+          <p className="mt-1 text-sm text-[var(--user-text-muted)]">
+            Search, compare, and review opportunities without losing your place.
+          </p>
+        </div>
+        {!loading && !error ? (
+          <p className="text-sm text-[var(--user-text-muted)]">{jobs.length} {jobs.length === 1 ? 'role' : 'roles'}</p>
+        ) : null}
+      </header>
+
+      <form onSubmit={onSearch} className="user-workspace-surface mb-4 p-3">
+        <div className="flex items-center gap-2">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[var(--user-text-muted)]" />
+            <input
+              value={filters.q}
+              onChange={(event) => onFilterChange('q', event.target.value)}
+              placeholder="Job title, skill, or company"
+              className="h-10 w-full rounded-md border border-[var(--user-border)] bg-[var(--user-surface-subtle)] pl-10 pr-3 text-sm text-[var(--user-text-strong)] outline-none placeholder:text-[var(--user-text-muted)] focus:border-[var(--user-primary)]"
+            />
+          </div>
+          <button type="submit" className="user-workspace-primary-button inline-flex items-center gap-2 px-4 text-sm font-semibold">
+            <Search className="h-4 w-4" />
+            Search
+          </button>
+          <button
+            ref={filterButtonRef}
+            type="button"
+            onClick={onOpenFilters}
+            className="inline-flex h-10 items-center gap-2 rounded-md border border-[var(--user-border-strong)] bg-[var(--user-surface)] px-4 text-sm font-semibold text-[var(--user-text-strong)] transition-colors duration-150 hover:bg-[var(--user-surface-subtle)]"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            Filters
+          </button>
+          {hasActiveFilters ? (
+            <button type="button" onClick={onReset} className="h-10 rounded-md px-3 text-sm font-medium text-[var(--user-primary)] hover:bg-[var(--user-surface-selected)]">
+              Clear
+            </button>
+          ) : null}
+        </div>
+      </form>
+
+      {error ? (
+        <div className="user-workspace-surface border-red-200 px-5 py-4 text-sm text-[var(--user-danger)]">{error}</div>
+      ) : null}
+
+      {loading ? (
+        <div className="grid grid-cols-[minmax(340px,0.82fr)_minmax(0,1.18fr)] gap-4">
+          <div className="user-workspace-surface h-[620px] animate-pulse bg-[var(--user-surface-subtle)]" />
+          <div className="user-workspace-surface h-[620px] animate-pulse bg-[var(--user-surface-subtle)]" />
+        </div>
+      ) : jobs.length === 0 ? (
+        <div className="user-workspace-surface flex min-h-[360px] items-center justify-center px-8 py-12 text-center">
+          <div className="max-w-md">
+            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-[var(--user-primary-soft)] text-[var(--user-primary)]">
+              <Search className="h-6 w-6" />
+            </span>
+            <h2 className="mt-4 text-xl font-semibold text-[var(--user-text-strong)]">
+              {hasActiveFilters ? 'No roles match these filters' : 'No roles are available yet'}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--user-text-muted)]">
+              {hasActiveFilters
+                ? 'Clear one or more filters to broaden your search.'
+                : 'Check back later for new opportunities from KapIT employers.'}
+            </p>
+            {hasActiveFilters ? (
+              <button type="button" onClick={onReset} className="user-workspace-primary-button mt-5 px-5 text-sm font-semibold">Clear filters</button>
+            ) : null}
+          </div>
+        </div>
+      ) : (
+        <div className="grid min-h-[620px] grid-cols-[minmax(360px,0.82fr)_minmax(0,1.18fr)] gap-4">
+          <section className="user-workspace-surface min-w-0 overflow-hidden" aria-label="Job results">
+            <div className="flex items-center justify-between border-b border-[var(--user-border)] px-4 py-3">
+              <h2 className="text-sm font-semibold text-[var(--user-text-strong)]">Search results</h2>
+              <span className="text-xs text-[var(--user-text-muted)]">Select a role to review</span>
+            </div>
+            <div className="max-h-[calc(100dvh-238px)] min-h-[560px] overflow-y-auto">
+              {jobs.map((job, index) => (
+                <DesktopJobResult
+                  key={job.id}
+                  job={job}
+                  active={index === currentJobIndex}
+                  profileCompleted={Boolean(user?.profileCompleted)}
+                  onClick={() => onSelectJob(index)}
+                />
+              ))}
+            </div>
+          </section>
+
+          <DesktopJobPreview
+            job={currentJob}
+            profileCompleted={Boolean(user?.profileCompleted)}
+            onOpenCompany={onOpenCompany}
+            onOpenDetail={onOpenDetail}
+          />
+        </div>
+      )}
     </div>
+  );
+}
+
+function DesktopJobResult({ job, active, profileCompleted, onClick }) {
+  const rawMatch = Number(job?.matchPercentage);
+  const hasMatch = profileCompleted && Number.isFinite(rawMatch) && rawMatch >= 0;
+  const match = hasMatch ? Math.max(0, Math.min(100, Math.round(rawMatch))) : null;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative flex w-full gap-3 border-b border-[var(--user-border)] px-4 py-4 text-left transition-colors duration-150 last:border-b-0 ${
+        active ? 'bg-[var(--user-surface-selected)]' : 'hover:bg-[var(--user-surface-subtle)]'
+      }`}
+      aria-current={active ? 'true' : undefined}
+    >
+      {active ? <span className="absolute inset-y-3 left-0 w-0.5 rounded-r bg-[var(--user-primary)]" /> : null}
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-md border border-[var(--user-border)] bg-[var(--user-surface)] text-[var(--user-primary)]">
+        {job?.company?.logo ? <img src={job.company.logo} alt="" className="h-full w-full object-cover" /> : <Building2 className="h-5 w-5" />}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-start justify-between gap-3">
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-semibold text-[var(--user-text-strong)]">{job?.title || 'Untitled job'}</span>
+            <span className="mt-0.5 block truncate text-sm text-[var(--user-text)]">{job?.company?.name || 'Company'}</span>
+          </span>
+          {job?.isSaved ? <Bookmark className="h-4 w-4 shrink-0 fill-current text-[var(--user-primary)]" aria-label="Saved" /> : null}
+        </span>
+        <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--user-text-muted)]">
+          {job?.location ? <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{job.location}</span> : null}
+          {job?.type ? <span>{job.type}</span> : null}
+          {job?.salary ? <span>{job.salary}</span> : null}
+        </span>
+        <span className="mt-2 flex items-center justify-between gap-3">
+          <span className="text-xs font-medium text-[var(--user-primary)]">{hasMatch ? `${match}% profile match` : 'Complete profile for match insights'}</span>
+          {job?.hasApplied ? <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--user-primary)]"><CheckCircle2 className="h-3.5 w-3.5" />Applied</span> : null}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function DesktopJobPreview({ job, profileCompleted, onOpenCompany, onOpenDetail }) {
+  if (!job) {
+    return null;
+  }
+
+  const rawMatch = Number(job?.matchPercentage);
+  const hasMatch = profileCompleted && Number.isFinite(rawMatch) && rawMatch >= 0;
+  const match = hasMatch ? Math.max(0, Math.min(100, Math.round(rawMatch))) : null;
+  const status = String(job?.status || 'open').toLowerCase();
+
+  return (
+    <article className="user-workspace-surface sticky top-[88px] flex min-h-[620px] min-w-0 flex-col overflow-hidden">
+      <div className="border-b border-[var(--user-border)] p-6">
+        <div className="flex items-start gap-4">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md border border-[var(--user-border)] bg-[var(--user-surface-subtle)] text-[var(--user-primary)]">
+            {job?.company?.logo ? <img src={job.company.logo} alt="" className="h-full w-full object-cover" /> : <Building2 className="h-6 w-6" />}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-xl font-semibold text-[var(--user-text-strong)]">{job?.title || 'Untitled job'}</h2>
+              <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${statusBadgeClass(status)}`}>{formatJobStatus(status)}</span>
+            </div>
+            <button type="button" onClick={onOpenCompany} className="mt-1 text-sm font-medium text-[var(--user-primary)] hover:underline">
+              {job?.company?.name || 'Company'}
+            </button>
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-[var(--user-text-muted)]">
+              {job?.location ? <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4" />{job.location}</span> : null}
+              {job?.type ? <span>{job.type}</span> : null}
+              {job?.salary ? <span>{job.salary}</span> : null}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto p-6">
+        <section className="rounded-lg border border-[var(--user-border)] bg-[var(--user-surface-subtle)] p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--user-text-muted)]">Profile match</p>
+          <div className="mt-2 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-2xl font-semibold text-[var(--user-text-strong)]">{hasMatch ? `${match}%` : 'Not available'}</p>
+              <p className="mt-1 text-sm text-[var(--user-text-muted)]">
+                {hasMatch ? 'Based on your current profile and resume.' : 'Complete your profile to unlock match insights.'}
+              </p>
+            </div>
+            {job?.hasApplied ? <span className="inline-flex items-center gap-1.5 rounded-md bg-[var(--user-primary-soft)] px-3 py-2 text-sm font-semibold text-[var(--user-primary)]"><CheckCircle2 className="h-4 w-4" />Applied</span> : null}
+          </div>
+        </section>
+
+        <section className="mt-6">
+          <h3 className="user-workspace-section-title">About the role</h3>
+          <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[var(--user-text)]">{job?.description || 'No description has been provided yet.'}</p>
+        </section>
+      </div>
+
+      <footer className="flex items-center justify-end gap-3 border-t border-[var(--user-border)] bg-[var(--user-surface-subtle)] p-4">
+        <button type="button" onClick={onOpenCompany} className="min-h-10 rounded-md border border-[var(--user-border-strong)] bg-[var(--user-surface)] px-4 text-sm font-semibold text-[var(--user-text-strong)] hover:bg-[var(--user-surface-selected)]">View company</button>
+        <button type="button" onClick={onOpenDetail} className="user-workspace-primary-button px-5 text-sm font-semibold">View full details</button>
+      </footer>
+    </article>
   );
 }
 
@@ -781,7 +1049,7 @@ function FilterPopup({ popupRef, position, filters, onChange, onClose, onReset, 
       <div
         id="job-search-filters-modal"
         ref={popupRef}
-        className="absolute z-10 w-[min(92vw,420px)] rounded-[24px] border border-[#d6d3c9] bg-[#f8fbf6] p-5 shadow-2xl shadow-black/15 transition-colors duration-300 dark:border-[#444d57] dark:bg-[#202428] dark:shadow-black/40"
+        className="absolute z-10 w-[min(92vw,420px)] rounded-[24px] border border-[#d6d3c9] bg-[#f8fbf6] p-5 shadow-2xl shadow-black/15 transition-colors duration-300 dark:border-[#444d57] dark:bg-[#202428] dark:shadow-black/40 xl:rounded-lg xl:border-[var(--user-border)] xl:bg-[var(--user-surface)] xl:shadow-[var(--user-elevated-shadow)] xl:dark:border-[var(--user-border)] xl:dark:bg-[var(--user-surface)]"
         style={{ top: `${position.top}px`, left: `${position.left}px` }}
         role="dialog"
         aria-modal="true"
