@@ -69,7 +69,7 @@ export default function UserFeedbackPage({ user, onBack }) {
         <form onSubmit={handleSubmit} className="space-y-6 px-6 py-6 sm:px-8">
           <div>
             <label className="text-sm font-semibold text-[var(--user-text-strong)]">What kind of feedback is this?</label>
-            <div className="mt-3 grid gap-3 md:grid-cols-3">
+            <div className="mt-3 grid gap-3 xl:grid-cols-3">
               {FEEDBACK_TYPES.map((type) => {
                 const Icon = type.icon;
                 const isSelected = feedbackType === type.id;

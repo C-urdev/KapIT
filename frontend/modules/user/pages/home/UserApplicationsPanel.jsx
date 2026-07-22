@@ -26,7 +26,7 @@ const INTERVIEW_STATUSES = new Set(['interview', 'interviewing', 'interview sche
 const RESULT_STATUSES = new Set(['accepted', 'hired', 'offer', 'offered', 'rejected', 'declined', 'result']);
 
 export default function UserApplicationsPanel({ applications = [], embedded = false }) {
-  const safeApplications = Array.isArray(applications) ? applications : [];
+  const safeApplications = useMemo(() => (Array.isArray(applications) ? applications : []), [applications]);
   const columns = useMemo(
     () => APPLICATION_BOARD_COLUMNS.map((column) => ({
       ...column,
@@ -48,7 +48,7 @@ export default function UserApplicationsPanel({ applications = [], embedded = fa
         </div>
       ) : null}
 
-      <div className="grid gap-0 px-4 pb-5 pt-4 md:grid-cols-3 md:px-5" aria-label="Application board">
+      <div className="grid gap-4 px-4 pb-5 pt-4 xl:grid-cols-3 xl:gap-0 xl:px-5" aria-label="Application board">
         {columns.map((column, index) => (
           <ApplicationColumn
             key={column.key}
@@ -63,7 +63,7 @@ export default function UserApplicationsPanel({ applications = [], embedded = fa
 
 function ApplicationColumn({ column, isFirst }) {
   return (
-    <section className={`min-w-0 px-0 pb-4 md:px-4 md:pb-0 ${isFirst ? '' : 'md:border-l md:border-[var(--user-border)]'}`}>
+    <section className={`min-w-0 px-0 pb-1 xl:px-4 xl:pb-0 ${isFirst ? '' : 'xl:border-l xl:border-[var(--user-border)]'}`}>
       <div className="px-1 text-center">
         <h3 className="text-xs font-medium text-[var(--user-text-strong)]">
           {column.title} ({column.items.length})

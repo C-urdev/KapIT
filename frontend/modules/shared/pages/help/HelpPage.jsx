@@ -31,7 +31,7 @@ export default function HelpPage({ onBack }) {
         </div>
 
         <div className="space-y-6 px-6 pb-6 sm:px-8">
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 xl:grid-cols-3">
             <InfoCard
               icon={Mail}
               title="Email Support"
