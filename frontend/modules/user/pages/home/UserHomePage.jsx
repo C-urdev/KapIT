@@ -1206,7 +1206,7 @@ export default function UserHomePage({ user, userType, onOpenHelp: _onOpenHelp, 
       <div className="xl:flex xl:min-h-[100dvh] xl:items-start">
         {/* Global Desktop Sidebar */}
         <aside
-          className="hidden xl:block flex-shrink-0 border-r border-[var(--user-border)] bg-[var(--user-canvas)] transition-[width] duration-200 ease-out xl:sticky xl:top-0 xl:h-[100dvh] overflow-y-auto no-scrollbar z-[60]"
+          className="hidden xl:block flex-shrink-0 border-r border-[var(--user-border)] bg-[var(--user-appbar)] transition-[width] duration-200 ease-out xl:sticky xl:top-0 xl:h-[100dvh] overflow-y-auto no-scrollbar z-[60]"
           style={{ width: homeSidebarCollapsed ? '4.5rem' : '18rem' }}
         >
           <UserLeftSidebar

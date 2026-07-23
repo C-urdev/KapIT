@@ -44,7 +44,7 @@ export default function UserLeftSidebar({
   ];
 
   return (
-    <div className="flex h-full flex-col bg-[var(--user-canvas)]">
+    <div className="flex h-full flex-col bg-transparent">
       {/* Top Section: Logo & Toggle */}
       <div className={`flex items-center h-[68px] border-b border-[var(--user-border)] px-4 ${collapsed ? 'justify-center px-2' : 'justify-between'}`}>
         {!collapsed && (

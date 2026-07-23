@@ -180,6 +180,7 @@ html::-webkit-scrollbar-thumb {
   --user-surface: rgba(248, 251, 246, 0.76);
   --user-surface-subtle: rgba(238, 246, 238, 0.72);
   --user-surface-selected: rgba(238, 246, 238, 0.9);
+  --user-appbar: rgba(255, 255, 255, 0.7);
   --user-text-strong: #18211c;
   --user-text: #344e41;
   --user-text-muted: #5f6f52;
@@ -200,6 +201,7 @@ html.dark .user-dashboard-shell {
   --user-surface: rgba(34, 39, 43, 0.78);
   --user-surface-subtle: rgba(32, 36, 40, 0.76);
   --user-surface-selected: rgba(53, 60, 68, 0.72);
+  --user-appbar: rgba(34, 39, 43, 0.7);
   --user-text-strong: #ffffff;
   --user-text: #e2e6e9;
   --user-text-muted: #a8b1ba;
@@ -283,6 +285,7 @@ html.dark .user-dashboard-shell .user-workspace-surface {
     --user-surface: #ffffff;
     --user-surface-subtle: #f8faf9;
     --user-surface-selected: #edf4ef;
+    --user-appbar: #ffffff;
     --user-text-strong: #18211c;
     --user-text: #34413a;
     --user-text-muted: #66736c;
@@ -304,6 +307,7 @@ html.dark .user-dashboard-shell .user-workspace-surface {
     --user-surface: #121212;
     --user-surface-subtle: #18181b;
     --user-surface-selected: #27272a;
+    --user-appbar: rgba(34, 39, 43, 0.7);
     --user-text-strong: #fafafa;
     --user-text: #e4e4e7;
     --user-text-muted: #a1a1aa;
