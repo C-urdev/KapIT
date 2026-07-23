@@ -14,6 +14,7 @@ import {
   TermsAndConditionsModal,
   UserAccountSettingsModal,
   UserApplicationsPanel,
+  UserCalendarPage,
   UserApplicationsSettingsPage,
   UserFeedbackPage,
   UserFaqModal,
@@ -62,7 +63,7 @@ const USER_NAV_QUERY_KEY = 'tab';
 const FEED_PAGE_SIZE = 10;
 const USER_PROFILE_QUERY_KEY = 'profileId';
 const USER_JOB_QUERY_KEY = 'jobId';
-const USER_NAV_TABS = new Set(['home', 'jobs', 'job-detail', 'pre-assessment', 'projects', 'search', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'resume-viewer', 'help', 'feedback', 'tips', 'verified', 'settings', 'public-profile', 'settings-account', 'settings-career', 'settings-resume-ats', 'settings-notifications', 'settings-saved-jobs', 'settings-applications', 'privacy-settings', 'privacy-change-password', 'privacy-comments', 'privacy-mentions', 'privacy-following', 'privacy-likes']);
+const USER_NAV_TABS = new Set(['home', 'jobs', 'job-detail', 'pre-assessment', 'projects', 'search', 'messages', 'notifications', 'calendar', 'saved-jobs', 'applications', 'my-profile', 'resume-viewer', 'help', 'feedback', 'tips', 'verified', 'settings', 'public-profile', 'settings-account', 'settings-career', 'settings-resume-ats', 'settings-notifications', 'settings-saved-jobs', 'settings-applications', 'privacy-settings', 'privacy-change-password', 'privacy-comments', 'privacy-mentions', 'privacy-following', 'privacy-likes']);
 const resolveProfileId = (value) => {
   const normalized = String(value || '').trim();
   return normalized || '';
@@ -1215,7 +1216,6 @@ export default function UserHomePage({ user, userType, onOpenHelp: _onOpenHelp, 
             collapsed={homeSidebarCollapsed}
             onToggleCollapsed={() => setHomeSidebarCollapsed((current) => !current)}
             onOpenMyProfile={() => updateActiveNav('my-profile')}
-            onOpenSettings={() => updateActiveNav('settings')}
             onOpenHelp={() => updateActiveNav('help', { preserveSettingsReturn: true })}
             onOpenFeedback={() => updateActiveNav('feedback')}
             onOpenProjects={() => updateActiveNav('projects')}
@@ -1441,6 +1441,11 @@ export default function UserHomePage({ user, userType, onOpenHelp: _onOpenHelp, 
         {activeNav === 'notifications' && (
           <Suspense fallback={lazyViewFallback}>
             <UserNotificationsPage user={user} onReadAll={() => setUnreadNotificationCount(0)} />
+          </Suspense>
+        )}
+        {activeNav === 'calendar' && (
+          <Suspense fallback={lazyViewFallback}>
+            <UserCalendarPage user={user} />
           </Suspense>
         )}
         {activeNav === 'help' && (

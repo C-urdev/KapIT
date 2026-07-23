@@ -151,6 +151,7 @@ export default function UserNavbar({
             <UserDesktopNavbar
               activeNav={activeNav}
               setActiveNav={setActiveNav}
+              user={user}
               hideProfileControl={hideDesktopProfileControl}
               searchRef={searchRef}
               searchQuery={searchQuery}
@@ -163,7 +164,9 @@ export default function UserNavbar({
               onSearchResultSelect={handleSearchResultSelect}
               onSearchSubmit={handleSearchSubmit}
               onOpenPremium={onOpenPremium}
+              onOpenSettings={onOpenSettings}
               onOpenNotifications={() => setActiveNav?.('notifications')}
+              onOpenMyProfile={onOpenMyProfile}
               unreadNotificationCount={unreadNotificationCount}
             />
           </div>

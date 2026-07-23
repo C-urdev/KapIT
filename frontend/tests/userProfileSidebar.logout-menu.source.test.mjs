@@ -9,7 +9,7 @@ const homeSource = readSource('modules/user/pages/home/UserHomePage.jsx');
 const sidebarSource = readSource('modules/user/components/UserLeftSidebar.jsx');
 const profileSidebarSource = readSource('modules/user/components/UserHomeProfileSidebar.jsx');
 
-test('desktop profile sidebar opens a centered red logout confirmation from the chevron action', () => {
+test('desktop profile sidebar opens a logout action before the centered confirmation', () => {
   const homeSidebarCall = homeSource.match(/<UserLeftSidebar[\s\S]*?\/>/)?.[0] || '';
   const profileSidebarCall = sidebarSource.match(/<UserHomeProfileSidebar[\s\S]*?\/>/)?.[0] || '';
 
@@ -19,8 +19,13 @@ test('desktop profile sidebar opens a centered red logout confirmation from the 
   assert.match(profileSidebarCall, /onLogout=\{onLogout\}/);
 
   assert.doesNotMatch(profileSidebarSource, /LogOut/);
+  assert.match(profileSidebarSource, /profileActionsOpen/);
   assert.match(profileSidebarSource, /logoutDialogOpen/);
   assert.match(profileSidebarSource, /aria-label="Open profile actions"/);
+  assert.match(profileSidebarSource, /aria-haspopup="menu"/);
+  assert.match(profileSidebarSource, /role="menu"/);
+  assert.match(profileSidebarSource, /role="menuitem"/);
+  assert.match(profileSidebarSource, /handleOpenLogoutDialog/);
   assert.match(profileSidebarSource, /role="dialog"/);
   assert.match(profileSidebarSource, /aria-modal="true"/);
   assert.match(profileSidebarSource, /fixed inset-0/);

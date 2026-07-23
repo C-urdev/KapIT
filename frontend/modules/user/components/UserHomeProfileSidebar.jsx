@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ChevronsUpDown, CheckCircle2 } from 'lucide-react';
 
 const PROGRESS_SEGMENTS = 28;
@@ -11,15 +11,18 @@ export default function UserHomeProfileSidebar({ user, userType, onOpenMyProfile
   const completedSegmentCount = Math.round((profileCompletion / 100) * PROGRESS_SEGMENTS);
   const profileSubLabel = user?.headline || user?.desiredJob || 'Open profile';
   const isComplete = profileCompletion >= 100;
+  const actionsRef = useRef(null);
+  const [profileActionsOpen, setProfileActionsOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   useEffect(() => {
-    if (!logoutDialogOpen || typeof document === 'undefined') {
+    if ((!profileActionsOpen && !logoutDialogOpen) || typeof document === 'undefined') {
       return undefined;
     }
 
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
+        setProfileActionsOpen(false);
         setLogoutDialogOpen(false);
       }
     };
@@ -29,11 +32,36 @@ export default function UserHomeProfileSidebar({ user, userType, onOpenMyProfile
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [logoutDialogOpen]);
+  }, [profileActionsOpen, logoutDialogOpen]);
+
+  useEffect(() => {
+    if (!profileActionsOpen || typeof document === 'undefined') {
+      return undefined;
+    }
+
+    const handlePointerDown = (event) => {
+      if (actionsRef.current && !actionsRef.current.contains(event.target)) {
+        setProfileActionsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+    };
+  }, [profileActionsOpen]);
 
   const handleLogout = () => {
     setLogoutDialogOpen(false);
     onLogout?.();
+  };
+
+  const handleOpenLogoutDialog = () => {
+    setProfileActionsOpen(false);
+    setLogoutDialogOpen(true);
   };
 
   return (
@@ -81,7 +109,8 @@ export default function UserHomeProfileSidebar({ user, userType, onOpenMyProfile
 
       {/* User Profile Card */}
       <section
-        className="rounded-xl border border-[var(--user-border)] bg-[var(--user-surface)] shadow-[0_4px_16px_rgba(25,42,28,0.06)]"
+        ref={actionsRef}
+        className="relative rounded-xl border border-[var(--user-border)] bg-[var(--user-surface)] shadow-[0_4px_16px_rgba(25,42,28,0.06)]"
         aria-label="User profile"
       >
         {logoutDialogOpen ? (
@@ -120,6 +149,23 @@ export default function UserHomeProfileSidebar({ user, userType, onOpenMyProfile
           </div>
         ) : null}
 
+        {profileActionsOpen ? (
+          <div
+            role="menu"
+            aria-label="Profile actions"
+            className="absolute bottom-[calc(100%+0.5rem)] right-1 z-30 w-40 rounded-xl border border-[var(--user-border)] bg-[var(--user-surface)] p-1.5 text-left shadow-[0_18px_42px_rgba(15,23,18,0.2)]"
+          >
+            <button
+              type="button"
+              role="menuitem"
+              onClick={handleOpenLogoutDialog}
+              className="flex h-10 w-full items-center rounded-lg px-3 text-[13px] font-semibold text-[#dc2626] transition-[background-color,color,transform] duration-150 ease-out hover:bg-[#dc2626]/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dc2626]/35"
+            >
+              Log out
+            </button>
+          </div>
+        ) : null}
+
         <div className="flex items-center overflow-hidden rounded-xl">
           <button
             type="button"
@@ -144,14 +190,14 @@ export default function UserHomeProfileSidebar({ user, userType, onOpenMyProfile
 
           <button
             type="button"
-            onClick={() => setLogoutDialogOpen(true)}
+            onClick={() => setProfileActionsOpen((current) => !current)}
             aria-label="Open profile actions"
-            aria-haspopup="dialog"
-            aria-expanded={logoutDialogOpen}
+            aria-haspopup="menu"
+            aria-expanded={profileActionsOpen}
             className="mr-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[var(--user-text-muted)] transition-[background-color,color,transform] duration-150 ease-out hover:bg-[var(--user-surface-selected)] hover:text-[var(--user-text-strong)] active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--user-primary)]/45"
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
-            <ChevronsUpDown className={`h-3.5 w-3.5 transition-[color,transform] duration-150 ease-out ${logoutDialogOpen ? 'rotate-180 text-[var(--user-text-strong)]' : ''}`} />
+            <ChevronsUpDown className={`h-3.5 w-3.5 transition-[color,transform] duration-150 ease-out ${profileActionsOpen ? 'rotate-180 text-[var(--user-text-strong)]' : ''}`} />
           </button>
         </div>
       </section>

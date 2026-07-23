@@ -7,6 +7,7 @@ export const UserProjectsPage = lazy(() => import('@userPages/projects/UserProje
 export const UserSearchResultsPage = lazy(() => import('@userPages/search/UserSearchResultsPage'));
 export const UserMessagesPage = lazy(() => import('@userPages/messages/UserMessagesPage'));
 export const UserNotificationsPage = lazy(() => import('@userPages/notifications/UserNotificationsPage'));
+export const UserCalendarPage = lazy(() => import('@userPages/calendar/UserCalendarPage'));
 export const UserFeedbackPage = lazy(() => import('@userPages/feedback/UserFeedbackPage'));
 export const PublicProfilePage = lazy(() => import('@sharedPages/public-profile/PublicProfilePage'));
 export const HelpPage = lazy(() => import('@sharedPages/help/HelpPage'));

@@ -3,11 +3,14 @@ import {
   Bell,
   Crown,
   Search,
+  Settings,
+  UserRound,
 } from 'lucide-react';
 import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
 
 export default function UserDesktopNavbar({
   hideProfileControl = false,
+  user,
   searchRef,
   searchQuery,
   setSearchQuery,
@@ -19,9 +22,15 @@ export default function UserDesktopNavbar({
   onSearchResultSelect,
   onSearchSubmit,
   onOpenPremium,
+  onOpenSettings,
   onOpenNotifications,
+  onOpenMyProfile,
   unreadNotificationCount = 0,
 }) {
+  const profileImage = user?.profileImage || user?.avatarUrl || '';
+  const displayName = user?.name || user?.fullName || user?.username || 'User profile';
+  const initial = String(displayName || 'U').trim().charAt(0).toUpperCase() || 'U';
+
   return (
     <div className="hidden h-[68px] min-w-0 items-center justify-between gap-4 xl:flex 2xl:gap-6">
       {/* Search */}
@@ -110,12 +119,33 @@ export default function UserDesktopNavbar({
             <span>Buy Premium</span>
           </button>
           <HeaderIconButton
+            icon={Settings}
+            label="Settings"
+            ariaLabel="Open settings"
+            onClick={onOpenSettings}
+          />
+          <HeaderIconButton
             icon={Bell}
             label="Notifications"
             ariaLabel="Open notifications"
             onClick={onOpenNotifications}
             badgeCount={unreadNotificationCount}
           />
+          <button
+            type="button"
+            onClick={onOpenMyProfile}
+            aria-label="Open user profile"
+            title="User profile"
+            className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-md border border-transparent text-[var(--user-text-muted)] transition-[background-color,border-color,color,transform] duration-150 hover:border-[var(--user-border)] hover:bg-[var(--user-surface-subtle)] hover:text-[var(--user-text-strong)] active:scale-[0.96]"
+          >
+            {profileImage ? (
+              <img src={profileImage} alt={`${displayName} profile`} className="h-8 w-8 rounded-md object-cover" />
+            ) : (
+              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--user-primary)] text-sm font-semibold text-white">
+                {initial || <UserRound className="h-[18px] w-[18px]" />}
+              </span>
+            )}
+          </button>
         </div>
       ) : null}
     </div>

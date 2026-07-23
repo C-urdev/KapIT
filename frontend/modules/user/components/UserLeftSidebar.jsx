@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Briefcase,
+  CalendarDays,
   FileCheck2,
   FolderKanban,
   Home,
@@ -9,7 +10,6 @@ import {
   MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
-  Settings,
 } from 'lucide-react';
 import UserHomeProfileSidebar from '@userComponents/UserHomeProfileSidebar';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
@@ -28,7 +28,6 @@ export default function UserLeftSidebar({
   collapsed,
   onToggleCollapsed,
   onOpenMyProfile,
-  onOpenSettings,
   onOpenHelp,
   onOpenFeedback,
   activeNav,
@@ -41,6 +40,7 @@ export default function UserLeftSidebar({
     { id: 'applications', label: 'Applications', icon: FileCheck2 },
     { id: 'projects', label: 'Projects', icon: FolderKanban },
     { id: 'messages', label: 'Messages', icon: MessageCircle },
+    { id: 'calendar', label: 'Calendar', icon: CalendarDays },
   ];
 
   return (
@@ -100,15 +100,8 @@ export default function UserLeftSidebar({
 
         <div className="mt-10 space-y-1">
           {!collapsed ? (
-            <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--user-text-muted)]">Settings</p>
+            <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--user-text-muted)]">More</p>
           ) : null}
-          <SidebarUtilityButton
-            label="Settings"
-            icon={Settings}
-            collapsed={collapsed}
-            active={activeNav === 'settings'}
-            onClick={onOpenSettings}
-          />
           <SidebarUtilityButton
             label="Help Center"
             icon={LifeBuoy}
