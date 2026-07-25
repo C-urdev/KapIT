@@ -18,6 +18,8 @@ import {
 const CUSTOM_JOB_VALUE = 'Other';
 const JOB_TYPE_OPTIONS = ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship'];
 const EXPERIENCE_LEVEL_OPTIONS = ['Intern', 'Junior', 'Mid', 'Senior'];
+const ATS_OPTIONS = ['Not using an ATS', 'Greenhouse', 'Lever', 'Workday', 'Ashby', 'BambooHR', 'SmartRecruiters', 'Other'];
+const HIRING_TIMELINE_OPTIONS = ['ASAP', '1-2 weeks', 'This month', 'This quarter', 'Flexible'];
 const WORK_PREFERENCE_OPTIONS = [
   { value: 'fully-remote', label: 'Fully remote' },
   { value: 'asynchronous-remote', label: 'Asynchronous remote' },
@@ -276,6 +278,10 @@ export default function CompanyPostJobPage() {
       workPreference: String(form.workPreference || '').trim().toLowerCase(),
       applicationDeadline: String(form.applicationDeadline || '').trim(),
       hiresNeeded: Math.max(1, Math.min(50, Number(form.hiresNeeded || 1) || 1)),
+      ats: String(form.ats || '').trim(),
+      hiringTimeline: String(form.hiringTimeline || '').trim(),
+      mustHaves: String(form.mustHaves || '').trim(),
+      dealbreakers: String(form.dealbreakers || '').trim(),
       skills: formatSkills(form.skills),
       preAssessment: {
         enabled: Boolean(form.preAssessmentEnabled),
@@ -515,7 +521,36 @@ export default function CompanyPostJobPage() {
               className="field"
             />
           </Field>
+          <Field label="Hiring timeline (optional)">
+            <select value={form.hiringTimeline || ''} onChange={(e) => setForm((prev) => ({ ...prev, hiringTimeline: e.target.value }))} className="field">
+              <option value="">Select timeline</option>
+              {HIRING_TIMELINE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+            </select>
+          </Field>
         </div>
+
+        <section className="rounded-2xl border border-[#bfd0af] dark:border-[#444d57] bg-[#f5f9f2] dark:bg-[#1b2025] p-4 space-y-4">
+          <div>
+            <h3 className="text-base font-bold text-[#2f4d35] dark:text-white">Hiring workflow</h3>
+            <p className="text-xs text-[#4f6654] dark:text-[#b9c1c8]">Role-specific details for matching and recruiter handoff.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="ATS used (optional)">
+              <select value={form.ats || ''} onChange={(e) => setForm((prev) => ({ ...prev, ats: e.target.value }))} className="field">
+                <option value="">Select ATS</option>
+                {ATS_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+              </select>
+            </Field>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Must-haves (optional)">
+              <textarea value={form.mustHaves || ''} onChange={(e) => setForm((prev) => ({ ...prev, mustHaves: e.target.value }))} className="field min-h-24 resize-y" placeholder="Required skills, certifications, tools, or experience..." />
+            </Field>
+            <Field label="Dealbreakers (optional)">
+              <textarea value={form.dealbreakers || ''} onChange={(e) => setForm((prev) => ({ ...prev, dealbreakers: e.target.value }))} className="field min-h-24 resize-y" placeholder="Constraints that would make a candidate unsuitable..." />
+            </Field>
+          </div>
+        </section>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Skills">

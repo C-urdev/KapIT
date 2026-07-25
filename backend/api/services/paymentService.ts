@@ -1,7 +1,7 @@
 ﻿const crypto = require('crypto');
 const { getJobPostPlanById, JOB_POST_PLANS } = require('./jobPostingPlans');
 const { getOrCreateCompanyForUserId, serializeJobRow } = require('./companyService');
-const { createPublishedJobForCompany, normalizePreAssessmentDraft, publishDraftJobForCompany } = require('./jobService');
+const { createPublishedJobForCompany, normalizeHiringWorkflowDraft, normalizePreAssessmentDraft, publishDraftJobForCompany } = require('./jobService');
 const { getRedisClient } = require('../config/redis');
 const { logger } = require('../config/logger');
 const {
@@ -415,6 +415,7 @@ const normalizeDraftPayload = (draft) => ({
   type: String(draft?.type || '').trim(),
   applicationDeadline: String(draft?.applicationDeadline || '').trim(),
   skills: Array.isArray(draft?.skills) ? draft.skills.map((item) => String(item).trim()).filter(Boolean) : [],
+  ...normalizeHiringWorkflowDraft(draft),
   preAssessment: normalizePreAssessmentDraft(draft),
 });
 

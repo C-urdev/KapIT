@@ -158,7 +158,7 @@ const getCompanyProfile = async (req, res) => {
       [req.user.id]
     );
     const userResult = await client.query(
-      `SELECT email, phone, hiring_for
+      `SELECT email, name, phone, hiring_for
        FROM users
        WHERE id = $1
        LIMIT 1`,
@@ -190,8 +190,10 @@ const getCompanyProfile = async (req, res) => {
       description: profile?.description || company.description || '',
       location: profile?.location || company.location || '',
       logoUrl: profile?.logo_url || company.logo || '',
+      contactName: account.name || '',
       contactEmail: account.email || '',
       phoneNumber: account.phone || '',
+      hiringFor: account.hiring_for || '',
       servicesNeeded: String(account.hiring_for || '')
         .split(',')
         .map((item) => item.trim())
@@ -1388,6 +1390,8 @@ const updateCompanyOnboardingProfile = async (req, res) => {
       body,
     });
     const companyName = String(body.companyName || '').trim();
+    const contactName = String(body.contactName || '').trim();
+    const contactEmail = String(body.contactEmail || currentResult.rows[0]?.email || '').trim();
     const industry = String(body.industry || '').trim();
     const companySize = String(body.companySize || '').trim();
     const location = String(body.location || '').trim();
@@ -1396,7 +1400,7 @@ const updateCompanyOnboardingProfile = async (req, res) => {
     const logoUrl = body.logoUrl ? String(body.logoUrl) : '';
     const phoneNumber = String(body.phoneNumber || '').trim();
 
-    if (!companyName || !industry || !companySize || !location) {
+    if (!contactName || !contactEmail || !companyName || !industry || !companySize || !location) {
       await client.query('ROLLBACK');
       return res.status(400).json({ success: false, message: 'Please fill in the required fields.' });
     }
@@ -1463,9 +1467,10 @@ const updateCompanyOnboardingProfile = async (req, res) => {
            profile_image = CASE WHEN $7 = '' THEN profile_image ELSE $7 END,
            phone = $8,
            hiring_for = $9,
+           name = $10,
            account_type = COALESCE(account_type, 'company'),
            profile_completed = true
-       WHERE id = $10`,
+       WHERE id = $11`,
       [
         companyName,
         industry,
@@ -1476,6 +1481,7 @@ const updateCompanyOnboardingProfile = async (req, res) => {
         logoUrl,
         phoneNumber || null,
         servicesNeeded.join(', '),
+        contactName,
         req.user.id,
       ]
     );

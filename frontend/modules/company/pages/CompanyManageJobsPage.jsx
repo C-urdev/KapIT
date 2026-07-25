@@ -20,6 +20,17 @@ const extractPreAssessment = (job) => {
   };
 };
 
+const extractHiringWorkflow = (job) => {
+  const payload = job?.draft_payload && typeof job.draft_payload === 'object' ? job.draft_payload : {};
+  const workflow = payload?.hiringWorkflow && typeof payload.hiringWorkflow === 'object' ? payload.hiringWorkflow : {};
+  return {
+    ats: String(workflow.ats || '').trim(),
+    hiringTimeline: String(workflow.hiringTimeline || '').trim(),
+    mustHaves: String(workflow.mustHaves || '').trim(),
+    dealbreakers: String(workflow.dealbreakers || '').trim(),
+  };
+};
+
 export default function CompanyManageJobsPage() {
   const { jobs, loading, error, refetch } = useCompanyJobs();
   const [actionJobId, setActionJobId] = useState(null);
@@ -107,6 +118,7 @@ export default function CompanyManageJobsPage() {
         location: String(job?.location || '').trim(),
         type: String(job?.type || '').trim(),
         skills: formatSkills(job?.skills),
+        ...extractHiringWorkflow(job),
         preAssessment: extractPreAssessment(job),
       };
 
@@ -146,6 +158,7 @@ export default function CompanyManageJobsPage() {
         location: String(job?.location || '').trim(),
         type: String(job?.type || '').trim(),
         skills: formatSkills(job?.skills),
+        ...extractHiringWorkflow(job),
         preAssessment: extractPreAssessment(job),
       };
 

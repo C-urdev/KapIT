@@ -36,7 +36,15 @@ const normalizePreAssessmentDraft = (draft) => {
   };
 };
 
+const normalizeHiringWorkflowDraft = (draft) => ({
+  ats: String(draft?.ats || '').trim().slice(0, 160),
+  hiringTimeline: String(draft?.hiringTimeline || '').trim().slice(0, 160),
+  mustHaves: String(draft?.mustHaves || '').trim().slice(0, 2000),
+  dealbreakers: String(draft?.dealbreakers || '').trim().slice(0, 2000),
+});
+
 const buildJobDraftPayload = (draft) => ({
+  hiringWorkflow: normalizeHiringWorkflowDraft(draft),
   preAssessment: normalizePreAssessmentDraft(draft),
 });
 
@@ -241,6 +249,7 @@ const createPublishedJobForCompany = async (client, companyId, draft, plan, paym
 
 module.exports = {
   normalizePreAssessmentDraft,
+  normalizeHiringWorkflowDraft,
   buildJobDraftPayload,
   createDraftJobForCompany,
   publishDraftJobForCompany,

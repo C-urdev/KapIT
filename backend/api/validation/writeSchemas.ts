@@ -67,6 +67,10 @@ const draftSchema = z
     workPreference: z.enum(['fully-remote', 'asynchronous-remote', 'hybrid', 'on-site']).or(z.literal('')).optional().default(''),
     applicationDeadline: z.coerce.string().trim().max(40).optional().default(''),
     hiresNeeded: z.coerce.number().int().min(1).max(50).optional().default(1),
+    ats: z.coerce.string().trim().max(160).optional().default(''),
+    hiringTimeline: z.coerce.string().trim().max(160).optional().default(''),
+    mustHaves: z.coerce.string().trim().max(2000).optional().default(''),
+    dealbreakers: z.coerce.string().trim().max(2000).optional().default(''),
     skills: z.array(z.coerce.string().trim().min(1).max(60)).max(50).optional().default([]),
     preAssessment: z
       .object({

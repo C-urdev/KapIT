@@ -28,7 +28,12 @@ const sanitizeDraft = (draft) => ({
   location: String(draft?.location || '').trim(),
   type: String(draft?.type || '').trim(),
   applicationDeadline: String(draft?.applicationDeadline || '').trim(),
+  ats: String(draft?.ats || '').trim(),
+  hiringTimeline: String(draft?.hiringTimeline || '').trim(),
+  mustHaves: String(draft?.mustHaves || '').trim(),
+  dealbreakers: String(draft?.dealbreakers || '').trim(),
   skills: Array.isArray(draft?.skills) ? draft.skills : [],
+  preAssessment: draft?.preAssessment && typeof draft.preAssessment === 'object' ? draft.preAssessment : undefined,
 });
 
 const notifyOpener = (type, payload = {}) => {
