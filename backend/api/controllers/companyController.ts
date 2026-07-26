@@ -134,6 +134,73 @@ const upsertApplicantAiScore = async (client, { applicationId, jobId, candidateU
   );
 };
 
+const ANALYTICS_DEFAULT_DAYS = 30;
+const ANALYTICS_ALLOWED_DAYS = new Set([7, 30, 90]);
+
+const normalizeAnalyticsDate = (value, { endOfDay = false } = {}) => {
+  const raw = String(value || '').trim();
+  if (!raw) {
+    return null;
+  }
+
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  if (endOfDay) {
+    date.setHours(23, 59, 59, 999);
+  } else {
+    date.setHours(0, 0, 0, 0);
+  }
+
+  return date;
+};
+
+const shiftDateByDays = (value, days) => {
+  const next = new Date(value.getTime());
+  next.setDate(next.getDate() + days);
+  return next;
+};
+
+const normalizeAnalyticsRange = (query = {}) => {
+  const explicitStart = normalizeAnalyticsDate(query.start);
+  const explicitEnd = normalizeAnalyticsDate(query.end, { endOfDay: true });
+
+  if (explicitStart && explicitEnd && explicitStart <= explicitEnd) {
+    const durationDays = Math.max(1, Math.floor((explicitEnd.getTime() - explicitStart.getTime()) / 86400000) + 1);
+    const previousEnd = new Date(explicitStart.getTime() - 1);
+    const previousStart = shiftDateByDays(explicitStart, -durationDays);
+
+    return {
+      days: durationDays,
+      start: explicitStart,
+      end: explicitEnd,
+      previousStart,
+      previousEnd,
+      mode: 'custom',
+    };
+  }
+
+  const requestedDays = Number(query.days || ANALYTICS_DEFAULT_DAYS);
+  const days = ANALYTICS_ALLOWED_DAYS.has(requestedDays) ? requestedDays : ANALYTICS_DEFAULT_DAYS;
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  const start = shiftDateByDays(end, -(days - 1));
+  start.setHours(0, 0, 0, 0);
+  const previousEnd = new Date(start.getTime() - 1);
+  const previousStart = shiftDateByDays(start, -days);
+
+  return {
+    days,
+    start,
+    end,
+    previousStart,
+    previousEnd,
+    mode: 'preset',
+  };
+};
+
 // GET /api/company/profile
 const getCompanyProfile = async (req, res) => {
   let client;
@@ -1173,6 +1240,7 @@ const getAnalytics = async (req, res) => {
     await ensureHiringSchemaReady();
     client = await pool.connect();
     const company = await getOrCreateCompanyForUserId(client, req.user.id);
+    const range = normalizeAnalyticsRange(req.query || {});
 
     const jobsResult = await client.query('SELECT COUNT(*)::int AS count FROM jobs WHERE company_id = $1', [company.id]);
     const jobsByStatusResult = await client.query(
@@ -1198,22 +1266,108 @@ const getAnalytics = async (req, res) => {
        GROUP BY a.status`,
       [company.id]
     );
+    const rangeApplicantsResult = await client.query(
+      `SELECT COUNT(*)::int AS count
+       FROM applications a
+       JOIN jobs j ON j.id = a.job_id
+       WHERE j.company_id = $1
+         AND a.created_at >= $2
+         AND a.created_at <= $3`,
+      [company.id, range.start, range.end]
+    );
+    const previousApplicantsResult = await client.query(
+      `SELECT COUNT(*)::int AS count
+       FROM applications a
+       JOIN jobs j ON j.id = a.job_id
+       WHERE j.company_id = $1
+         AND a.created_at >= $2
+         AND a.created_at <= $3`,
+      [company.id, range.previousStart, range.previousEnd]
+    );
+    const applicationsSeriesResult = await client.query(
+      `WITH series AS (
+         SELECT generate_series(date_trunc('day', $2::timestamp), date_trunc('day', $3::timestamp), interval '1 day') AS bucket
+       ),
+       counts AS (
+         SELECT date_trunc('day', a.created_at) AS bucket, COUNT(*)::int AS count
+         FROM applications a
+         JOIN jobs j ON j.id = a.job_id
+         WHERE j.company_id = $1
+           AND a.created_at >= $2
+           AND a.created_at <= $3
+         GROUP BY 1
+       )
+       SELECT TO_CHAR(series.bucket, 'YYYY-MM-DD') AS day,
+              COALESCE(counts.count, 0)::int AS count
+       FROM series
+       LEFT JOIN counts ON counts.bucket = series.bucket
+       ORDER BY series.bucket ASC`,
+      [company.id, range.start, range.end]
+    );
+    const averageDaysOpenResult = await client.query(
+      `SELECT AVG(EXTRACT(EPOCH FROM (COALESCE(closed_at, hired_at) - created_at)) / 86400.0) AS avg_days_open
+       FROM jobs
+       WHERE company_id = $1
+         AND created_at IS NOT NULL
+         AND COALESCE(closed_at, hired_at) IS NOT NULL
+         AND COALESCE(closed_at, hired_at) >= $2
+         AND COALESCE(closed_at, hired_at) <= $3`,
+      [company.id, range.start, range.end]
+    );
+
+    const jobsByStatus = jobsByStatusResult.rows.reduce((acc, row) => {
+      acc[row.status] = Number(row.count || 0);
+      return acc;
+    }, {});
 
     const byStatus = {};
     statusResult.rows.forEach((row) => {
-      byStatus[row.status] = row.count;
+      byStatus[row.status] = Number(row.count || 0);
     });
+
+    const totalJobs = Number(jobsResult.rows[0]?.count || 0);
+    const totalApplicants = Number(appsResult.rows[0]?.count || 0);
+    const openJobs = Number(jobsByStatus.open || 0);
+    const draftJobs = Number(jobsByStatus.draft || 0);
+    const filledJobs = Number(jobsByStatus.filled || 0);
+    const closedJobs = Number(jobsByStatus.closed || 0);
+    const newApplicantsInRange = Number(rangeApplicantsResult.rows[0]?.count || 0);
+    const previousApplicantsInRange = Number(previousApplicantsResult.rows[0]?.count || 0);
+    const applicantsAwaitingReview = Number(byStatus.pending || 0);
+    const averageApplicantsPerOpenJob = openJobs > 0 ? Number((totalApplicants / openJobs).toFixed(1)) : 0;
+    const averageDaysOpenRaw = averageDaysOpenResult.rows[0]?.avg_days_open;
+    const averageDaysOpen = averageDaysOpenRaw == null ? null : Number(Number(averageDaysOpenRaw).toFixed(1));
 
     return res.json({
       success: true,
       analytics: {
-        totalJobs: jobsResult.rows[0]?.count || 0,
-        totalApplicants: appsResult.rows[0]?.count || 0,
-        jobsByStatus: jobsByStatusResult.rows.reduce((acc, row) => {
-          acc[row.status] = row.count;
-          return acc;
-        }, {}),
+        totalJobs,
+        openJobs,
+        draftJobs,
+        filledJobs,
+        closedJobs,
+        totalApplicants,
+        newApplicantsInRange,
+        applicantsAwaitingReview,
+        averageApplicantsPerOpenJob,
+        averageDaysOpen,
+        jobsByStatus,
         applicantsByStatus: byStatus,
+        applicationsOverTime: applicationsSeriesResult.rows.map((row) => ({
+          day: row.day,
+          count: Number(row.count || 0),
+        })),
+        previousPeriod: {
+          newApplicantsInRange: previousApplicantsInRange,
+        },
+        range: {
+          mode: range.mode,
+          days: range.days,
+          start: range.start.toISOString(),
+          end: range.end.toISOString(),
+          previousStart: range.previousStart.toISOString(),
+          previousEnd: range.previousEnd.toISOString(),
+        },
       },
     });
   } catch (error) {
@@ -1400,7 +1554,7 @@ const updateCompanyOnboardingProfile = async (req, res) => {
     const logoUrl = body.logoUrl ? String(body.logoUrl) : '';
     const phoneNumber = String(body.phoneNumber || '').trim();
 
-    if (!contactName || !contactEmail || !companyName || !industry || !companySize || !location) {
+    if (!contactEmail || !companyName || !industry || !companySize || !location) {
       await client.query('ROLLBACK');
       return res.status(400).json({ success: false, message: 'Please fill in the required fields.' });
     }
@@ -1465,9 +1619,9 @@ const updateCompanyOnboardingProfile = async (req, res) => {
            bio = $5,
            address = $6,
            profile_image = CASE WHEN $7 = '' THEN profile_image ELSE $7 END,
-           phone = $8,
+           phone = COALESCE($8, phone),
            hiring_for = $9,
-           name = $10,
+           name = COALESCE($10, name),
            account_type = COALESCE(account_type, 'company'),
            profile_completed = true
        WHERE id = $11`,
@@ -1481,7 +1635,7 @@ const updateCompanyOnboardingProfile = async (req, res) => {
         logoUrl,
         phoneNumber || null,
         servicesNeeded.join(', '),
-        contactName,
+        contactName || null,
         req.user.id,
       ]
     );

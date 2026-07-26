@@ -71,9 +71,9 @@ const createPoolMock = () => {
         state.user.bio = params[4] || '';
         state.user.address = params[5] || '';
         state.user.profile_image = params[6] || '';
-        state.user.phone = params[7] || '';
+        if (params[7] != null) state.user.phone = params[7];
         state.user.hiring_for = params[8] || '';
-        state.user.name = params[9] || '';
+        if (params[9] != null) state.user.name = params[9];
         state.user.profile_completed = true;
         return { rows: [], rowCount: 1 };
       }
@@ -129,6 +129,21 @@ test('company profile onboarding persists reusable company profile fields', asyn
     location: 'Manila, Metro Manila, Philippines',
     logo_url: null,
   });
+});
+
+test('company profile onboarding accepts omitted contact name and phone', async () => {
+  const { app, poolMock } = loadApp();
+  poolMock.__state.user.name = 'Existing Owner';
+  poolMock.__state.user.phone = '09123456789';
+  const { contactName: _contactName, phoneNumber: _phoneNumber, ...payload } = validPayload();
+
+  const response = await request(app).put('/api/company/onboarding/profile').set('Authorization', `Bearer ${companyToken()}`).set('x-csrf-token', 'csrf-test-token').send(payload);
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.success, true);
+  assert.equal(poolMock.__state.user.name, 'Existing Owner');
+  assert.equal(poolMock.__state.user.phone, '09123456789');
+  assert.equal(poolMock.__state.user.profile_completed, true);
 });
 
 test('company profile onboarding rejects missing company profile requirements', async () => {
