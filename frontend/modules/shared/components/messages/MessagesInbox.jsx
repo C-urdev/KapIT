@@ -458,7 +458,7 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
   }
 
   return (
-    <div className={`mx-auto flex h-full min-h-0 w-full ${isCompanyVariant ? 'max-w-[min(100%,1560px)] px-0 xl:px-4' : 'user-messages-workspace max-w-[min(100%,1420px)] px-0'} justify-center xl:transition-all xl:duration-300 xl:ease-out ${introReady ? 'xl:translate-y-0 xl:opacity-100' : 'xl:translate-y-1 xl:opacity-0'}`}>
+    <div className={`mx-auto flex h-full min-h-0 w-full ${isCompanyVariant ? 'company-messages-workspace max-w-[min(100%,1600px)] px-0' : 'user-messages-workspace max-w-[min(100%,1420px)] px-0'} justify-center xl:transition-[opacity,transform] xl:duration-300 xl:ease-out ${introReady ? 'xl:translate-y-0 xl:opacity-100' : 'xl:translate-y-1 xl:opacity-0'}`}>
       <div className="user-messages-frame flex h-full min-h-0 w-full overflow-hidden rounded-none border-0 border-white/40 bg-white/70 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 xl:rounded-[2rem] xl:border">
         {/* Narrow icon rail — layout only; KapIT palette */}
         <aside className="user-messages-utility-rail hidden w-[52px] shrink-0 flex-col items-center border-r border-white/40 bg-white/40 py-3 backdrop-blur-sm dark:border-white/10 dark:bg-[#1a1d20]/40 md:flex md:w-14">
@@ -521,7 +521,7 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
                         type="button"
                         onClick={() => handleSelectConversation(conversation)}
                         data-active={active ? 'true' : 'false'}
-                        className={`user-message-row flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${
+                        className={`${isCompanyVariant ? 'company-message-row' : 'user-message-row'} flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${
                           active
                             ? 'bg-[#eef6ee] dark:bg-[#353c44]'
                             : isCompanyVariant

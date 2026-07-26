@@ -349,10 +349,10 @@ export default function CompanyPostJobPaymentPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#dad7cd] dark:bg-[#121416] px-3 py-3 text-[#344e41] dark:text-white transition-colors duration-300 sm:px-4 sm:py-4">
+    <div className="company-dashboard-shell min-h-screen bg-[#f4f6f5] px-3 py-3 text-[#34413a] transition-colors duration-300 dark:bg-[#09090b] dark:text-[#e4e4e7] sm:px-4 sm:py-4">
       <div className="min-h-[calc(100vh-1.5rem)] flex items-center justify-center sm:min-h-[calc(100vh-2rem)]">
-        <div className="w-full max-w-6xl overflow-hidden rounded-[28px] border border-[#a3b18a] dark:border-[#444d57] bg-[rgba(255,255,255,0.88)] dark:bg-[rgba(28,31,35,0.9)] backdrop-blur-2xl shadow-[0_30px_90px_rgba(58,90,64,0.14)] dark:shadow-[0_30px_90px_rgba(0,0,0,0.45)]">
-          <div className="border-b border-[#ccd5c0] dark:border-[#444d57] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(245,247,240,0.78))] dark:bg-[linear-gradient(180deg,rgba(47,52,59,0.95),rgba(27,31,35,0.84))] px-5 py-4 sm:px-6">
+        <div className="company-workspace-panel w-full max-w-6xl overflow-hidden shadow-[var(--workspace-elevated-shadow)]">
+          <div className="border-b border-[var(--workspace-border)] bg-[var(--workspace-surface)] px-5 py-4 sm:px-6">
             <div className="mb-4 flex flex-wrap items-center gap-2 sm:flex-nowrap">
               {[
                 { key: 1, label: 'Plan' },
@@ -384,7 +384,7 @@ export default function CompanyPostJobPaymentPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#588157] dark:text-[#e2b94d]">Secure checkout</p>
-              <h1 className="mt-1.5 text-2xl sm:text-[2rem] font-semibold tracking-tight text-[#102a1b] dark:text-white">Complete Payment to Publish Job</h1>
+              <h1 className="company-workspace-page-title mt-1.5">Complete payment to publish job</h1>
             </div>
             <button
               type="button"
@@ -397,8 +397,8 @@ export default function CompanyPostJobPaymentPage() {
             </div>
           </div>
 
-          <div className={`${completedCheckout ? 'flex justify-center' : 'grid gap-4 lg:grid-cols-[1.25fr_0.75fr]'} bg-[linear-gradient(180deg,rgba(255,255,255,0.24),rgba(245,247,240,0.08))] dark:bg-[linear-gradient(180deg,rgba(24,28,33,0.28),rgba(24,28,33,0))] p-4 sm:p-5`}>
-            <div className={`${completedCheckout ? 'hidden' : 'space-y-4'} rounded-[24px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6]/90 dark:bg-[#1b1f23] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]`}>
+          <div className={`${completedCheckout ? 'flex justify-center' : 'grid gap-4 lg:grid-cols-[1.25fr_0.75fr]'} bg-[var(--workspace-surface-subtle)] p-4 sm:p-5`}>
+            <div className={`${completedCheckout ? 'hidden' : 'company-workspace-panel space-y-4'} p-4 sm:p-5`}>
               <div className="flex flex-col gap-3 border-b border-[#d6d3c9] dark:border-[#444d57] pb-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-[#5f6f52] dark:text-[#b3bcc5]">Selected plan</p>
@@ -424,12 +424,12 @@ export default function CompanyPostJobPaymentPage() {
                         key={plan.id}
                         type="button"
                         onClick={() => setSelectedPlanId(plan.id)}
-                        className={`relative rounded-[20px] border p-3.5 text-left transition-all ${
+                        className={`relative rounded-lg border p-3.5 text-left transition-[background-color,border-color,box-shadow,transform] duration-150 ${
                           isSelected
-                            ? 'border-[#588157] bg-[linear-gradient(180deg,#f4f8f1,#eaf2e5)] shadow-[0_16px_40px_rgba(88,129,87,0.16)] dark:border-[#82ad86] dark:bg-[linear-gradient(180deg,#31363d,#202428)]'
+                            ? 'border-[var(--workspace-primary)] bg-[var(--workspace-primary-soft)]'
                             : plan.highlighted
-                              ? 'border-[#bfd0af] bg-[linear-gradient(180deg,#fbfdf8,#f2f7ed)] hover:border-[#588157] dark:border-[#4b5560] dark:bg-[linear-gradient(180deg,#31363d,#202428)]'
-                              : 'border-[#d6d3c9] bg-[#fbfcfa] hover:bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#202428] dark:hover:bg-[#2f343b]'
+                              ? 'border-[var(--workspace-border-strong)] bg-[var(--workspace-surface)] hover:border-[var(--workspace-primary)]'
+                              : 'border-[var(--workspace-border)] bg-[var(--workspace-surface)] hover:bg-[var(--workspace-surface-subtle)]'
                         }`}
                       >
                         {plan.badge ? (
@@ -493,12 +493,12 @@ export default function CompanyPostJobPaymentPage() {
                           setPaymentMethod(provider.id);
                         }}
                         disabled={!providerState.enabled}
-                        className={`rounded-[20px] border p-3.5 text-left transition-colors ${
+                        className={`rounded-lg border p-3.5 text-left transition-colors ${
                           !providerState.enabled
                             ? 'cursor-not-allowed border-[#e1e7ee] bg-[#f8fafc] opacity-60 dark:border-[#444d57] dark:bg-[#202428]'
                             : selected
-                              ? 'border-[#588157] bg-[#eef6ee] shadow-[0_12px_30px_rgba(88,129,87,0.1)] dark:border-[#82ad86] dark:bg-[#2a2f35]'
-                              : 'border-[#d6d3c9] bg-[#fbfcfa] hover:bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#202428] dark:hover:bg-[#2f343b]'
+                              ? 'border-[var(--workspace-primary)] bg-[var(--workspace-primary-soft)]'
+                              : 'border-[var(--workspace-border)] bg-[var(--workspace-surface)] hover:bg-[var(--workspace-surface-subtle)]'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-3">

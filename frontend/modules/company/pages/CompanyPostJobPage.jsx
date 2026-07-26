@@ -340,9 +340,10 @@ export default function CompanyPostJobPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="company-workspace-page company-workspace-form-page space-y-6">
       <div>
-        <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Post a job</h2>
+        <h1 className="company-workspace-page-title">Post a job</h1>
+        <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">Create the role, define candidate requirements, and prepare it for publishing.</p>
       </div>
 
       {paymentInfoOpen ? (
@@ -379,159 +380,165 @@ export default function CompanyPostJobPage() {
       {paymentPending && <p className="text-sm text-[#3a5a40] dark:text-[#f0c766]">Draft saved. Finish the payment in the merchant window to publish this job.</p>}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-      <form onSubmit={handleSubmit} className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] shadow-lg shadow-black/5 dark:shadow-black/20 p-8 space-y-6 transition-colors duration-300">
-        <Field label="Job title">
-          <SearchableSelect value={form.selectedTitle} onChange={(selectedTitle) => setForm((prev) => ({ ...prev, selectedTitle, customTitle: selectedTitle === CUSTOM_JOB_VALUE ? prev.customTitle : '' }))} options={TECH_JOB_TITLE_OPTIONS} placeholder="Select a tech job title" searchPlaceholder="Search tech job titles" />
-        </Field>
+      <form onSubmit={handleSubmit} className="company-workspace-form-shell space-y-6">
+        <section className="company-workspace-form-section space-y-6">
+          <div>
+            <h2 className="company-workspace-section-title">Job details</h2>
+            <p className="mt-1 text-xs text-[var(--workspace-text-muted)]">The role information developers will see in the listing.</p>
+          </div>
+          <Field label="Job title">
+            <SearchableSelect value={form.selectedTitle} onChange={(selectedTitle) => setForm((prev) => ({ ...prev, selectedTitle, customTitle: selectedTitle === CUSTOM_JOB_VALUE ? prev.customTitle : '' }))} options={TECH_JOB_TITLE_OPTIONS} placeholder="Select a tech job title" searchPlaceholder="Search tech job titles" />
+          </Field>
 
-        {form.selectedTitle === CUSTOM_JOB_VALUE && <Field label="Custom job title"><input value={form.customTitle} onChange={(e) => setForm((prev) => ({ ...prev, customTitle: e.target.value }))} className="field" placeholder="Enter the exact tech role" required /></Field>}
+          {form.selectedTitle === CUSTOM_JOB_VALUE && <Field label="Custom job title"><input value={form.customTitle} onChange={(e) => setForm((prev) => ({ ...prev, customTitle: e.target.value }))} className="field" placeholder="Enter the exact tech role" required /></Field>}
 
-        <Field label="Description"><textarea value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} className="field min-h-32" placeholder="Responsibilities, requirements, and what success looks like..." required /></Field>
+          <Field label="Description"><textarea value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} className="field min-h-32" placeholder="Responsibilities, requirements, and what success looks like..." required /></Field>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Salary (optional)">
-            <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-3">
-              <select
-                value={form.salaryCurrency}
-                onChange={(e) => setForm((prev) => ({ ...prev, salaryCurrency: e.target.value, salary: '', customSalary: '' }))}
-                className="field"
-              >
-                {SALARY_CURRENCY_OPTIONS.map((currency) => <option key={currency} value={currency}>{currency}</option>)}
-              </select>
-              {usingCustomSalary ? (
-                <input
-                  value={form.customSalary}
-                  onChange={(e) => setForm((prev) => ({ ...prev, customSalary: e.target.value }))}
-                  className="field"
-                  placeholder={`Enter ${form.salaryCurrency} salary range`}
-                />
-              ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Salary (optional)">
+              <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-3">
                 <select
-                  value={form.salary}
-                  onChange={(e) => setForm((prev) => ({ ...prev, salary: e.target.value, customSalary: '' }))}
+                  value={form.salaryCurrency}
+                  onChange={(e) => setForm((prev) => ({ ...prev, salaryCurrency: e.target.value, salary: '', customSalary: '' }))}
                   className="field"
                 >
-                  <option value="">Select salary range</option>
-                  {salaryRangeOptions.map((range) => <option key={range} value={range}>{range}</option>)}
+                  {SALARY_CURRENCY_OPTIONS.map((currency) => <option key={currency} value={currency}>{currency}</option>)}
                 </select>
-              )}
-            </div>
-            {usingCustomSalary && (
-              <button
-                type="button"
-                onClick={() => setForm((prev) => ({ ...prev, salary: '', customSalary: '' }))}
-                className="mt-2 text-xs font-semibold text-[#3a5a40] hover:text-[#344e41] dark:text-[#f0c766] dark:hover:text-[#d0d7dd]"
-              >
-                Back to preset salary ranges
-              </button>
-            )}
-          </Field>
-          <Field label="Country (optional)">
-            <SearchableSelect
-              value={form.country}
-              onChange={(country) =>
-                setForm((prev) => ({
-                  ...prev,
-                  country,
-                  provinceCode: String(country || '').trim().toLowerCase() === 'philippines' ? prev.provinceCode : '',
-                }))}
-              options={countryOptions}
-              placeholder="Select a country"
-              searchPlaceholder="Search country"
-              searchInTrigger
-            />
-          </Field>
-          <Field label="Location (optional)">
-            {isPhilippines ? (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <SearchableSelect
-                  value={form.provinceCode}
-                  onChange={(provinceCode) => setForm((prev) => ({ ...prev, provinceCode }))}
-                  options={locationData.provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
-                  placeholder="Select a province"
-                  searchPlaceholder="Search provinces"
-                  searchInTrigger
-                />
-                <SearchableSelect
-                  value={form.city}
-                  onChange={(city) => setForm((prev) => ({ ...prev, city }))}
-                  options={cityOptions.map((city) => ({ value: city.name, label: city.name }))}
-                  placeholder={form.provinceCode ? 'Select a city or municipality' : 'Select a province first'}
-                  searchPlaceholder="Search city or municipality"
-                  disabled={!form.provinceCode}
-                  searchInTrigger
-                />
+                {usingCustomSalary ? (
+                  <input
+                    value={form.customSalary}
+                    onChange={(e) => setForm((prev) => ({ ...prev, customSalary: e.target.value }))}
+                    className="field"
+                    placeholder={`Enter ${form.salaryCurrency} salary range`}
+                  />
+                ) : (
+                  <select
+                    value={form.salary}
+                    onChange={(e) => setForm((prev) => ({ ...prev, salary: e.target.value, customSalary: '' }))}
+                    className="field"
+                  >
+                    <option value="">Select salary range</option>
+                    {salaryRangeOptions.map((range) => <option key={range} value={range}>{range}</option>)}
+                  </select>
+                )}
               </div>
-            ) : (
-              <input
-                value={form.city}
-                onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
-                className="field"
-                placeholder="Enter your location in this country"
+              {usingCustomSalary && (
+                <button
+                  type="button"
+                  onClick={() => setForm((prev) => ({ ...prev, salary: '', customSalary: '' }))}
+                  className="mt-2 text-xs font-semibold text-[#3a5a40] hover:text-[#344e41] dark:text-[#f0c766] dark:hover:text-[#d0d7dd]"
+                >
+                  Back to preset salary ranges
+                </button>
+              )}
+            </Field>
+            <Field label="Country (optional)">
+              <SearchableSelect
+                value={form.country}
+                onChange={(country) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    country,
+                    provinceCode: String(country || '').trim().toLowerCase() === 'philippines' ? prev.provinceCode : '',
+                  }))}
+                options={countryOptions}
+                placeholder="Select a country"
+                searchPlaceholder="Search country"
+                searchInTrigger
               />
-            )}
-          </Field>
-        </div>
+            </Field>
+            <Field label="Location (optional)">
+              {isPhilippines ? (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <SearchableSelect
+                    value={form.provinceCode}
+                    onChange={(provinceCode) => setForm((prev) => ({ ...prev, provinceCode }))}
+                    options={locationData.provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
+                    placeholder="Select a province"
+                    searchPlaceholder="Search provinces"
+                    searchInTrigger
+                  />
+                  <SearchableSelect
+                    value={form.city}
+                    onChange={(city) => setForm((prev) => ({ ...prev, city }))}
+                    options={cityOptions.map((city) => ({ value: city.name, label: city.name }))}
+                    placeholder={form.provinceCode ? 'Select a city or municipality' : 'Select a province first'}
+                    searchPlaceholder="Search city or municipality"
+                    disabled={!form.provinceCode}
+                    searchInTrigger
+                  />
+                </div>
+              ) : (
+                <input
+                  value={form.city}
+                  onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
+                  className="field"
+                  placeholder="Enter your location in this country"
+                />
+              )}
+            </Field>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Type (optional)">
-            <select value={form.type} onChange={(e) => setForm((prev) => ({ ...prev, type: e.target.value }))} className="field">
-              {JOB_TYPE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
-            </select>
-          </Field>
-          <Field label="Experience level (optional)">
-            <select value={form.experienceLevel} onChange={(e) => setForm((prev) => ({ ...prev, experienceLevel: e.target.value }))} className="field">
-              <option value="">Select experience level</option>
-              {EXPERIENCE_LEVEL_OPTIONS.map((option) => <option key={option} value={option.toLowerCase()}>{option}</option>)}
-            </select>
-          </Field>
-        </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Type (optional)">
+              <select value={form.type} onChange={(e) => setForm((prev) => ({ ...prev, type: e.target.value }))} className="field">
+                {JOB_TYPE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+              </select>
+            </Field>
+            <Field label="Experience level (optional)">
+              <select value={form.experienceLevel} onChange={(e) => setForm((prev) => ({ ...prev, experienceLevel: e.target.value }))} className="field">
+                <option value="">Select experience level</option>
+                {EXPERIENCE_LEVEL_OPTIONS.map((option) => <option key={option} value={option.toLowerCase()}>{option}</option>)}
+              </select>
+            </Field>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Work preference (optional)">
-            <select value={form.workPreference || ''} onChange={(e) => setForm((prev) => ({ ...prev, workPreference: e.target.value }))} className="field">
-              <option value="">Select work preference</option>
-              {WORK_PREFERENCE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
-          </Field>
-          <Field label="Hires needed">
-            <input
-              type="number"
-              min={1}
-              max={50}
-              value={form.hiresNeeded}
-              onChange={(e) => {
-                const nextValue = Number(e.target.value || 1);
-                const normalized = Number.isFinite(nextValue) ? nextValue : 1;
-                setForm((prev) => ({ ...prev, hiresNeeded: Math.max(1, Math.min(50, normalized)) }));
-              }}
-              className="field"
-              placeholder="1"
-            />
-          </Field>
-        </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Work preference (optional)">
+              <select value={form.workPreference || ''} onChange={(e) => setForm((prev) => ({ ...prev, workPreference: e.target.value }))} className="field">
+                <option value="">Select work preference</option>
+                {WORK_PREFERENCE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+            </Field>
+            <Field label="Hires needed">
+              <input
+                type="number"
+                min={1}
+                max={50}
+                value={form.hiresNeeded}
+                onChange={(e) => {
+                  const nextValue = Number(e.target.value || 1);
+                  const normalized = Number.isFinite(nextValue) ? nextValue : 1;
+                  setForm((prev) => ({ ...prev, hiresNeeded: Math.max(1, Math.min(50, normalized)) }));
+                }}
+                className="field"
+                placeholder="1"
+              />
+            </Field>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Application deadline (optional)">
-            <input
-              type="date"
-              value={form.applicationDeadline}
-              min={new Date().toISOString().slice(0, 10)}
-              onChange={(e) => setForm((prev) => ({ ...prev, applicationDeadline: e.target.value }))}
-              className="field"
-            />
-          </Field>
-          <Field label="Hiring timeline (optional)">
-            <select value={form.hiringTimeline || ''} onChange={(e) => setForm((prev) => ({ ...prev, hiringTimeline: e.target.value }))} className="field">
-              <option value="">Select timeline</option>
-              {HIRING_TIMELINE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
-            </select>
-          </Field>
-        </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Application deadline (optional)">
+              <input
+                type="date"
+                value={form.applicationDeadline}
+                min={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setForm((prev) => ({ ...prev, applicationDeadline: e.target.value }))}
+                className="field"
+              />
+            </Field>
+            <Field label="Hiring timeline (optional)">
+              <select value={form.hiringTimeline || ''} onChange={(e) => setForm((prev) => ({ ...prev, hiringTimeline: e.target.value }))} className="field">
+                <option value="">Select timeline</option>
+                {HIRING_TIMELINE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+              </select>
+            </Field>
+          </div>
+        </section>
 
-        <section className="rounded-2xl border border-[#bfd0af] dark:border-[#444d57] bg-[#f5f9f2] dark:bg-[#1b2025] p-4 space-y-4">
+        <section className="company-workspace-form-section company-workspace-form-section-subtle space-y-4">
           <div>
-            <h3 className="text-base font-bold text-[#2f4d35] dark:text-white">Hiring workflow</h3>
+            <h2 className="company-workspace-section-title">Hiring workflow</h2>
             <p className="text-xs text-[#4f6654] dark:text-[#b9c1c8]">Role-specific details for matching and recruiter handoff.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -552,20 +559,26 @@ export default function CompanyPostJobPage() {
           </div>
         </section>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Skills">
-            <div className="space-y-3">
-              <SearchableSelect value={selectedSkill} onChange={(skill) => { setSelectedSkill(skill); if (skill === OTHER_SKILL_VALUE) return; addSkill(skill); setSelectedSkill(''); }} options={TECH_SKILL_OPTIONS.filter((skill) => skill === OTHER_SKILL_VALUE || !form.skills.includes(skill))} placeholder="Select a skill" searchPlaceholder="Search tech skills" />
-              {selectedSkill === OTHER_SKILL_VALUE && <input value={customSkill} onChange={(e) => { const nextValue = e.target.value; setCustomSkill(nextValue); const trimmed = nextValue.trim(); if (!trimmed) return; if (trimmed.endsWith(',') || trimmed.endsWith(';')) { addSkill(trimmed.slice(0, -1)); setCustomSkill(''); setSelectedSkill(''); } }} onBlur={() => { if (!customSkill.trim()) { setSelectedSkill(''); return; } addSkill(customSkill); setCustomSkill(''); setSelectedSkill(''); }} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSkill(customSkill); setCustomSkill(''); setSelectedSkill(''); } }} className="field" placeholder="Type other skill and press Enter" autoFocus />}
-              {form.skills.length > 0 && <div className="flex flex-wrap gap-2">{form.skills.map((skill) => <span key={skill} className="inline-flex items-center gap-2 rounded-full border border-[#a3b18a] dark:border-[#444d57] bg-[#f5f5f2] dark:bg-[#1a1d20] px-3 py-1 text-sm text-[#344e41] dark:text-white">{skill}<button type="button" onClick={() => removeSkill(skill)} className="text-[#5f6f52] dark:text-[#d0d7dd]" aria-label={`Remove ${skill}`}><X className="h-3.5 w-3.5" /></button></span>)}</div>}
-            </div>
-          </Field>
-        </div>
+        <section className="company-workspace-form-section space-y-4">
+          <div>
+            <h2 className="company-workspace-section-title">Skills</h2>
+            <p className="text-xs text-[#4f6654] dark:text-[#b9c1c8]">List the tools and capabilities that should show up in matching and search.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Skills">
+              <div className="space-y-3">
+                <SearchableSelect value={selectedSkill} onChange={(skill) => { setSelectedSkill(skill); if (skill === OTHER_SKILL_VALUE) return; addSkill(skill); setSelectedSkill(''); }} options={TECH_SKILL_OPTIONS.filter((skill) => skill === OTHER_SKILL_VALUE || !form.skills.includes(skill))} placeholder="Select a skill" searchPlaceholder="Search tech skills" />
+                {selectedSkill === OTHER_SKILL_VALUE && <input value={customSkill} onChange={(e) => { const nextValue = e.target.value; setCustomSkill(nextValue); const trimmed = nextValue.trim(); if (!trimmed) return; if (trimmed.endsWith(',') || trimmed.endsWith(';')) { addSkill(trimmed.slice(0, -1)); setCustomSkill(''); setSelectedSkill(''); } }} onBlur={() => { if (!customSkill.trim()) { setSelectedSkill(''); return; } addSkill(customSkill); setCustomSkill(''); setSelectedSkill(''); }} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSkill(customSkill); setCustomSkill(''); setSelectedSkill(''); } }} className="field" placeholder="Type other skill and press Enter" autoFocus />}
+                {form.skills.length > 0 && <div className="flex flex-wrap gap-2">{form.skills.map((skill) => <span key={skill} className="inline-flex items-center gap-2 rounded-full border border-[#a3b18a] dark:border-[#444d57] bg-[#f5f5f2] dark:bg-[#1a1d20] px-3 py-1 text-sm text-[#344e41] dark:text-white">{skill}<button type="button" onClick={() => removeSkill(skill)} className="text-[#5f6f52] dark:text-[#d0d7dd]" aria-label={`Remove ${skill}`}><X className="h-3.5 w-3.5" /></button></span>)}</div>}
+              </div>
+            </Field>
+          </div>
+        </section>
 
-        <section className="rounded-2xl border border-[#bfd0af] dark:border-[#444d57] bg-[#f5f9f2] dark:bg-[#1b2025] p-4 space-y-4">
+        <section className="company-workspace-form-section company-workspace-form-section-subtle space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="text-base font-bold text-[#2f4d35] dark:text-white">Pre-assessment test (optional)</h3>
+              <h2 className="company-workspace-section-title">Assessment</h2>
               <p className="text-xs text-[#4f6654] dark:text-[#b9c1c8]">Enable this to redirect into a dedicated builder page where you can create multiple questions, add images, and define answer criteria.</p>
             </div>
             <label className="inline-flex items-center gap-2 text-sm font-semibold text-[#344e41] dark:text-white">
@@ -595,9 +608,9 @@ export default function CompanyPostJobPage() {
           ) : null}
         </section>
 
-        <div className="flex gap-3">
-          <button type="button" onClick={() => navigate(COMPANY_PATHS.dashboard)} className="px-4 py-2.5 rounded-xl border border-[#a3b18a] dark:border-[#444d57] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors">Cancel</button>
-          <button type="submit" className="px-4 py-2.5 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white font-semibold transition-colors">Continue to payment</button>
+        <div className="company-workspace-form-actions">
+          <button type="button" onClick={() => navigate(COMPANY_PATHS.dashboard)} className="company-workspace-secondary-button px-4 py-2.5">Cancel</button>
+          <button type="submit" className="company-workspace-primary-button px-4 py-2.5">Continue to payment</button>
         </div>
       </form>
     </div>

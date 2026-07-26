@@ -124,13 +124,13 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
         ) : null}
       </div>
 
-      <div className="hidden rounded-2xl border border-[#d6d3c9] bg-[#f8fbf6] p-6 shadow-sm shadow-black/5 transition-colors dark:border-[#444d57] dark:bg-[#22272b] xl:grid xl:grid-cols-[minmax(0,1.7fr)_0.95fr_0.9fr_0.95fr_minmax(17.5rem,1.35fr)] xl:items-center xl:gap-6">
+      <div className="company-workspace-panel hidden p-6 xl:grid xl:grid-cols-[minmax(0,1.7fr)_0.95fr_0.9fr_0.95fr_minmax(17.5rem,1.35fr)] xl:items-center xl:gap-6">
         <div className="min-w-0">
           <div className="flex items-start gap-3">
             <Avatar user={user} name={name} />
             <div className="min-w-0">
-              <p className="truncate text-[1.05rem] font-bold text-[#31572c] dark:text-white">{name}</p>
-              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[#425466] dark:text-[#d0d7dd]">
+              <p className="truncate text-[1.05rem] font-semibold text-[var(--workspace-text-strong)]">{name}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--workspace-text-muted)]">
                 <span className="inline-flex items-center gap-1">
                   <Briefcase className="h-4 w-4 text-[#588157] dark:text-[#f0c766]" />
                   {role}

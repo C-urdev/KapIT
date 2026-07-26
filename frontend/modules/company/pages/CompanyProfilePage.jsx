@@ -138,19 +138,20 @@ export default function CompanyProfilePage({ user, onUpdated }) {
   const initial = (form.name || 'C').charAt(0).toUpperCase();
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="company-workspace-page company-workspace-form-page space-y-6">
       <div>
-        <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Company profile</h2>
+        <h1 className="company-workspace-page-title">Company profile</h1>
+        <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">Manage the employer identity and information candidates can review.</p>
       </div>
 
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
       {loading && <p className="text-sm text-[#344e41] dark:text-[#d0d7dd]">Loading company profile...</p>}
 
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] shadow-lg shadow-black/5 dark:shadow-black/20 p-8 space-y-6 transition-colors duration-300">
+      <div className="company-workspace-form-shell space-y-6">
         {onboardingDetails && (
-          <section className="space-y-4 rounded-2xl border border-[#d8dfc9] dark:border-[#444d57] bg-[#f8faf5] dark:bg-[#202428] p-5">
+          <section className="company-workspace-form-section company-workspace-form-section-subtle space-y-4">
             <div>
-              <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Company onboarding details</h3>
+              <h2 className="company-workspace-section-title">Company onboarding details</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -176,46 +177,52 @@ export default function CompanyProfilePage({ user, onUpdated }) {
           </section>
         )}
 
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-[#f5f5f2] dark:bg-[#353c44] border border-[#a3b18a] dark:border-[#444d57] overflow-hidden text-[#3a5a40] dark:text-white flex items-center justify-center font-extrabold text-2xl transition-colors duration-300">
-            {form.logo ? <img src={form.logo} alt="Company logo" className="w-full h-full object-cover" /> : initial}
+        <section className="company-workspace-form-section space-y-6">
+          <div>
+            <h2 className="company-workspace-section-title">Public company profile</h2>
+            <p className="mt-1 text-xs text-[var(--workspace-text-muted)]">Keep the identity, summary, and company links candidates will see in sync.</p>
           </div>
-          <div className="space-y-1">
-            <div className="text-sm font-semibold text-[#3a5a40] dark:text-white">Company logo</div>
-            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#444d57] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] cursor-pointer text-sm transition-colors">
-              {logoBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {logoBusy ? 'Preparing...' : 'Upload'}
-              <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" className="hidden" onChange={handleLogoSelect} disabled={logoBusy} />
-            </label>
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-[#f5f5f2] dark:bg-[#353c44] border border-[#a3b18a] dark:border-[#444d57] overflow-hidden text-[#3a5a40] dark:text-white flex items-center justify-center font-extrabold text-2xl transition-colors duration-300">
+              {form.logo ? <img src={form.logo} alt="Company logo" className="w-full h-full object-cover" /> : initial}
+            </div>
+            <div className="space-y-1">
+              <div className="text-sm font-semibold text-[#3a5a40] dark:text-white">Company logo</div>
+              <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#444d57] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] cursor-pointer text-sm transition-colors">
+                {logoBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {logoBusy ? 'Preparing...' : 'Upload'}
+                <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" className="hidden" onChange={handleLogoSelect} disabled={logoBusy} />
+              </label>
+            </div>
           </div>
-        </div>
 
-        <Field label="Company name">
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field" placeholder="Your company name" required />
-        </Field>
-
-        <Field label="Short description">
-          <input value={form.shortDescription} onChange={(e) => setForm({ ...form, shortDescription: e.target.value })} className="field" placeholder="A short public summary about your company" maxLength={220} />
-        </Field>
-
-        <Field label="Full company description (optional)">
-          <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="field min-h-32" placeholder="Tell candidates what your company does, who you serve, and who you hire." />
-        </Field>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="Website (optional)">
-            <input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} className="field" placeholder="https://" />
+          <Field label="Company name">
+            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field" placeholder="Your company name" required />
           </Field>
 
-          <Field label="Location (optional)">
-            <input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className="field" placeholder="City, Province" />
+          <Field label="Short description">
+            <input value={form.shortDescription} onChange={(e) => setForm({ ...form, shortDescription: e.target.value })} className="field" placeholder="A short public summary about your company" maxLength={220} />
           </Field>
-        </div>
 
-        <section className="space-y-4">
+          <Field label="Full company description (optional)">
+            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="field min-h-32" placeholder="Tell candidates what your company does, who you serve, and who you hire." />
+          </Field>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Website (optional)">
+              <input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} className="field" placeholder="https://" />
+            </Field>
+
+            <Field label="Location (optional)">
+              <input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className="field" placeholder="City, Province" />
+            </Field>
+          </div>
+        </section>
+
+        <section className="company-workspace-form-section space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Related companies</h3>
+              <h2 className="company-workspace-section-title">Related companies</h2>
             </div>
             <button type="button" onClick={addRelatedCompany} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#a3b18a] dark:border-[#444d57] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors">
               <Plus className="w-4 h-4" />
@@ -247,7 +254,7 @@ export default function CompanyProfilePage({ user, onUpdated }) {
           )}
         </section>
 
-        <div className="flex justify-end">
+        <div className="company-workspace-form-actions">
           <button type="button" disabled={saving || loading} onClick={handleSave} className="px-4 py-2.5 rounded-xl bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white font-semibold disabled:opacity-60 transition-colors">
             {saving ? 'Saving...' : 'Save profile'}
           </button>

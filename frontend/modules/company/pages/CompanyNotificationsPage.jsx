@@ -173,9 +173,10 @@ export default function CompanyNotificationsPage({ onReadAll }) {
   };
 
   return (
-    <div className="mx-auto w-full max-w-4xl">
+    <div className="company-workspace-page mx-auto w-full max-w-5xl">
       <div className="mb-4 px-1 sm:mb-5">
-        <h1 className="text-[2rem] leading-none text-[#183622] dark:text-white sm:text-[2.35rem]">Notifications</h1>
+        <h1 className="company-workspace-page-title">Notifications</h1>
+        <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">Hiring updates, candidate activity, and account notices.</p>
       </div>
 
       {loading ? (
@@ -183,7 +184,7 @@ export default function CompanyNotificationsPage({ onReadAll }) {
       ) : error ? (
         <StateBlock tone="error">{error}</StateBlock>
       ) : items.length > 0 ? (
-        <div className="overflow-hidden rounded-[28px] border border-[#c9d2bc] bg-[#f6f5ef] shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#353c44] dark:bg-[#22272b] dark:shadow-[0_18px_48px_rgba(0,0,0,0.24)]">
+        <div className="company-workspace-panel overflow-hidden">
           {recentItems.length > 0 ? (
             <NotificationSection
               title="New"
@@ -221,7 +222,7 @@ export default function CompanyNotificationsPage({ onReadAll }) {
 function StateBlock({ children, tone = 'default' }) {
   return (
     <div
-      className={`rounded-[28px] border px-6 py-12 text-center sm:px-8 ${
+      className={`rounded-lg border px-6 py-12 text-center sm:px-8 ${
         tone === 'error'
           ? 'border-red-200 bg-[#fff8f7] text-red-600 dark:border-red-900/50 dark:bg-[#22272b] dark:text-red-400'
           : 'border-[#c9d2bc] bg-[#f8fbf6] text-[#344e41] dark:border-[#353c44] dark:bg-[#22272b] dark:text-[#d0d7dd]'
@@ -236,7 +237,7 @@ function NotificationSection({ title, items, expandedId, onToggle, onOpenMenu, w
   return (
     <section className={withTopDivider ? 'border-t border-[#d8decf] dark:border-[#4b5560]' : ''}>
       <div className="px-5 pb-3 pt-5 sm:px-7">
-        <h2 className="text-xl text-[#183622] dark:text-white">{title}</h2>
+        <h2 className="company-workspace-section-title">{title}</h2>
       </div>
       <div>
         {items.map((item, index) => (

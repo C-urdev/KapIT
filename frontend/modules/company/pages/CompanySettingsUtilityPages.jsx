@@ -106,18 +106,18 @@ function Header({ title, onBack }) {
         type="button"
         onClick={onBack}
         aria-label="Go back"
-        className="inline-flex h-14 w-14 items-center justify-center rounded-xl border border-[#9caf97] bg-[#d9ddcf] text-[#344e41] transition-colors hover:bg-[#dde2d4] hover:border-[#8ea488] dark:border-[#5e8b67] dark:bg-transparent dark:text-white dark:hover:bg-[#353c44]"
+        className="company-workspace-secondary-button inline-flex h-10 w-10 items-center justify-center"
       >
         <ArrowLeft className="h-5 w-5" />
       </button>
-      <h2 className="mt-3 text-[28px] font-bold text-[#1c2b1f] dark:text-white">{title}</h2>
+      <h1 className="company-workspace-page-title mt-3">{title}</h1>
     </div>
   );
 }
 
 function PageShell({ title, onBack, children }) {
   return (
-    <div className="mx-auto w-full max-w-[min(100%,900px)] px-4 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] pt-4 sm:px-5 sm:pb-10 sm:pt-6">
+    <div className="company-workspace-page mx-auto w-full max-w-[min(100%,900px)] px-4 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] pt-4 sm:px-5 sm:pb-10 sm:pt-6 xl:px-0 xl:pt-0">
       <Header title={title} onBack={onBack} />
       {children}
     </div>
@@ -129,7 +129,7 @@ function OptionRow({ icon: Icon, title, selected, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-between rounded-xl bg-[#f8fbf6] px-4 py-3.5 text-left transition-colors hover:bg-[#eef6ee] dark:bg-[#22272b] dark:hover:bg-[#353c44]/60"
+      className="company-workspace-panel flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors duration-150 hover:bg-[var(--workspace-surface-selected)]"
     >
       <div className="flex items-center gap-3">
         <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#edf3e8] text-[#3a5a40] dark:bg-[#2b3138] dark:text-[#e9c86b]">

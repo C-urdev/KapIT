@@ -232,9 +232,20 @@ const COMPANY_CACHE_FALLBACKS: Record<string, any> = {
   analytics: {
     analytics: {
       totalJobs: 0,
+      openJobs: 0,
+      draftJobs: 0,
+      filledJobs: 0,
+      closedJobs: 0,
       totalApplicants: 0,
+      newApplicantsInRange: 0,
+      applicantsAwaitingReview: 0,
+      averageApplicantsPerOpenJob: 0,
+      averageDaysOpen: null,
       jobsByStatus: {},
       applicantsByStatus: {},
+      applicationsOverTime: [],
+      range: null,
+      previousPeriod: null,
     },
   },
   profile: { company: null },
@@ -260,10 +271,20 @@ export const useCompanyApplicants = () => {
   return { applicants, plan: data?.plan || { isPremium: false }, loading, error, refetch };
 };
 
-export const useCompanyAnalytics = () => {
-  const fetchAnalytics = useCallback(() => companyAPI.getAnalytics(), []);
-  const { data, loading, error, refetch } = useAsyncResource(fetchAnalytics, [], {
-    cacheKey: COMPANY_CACHE_KEYS.analytics,
+export const useCompanyAnalytics = (input: any = {}) => {
+  const normalized = useMemo(() => {
+    const days = Number(input?.days || 30);
+    return {
+      days: Number.isFinite(days) ? days : 30,
+      start: String(input?.start || '').trim(),
+      end: String(input?.end || '').trim(),
+    };
+  }, [input?.days, input?.end, input?.start]);
+  const deps = useMemo(() => [JSON.stringify(normalized)], [normalized]);
+  const cacheKey = useMemo(() => `${COMPANY_CACHE_KEYS.analytics}:${JSON.stringify(normalized)}`, [normalized]);
+  const fetchAnalytics = useCallback(() => companyAPI.getAnalytics(normalized), [normalized]);
+  const { data, loading, error, refetch } = useAsyncResource(fetchAnalytics, deps, {
+    cacheKey,
     fallbackData: COMPANY_CACHE_FALLBACKS.analytics,
   });
   return { analytics: data?.analytics || null, loading, error, refetch };

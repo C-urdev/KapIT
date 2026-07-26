@@ -37,6 +37,7 @@ export default function CompanySearchDevelopersPage() {
   const { developers, loading, error } = useDeveloperSearch(appliedFilters);
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [selectedDeveloper, setSelectedDeveloper] = useState(null);
   const filterPopupRef = useRef(null);
   const filterButtonRef = useRef(null);
   const skillOptions = useMemo(
@@ -97,6 +98,32 @@ export default function CompanySearchDevelopersPage() {
   };
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const query = String(params.get('query') || '').trim();
+    if (!query) return;
+    setFilters((current) => ({ ...current, q: query }));
+    setAppliedFilters((current) => ({ ...current, q: query }));
+  }, []);
+
+  useEffect(() => {
+    if (!developers.length) {
+      setSelectedDeveloper(null);
+      return;
+    }
+
+    setSelectedDeveloper((current) => {
+      if (current?.id) {
+        const match = developers.find((developer) => developer.id === current.id);
+        if (match) {
+          return match;
+        }
+      }
+      return developers[0];
+    });
+  }, [developers]);
+
+  useEffect(() => {
     let cancelled = false;
 
     const loadProvinces = async () => {
@@ -151,9 +178,10 @@ export default function CompanySearchDevelopersPage() {
   }, [showAdvancedFilters]);
 
   return (
-    <div className="space-y-6">
+    <div className="company-workspace-page space-y-6">
       <div>
-        <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Search developers</h2>
+        <h1 className="company-workspace-page-title">Talent search</h1>
+        <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">Find developers by role, skill, experience, or location.</p>
       </div>
 
       <form
@@ -161,18 +189,18 @@ export default function CompanySearchDevelopersPage() {
         className="transition-colors duration-300"
       >
         <div className={`flex flex-col ${hasActiveFilters ? 'gap-4' : 'gap-3'}`}>
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="company-workspace-toolbar flex flex-col lg:flex-row lg:items-center">
             <div className="min-w-0 flex-1">
-              <div className="flex w-full items-center rounded-xl border border-[#a3b18a] bg-[#fcfdf8] px-2 py-2 transition-colors focus-within:ring-2 focus-within:ring-[#588157] dark:border-[#444d57] dark:bg-[#1a1d20] dark:focus-within:ring-[#6f9b74]">
+              <div className="company-workspace-control flex w-full items-center px-2">
                 <input
                   value={filters.q}
                   onChange={(event) => handleFilterChange('q', event.target.value)}
                   placeholder="Search by name, desired role, education..."
-                  className="min-w-0 flex-1 border-0 bg-transparent px-4 py-2.5 text-[#344e41] outline-none placeholder:text-[#3a5a40] dark:text-white dark:placeholder:text-[#adb5be]"
+                  className="min-w-0 flex-1 border-0 bg-transparent px-4 py-2.5 text-[var(--workspace-text-strong)] outline-none placeholder:text-[var(--workspace-text-muted)]"
                 />
                 <button
                   type="submit"
-                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#3a5a40] px-3.5 min-[420px]:px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#344e41] hover:shadow-md hover:shadow-[#344e41]/15 dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] dark:hover:shadow-[#6f9b74]/20"
+                  className="company-workspace-primary-button inline-flex shrink-0 items-center justify-center gap-2 px-3.5 py-2.5 min-[420px]:px-5"
                 >
                   <Search className="h-4 w-4" />
                   <span className="hidden min-[380px]:inline">Search</span>
@@ -185,7 +213,7 @@ export default function CompanySearchDevelopersPage() {
                 ref={filterButtonRef}
                 type="button"
                 onClick={() => setShowAdvancedFilters((current) => !current)}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#a8b892] bg-[#fcfdf8] px-4 py-3 text-sm font-semibold text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#1a1d20] dark:text-white dark:hover:bg-[#353c44] lg:w-auto"
+                className="company-workspace-secondary-button inline-flex w-full items-center justify-center gap-2 px-4 py-2.5 lg:w-auto"
                 aria-expanded={showAdvancedFilters}
                 aria-controls="developer-search-filters-modal"
               >
@@ -219,20 +247,42 @@ export default function CompanySearchDevelopersPage() {
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {loading ? (
-        <p className="text-sm text-[#4b5563] dark:text-[#d0d7dd]">Searching...</p>
+        <div className="company-workspace-empty-quiet p-8 text-center text-sm">Searching...</div>
       ) : developers.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {developers.map((developer) => (
-            <DeveloperCard
-              key={developer.id}
-              developer={developer}
-              onViewProfile={handleViewProfile}
-              onMessage={handleMessage}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(360px,0.88fr)_minmax(0,1.12fr)]">
+            <section className="company-workspace-list-surface p-4">
+              <div className="border-b border-[var(--workspace-border)] pb-3">
+                <h2 className="company-workspace-section-title">Results</h2>
+                <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">{developers.length} developers matched your current search.</p>
+              </div>
+              <div className="mt-4 space-y-3">
+                {developers.map((developer) => (
+                  <DeveloperCard
+                    key={developer.id}
+                    developer={developer}
+                    selected={selectedDeveloper?.id === developer.id}
+                    onSelect={setSelectedDeveloper}
+                    onViewProfile={handleViewProfile}
+                    onMessage={handleMessage}
+                  />
+                ))}
+              </div>
+            </section>
+
+            <section className="company-workspace-detail-surface hidden p-5 xl:block">
+              {selectedDeveloper ? (
+                <DeveloperPreview developer={selectedDeveloper} onViewProfile={handleViewProfile} onMessage={handleMessage} />
+              ) : (
+                <div className="company-workspace-empty-quiet flex h-full items-center justify-center p-8 text-center text-sm">
+                  Select a developer to preview their profile details.
+                </div>
+              )}
+            </section>
+          </div>
+        </>
       ) : (
-        <div className="rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] p-6 text-sm text-[#344e41] shadow-lg shadow-black/5 transition-colors duration-300 dark:border-[#353c44] dark:bg-[#22272b] dark:text-[#eceff2] dark:shadow-black/20">
+        <div className="company-workspace-empty-quiet p-8 text-center text-sm">
           No developers matched your current search yet. Try a broader keyword or open Filters to adjust the details.
         </div>
       )}
@@ -261,6 +311,81 @@ export default function CompanySearchDevelopersPage() {
           onReset={handleReset}
         />
       ) : null}
+    </div>
+  );
+}
+
+function DeveloperPreview({ developer, onViewProfile, onMessage }) {
+  const name = developer?.username || developer?.email || 'Developer';
+  const initial = name.charAt(0).toUpperCase();
+  const skills = Array.isArray(developer?.skills) ? developer.skills.filter(Boolean).slice(0, 10) : [];
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--workspace-border)] bg-[var(--workspace-surface-subtle)] text-lg font-semibold text-[var(--workspace-text-strong)]">
+            {developer?.profileImage ? (
+              <img src={developer.profileImage} alt={`${name} profile`} className="h-full w-full object-cover" />
+            ) : (
+              initial
+            )}
+          </div>
+          <div>
+            <h2 className="company-workspace-section-title">{name}</h2>
+            <p className="mt-1 text-sm text-[var(--workspace-text)]">{developer?.desiredJob || developer?.education || 'IT Professional'}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--workspace-text-muted)]">
+              {developer?.address ? <span>{developer.address}</span> : null}
+              {Number.isFinite(Number(developer?.ai?.matchPercentage)) ? (
+                <span className="font-semibold text-[var(--workspace-primary)]">
+                  Match {Number(developer.ai.matchPercentage)}% / ATS {Number(developer?.ai?.atsScore || 0)}
+                </span>
+              ) : null}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <button type="button" onClick={() => onMessage?.(developer)} className="company-workspace-primary-button px-4">
+            Message
+          </button>
+          <button type="button" onClick={() => onViewProfile?.(developer)} className="company-workspace-secondary-button px-4">
+            View full profile
+          </button>
+        </div>
+      </div>
+
+      <div className="company-workspace-detail-grid mt-6">
+        <div className="company-workspace-detail-block">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--workspace-text-muted)]">About</p>
+          <p className="mt-2 text-sm leading-7 text-[var(--workspace-text)]">
+            {developer?.bio || developer?.summary || 'No profile summary added yet.'}
+          </p>
+        </div>
+        <div className="company-workspace-detail-block">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--workspace-text-muted)]">Highlights</p>
+          <div className="mt-2 space-y-2 text-sm text-[var(--workspace-text)]">
+            <p><span className="font-semibold text-[var(--workspace-text-strong)]">Education:</span> {developer?.education || 'Not provided'}</p>
+            <p><span className="font-semibold text-[var(--workspace-text-strong)]">Location:</span> {developer?.address || 'Not provided'}</p>
+            <p><span className="font-semibold text-[var(--workspace-text-strong)]">Role:</span> {developer?.desiredJob || 'Not provided'}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="company-workspace-detail-block mt-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--workspace-text-muted)]">Skills</p>
+        {skills.length > 0 ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {skills.map((skill) => (
+              <span key={skill} className="rounded-full border border-[var(--workspace-border)] bg-[var(--workspace-surface)] px-2.5 py-1 text-xs text-[var(--workspace-text)]">
+                {skill}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-[var(--workspace-text-muted)]">No skills listed yet.</p>
+        )}
+      </div>
     </div>
   );
 }

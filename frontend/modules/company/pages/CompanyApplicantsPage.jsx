@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
+import { LayoutList, Layers3 } from 'lucide-react';
 import { useSearchParams } from '@shared/hooks/useAppRouter';
 import ApplicantCard from '@companyComponents/CompanyApplicantCard';
+import { CompanyStatStrip } from '@companyComponents/CompanyWorkspaceControls';
 import { companyAPI } from '@companyFeatures/companyAPI';
 import { useCompanyAnalytics, useCompanyApplicants } from '@companyFeatures/companyHooks';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
@@ -9,94 +11,99 @@ import TimedInfoPopup from '@sharedComponents/ui/TimedInfoPopup';
 import { getPublicProfile, getStoredUser } from '@sharedServices/authService';
 import PublicProfilePage from '@sharedPages/public-profile/PublicProfilePage';
 
+const VIEW_OPTIONS = [
+  { value: 'list', label: 'List', icon: LayoutList },
+  { value: 'grouped', label: 'Grouped', icon: Layers3 },
+];
+
+const STATUS_ORDER = ['pending', 'reviewed', 'accepted', 'rejected'];
+const STATUS_LABELS = {
+  pending: 'Awaiting review',
+  reviewed: 'Reviewed',
+  accepted: 'Hired',
+  rejected: 'Rejected',
+};
+
+const normalizeApplicantStatus = (value) => {
+  const raw = String(value || '').trim().toLowerCase();
+  if (!raw || raw === 'applied') return 'pending';
+  if (raw === 'reviewing' || raw === 'on_hold' || raw === 'on hold') return 'reviewed';
+  if (raw === 'hired' || raw === 'joined') return 'accepted';
+  if (raw === 'declined') return 'rejected';
+  return raw;
+};
+
+const buildStatusSummary = (sourceApplicants) => {
+  return sourceApplicants.reduce((acc, applicant) => {
+    const key = normalizeApplicantStatus(applicant?.status);
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+};
+
 export default function CompanyApplicantsPage() {
   const searchParams = useSearchParams();
   const viewer = getStoredUser();
   const { applicants, plan, loading, error, refetch } = useCompanyApplicants();
-  const { analytics, loading: analyticsLoading, error: analyticsError, refetch: refetchAnalytics } = useCompanyAnalytics();
+  const { analytics, loading: analyticsLoading, error: analyticsError, refetch: refetchAnalytics } = useCompanyAnalytics({ days: 30 });
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [actionApplicantId, setActionApplicantId] = useState(null);
-  const toast = useToast();
   const [rankingJobId, setRankingJobId] = useState(null);
-  const selectedJobId = useMemo(
-    () => String(searchParams?.get('job') || '').trim(),
-    [searchParams],
-  );
-  const selectedJobTitleFromQuery = useMemo(
-    () => String(searchParams?.get('title') || '').trim(),
-    [searchParams],
-  );
-  const selectedJobTitle = useMemo(() => {
-    if (!selectedJobId) {
-      return '';
-    }
+  const [viewMode, setViewMode] = useState('list');
+  const toast = useToast();
 
-    const fromList = applicants.find((item) => String(item?.job?.id || '') === selectedJobId)?.job?.title;
-    if (fromList) {
-      return String(fromList);
-    }
+  const selectedJobId = useMemo(() => String(searchParams?.get('job') || '').trim(), [searchParams]);
+  const selectedJobTitleFromQuery = useMemo(() => String(searchParams?.get('title') || '').trim(), [searchParams]);
 
-    if (selectedJobTitleFromQuery) {
-      return selectedJobTitleFromQuery;
-    }
-
-    return `Job #${selectedJobId}`;
-  }, [applicants, selectedJobId, selectedJobTitleFromQuery]);
   const visibleApplicants = useMemo(() => {
     if (!selectedJobId) {
       return applicants;
     }
     return applicants.filter((item) => String(item?.job?.id || '') === selectedJobId);
   }, [applicants, selectedJobId]);
-  const summaryValues = useMemo(
-    () => [
-      { label: 'Total jobs', value: selectedJobId ? 1 : Number(analytics?.totalJobs ?? 0), color: '#3a5a40' },
-      { label: 'Total applicants', value: selectedJobId ? Number(visibleApplicants.length) : Number(analytics?.totalApplicants ?? applicants.length ?? 0), color: '#588157' },
-    ],
-    [analytics?.totalApplicants, analytics?.totalJobs, applicants.length, selectedJobId, visibleApplicants.length],
-  );
-  const pipelineData = useMemo(() => {
-    const sourceApplicants = selectedJobId ? visibleApplicants : applicants;
-    const grouped = sourceApplicants.reduce(
-      (acc, item) => {
-        const raw = String(item?.status || '').trim().toLowerCase();
-        if (!raw || raw === 'pending' || raw === 'applied') {
-          acc.applied += 1;
-          return acc;
-        }
-        if (raw === 'reviewed' || raw === 'reviewing' || raw === 'on_hold' || raw === 'on hold') {
-          acc.reviewing += 1;
-          return acc;
-        }
-        if (raw === 'interviewed' || raw === 'interview' || raw === 'phone_screen' || raw === 'telephone' || raw === 'skill_check') {
-          acc.interviewed += 1;
-          return acc;
-        }
-        if (raw === 'accepted' || raw === 'hired' || raw === 'joined') {
-          acc.hired += 1;
-          return acc;
-        }
-        if (raw === 'rejected' || raw === 'declined') {
-          acc.rejected += 1;
-          return acc;
-        }
-        acc.other += 1;
-        return acc;
-      },
-      { applied: 0, reviewing: 0, interviewed: 0, hired: 0, rejected: 0, other: 0 },
-    );
 
+  const selectedJobTitle = useMemo(() => {
+    if (!selectedJobId) return '';
+
+    const fromList = applicants.find((item) => String(item?.job?.id || '') === selectedJobId)?.job?.title;
+    if (fromList) return String(fromList);
+    if (selectedJobTitleFromQuery) return selectedJobTitleFromQuery;
+    return `Job #${selectedJobId}`;
+  }, [applicants, selectedJobId, selectedJobTitleFromQuery]);
+
+  const localStatusSummary = useMemo(() => buildStatusSummary(visibleApplicants), [visibleApplicants]);
+  const globalStatusSummary = analytics?.applicantsByStatus || {};
+  const statusSummary = selectedJobId ? localStatusSummary : globalStatusSummary;
+
+  const metrics = useMemo(() => {
+    const totalApplicants = selectedJobId ? visibleApplicants.length : Number(analytics?.totalApplicants || applicants.length || 0);
+    const awaitingReview = Number(statusSummary.pending || 0);
+    const reviewed = Number(statusSummary.reviewed || 0);
+    const hired = Number(statusSummary.accepted || 0);
     return [
-      { label: 'Total', value: sourceApplicants.length, color: '#5f97bd' },
-      { label: 'Applied', value: grouped.applied, color: '#7aa7c8' },
-      { label: 'On hold / Reviewing', value: grouped.reviewing, color: '#6f9bb9' },
-      { label: 'Interviewed', value: grouped.interviewed, color: '#8fb4d0' },
-      { label: 'Hired', value: grouped.hired, color: '#6b9b68' },
-      { label: 'Rejected / Declined', value: grouped.rejected, color: '#cf4a62' },
-      { label: 'Other', value: grouped.other, color: '#9ca3af' },
+      { label: 'Applicants', value: totalApplicants, sublabel: selectedJobId ? 'For selected role' : 'Across all roles' },
+      { label: 'Awaiting review', value: awaitingReview, sublabel: `${Number(statusSummary.rejected || 0)} rejected` },
+      { label: 'Reviewed', value: reviewed, sublabel: selectedJobId ? 'Within selected role' : 'Across all roles' },
+      { label: 'Hired', value: hired, sublabel: `${Number(statusSummary.accepted || 0)} accepted in current scope` },
     ];
-  }, [selectedJobId, visibleApplicants, applicants]);
+  }, [analytics?.totalApplicants, applicants.length, selectedJobId, statusSummary, visibleApplicants.length]);
+
+  const groupedApplicants = useMemo(() => {
+    return STATUS_ORDER.map((statusKey) => ({
+      key: statusKey,
+      label: STATUS_LABELS[statusKey] || statusKey,
+      items: visibleApplicants.filter((applicant) => normalizeApplicantStatus(applicant?.status) === statusKey),
+    })).filter((group) => group.items.length > 0 || group.key === 'pending');
+  }, [visibleApplicants]);
+
+  const pipelineRows = useMemo(() => {
+    return STATUS_ORDER.map((statusKey) => ({
+      key: statusKey,
+      label: STATUS_LABELS[statusKey] || statusKey,
+      value: Number(statusSummary[statusKey] || 0),
+    }));
+  }, [statusSummary]);
 
   const handleViewProfile = async (user) => {
     if (!user?.id) return;
@@ -145,22 +152,37 @@ export default function CompanyApplicantsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="company-workspace-page space-y-6">
       <TimedInfoPopup
-        title="Hiring flow"
-        message="Use Hire candidate when you make a selection. The job will be marked filled, and if you reopen the role later, it will go through the posting payment flow again before going live."
-        dismissKey="applicants_hiring_flow"
+        title="Applicant review"
+        message="Use this page for fast candidate review. Keep Jobs for publishing operations and use Talent Search when you want to source outside the current applicant pool."
+        dismissKey="applicants_workspace_direction"
       />
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Applicants</h2>
-          {selectedJobId ? (
-            <p className="mt-1 text-sm text-[#4b5563] dark:text-[#d0d7dd]">
-              Showing applicants for <span className="font-semibold text-[#3a5a40] dark:text-white">{selectedJobTitle}</span>
-            </p>
-          ) : null}
+          <h1 className="company-workspace-page-title">Applicants</h1>
+          <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">
+            {selectedJobId ? `Review applicants for ${selectedJobTitle}.` : 'Review candidate progress across active roles.'}
+          </p>
         </div>
-        <div className="flex w-full sm:w-auto flex-wrap items-stretch sm:items-center gap-2">
+
+        <div className="company-workspace-tab-row">
+          {VIEW_OPTIONS.map((option) => {
+            const Icon = option.icon;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setViewMode(option.value)}
+                data-active={viewMode === option.value}
+                className="company-workspace-tab-button inline-flex items-center gap-2"
+              >
+                <Icon className="h-4 w-4" />
+                <span>{option.label}</span>
+              </button>
+            );
+          })}
           {plan?.isPremium ? (
             <button
               type="button"
@@ -171,7 +193,7 @@ export default function CompanyApplicantsPage() {
                 }
               }}
               disabled={!(selectedJobId || visibleApplicants[0]?.job?.id) || rankingJobId != null}
-              className="px-4 py-2.5 rounded-xl bg-[#2f6b4f] text-white font-semibold hover:bg-[#285b44] disabled:opacity-60 w-full min-[420px]:w-auto"
+              className="company-workspace-primary-button px-4 disabled:opacity-60"
             >
               {rankingJobId ? 'Ranking...' : 'Refresh AI ranking'}
             </button>
@@ -179,35 +201,60 @@ export default function CompanyApplicantsPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
-        <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Applicants snapshot graph</h3>
-        <SummaryGraph data={analyticsLoading && !selectedJobId ? [] : summaryValues} />
-      </div>
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
-        <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">
-          {selectedJobId ? 'Applicant pipeline' : 'Applicants pipeline'}
-        </h3>
-        <PipelineGraph data={pipelineData} />
-      </div>
+      <CompanyStatStrip metrics={metrics} loading={loading || analyticsLoading} />
 
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-      {analyticsError && <p className="text-sm text-red-600 dark:text-red-400">{analyticsError}</p>}
+      <section>
+        <article className="company-workspace-panel p-5">
+          <h2 className="company-workspace-section-title">Review flow</h2>
+          <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">Current candidate volume by stored applicant status.</p>
+          <StatusRail rows={pipelineRows} />
+        </article>
+      </section>
+
+      {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
+      {analyticsError ? <p className="text-sm text-red-600 dark:text-red-400">{analyticsError}</p> : null}
+
       {loading ? (
-        <p className="text-sm text-[#4b5563] dark:text-[#d0d7dd]">Loading applicants...</p>
+        <div className="company-workspace-empty-quiet p-8 text-center">
+          <p>Loading applicants...</p>
+        </div>
       ) : visibleApplicants.length === 0 ? (
-        <div className="rounded-xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] p-6 transition-colors duration-300">
-          <p className="text-[#344e41] dark:text-[#d0d7dd]">
-            {selectedJobId ? `No applicants yet for ${selectedJobTitle}.` : 'No applicants yet.'}
-          </p>
+        <div className="company-workspace-empty-quiet p-8 text-center">
+          <p>{selectedJobId ? `No applicants yet for ${selectedJobTitle}.` : 'No applicants yet.'}</p>
+        </div>
+      ) : viewMode === 'grouped' ? (
+        <div className="space-y-5">
+          {groupedApplicants.map((group) => (
+            <section key={group.key} className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="company-workspace-section-title">{group.label}</h2>
+                <span className="text-sm font-semibold tabular-nums text-[var(--workspace-text-muted)]">{group.items.length}</span>
+              </div>
+              <div className="space-y-4">
+                {group.items.map((applicant) => (
+                  <ApplicantCard
+                    key={applicant.id}
+                    applicant={applicant}
+                    actionLoading={actionApplicantId === applicant.id}
+                    onViewProfile={handleViewProfile}
+                    onMessage={handleMessage}
+                    onReview={(current) => handleStatusUpdate(current, 'reviewed', `Marked ${current?.user?.username || 'applicant'} as reviewed.`)}
+                    onReject={(current) => handleStatusUpdate(current, 'rejected', `Rejected ${current?.user?.username || 'applicant'}.`)}
+                    onHire={(current) => handleStatusUpdate(current, 'accepted', `Hired ${current?.user?.username || 'applicant'}.`)}
+                  />
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="hidden xl:grid xl:grid-cols-[minmax(0,1.7fr)_minmax(0,0.95fr)_0.9fr_0.95fr_minmax(17.5rem,1.35fr)] gap-6 rounded-2xl bg-[#f5f5f2] dark:bg-[#202428] px-6 py-4 text-sm font-semibold text-[#344e41] dark:text-[#eceff2]">
+          <div className="company-workspace-table-header hidden gap-6 px-6 py-3 text-xs font-semibold uppercase tracking-[0.04em] xl:grid xl:grid-cols-[minmax(0,1.7fr)_minmax(0,0.95fr)_0.9fr_0.95fr_minmax(17.5rem,1.35fr)]">
             <div>Candidate</div>
             <div>Applied To</div>
             <div>Job Status</div>
             <div>Applicant Status</div>
-            <div className="text-center">Action</div>
+            <div className="text-center">Actions</div>
           </div>
           {visibleApplicants.map((applicant) => (
             <ApplicantCard
@@ -227,9 +274,9 @@ export default function CompanyApplicantsPage() {
       {profile && (
         <Modal onClose={() => setProfile(null)}>
           {profileLoading ? (
-            <p className="text-sm text-[#4b5563] dark:text-[#d0d7dd]">Loading profile...</p>
+            <p className="text-sm text-[var(--workspace-text-muted)]">Loading profile...</p>
           ) : (
-            <div className="bg-[#f8fbf6] dark:bg-[#1a1d20] rounded-xl border border-[#a3b18a] dark:border-[#444d57] p-4 transition-colors duration-300">
+            <div className="company-workspace-panel p-4">
               <PublicProfilePage
                 profile={profile}
                 onBack={() => setProfile(null)}
@@ -249,102 +296,34 @@ export default function CompanyApplicantsPage() {
   );
 }
 
-function SummaryGraph({ data }) {
-  if (!data.length) {
-    return <p className="mt-4 text-sm text-[#4b5563] dark:text-[#d0d7dd]">Loading graph data...</p>;
-  }
-  const total = data.reduce((sum, item) => sum + item.value, 0);
-  const safeTotal = total > 0 ? total : 1;
-  let currentAngle = 0;
-  const gradientStops = data
-    .map((item) => {
-      const angle = (item.value / safeTotal) * 360;
-      const start = currentAngle;
-      const end = currentAngle + angle;
-      currentAngle = end;
-      return `${item.color} ${start}deg ${end}deg`;
-    })
-    .join(', ');
-  const donutStyle = {
-    background: `conic-gradient(${gradientStops || '#d1d5db 0deg 360deg'})`,
-  };
+function StatusRail({ rows }) {
+  const maxValue = Math.max(...rows.map((row) => Number(row?.value || 0)), 1);
 
   return (
-    <div className="mt-5 grid grid-cols-[120px_minmax(0,1fr)] items-center gap-4 sm:grid-cols-[170px_minmax(0,1fr)] sm:gap-5">
-      <div className="flex justify-center">
-        <div className="h-28 w-28 sm:h-40 sm:w-40" role="img" aria-label="Applicants summary donut chart">
-          <div className="h-full w-full rounded-full" style={donutStyle} />
+    <div className="mt-5 space-y-3">
+      {rows.map((row) => (
+        <div key={row.key}>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm font-medium text-[var(--workspace-text)]">{row.label}</span>
+            <span className="text-sm font-semibold tabular-nums text-[var(--workspace-text-strong)]">{row.value}</span>
+          </div>
+          <div className="mt-2 h-2 rounded-full bg-[var(--workspace-surface-subtle)]">
+            <div
+              className="h-2 rounded-full bg-[var(--workspace-primary)]"
+              style={{ width: `${Math.max(10, Math.round((Number(row.value || 0) / maxValue) * 100))}%` }}
+            />
+          </div>
         </div>
-      </div>
-      <div className="space-y-2.5">
-        {data.map((item) => {
-          const percent = Math.round((item.value / safeTotal) * 100);
-          return (
-            <div key={item.label} className="flex items-center justify-between rounded-xl border border-[#d6d3c9] px-3 py-2 dark:border-[#444d57]">
-              <div className="flex items-center gap-2">
-                <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-                <span className="text-xs sm:text-sm font-medium text-[#344e41] dark:text-[#eceff2]">{item.label}</span>
-              </div>
-              <div className="text-xs sm:text-sm font-semibold text-[#3a5a40] dark:text-white">
-                {item.value} <span className="text-[11px] font-medium text-[#6b7280] dark:text-[#b3bcc5]">({percent}%)</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      ))}
     </div>
   );
 }
 
-function PipelineGraph({ data }) {
-  const maxValue = Math.max(...data.map((item) => Number(item?.value || 0)), 1);
-
+function Modal({ children }) {
   return (
-    <div className="mt-4 overflow-x-auto">
-      <div className="min-w-[760px]">
-        <div className="grid grid-cols-7 gap-3 rounded-2xl border border-[#d6d3c9] bg-[#f8fbf6] p-4 dark:border-[#444d57] dark:bg-[#202428]">
-          {data.map((item) => {
-            const value = Number(item?.value || 0);
-            const barHeight = Math.max(value > 0 ? Math.round((value / maxValue) * 96) : 0, value > 0 ? 18 : 0);
-            const isJoined = item.label.toLowerCase() === 'joined';
-            const isDeclined = item.label.toLowerCase() === 'declined';
-            return (
-              <div key={item.label} className="flex flex-col items-center">
-                <div className="h-6 text-xl leading-none font-semibold text-[#4b5563] dark:text-[#d0d7dd]">{value}</div>
-                <div className="mt-1 flex h-24 w-full items-end justify-center">
-                  {value > 0 ? (
-                    <div
-                      className="w-10 rounded-md shadow-sm"
-                      style={{
-                        height: `${barHeight}px`,
-                        background: item.color,
-                      }}
-                    />
-                  ) : (
-                    <div className="h-1 w-10 rounded bg-[#d6d3c9] dark:bg-[#3b424b]" />
-                  )}
-                </div>
-                <div
-                  className={`mt-2 text-xs font-semibold leading-tight text-center ${
-                    isDeclined ? 'text-[#cf4a62] dark:text-[#fda4af]' : isJoined ? 'text-[#6b9b68] dark:text-[#86efac]' : 'text-[#374151] dark:text-[#d0d7dd]'
-                  }`}
-                >
-                  {item.label}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Modal({ onClose: _onClose, children }) {
-  return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-5xl max-h-[85vh] overflow-y-auto rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] shadow-2xl shadow-black/20 dark:shadow-black/50 transition-colors duration-300">
-        <div className="p-5">{children}</div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+      <div className="max-h-[85vh] w-full max-w-5xl overflow-y-auto rounded-2xl">
+        <div className="p-1">{children}</div>
       </div>
     </div>
   );

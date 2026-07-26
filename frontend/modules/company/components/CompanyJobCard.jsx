@@ -9,7 +9,7 @@ export default function CompanyJobCard({ job, onManage, onViewDetails, onClose, 
   const applicants = Number(job?.applicant_count || job?.applicantCount || 0);
 
   return (
-    <div className="rounded-2xl bg-[#f8fbf6] dark:bg-[#22272b] shadow-lg shadow-black/5 dark:shadow-black/20 px-3.5 py-3.5 transition-colors duration-300 sm:px-4 sm:py-4">
+    <div className="company-workspace-panel rounded-2xl bg-[#f8fbf6] px-3.5 py-3.5 shadow-lg shadow-black/5 transition-colors duration-300 dark:bg-[#22272b] dark:shadow-black/20 sm:px-4 sm:py-4">
       <div className="flex flex-col 2xl:flex-row 2xl:items-center gap-3 2xl:gap-5">
         <div className="min-w-0 2xl:flex-[1_1_auto]">
           <div className="flex flex-wrap items-center gap-2">

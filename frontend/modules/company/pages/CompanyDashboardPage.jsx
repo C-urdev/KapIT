@@ -1,209 +1,114 @@
 import React, { useMemo, useState } from 'react';
-import { Briefcase, PlusCircle, Search, MapPin, ChevronDown, ArrowDownUp } from 'lucide-react';
-import { useCompanyJobs } from '@companyFeatures/companyHooks';
+import { ArrowRight, BriefcaseBusiness, PlusCircle, Search, Users } from 'lucide-react';
+import { CompanyPeriodControl, CompanyStatStrip } from '@companyComponents/CompanyWorkspaceControls';
+import { useCompanyAnalytics, useCompanyJobs } from '@companyFeatures/companyHooks';
 import { COMPANY_PATHS, formatJobStatus, navigate } from '@companyFeatures/companyUtils';
 import { clearCompanyPostJobFormDraft } from '@companyFeatures/postJobDraftStorage';
 import TimedInfoPopup from '@sharedComponents/ui/TimedInfoPopup';
 
-function OverviewIconAction({ icon: Icon, label, onClick, variant = 'default' }) {
-  const isPrimary = variant === 'primary';
+const RANGE_OPTIONS = [
+  { label: '7 days', value: 7 },
+  { label: '30 days', value: 30 },
+  { label: '90 days', value: 90 },
+];
 
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={isPrimary
-        ? 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-[#588157] dark:border-[#6f9b74] bg-[#3a5a40] dark:bg-[#6f9b74] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-[#344e41] dark:hover:bg-[#82ad86] hover:shadow-lg hover:shadow-black/10'
-        : 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] px-4 py-2.5 text-sm font-semibold text-[#3a5a40] dark:text-white transition-all hover:-translate-y-0.5 hover:border-[#588157] dark:hover:border-[#6f9b74] hover:bg-[#f8fbf5] dark:hover:bg-[#353c44]'}
-    >
-      <Icon className={isPrimary ? 'h-4 w-4 text-white' : 'h-4 w-4 text-[#588157] dark:text-[#f0c766]'} />
-      <span>{label}</span>
-    </button>
-  );
-}
+const STATUS_LABELS = {
+  pending: 'Awaiting review',
+  reviewed: 'Reviewed',
+  accepted: 'Hired',
+  rejected: 'Rejected',
+  open: 'Open jobs',
+  draft: 'Draft jobs',
+  filled: 'Filled jobs',
+  closed: 'Closed jobs',
+};
 
-function OverviewTab({ active, label, count, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-xl border px-4 py-2 text-xs sm:text-sm font-semibold transition-colors ${active ? 'border-[#3a5a40] bg-[#3a5a40] text-white dark:border-[#6f9b74] dark:bg-[#6f9b74] dark:text-[#121416]' : 'border-[#d6d3c9] bg-[#f8fbf6] text-[#3a5a40] hover:bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#22272b] dark:text-white dark:hover:bg-[#353c44]'}`}
-    >
-      {label} ({count})
-    </button>
-  );
-}
+const formatCompactDate = (value) => {
+  if (!value) return 'No date';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return 'No date';
+  return parsed.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
+};
 
-function FilterInput({ icon: Icon, value, onChange, placeholder }) {
-  return (
-    <label className="flex min-w-0 items-center gap-2.5 rounded-xl border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#22272b] px-3.5 py-2.5 shadow-sm shadow-black/5 transition-colors focus-within:border-[#588157] dark:focus-within:border-[#6f9b74]">
-      <Icon className="h-4 w-4 shrink-0 text-[#588157] dark:text-[#f0c766]" />
-      <input
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className="w-full bg-transparent text-sm text-[#344e41] outline-none placeholder:text-[#6b7280] dark:text-white dark:placeholder:text-[#b3bcc5]"
-      />
-    </label>
-  );
-}
-
-function FilterSelect({ icon: Icon, label, value, onChange, children }) {
-  return (
-    <label className="flex min-w-0 items-center gap-2.5 overflow-hidden rounded-xl border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#22272b] px-3.5 py-2.5 shadow-sm shadow-black/5 transition-colors focus-within:border-[#588157] dark:focus-within:border-[#6f9b74]">
-      <Icon className="h-4 w-4 shrink-0 text-[#588157] dark:text-[#f0c766]" />
-      <span className="hidden shrink-0 text-sm font-semibold text-[#3a5a40] dark:text-white min-[420px]:inline">{label}</span>
-      <select
-        value={value}
-        onChange={onChange}
-        className="min-w-0 w-full flex-1 appearance-none truncate bg-transparent pr-5 text-sm text-[#344e41] outline-none dark:text-white"
-      >
-        {children}
-      </select>
-      <ChevronDown className="h-4 w-4 shrink-0 text-[#6b7280] dark:text-[#b3bcc5]" />
-    </label>
-  );
-}
-
-function formatJobDate(value) {
-  if (!value) return 'No posting date';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'No posting date';
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function CompactJobRow({ job, onManage, onOpenApplicants }) {
-  const applicants = Number(job?.applicant_count || job?.applicantCount || 0);
-  const status = String(job?.status || 'open').toLowerCase();
-  const statusDot = status === 'open' ? 'bg-emerald-500' : status === 'closed' ? 'bg-amber-500' : status === 'draft' ? 'bg-[#8ea18c]' : 'bg-[#6f9b74]';
-  const planPrice = Number(job?.posting_plan_price || job?.pay_per_use_fee || 0);
-  const planDuration = String(job?.posting_plan_duration || '').trim();
-
-  return (
-    <div className="grid grid-cols-1 gap-3 rounded-2xl bg-[#f8fbf6] dark:bg-[#22272b] p-4 shadow-sm shadow-black/5 lg:grid-cols-[minmax(0,2.2fr)_0.9fr_0.8fr_0.9fr_0.8fr] lg:items-center lg:gap-5 lg:p-5">
-      <div className="min-w-0">
-        <p className="truncate text-[1.05rem] font-bold text-[#3a5a40] dark:text-white">{job?.title || 'Untitled job'}</p>
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[#4b5563] dark:text-[#d0d7dd]">
-          {job?.location ? (
-            <span className="inline-flex items-center gap-1">
-              <MapPin className="h-4 w-4 text-[#588157] dark:text-[#f0c766]" />
-              {job.location}
-            </span>
-          ) : null}
-          {job?.type ? (
-            <span className="inline-flex items-center gap-1">
-              <Briefcase className="h-4 w-4 text-[#588157] dark:text-[#f0c766]" />
-              {job.type}
-            </span>
-          ) : null}
-        </div>
-        <p className="mt-2 text-xs text-[#6b7280] dark:text-[#b3bcc5]">Posted: {formatJobDate(job?.created_at || job?.createdAt)}</p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2.5 lg:contents">
-        <div className="rounded-xl bg-[#f8fbf6] px-3 py-2.5 dark:bg-[#202428] lg:rounded-none lg:bg-transparent lg:p-0">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6b7280] dark:text-[#b3bcc5] lg:hidden">Candidates</p>
-          <p className="text-lg font-bold text-[#31572c] dark:text-white">{applicants}</p>
-          <p className="text-sm text-[#4b5563] dark:text-[#d0d7dd]">Applicants</p>
-        </div>
-
-        <div className="rounded-xl bg-[#f8fbf6] px-3 py-2.5 dark:bg-[#202428] lg:rounded-none lg:bg-transparent lg:p-0">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6b7280] dark:text-[#b3bcc5] lg:hidden">Posting Plan</p>
-          <p className="text-sm font-semibold text-[#3a5a40] dark:text-white">
-            {planPrice > 0 ? `PHP ${planPrice.toLocaleString()}` : 'Plan saved'}
-          </p>
-          <p className="text-xs text-[#4b5563] dark:text-[#d0d7dd]">{planDuration || 'Selected in merchant'}</p>
-        </div>
-
-        <div className="rounded-xl bg-[#f8fbf6] px-3 py-2.5 dark:bg-[#202428] lg:rounded-none lg:bg-transparent lg:p-0">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6b7280] dark:text-[#b3bcc5] lg:hidden">Job Status</p>
-          <button
-            type="button"
-            onClick={() => {
-              if (status === 'open') onOpenApplicants?.(job);
-            }}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#d6d3c9] dark:border-[#444d57] bg-[#fbfcfa] dark:bg-[#202428] px-3 py-2 text-sm text-[#344e41] dark:text-white disabled:cursor-not-allowed disabled:opacity-80"
-            disabled={status !== 'open'}
-            aria-label={status === 'open' ? 'Open applicants list for this job' : 'Job status'}
-            title={status === 'open' ? 'Open applicants for this job' : undefined}
-          >
-            <span className={`h-2.5 w-2.5 rounded-full ${statusDot}`} />
-            <span>{formatJobStatus(status)}</span>
-          </button>
-        </div>
-
-        <div className="rounded-xl bg-[#f8fbf6] px-3 py-2.5 dark:bg-[#202428] lg:rounded-none lg:bg-transparent lg:p-0">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6b7280] dark:text-[#b3bcc5] lg:hidden">Action</p>
-          <button
-            type="button"
-            onClick={() => onManage(job)}
-            className="rounded-xl border border-[#a3b18a] dark:border-[#444d57] bg-[#f8fbf6] px-4 py-2.5 text-sm font-medium text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:bg-[#22272b] dark:text-white dark:hover:bg-[#353c44]"
-          >
-            Manage
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+const formatDelta = (current, previous) => {
+  const safeCurrent = Number(current || 0);
+  const safePrevious = Number(previous || 0);
+  const diff = safeCurrent - safePrevious;
+  if (diff === 0) return 'No change';
+  return `${diff > 0 ? '+' : ''}${diff} vs previous period`;
+};
 
 export default function CompanyDashboardPage() {
+  const [rangeDays, setRangeDays] = useState(30);
   const { jobs, loading: jobsLoading, error: jobsError } = useCompanyJobs();
-  const [statusTab, setStatusTab] = useState('open');
-  const [titleQuery, setTitleQuery] = useState('');
-  const [locationQuery, setLocationQuery] = useState('');
-  const [sortBy, setSortBy] = useState('posting_date');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const { analytics, loading: analyticsLoading, error: analyticsError } = useCompanyAnalytics({ days: rangeDays });
 
-  const openJobs = useMemo(() => jobs.filter((job) => String(job?.status || '').toLowerCase() === 'open'), [jobs]);
-  const draftJobs = useMemo(() => jobs.filter((job) => String(job?.status || '').toLowerCase() === 'draft' || String(job?.posting_payment_status || '').toLowerCase() !== 'paid'), [jobs]);
-  const closedJobs = useMemo(() => jobs.filter((job) => {
-    const status = String(job?.status || '').toLowerCase();
-    return status !== 'open' && status !== 'draft';
-  }), [jobs]);
-  const jobsByStatus = useMemo(() => jobs.reduce((acc, job) => {
-    const status = String(job?.status || '').toLowerCase() || 'unknown';
-    acc[status] = (acc[status] || 0) + 1;
-    return acc;
-  }, {}), [jobs]);
-  const totalApplicants = useMemo(
-    () => jobs.reduce((sum, job) => sum + Number(job?.applicant_count || job?.applicantCount || 0), 0),
-    [jobs],
-  );
+  const activeJobs = useMemo(() => {
+    return [...jobs]
+      .sort((left, right) => {
+        const leftTime = new Date(left?.created_at || left?.createdAt || 0).getTime();
+        const rightTime = new Date(right?.created_at || right?.createdAt || 0).getTime();
+        return rightTime - leftTime;
+      })
+      .slice(0, 6);
+  }, [jobs]);
 
-  const filteredJobs = useMemo(() => {
-    const source = statusTab === 'open' ? openJobs : statusTab === 'draft' ? draftJobs : closedJobs;
-    const normalizedTitle = titleQuery.trim().toLowerCase();
-    const normalizedLocation = locationQuery.trim().toLowerCase();
+  const metrics = useMemo(() => {
+    return [
+      {
+        label: 'Open jobs',
+        value: Number(analytics?.openJobs || 0),
+        sublabel: `${Number(analytics?.draftJobs || 0)} drafts waiting to publish`,
+      },
+      {
+        label: 'New applicants',
+        value: Number(analytics?.newApplicantsInRange || 0),
+        sublabel: `Last ${rangeDays} days. ${formatDelta(analytics?.newApplicantsInRange, analytics?.previousPeriod?.newApplicantsInRange)}`,
+      },
+      {
+        label: 'Awaiting review',
+        value: Number(analytics?.applicantsAwaitingReview || 0),
+        sublabel: `${Number(analytics?.totalApplicants || 0)} total applicants`,
+      },
+      {
+        label: 'Filled roles',
+        value: Number(analytics?.filledJobs || 0),
+        sublabel: analytics?.averageDaysOpen == null ? 'No close-time data yet' : `${analytics.averageDaysOpen} avg days open`,
+      },
+    ];
+  }, [analytics, rangeDays]);
 
-    const nextJobs = source.filter((job) => {
-      const matchesTitle = !normalizedTitle || String(job?.title || '').toLowerCase().includes(normalizedTitle);
-      const matchesLocation = !normalizedLocation || String(job?.location || '').toLowerCase().includes(normalizedLocation);
-      return matchesTitle && matchesLocation;
-    });
+  const jobStatusRows = useMemo(() => {
+    const source = analytics?.jobsByStatus || {};
+    return ['open', 'draft', 'filled', 'closed']
+      .map((key) => ({
+        key,
+        label: STATUS_LABELS[key] || key,
+        value: Number(source[key] || 0),
+      }))
+      .filter((item) => item.value > 0 || item.key === 'open');
+  }, [analytics?.jobsByStatus]);
 
-    nextJobs.sort((a, b) => {
-      if (sortBy === 'title') {
-        const compare = String(a?.title || '').localeCompare(String(b?.title || ''));
-        return sortOrder === 'asc' ? compare : -compare;
-      }
+  const applicantStatusRows = useMemo(() => {
+    const source = analytics?.applicantsByStatus || {};
+    return ['pending', 'reviewed', 'accepted', 'rejected']
+      .map((key) => ({
+        key,
+        label: STATUS_LABELS[key] || key,
+        value: Number(source[key] || 0),
+      }))
+      .filter((item) => item.value > 0 || item.key === 'pending');
+  }, [analytics?.applicantsByStatus]);
 
-      const aTime = new Date(a?.created_at || a?.createdAt || 0).getTime();
-      const bTime = new Date(b?.created_at || b?.createdAt || 0).getTime();
-      return sortOrder === 'asc' ? aTime - bTime : bTime - aTime;
-    });
-
-    return nextJobs;
-  }, [closedJobs, draftJobs, locationQuery, openJobs, sortBy, sortOrder, statusTab, titleQuery]);
-  const overviewGraphData = useMemo(
-    () => [
-      { label: 'Total jobs', value: Number(jobs.length), color: '#3a5a40' },
-      { label: 'Open jobs', value: Number(jobsByStatus.open ?? 0), color: '#6d9273' },
-      { label: 'Filled jobs', value: Number(jobsByStatus.filled ?? 0), color: '#93b18e' },
-      { label: 'Total applicants', value: Number(totalApplicants), color: '#588157' },
-    ],
-    [jobs.length, jobsByStatus.filled, jobsByStatus.open, totalApplicants],
-  );
+  const chartMax = useMemo(() => {
+    const values = Array.isArray(analytics?.applicationsOverTime)
+      ? analytics.applicationsOverTime.map((entry) => Number(entry?.count || 0))
+      : [];
+    return Math.max(...values, 1);
+  }, [analytics?.applicationsOverTime]);
 
   const handleStartFreshPostJob = () => {
     clearCompanyPostJobFormDraft();
@@ -213,141 +118,195 @@ export default function CompanyDashboardPage() {
     navigate(COMPANY_PATHS.postJob);
   };
 
+  const showEmptyState = !jobsLoading && !analyticsLoading && Number(analytics?.totalJobs || 0) === 0;
+
   return (
-    <div className="space-y-8">
+    <div className="company-workspace-page space-y-6">
       <TimedInfoPopup
-        title="Pay before posting"
-        message="Before you post a job, payment is required and the listing goes live only after the selected plan is confirmed. Reposting an old job also opens the merchant payment page again, so every live listing follows the same plan-selection flow."
-        dismissKey="dashboard_pay_before_posting"
+        title="Hiring workspace"
+        message="This overview is meant to help you spot what needs attention quickly. Use Jobs for publishing operations, Applicants for candidate review, and Talent Search when you want to source proactively."
+        dismissKey="company_hiring_workspace_direction"
       />
-      <div className="flex flex-wrap items-start justify-between gap-4">
+
+      <div className="company-workspace-page-header">
         <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-[#3a5a40] dark:text-white">Overview</h2>
+          <h1 className="company-workspace-page-title">Hiring overview</h1>
+          <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">Track what needs attention across roles, applicants, and hiring activity.</p>
         </div>
-        <div className="ml-auto flex w-auto flex-wrap items-center justify-end gap-2">
-          <OverviewIconAction icon={PlusCircle} label="Post a job" variant="primary" onClick={handleStartFreshPostJob} />
-          <OverviewIconAction icon={Search} label="Search developers" onClick={() => navigate(COMPANY_PATHS.search)} />
+
+        <div className="company-workspace-header-actions">
+          <CompanyPeriodControl value={rangeDays} options={RANGE_OPTIONS} onChange={setRangeDays} />
+          <button type="button" onClick={handleStartFreshPostJob} className="company-workspace-primary-button inline-flex items-center gap-2 px-4">
+            <PlusCircle className="h-4 w-4" />
+            <span>Post a job</span>
+          </button>
+          <button type="button" onClick={() => navigate(COMPANY_PATHS.search)} className="company-workspace-secondary-button inline-flex items-center gap-2 px-4">
+            <Search className="h-4 w-4" />
+            <span>Search developers</span>
+          </button>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] p-5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-colors duration-300">
-        <h3 className="text-lg font-bold text-[#3a5a40] dark:text-white">Applicants snapshot graph</h3>
-        <SummaryGraph data={jobsLoading ? [] : overviewGraphData} />
-      </div>
+      {jobsError ? <p className="text-sm text-red-600 dark:text-red-400">{jobsError}</p> : null}
+      {analyticsError ? <p className="text-sm text-red-600 dark:text-red-400">{analyticsError}</p> : null}
 
-      <section className="space-y-4">
-        <div className="flex flex-wrap items-center gap-2 pb-1">
-          <OverviewTab active={statusTab === 'open'} label="Open" count={openJobs.length} onClick={() => setStatusTab('open')} />
-          <OverviewTab active={statusTab === 'draft'} label="Draft" count={draftJobs.length} onClick={() => setStatusTab('draft')} />
-          <OverviewTab active={statusTab === 'closed'} label="Closed" count={closedJobs.length} onClick={() => setStatusTab('closed')} />
-        </div>
-
-        <div className="grid grid-cols-1 gap-2.5 min-[520px]:grid-cols-2 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(160px,0.72fr)_minmax(160px,0.72fr)]">
-          <FilterInput icon={Search} value={titleQuery} onChange={(event) => setTitleQuery(event.target.value)} placeholder="Search job titles" />
-          <FilterInput icon={MapPin} value={locationQuery} onChange={(event) => setLocationQuery(event.target.value)} placeholder="Search locations" />
-          <FilterSelect icon={Search} label="Sort by" value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
-            <option value="posting_date">Posting date</option>
-            <option value="title">Job title</option>
-          </FilterSelect>
-          <FilterSelect icon={ArrowDownUp} label="Order" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)}>
-            <option value="desc">Descending</option>
-            <option value="asc">Ascending</option>
-          </FilterSelect>
-        </div>
-
-        <div className="hidden lg:grid grid-cols-[minmax(0,2.2fr)_0.9fr_0.8fr_0.9fr_0.8fr] gap-5 rounded-2xl bg-[#f5f5f2] dark:bg-[#202428] px-5 py-4 text-sm font-semibold text-[#344e41] dark:text-[#eceff2]">
-          <div>Job Title</div>
-          <div>Candidates</div>
-          <div>Posting Plan</div>
-          <div>Job Status</div>
-          <div>Action</div>
-        </div>
-
-        {jobsError && <p className="text-sm text-red-600 dark:text-red-400">{jobsError}</p>}
-        {jobsLoading ? (
-          <div className="space-y-4 animate-pulse">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-[120px] lg:h-[88px] w-full rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 shadow-sm" />
-            ))}
+      {showEmptyState ? (
+        <section className="company-workspace-empty-quiet p-10">
+          <div className="mx-auto max-w-xl text-center">
+            <BriefcaseBusiness className="mx-auto h-10 w-10 text-[var(--workspace-text-muted)]" />
+            <h2 className="mt-4 text-xl font-semibold text-[var(--workspace-text-strong)]">No hiring activity yet</h2>
+            <p className="mt-2 text-sm text-[var(--workspace-text-muted)]">
+              Start with your first role, then this overview will show applicant flow, role status, and hiring progress.
+            </p>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+              <button type="button" onClick={handleStartFreshPostJob} className="company-workspace-primary-button px-4">
+                Post a job
+              </button>
+              <button type="button" onClick={() => navigate(COMPANY_PATHS.search)} className="company-workspace-secondary-button px-4">
+                Search developers
+              </button>
+            </div>
           </div>
-        ) : filteredJobs.length === 0 ? (
-          <div className="rounded-xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] p-6 transition-colors duration-300">
-            <p className="text-[#344e41] dark:text-[#d0d7dd]">No jobs match the current filters.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredJobs.slice(0, 8).map((job) => (
-              <CompactJobRow
-                key={job.id}
-                job={job}
-                onManage={() => navigate(COMPANY_PATHS.jobs)}
-                onOpenApplicants={(selectedJob) => {
-                  const params = new URLSearchParams();
-                  params.set('job', String(selectedJob?.id || ''));
-                  if (selectedJob?.title) {
-                    params.set('title', String(selectedJob.title));
-                  }
-                  navigate(`${COMPANY_PATHS.applicants}?${params.toString()}`);
-                }}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+        </section>
+      ) : (
+        <>
+          <CompanyStatStrip metrics={metrics} loading={analyticsLoading} />
+
+          <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.95fr)]">
+            <article className="company-workspace-panel p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="company-workspace-section-title">Applications over time</h2>
+                  <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">New applicant volume in the selected range.</p>
+                </div>
+                <span className="rounded-full bg-[var(--workspace-primary-soft)] px-3 py-1 text-xs font-semibold text-[var(--workspace-primary)]">
+                  {rangeDays} day view
+                </span>
+              </div>
+
+              <div className="mt-5 grid h-[220px] grid-cols-[repeat(auto-fit,minmax(28px,1fr))] items-end gap-2">
+                {(analytics?.applicationsOverTime || []).map((entry) => {
+                  const count = Number(entry?.count || 0);
+                  const height = Math.max(count > 0 ? Math.round((count / chartMax) * 180) : 6, count > 0 ? 18 : 6);
+                  return (
+                    <div key={entry.day} className="flex min-w-0 flex-col items-center gap-2">
+                      <span className="text-[11px] font-semibold tabular-nums text-[var(--workspace-text-strong)]">{count}</span>
+                      <div className="flex h-[180px] w-full items-end">
+                        <div
+                          className="w-full rounded-t-md bg-[var(--workspace-primary)]"
+                          style={{ height: `${height}px`, opacity: count === 0 ? 0.28 : 1 }}
+                          title={`${entry.day}: ${count} applications`}
+                        />
+                      </div>
+                      <span className="text-[11px] text-[var(--workspace-text-muted)]">{formatCompactDate(entry.day)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </article>
+
+            <article className="company-workspace-panel p-5">
+              <h2 className="company-workspace-section-title">Hiring pipeline</h2>
+              <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">Role and applicant status at a glance.</p>
+
+              <div className="mt-5 space-y-5">
+                <StatusList title="Jobs" rows={jobStatusRows} accentClass="bg-[var(--workspace-primary)]" />
+                <StatusList title="Applicants" rows={applicantStatusRows} accentClass="bg-[#4f7d60]" />
+              </div>
+            </article>
+          </section>
+
+          <section className="company-workspace-panel p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="company-workspace-section-title">Active roles</h2>
+                <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">Recent openings with direct shortcuts into jobs and applicants.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate(COMPANY_PATHS.jobs)}
+                className="company-workspace-secondary-button inline-flex items-center gap-2 px-4"
+              >
+                <span>Open Jobs</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="company-workspace-table-header mt-5 hidden grid-cols-[minmax(0,2fr)_0.8fr_0.8fr_0.7fr_0.8fr] gap-4 px-4 py-3 text-xs font-semibold uppercase tracking-[0.05em] xl:grid">
+              <div>Role</div>
+              <div>Status</div>
+              <div>Applicants</div>
+              <div>Posted</div>
+              <div>Action</div>
+            </div>
+
+            <div className="mt-3 space-y-3">
+              {activeJobs.map((job) => (
+                <div key={job.id} className="company-workspace-panel-subtle grid grid-cols-1 gap-3 p-4 xl:grid-cols-[minmax(0,2fr)_0.8fr_0.8fr_0.7fr_0.8fr] xl:items-center xl:gap-4">
+                  <div className="min-w-0">
+                    <p className="truncate text-base font-semibold text-[var(--workspace-text-strong)]">{job?.title || 'Untitled job'}</p>
+                    <p className="mt-1 truncate text-sm text-[var(--workspace-text-muted)]">{job?.location || 'No location added'}</p>
+                  </div>
+                  <div className="text-sm font-medium text-[var(--workspace-text)]">{formatJobStatus(job?.status || 'open')}</div>
+                  <div className="text-sm font-semibold tabular-nums text-[var(--workspace-text-strong)]">
+                    {Number(job?.applicant_count || job?.applicantCount || 0)}
+                  </div>
+                  <div className="text-sm text-[var(--workspace-text-muted)]">{formatCompactDate(job?.created_at || job?.createdAt)}</div>
+                  <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+                    <button
+                      type="button"
+                      onClick={() => navigate(COMPANY_PATHS.jobs)}
+                      className="company-workspace-secondary-button px-3"
+                    >
+                      Manage
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const params = new URLSearchParams();
+                        params.set('job', String(job?.id || ''));
+                        params.set('title', String(job?.title || ''));
+                        navigate(`${COMPANY_PATHS.applicants}?${params.toString()}`);
+                      }}
+                      className="company-workspace-primary-button inline-flex items-center gap-2 px-3"
+                    >
+                      <Users className="h-4 w-4" />
+                      <span>Applicants</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
     </div>
   );
 }
 
-function SummaryGraph({ data }) {
-  if (!data.length) {
-    return (
-      <div className="mt-5 grid grid-cols-[120px_minmax(0,1fr)] items-center gap-4 sm:grid-cols-[170px_minmax(0,1fr)] sm:gap-5 animate-pulse">
-        <div className="flex justify-center">
-          <div className="h-28 w-28 sm:h-40 sm:w-40 rounded-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5" />
-        </div>
-        <div className="space-y-2.5">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-10 w-full max-w-xs rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-  const total = data.reduce((sum, item) => sum + item.value, 0);
-  const safeTotal = total > 0 ? total : 1;
-  let currentAngle = 0;
-  const gradientStops = data
-    .map((item) => {
-      const angle = (item.value / safeTotal) * 360;
-      const start = currentAngle;
-      const end = currentAngle + angle;
-      currentAngle = end;
-      return `${item.color} ${start}deg ${end}deg`;
-    })
-    .join(', ');
+function StatusList({ title, rows, accentClass }) {
+  const maxValue = Math.max(...rows.map((row) => Number(row?.value || 0)), 1);
 
   return (
-    <div className="mt-5 grid grid-cols-[120px_minmax(0,1fr)] items-center gap-4 sm:grid-cols-[170px_minmax(0,1fr)] sm:gap-5">
-      <div className="flex justify-center">
-        <div className="h-28 w-28 sm:h-40 sm:w-40" role="img" aria-label="Overview summary donut chart">
-          <div className="h-full w-full rounded-full" style={{ background: `conic-gradient(${gradientStops || '#d1d5db 0deg 360deg'})` }} />
-        </div>
-      </div>
-      <div className="space-y-2.5">
-        {data.map((item) => {
-          const percent = Math.round((item.value / safeTotal) * 100);
-          return (
-            <div key={item.label} className="flex items-center justify-between rounded-xl border border-[#d6d3c9] px-3 py-2 dark:border-[#444d57]">
-              <div className="flex items-center gap-2">
-                <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-                <span className="text-xs sm:text-sm font-medium text-[#344e41] dark:text-[#eceff2]">{item.label}</span>
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--workspace-text-muted)]">{title}</p>
+      <div className="mt-3 space-y-3">
+        {rows.map((row) => (
+          <div key={row.key} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center justify-between gap-3">
+                <span className="truncate text-sm font-medium text-[var(--workspace-text)]">{row.label}</span>
+                <span className="text-sm font-semibold tabular-nums text-[var(--workspace-text-strong)]">{row.value}</span>
               </div>
-              <div className="text-xs sm:text-sm font-semibold text-[#3a5a40] dark:text-white">
-                {item.value} <span className="text-[11px] font-medium text-[#6b7280] dark:text-[#b3bcc5]">({percent}%)</span>
+              <div className="mt-2 h-2 rounded-full bg-[var(--workspace-surface-subtle)]">
+                <div
+                  className={`h-2 rounded-full ${accentClass}`}
+                  style={{ width: `${Math.max(10, Math.round((Number(row.value || 0) / maxValue) * 100))}%` }}
+                />
               </div>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </div>
   );

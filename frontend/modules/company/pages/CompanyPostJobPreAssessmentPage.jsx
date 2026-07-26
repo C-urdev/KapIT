@@ -127,23 +127,23 @@ export default function CompanyPostJobPreAssessmentPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="company-workspace-page mx-auto max-w-5xl space-y-6">
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={handleBackToPostJob}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#a3b18a] dark:border-[#444d57] text-[#344e41] dark:text-white hover:bg-[#f5f5f2] dark:hover:bg-[#353c44]"
+          className="company-workspace-secondary-button inline-flex h-10 w-10 items-center justify-center"
           aria-label="Back to post job"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
-          <h2 className="text-2xl font-extrabold text-[#3a5a40] dark:text-white">Pre-assessment builder</h2>
-          <p className="text-sm text-[#4f6654] dark:text-[#b9c1c8]">Create custom questions, add references, and define answer criteria.</p>
+          <h1 className="company-workspace-page-title">Pre-assessment builder</h1>
+          <p className="text-sm text-[var(--workspace-text-muted)]">Create custom questions, add references, and define answer criteria.</p>
         </div>
       </div>
 
-      <section className="rounded-2xl border border-[#a3b18a] dark:border-[#353c44] bg-[#f8fbf6] dark:bg-[#22272b] p-6 space-y-5">
+      <section className="company-workspace-form space-y-5 p-6">
         <div className="space-y-2">
           <label className="text-sm font-semibold text-[#3a5a40] dark:text-white">Assessment instructions (optional)</label>
           <textarea
@@ -156,7 +156,7 @@ export default function CompanyPostJobPreAssessmentPage() {
 
         <div className="space-y-3">
           {questions.map((question, index) => (
-            <article key={question.id} className="rounded-xl border border-[#bfd0af] dark:border-[#444d57] bg-[#f5f9f2] dark:bg-[#1b2025] p-4 space-y-3">
+            <article key={question.id} className="company-workspace-panel-subtle space-y-3 p-4">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-bold text-[#2f4d35] dark:text-white">Question {index + 1}</p>
                 <button
@@ -238,7 +238,7 @@ export default function CompanyPostJobPreAssessmentPage() {
                     <button
                       type="button"
                       onClick={() => addCriterion(question.id)}
-                      className="inline-flex items-center gap-1 rounded-lg bg-[#3a5a40] px-3 py-2 text-xs font-semibold text-white hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86]"
+                      className="company-workspace-primary-button inline-flex items-center gap-1 px-3 py-2 text-xs"
                     >
                       <Plus className="h-3.5 w-3.5" />
                       Add
@@ -274,7 +274,7 @@ export default function CompanyPostJobPreAssessmentPage() {
             type="button"
             onClick={addQuestion}
             disabled={questions.length >= PRE_ASSESSMENT_MAX_QUESTIONS}
-            className="inline-flex items-center gap-2 rounded-lg border border-[#a3b18a] dark:border-[#444d57] px-3 py-2 text-sm font-semibold text-[#344e41] dark:text-white hover:bg-[#eef3e8] dark:hover:bg-[#353c44] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="company-workspace-secondary-button inline-flex items-center gap-2 px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Plus className="h-4 w-4" />
             Add question
@@ -282,7 +282,7 @@ export default function CompanyPostJobPreAssessmentPage() {
           <button
             type="button"
             onClick={handleBackToPostJob}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#3a5a40] px-4 py-2 text-sm font-semibold text-white hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86]"
+            className="company-workspace-primary-button inline-flex items-center gap-2 px-4 py-2"
           >
             Save and return to post job
           </button>

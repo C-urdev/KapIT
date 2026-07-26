@@ -1,79 +1,97 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Clock3, HelpCircle, Mail, MessageSquare, Send } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock3, HelpCircle, Mail, MessageSquare, Send } from 'lucide-react';
+
+const SUPPORT_EMAIL = 'support@kapit.dev';
 
 export default function HelpPage({ onBack }) {
   const [question, setQuestion] = useState('');
+  const normalizedQuestion = question.trim();
+
+  const handleSubmit = () => {
+    if (!normalizedQuestion || typeof window === 'undefined') return;
+
+    const subject = encodeURIComponent('KapIT support request');
+    const body = encodeURIComponent(normalizedQuestion);
+    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
+  };
 
   return (
-    <div className="mx-auto w-full max-w-[min(100%,1040px)] py-3 xl:py-6">
-      <button
-        type="button"
-        onClick={onBack}
-        className="mb-4 inline-flex h-10 items-center gap-2 rounded-lg border border-[var(--user-border)] bg-[var(--user-surface)] px-3.5 text-sm font-semibold text-[var(--user-text)] transition-[background-color,border-color,color,transform] duration-150 hover:border-[var(--user-primary)]/40 hover:bg-[var(--user-surface-selected)] hover:text-[var(--user-primary)] active:scale-[0.98]"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back
-      </button>
-
-      <section className="user-desktop-flat-surface overflow-hidden rounded-[24px] border border-[var(--user-border)] bg-[var(--user-surface)]">
-        <div className="px-6 py-6 sm:px-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--user-text-strong)] sm:text-3xl">Help</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--user-text-muted)]">
-                Find answers and contact the KapIT support team.
-              </p>
-            </div>
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--user-primary-soft)] text-[var(--user-primary)]">
-              <HelpCircle className="h-5 w-5" />
-            </div>
-          </div>
+    <div className="help-workspace-page mx-auto w-full max-w-[min(100%,1120px)] py-3 xl:mx-0 xl:py-0">
+      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <button
+            type="button"
+            onClick={onBack}
+            className="help-workspace-back-button inline-flex h-10 items-center gap-2 rounded-md px-3 text-sm font-semibold transition-[background-color,border-color,color,transform] duration-150 active:scale-[0.98]"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </button>
+          <h1 className="help-workspace-title mt-5">Help</h1>
+          <p className="help-workspace-copy mt-2 max-w-2xl text-sm leading-6">
+            Contact KapIT support with account, hiring, payment, or onboarding questions.
+          </p>
         </div>
+        <div className="help-workspace-status flex items-center gap-2 rounded-md px-3 py-2 text-sm">
+          <Clock3 className="h-4 w-4" />
+          Usually reviewed in 1 to 2 business days
+        </div>
+      </div>
 
-        <div className="space-y-6 px-6 pb-6 sm:px-8">
-          <div className="grid gap-3 xl:grid-cols-3">
-            <InfoCard
-              icon={Mail}
-              title="Email Support"
-              text="Use support@kapit.dev for account, hiring, and onboarding concerns."
-            />
-            <InfoCard
-              icon={Clock3}
-              title="Response Time"
-              text="Most questions are reviewed within 1 to 2 business days."
-            />
-            <InfoCard
-              icon={MessageSquare}
-              title="Best Details"
-              text="Include your account type, issue, and what device you are using."
-            />
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-3">
+            <InfoCard icon={Mail} title="Email support" text={SUPPORT_EMAIL} />
+            <InfoCard icon={MessageSquare} title="Best context" text="Account type, issue, and device" />
+            <InfoCard icon={HelpCircle} title="Hiring help" text="Jobs, applicants, billing, profiles" />
           </div>
 
-          <div>
-            <label htmlFor="user-help-question" className="text-sm font-semibold text-[var(--user-text-strong)]">
-              Need help question
-            </label>
+          <div className="help-workspace-composer rounded-lg p-5 sm:p-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <label htmlFor="user-help-question" className="help-workspace-section-title text-base font-semibold">
+                  Send a support request
+                </label>
+                <p className="help-workspace-copy mt-1 text-sm leading-6">
+                  Write the issue once and we will open it in your email app.
+                </p>
+              </div>
+              <span className="help-workspace-count text-xs tabular-nums">{normalizedQuestion.length} chars</span>
+            </div>
             <textarea
               id="user-help-question"
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
-              placeholder="Type your question here..."
-              rows={7}
-              className="mt-3 w-full resize-none rounded-2xl border border-[var(--user-border)] bg-[var(--user-surface-subtle)] px-4 py-3 text-sm leading-6 text-[var(--user-text-strong)] outline-none transition-[background-color,border-color,box-shadow] duration-150 placeholder:text-[var(--user-text-muted)] focus:border-[var(--user-primary)] focus:bg-[var(--user-surface)] focus:ring-2 focus:ring-[var(--user-primary-soft)]"
+              placeholder="Describe what happened, what page you were on, and what you expected..."
+              rows={9}
+              className="help-workspace-textarea mt-4 w-full resize-none rounded-md px-4 py-3 text-sm leading-6 outline-none transition-[background-color,border-color,box-shadow] duration-150"
             />
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              type="button"
-              disabled={!question.trim()}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[var(--user-primary)] px-5 text-sm font-semibold text-white transition-[background-color,box-shadow,opacity,transform] duration-150 hover:bg-[var(--user-primary-hover)] hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none"
-            >
-              <Send className="h-4 w-4" />
-              Submit
-            </button>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="help-workspace-copy text-xs leading-5">
+                Do not include passwords or private payment details.
+              </p>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!normalizedQuestion}
+                className="help-workspace-submit inline-flex h-10 items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold transition-[background-color,border-color,color,opacity,transform] duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Send className="h-4 w-4" />
+                Submit
+              </button>
+            </div>
           </div>
         </div>
+
+        <aside className="help-workspace-rail rounded-lg p-5">
+          <h2 className="help-workspace-section-title text-sm font-semibold">Before you send</h2>
+          <div className="mt-4 space-y-3">
+            <ChecklistItem text="Company account name" />
+            <ChecklistItem text="Page or workflow affected" />
+            <ChecklistItem text="Screenshot or error text" />
+            <ChecklistItem text="Browser and device used" />
+          </div>
+        </aside>
       </section>
     </div>
   );
@@ -81,12 +99,21 @@ export default function HelpPage({ onBack }) {
 
 function InfoCard({ icon: Icon, title, text }) {
   return (
-    <div className="min-h-[112px] rounded-2xl border border-[var(--user-border)] bg-[var(--user-surface-subtle)] p-4">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--user-primary-soft)] text-[var(--user-primary)]">
+    <div className="help-workspace-info-card min-h-[116px] rounded-lg p-4 transition-[background-color,border-color,transform] duration-150">
+      <span className="help-workspace-icon flex h-9 w-9 items-center justify-center rounded-md">
         <Icon className="h-4 w-4" />
       </span>
-      <h3 className="mt-3 text-sm font-semibold text-[var(--user-text-strong)]">{title}</h3>
-      <p className="mt-1 text-xs leading-5 text-[var(--user-text-muted)]">{text}</p>
+      <h3 className="help-workspace-section-title mt-3 text-sm font-semibold">{title}</h3>
+      <p className="help-workspace-copy mt-1 text-xs leading-5">{text}</p>
+    </div>
+  );
+}
+
+function ChecklistItem({ text }) {
+  return (
+    <div className="flex items-start gap-2.5 text-sm">
+      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+      <span>{text}</span>
     </div>
   );
 }

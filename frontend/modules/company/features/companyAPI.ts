@@ -86,7 +86,20 @@ export const companyAPI = {
     }
     return request(`/developers?q=${encodeURIComponent(input || '')}`);
   },
-  getAnalytics: () => request('/analytics'),
+  getAnalytics: (input = {}) => {
+    const params = new URLSearchParams();
+    if (input?.days != null && String(input.days).trim() !== '') {
+      params.set('days', String(input.days));
+    }
+    if (input?.start) {
+      params.set('start', String(input.start));
+    }
+    if (input?.end) {
+      params.set('end', String(input.end));
+    }
+    const query = params.toString();
+    return request(`/analytics${query ? `?${query}` : ''}`);
+  },
   updateProfile: (profileInput) => request('/profile', { method: 'PUT', body: profileInput }),
   saveOnboardingProfile: (profileInput) => request('/onboarding/profile', { method: 'PUT', body: profileInput }),
 };
