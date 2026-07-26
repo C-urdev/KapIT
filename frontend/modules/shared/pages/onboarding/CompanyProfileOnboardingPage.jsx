@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Building2, LogOut, Moon, Sun } from 'lucide-react';
+import { ArrowLeft, LogOut, Moon, Sun } from 'lucide-react';
 import { useToast } from '@sharedComponents/ui/ToastProvider';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
@@ -85,13 +85,41 @@ const formatLocation = (city, provinceCode, provinceLabelByCode, country) => {
   return `${city}, ${provinceLabel}, ${normalizedCountry}`;
 };
 
-const inputClass = (invalid) => [
-  'min-h-11 w-full rounded-lg border bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none',
-  'placeholder:text-slate-400 focus-visible:border-[#0f5a48] focus-visible:ring-4 focus-visible:ring-[#0f5a48]/15',
+const filledFieldClass = 'border-[#0f5a48] bg-[#e8f5f0] text-[#0f3f34] dark:border-[#176c57] dark:bg-[#17382f] dark:text-[#e9fbf4]';
+
+const filledFieldShellClass = (invalid, filled = false, readOnly = false) => [
+  'min-h-11 flex w-full items-center gap-3 rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-[border-color,box-shadow,background-color] duration-150 ease-out',
+  'placeholder:text-slate-400 focus-within:border-[#0f5a48] focus-within:ring-4 focus-within:ring-[#0f5a48]/15',
   'dark:border-slate-600 dark:bg-[#1b2024] dark:text-slate-100 dark:placeholder:text-slate-500',
-  'dark:focus-visible:border-[#71b69b] dark:focus-visible:ring-[#71b69b]/20',
-  'transition-[border-color,box-shadow,background-color] duration-150 ease-out',
-  invalid ? 'border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/15 dark:border-red-400' : 'border-slate-200 hover:border-slate-300 dark:hover:border-slate-500',
+  'dark:focus-within:border-[#71b69b] dark:focus-within:ring-[#71b69b]/20',
+  readOnly ? 'cursor-not-allowed' : '',
+  invalid
+    ? 'border-red-400 bg-[#fff1f2] text-red-950 shadow-[inset_3px_0_0_rgba(239,68,68,0.8)] focus-within:border-red-500 focus-within:ring-red-500/15 dark:border-red-400 dark:bg-[#2a1719] dark:text-red-100 dark:shadow-[inset_3px_0_0_rgba(248,113,113,0.8)] dark:focus-within:border-red-400 dark:focus-within:ring-red-400/20'
+    : filled
+      ? filledFieldClass
+      : 'border-slate-200 bg-white text-slate-900 hover:border-slate-300 dark:bg-[#1b2024] dark:text-slate-100 dark:hover:border-slate-500',
+].join(' ');
+
+const filledFieldTextareaShellClass = (invalid, filled = false) => [
+  'flex w-full flex-col rounded-lg border px-3.5 py-3 text-sm outline-none transition-[border-color,box-shadow,background-color] duration-150 ease-out',
+  'placeholder:text-slate-400 focus-within:border-[#0f5a48] focus-within:ring-4 focus-within:ring-[#0f5a48]/15',
+  'dark:border-slate-600 dark:bg-[#1b2024] dark:text-slate-100 dark:placeholder:text-slate-500',
+  'dark:focus-within:border-[#71b69b] dark:focus-within:ring-[#71b69b]/20',
+  invalid
+    ? 'border-red-400 bg-[#fff1f2] text-red-950 shadow-[inset_3px_0_0_rgba(239,68,68,0.8)] focus-within:border-red-500 focus-within:ring-red-500/15 dark:border-red-400 dark:bg-[#2a1719] dark:text-red-100 dark:shadow-[inset_3px_0_0_rgba(248,113,113,0.8)] dark:focus-within:border-red-400 dark:focus-within:ring-red-400/20'
+    : filled
+      ? filledFieldClass
+      : 'border-slate-200 bg-white text-slate-900 hover:border-slate-300 dark:bg-[#1b2024] dark:text-slate-100 dark:hover:border-slate-500',
+].join(' ');
+
+const filledFieldInputClass = (invalid, filled = false) => [
+  'min-w-0 flex-1 border-0 bg-transparent p-0 text-sm outline-none',
+  'placeholder:text-slate-400 dark:placeholder:text-slate-500',
+  invalid
+    ? 'text-red-950 dark:text-red-100'
+    : filled
+      ? 'text-[#0f3f34] dark:text-[#e9fbf4]'
+      : 'text-slate-900 dark:text-slate-100',
 ].join(' ');
 
 export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout }) {
@@ -109,7 +137,6 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
   const initialIndustry = String(user?.industry || '').trim();
   const initialUsesCustomType = Boolean(initialIndustry) && !INDUSTRY_OPTIONS.includes(initialIndustry);
   const [form, setForm] = useState({
-    contactName: user?.name || '',
     contactEmail: user?.email || '',
     companyName: user?.companyName || user?.username || '',
     logoUrl: user?.profileImage || '',
@@ -121,7 +148,6 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
     provinceCode: '',
     city: '',
     location: String(user?.address || ''),
-    phoneNumber: user?.phone || '',
     description: user?.bio || '',
   });
   const countryOptions = useMemo(() => getCountryOptions(), []);
@@ -196,27 +222,25 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
   }, [form.city, form.country, locationData]);
 
   const finalIndustry = form.industry === OTHER_COMPANY_TYPE_OPTION ? form.customIndustry : form.industry;
+  const resolvedLocation = useMemo(
+    () => formatLocation(form.city, form.provinceCode, locationData.provinceLabelByCode, form.country),
+    [form.city, form.country, form.provinceCode, locationData.provinceLabelByCode]
+  );
+  const submittedLocation = String(form.location || resolvedLocation || '').trim();
 
   const missing = useMemo(() => ({
-    contactName: !String(form.contactName).trim(),
     contactEmail: !String(form.contactEmail).trim(),
     companyName: !String(form.companyName).trim(),
     industry: !String(finalIndustry).trim(),
     companySize: !String(form.companySize).trim(),
-    location: !String(form.location).trim(),
+    location: !submittedLocation,
     provinceCode: isPhilippines && !String(form.provinceCode).trim(),
     city: isPhilippines && !String(form.city).trim(),
-  }), [finalIndustry, form, isPhilippines]);
+  }), [finalIndustry, form.city, form.companyName, form.companySize, form.contactEmail, form.country, form.industry, form.location, form.provinceCode, form.customIndustry, isPhilippines, submittedLocation]);
 
   const isComplete = useMemo(() => !Object.values(missing).some(Boolean), [missing]);
 
   const update = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.value }));
-  const controlStyle = (invalid = false, readOnly = false) => ({
-    backgroundColor: isDark ? (readOnly ? '#171c1f' : '#1b2024') : (readOnly ? '#f8fafc' : '#ffffff'),
-    borderColor: invalid ? (isDark ? '#f87171' : '#ef4444') : (isDark ? '#475569' : '#e2e8f0'),
-    color: isDark ? '#f1f5f9' : '#0f172a',
-    colorScheme: isDark ? 'dark' : 'light',
-  });
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -230,15 +254,13 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
     setSaving(true);
     try {
       await onSubmit?.({
-        contactName: form.contactName.trim(),
         contactEmail: form.contactEmail.trim(),
         companyName: form.companyName.trim(),
         logoUrl: form.logoUrl,
         industry: finalIndustry.trim(),
         companySize: form.companySize,
         website: form.website.trim(),
-        location: form.location.trim(),
-        phoneNumber: form.phoneNumber.trim(),
+        location: submittedLocation,
         description: form.description.trim(),
       });
     } catch (error) {
@@ -287,21 +309,37 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
 
         <form onSubmit={handleSubmit} noValidate className="w-full rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_4px_rgba(15,23,42,0.03),0_14px_36px_rgba(15,23,42,0.06)] dark:border-slate-700 dark:bg-[#20262a] dark:shadow-[0_16px_40px_rgba(0,0,0,0.28)] sm:p-8" style={{ backgroundColor: isDark ? '#20262a' : '#ffffff', borderColor: isDark ? '#475569' : '#e2e8f0' }}>
           <div className="grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-2">
-            <Field label="Company logo" full isDark={isDark}>
+            <Field label="Company logo" optional isDark={isDark}>
               <CompanyLogoUpload value={form.logoUrl} onChange={(logoUrl) => setForm((current) => ({ ...current, logoUrl }))} compact />
             </Field>
-            <Field label="Your name" required invalid={submitAttempted && missing.contactName} isDark={isDark}>
-              <input value={form.contactName} onChange={update('contactName')} className={inputClass(submitAttempted && missing.contactName)} style={controlStyle(submitAttempted && missing.contactName)} placeholder="Jane Doe" autoComplete="name" required />
-            </Field>
-            <Field label="Work email" required invalid={submitAttempted && missing.contactEmail} isDark={isDark}>
-              <input value={form.contactEmail} className={`${inputClass(submitAttempted && missing.contactEmail)} cursor-not-allowed bg-slate-50 text-slate-600 dark:bg-[#171c1f] dark:text-slate-300`} style={controlStyle(submitAttempted && missing.contactEmail, true)} placeholder="jane@company.com" type="email" autoComplete="email" readOnly aria-readonly="true" required />
-            </Field>
-            <Field label="Company name" required invalid={submitAttempted && missing.companyName} isDark={isDark}>
-              <input value={form.companyName} onChange={update('companyName')} className={inputClass(submitAttempted && missing.companyName)} style={controlStyle(submitAttempted && missing.companyName)} placeholder="Acme, Inc." autoComplete="organization" required />
-            </Field>
-            <Field label="Phone" isDark={isDark}>
-              <input value={form.phoneNumber} onChange={update('phoneNumber')} className={inputClass(false)} style={controlStyle()} placeholder="+63 912 345 6789" autoComplete="tel" inputMode="tel" />
-            </Field>
+            <div className="min-w-0 space-y-5">
+              <Field label="Company name" required invalid={submitAttempted && missing.companyName} isDark={isDark}>
+                <div className={filledFieldShellClass(submitAttempted && missing.companyName, Boolean(String(form.companyName).trim()))}>
+                  <input
+                    value={form.companyName}
+                    onChange={update('companyName')}
+                    className={filledFieldInputClass(submitAttempted && missing.companyName, Boolean(String(form.companyName).trim()))}
+                    placeholder="Acme, Inc."
+                    autoComplete="organization"
+                    required
+                  />
+                </div>
+              </Field>
+              <Field label="Work email" required invalid={submitAttempted && missing.contactEmail} isDark={isDark}>
+                <div className={filledFieldShellClass(submitAttempted && missing.contactEmail, Boolean(String(form.contactEmail).trim()), true)}>
+                  <input
+                    value={form.contactEmail}
+                    className={filledFieldInputClass(submitAttempted && missing.contactEmail, Boolean(String(form.contactEmail).trim()))}
+                    placeholder="jane@company.com"
+                    type="email"
+                    autoComplete="email"
+                    readOnly
+                    aria-readonly="true"
+                    required
+                  />
+                </div>
+              </Field>
+            </div>
             <Field label="Company type" required invalid={submitAttempted && missing.industry} isDark={isDark}>
               <SearchableSelect
                 value={form.industry}
@@ -309,12 +347,22 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
                 options={COMPANY_TYPE_OPTIONS}
                 placeholder="Select company type"
                 searchPlaceholder="Search company types"
-                className={inputClass(submitAttempted && missing.industry)}
+                className={filledFieldShellClass(submitAttempted && missing.industry, Boolean(String(finalIndustry).trim()))}
+                showTriggerSearchIcon={false}
+                showTriggerChevron={false}
               />
             </Field>
             {form.industry === OTHER_COMPANY_TYPE_OPTION ? (
               <Field label="Other company type" required invalid={submitAttempted && missing.industry} isDark={isDark}>
-                <input value={form.customIndustry} onChange={update('customIndustry')} className={inputClass(submitAttempted && missing.industry)} style={controlStyle(submitAttempted && missing.industry)} placeholder="Enter your company type" required />
+                <div className={filledFieldShellClass(submitAttempted && missing.industry, Boolean(String(form.customIndustry).trim()))}>
+                  <input
+                    value={form.customIndustry}
+                    onChange={update('customIndustry')}
+                    className={filledFieldInputClass(submitAttempted && missing.industry, Boolean(String(form.customIndustry).trim()))}
+                    placeholder="Enter your company type"
+                    required
+                  />
+                </div>
               </Field>
             ) : null}
             <Field label="Company size" required invalid={submitAttempted && missing.companySize} isDark={isDark}>
@@ -324,11 +372,21 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
                 options={COMPANY_SIZE_OPTIONS}
                 placeholder="Select company size"
                 searchPlaceholder="Search company size"
-                className={inputClass(submitAttempted && missing.companySize)}
+                className={filledFieldShellClass(submitAttempted && missing.companySize, Boolean(String(form.companySize).trim()))}
+                showTriggerSearchIcon={false}
+                showTriggerChevron={false}
               />
             </Field>
-            <Field label="Website" isDark={isDark}>
-              <input value={form.website} onChange={update('website')} className={inputClass(false)} style={controlStyle()} placeholder="https://" autoComplete="url" />
+            <Field label="Website" optional isDark={isDark}>
+              <div className={filledFieldShellClass(false, Boolean(String(form.website).trim()))}>
+                <input
+                  value={form.website}
+                  onChange={update('website')}
+                  className={filledFieldInputClass(false, Boolean(String(form.website).trim()))}
+                  placeholder="https://"
+                  autoComplete="url"
+                />
+              </div>
             </Field>
             <Field label="Country" isDark={isDark}>
               <SearchableSelect
@@ -342,7 +400,9 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
                 options={countryOptions}
                 placeholder="Select country"
                 searchPlaceholder="Search countries"
-                className={inputClass(false)}
+                className={filledFieldShellClass(false, Boolean(String(form.country).trim()))}
+                showTriggerSearchIcon={false}
+                showTriggerChevron={false}
               />
             </Field>
             {isPhilippines ? (
@@ -354,7 +414,9 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
                     options={locationData.provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
                     placeholder="Select province"
                     searchPlaceholder="Search provinces"
-                    className={inputClass(submitAttempted && missing.provinceCode)}
+                    className={filledFieldShellClass(submitAttempted && missing.provinceCode, Boolean(String(form.provinceCode).trim()))}
+                    showTriggerSearchIcon={false}
+                    showTriggerChevron={false}
                   />
                 </Field>
                 <Field label="City / Municipality" required invalid={submitAttempted && missing.city} isDark={isDark}>
@@ -365,22 +427,33 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
                     placeholder={form.provinceCode ? 'Select city or municipality' : 'Select a province first'}
                     searchPlaceholder="Search cities"
                     disabled={!form.provinceCode}
-                    className={inputClass(submitAttempted && missing.city)}
+                    className={filledFieldShellClass(submitAttempted && missing.city, Boolean(String(form.city).trim()))}
+                    showTriggerSearchIcon={false}
+                    showTriggerChevron={false}
                   />
                 </Field>
               </>
             ) : (
               <Field label="City / Region" required invalid={submitAttempted && missing.location} isDark={isDark}>
-                <input value={form.city} onChange={update('city')} className={inputClass(submitAttempted && missing.location)} style={controlStyle(submitAttempted && missing.location)} placeholder="City, state, or region" required />
+                <div className={filledFieldShellClass(submitAttempted && missing.location, Boolean(String(form.city).trim()))}>
+                  <input
+                    value={form.city}
+                    onChange={update('city')}
+                    className={filledFieldInputClass(submitAttempted && missing.location, Boolean(String(form.city).trim()))}
+                    placeholder="City, state, or region"
+                    required
+                  />
+                </div>
               </Field>
             )}
             <Field label="About the company" full isDark={isDark}>
-              <textarea value={form.description} onChange={update('description')} className={`${inputClass(false)} min-h-28 resize-y`} style={controlStyle()} placeholder="Tell candidates what your company does, who you serve, and what your team is like." />
-            </Field>
-            <Field label="Profile context" full isDark={isDark}>
-              <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-600 dark:border-slate-700 dark:bg-[#171c1f] dark:text-slate-300">
-                <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-[#0f5a48] dark:text-[#9ad2ba]" aria-hidden="true" />
-                <span>Hiring requirements, ATS details, timelines, and must-haves belong on each job post so every role can have its own criteria.</span>
+              <div className={filledFieldTextareaShellClass(false, Boolean(String(form.description).trim()))}>
+                <textarea
+                  value={form.description}
+                  onChange={update('description')}
+                  className={`min-h-28 w-full resize-y border-0 bg-transparent p-0 text-sm outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 ${String(form.description).trim() ? 'text-[#0f3f34] dark:text-[#e9fbf4]' : 'text-slate-900 dark:text-slate-100'}`}
+                  placeholder="Tell candidates what your company does, who you serve, and what your team is like."
+                />
               </div>
             </Field>
           </div>
@@ -394,11 +467,13 @@ export default function CompanyProfileOnboardingPage({ user, onSubmit, onLogout 
   );
 }
 
-function Field({ label, children, full = false, invalid = false, required = false, isDark = false }) {
+function Field({ label, children, full = false, invalid = false, required = false, optional = false, isDark = false }) {
   return (
     <label className={`block ${full ? 'md:col-span-2' : ''}`}>
       <span className={`mb-2 block text-sm font-medium ${invalid ? 'text-red-700 dark:text-red-300' : 'text-slate-800 dark:text-slate-100'}`} style={{ color: invalid ? (isDark ? '#fca5a5' : '#b91c1c') : (isDark ? '#f1f5f9' : '#1e293b') }}>
-        {label}{required ? <span className="ml-1 text-red-600 dark:text-red-400">*</span> : null}
+        {label}
+        {required ? <span className="ml-1 text-red-600 dark:text-red-400">*</span> : null}
+        {optional ? <span className="ml-2 text-xs font-normal tracking-normal text-slate-500 dark:text-slate-400">Optional</span> : null}
       </span>
       {children}
     </label>
