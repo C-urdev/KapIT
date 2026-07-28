@@ -34,8 +34,6 @@ export default function LandingHeroSection({ onGetStarted }) {
 
   return (
     <section className="relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[#FDFBF7] pt-24 dark:bg-[#181a1b] lg:pt-28 min-[1100px]:pt-0">
-      
-      {/* Restored Background Image */}
       {mounted && (
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           {theme === 'dark' ? (
@@ -67,7 +65,7 @@ export default function LandingHeroSection({ onGetStarted }) {
           )}
         </div>
       )}
-      {/* Editorial Split: Left Side Typography */}
+
       <div className="landing-desktop-shell relative z-20 flex w-full flex-1 flex-col justify-center py-[4.5rem] sm:py-[5.5rem] min-[1100px]:min-h-[100dvh] min-[1100px]:items-center min-[1100px]:justify-start min-[1100px]:pt-[11.5rem] min-[1100px]:pb-[4.5rem]">
         <style dangerouslySetInnerHTML={{ __html: `
           @keyframes heroSlideUp {
@@ -76,8 +74,6 @@ export default function LandingHeroSection({ onGetStarted }) {
         `}} />
 
         <div className="relative flex w-full max-w-[34rem] flex-col gap-10 min-[1100px]:max-w-[52rem] min-[1100px]:items-center min-[1100px]:gap-12">
-          
-          {/* Halo Effect for Text Readability */}
           <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[120%] w-[140%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] bg-[#FDFBF7] opacity-95 blur-[60px] dark:bg-[#181a1b] dark:opacity-90 min-[1100px]:h-[160%] min-[1100px]:w-[120%]" />
           <div className="translate-y-8 space-y-6 opacity-0 animate-[heroSlideUp_1s_cubic-bezier(0.32,0.72,0,1)_forwards] min-[1100px]:space-y-7 min-[1100px]:text-center">
             <h1
@@ -120,7 +116,6 @@ export default function LandingHeroSection({ onGetStarted }) {
               <span>Try KapIT</span>
               <ArrowRight className="w-4.5 h-4.5 transition-transform duration-300 ease-out group-hover:translate-x-1" />
 
-              {/* Subtle inner glow for premium feel */}
               <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-white/5 to-white/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100 dark:via-black/5 dark:to-black/10" />
             </button>
           </div>

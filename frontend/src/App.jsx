@@ -2,7 +2,6 @@ import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import PageSkeleton from '../components/shared/PageSkeleton';
 
-// Lazy-loaded page components
 const LandingPageClient = lazy(() => import('../components/LandingPageClient'));
 const EmployerLandingPageClient = lazy(() => import('../components/EmployerLandingPageClient'));
 const EmployerPricingPage = lazy(() => import('./pages/EmployerPricingPage'));
@@ -32,7 +31,6 @@ const App = () => {
       <main className="flex-grow">
         <Suspense fallback={<PageSkeleton />}>
           <Routes>
-            {/* Public routes */}
             <Route index element={<LandingPageClient />} />
             <Route path="/for-employers" element={<EmployerLandingPageClient />} />
             <Route path="/for-employers/pricing" element={<EmployerPricingPage />} />
@@ -50,7 +48,6 @@ const App = () => {
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
             <Route path="/resume/:resumeId" element={<ResumeViewerPage />} />
 
-            {/* Protected routes */}
             <Route path="/dashboard/user" element={<UserDashboardPage />} />
             <Route path="/dashboard/company" element={<Navigate to="/company/dashboard" replace />} />
             <Route path="/company/*" element={<CompanyAppPage />} />
@@ -59,7 +56,6 @@ const App = () => {
             <Route path="/job-match" element={<JobMatchPage />} />
             <Route path="/premium/payment" element={<PremiumPaymentPage />} />
 
-            {/* Catch-all */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>

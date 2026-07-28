@@ -46,8 +46,8 @@ export const EMPLOYER_FAQ = [
   },
 ];
 
-export const EMPLOYER_PROOF_PLACEHOLDERS = [
-  'Employer logo placeholder',
-  'Hiring team quote placeholder',
-  'Employer outcome placeholder',
+export const EMPLOYER_PROOF_SIGNALS = [
+  'Philippine IT hiring focus',
+  'Role-fit applicant review',
+  'Connected candidate pipeline',
 ];

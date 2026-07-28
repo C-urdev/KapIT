@@ -414,9 +414,9 @@ export default function AuthPage({
 
       let data;
       if (provider === 'Google') {
-        data = await loginWithGoogle('mock-google-' + email.split('@')[0], { state });
+        data = await loginWithGoogle('local-bypass-google-' + email.split('@')[0], { state });
       } else {
-        data = await loginWithGithub('mock-github-' + email.split('@')[0], { state });
+        data = await loginWithGithub('local-bypass-github-' + email.split('@')[0], { state });
       }
 
       if (data?.success && data?.user) {
@@ -477,8 +477,6 @@ export default function AuthPage({
           <div className="absolute top-[20%] right-[-5%] w-[40%] h-[40%] rounded-full bg-[#dad7cd]/40 blur-[100px] pointer-events-none dark:hidden" />
         </>
       )}
-
-      {/* Header — matched exactly to SiteTopNav */}
       <header className={`absolute inset-x-0 top-5 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] lg:top-6 ${isSignupMode ? 'z-20 opacity-65' : 'z-50'}`}>
         <div className="landing-desktop-shell relative flex items-center justify-between py-2 lg:gap-8">
           <button type="button" onClick={onBack} className={brandLinkClass} aria-label="Back to home">
@@ -496,11 +494,7 @@ export default function AuthPage({
           </button>
         </div>
       </header>
-
-      {/* Main Content Area */}
       <main className={`relative flex-1 px-4 py-12 sm:px-6 ${isSignupMode ? 'z-20 flex items-center justify-center' : 'z-10 flex flex-col items-center justify-center'}`}>
-        
-        {/* Auth Card */}
         <div className={`w-full ${isSignupMode ? 'max-w-[400px]' : 'max-w-[420px]'}`}>
           <div className={`rounded-[24px] border backdrop-blur-xl px-7 py-9 sm:px-8 sm:py-10 ${isSignupMode ? 'relative overflow-hidden bg-white/95 shadow-[0_16px_40px_rgba(0,0,0,0.18)] border-[#a3b18a]/20 animate-in zoom-in-95 duration-200 dark:bg-[#1a1d20]/95 dark:border-[#444d57]/30 dark:shadow-[0_20px_48px_rgba(0,0,0,0.45)]' : 'bg-white/95 shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:bg-[#1a1d20]/95 dark:shadow-[0_20px_40px_rgb(0,0,0,0.4)] border-[#a3b18a]/15 dark:border-[#444d57]/30'}`}>
             {isSignupMode ? (
@@ -513,8 +507,6 @@ export default function AuthPage({
                 <X className="h-5 w-5" />
               </button>
             ) : null}
-
-            {/* Error Message */}
             {error && (
               <div className="mb-5 p-3.5 bg-red-50 dark:bg-red-500/10 border border-red-200/80 dark:border-red-500/20 rounded-xl flex items-start gap-2.5">
                 <AlertCircle className="w-4 h-4 text-red-500 dark:text-red-400 flex-shrink-0 mt-0.5" />
@@ -527,13 +519,8 @@ export default function AuthPage({
                 <p className="text-[13px] font-medium text-emerald-700 dark:text-emerald-400 leading-snug">{infoMessage}</p>
               </div>
             )}
-
-            {/* ============================================ */}
-            {/* LOGIN MODE — single step                     */}
-            {/* ============================================ */}
             {authMode === 'login' && (
               <>
-                {/* Header */}
                 <div className="text-center mb-7">
                   <h2 className="text-[22px] sm:text-2xl font-semibold text-[#344e41] tracking-tight dark:text-white mb-2">
                     Welcome back
@@ -542,8 +529,6 @@ export default function AuthPage({
                     Sign in to continue to KapIT
                   </p>
                 </div>
-
-                {/* Social login */}
                 <div className="space-y-2.5 mb-6">
                   <button
                     type="button"
@@ -569,16 +554,12 @@ export default function AuthPage({
                     Continue with GitHub
                   </button>
                 </div>
-
-                {/* Divider */}
                 <div className="relative flex items-center justify-center mb-6">
                   <div className="absolute inset-x-0 h-px bg-[#a3b18a]/25 dark:bg-[#444d57]/40"></div>
                   <span className="relative bg-white dark:bg-[#1a1d20] px-3 text-[11px] text-[#3a5a40]/50 dark:text-[#adb5be]/50 font-medium uppercase tracking-widest">
                     or
                   </span>
                 </div>
-
-                {/* Login form */}
                 <form onSubmit={handleSubmit} className="space-y-3.5">
                   <div>
                     <label className="block text-[13px] font-medium text-[#344e41]/80 dark:text-[#adb5be] mb-1.5">Email</label>
@@ -646,8 +627,6 @@ export default function AuthPage({
                     ) : 'Continue'}
                   </button>
                 </form>
-
-                {/* Toggle to signup */}
                 <div className="mt-6 text-center text-[14px] text-[#3a5a40]/65 dark:text-[#adb5be]">
                   Don't have an account?{' '}
                   <button
@@ -669,13 +648,8 @@ export default function AuthPage({
                 </div>
               </>
             )}
-
-            {/* ============================================ */}
-            {/* SIGNUP MODE — Step 1: Email + Social         */}
-            {/* ============================================ */}
             {authMode === 'signup' && signupStep === 'email' && (
               <>
-                {/* Header */}
                 <div className="text-center mb-7">
                   <h2 className="text-[22px] sm:text-2xl font-semibold text-[#344e41] tracking-tight dark:text-white mb-2">
                     Create your account
@@ -686,8 +660,6 @@ export default function AuthPage({
                     </p>
                   ) : null}
                 </div>
-
-                {/* Social login */}
                 <div className="space-y-2.5 mb-6">
                   <button
                     type="button"
@@ -713,16 +685,12 @@ export default function AuthPage({
                     Continue with GitHub
                   </button>
                 </div>
-
-                {/* Divider */}
                 <div className="relative flex items-center justify-center mb-6">
                   <div className="absolute inset-x-0 h-px bg-[#a3b18a]/25 dark:bg-[#444d57]/40"></div>
                   <span className="relative bg-white dark:bg-[#1a1d20] px-3 text-[11px] text-[#3a5a40]/50 dark:text-[#adb5be]/50 font-medium uppercase tracking-widest">
                     or
                   </span>
                 </div>
-
-                {/* Email-only form */}
                 <form onSubmit={handleSubmit} className="space-y-3.5">
                   <div>
                     <label className="block text-[13px] font-medium text-[#344e41]/80 dark:text-[#adb5be] mb-1.5">Email</label>
@@ -748,8 +716,6 @@ export default function AuthPage({
                     Continue
                   </button>
                 </form>
-
-                {/* Toggle to login */}
                 <div className="mt-6 text-center text-[14px] text-[#3a5a40]/65 dark:text-[#adb5be]">
                   Already have an account?{' '}
                   <button
@@ -763,10 +729,6 @@ export default function AuthPage({
                 </div>
               </>
             )}
-
-            {/* ============================================ */}
-            {/* SIGNUP MODE — Step 2: Password               */}
-            {/* ============================================ */}
             {authMode === 'signup' && signupStep === 'password' && (
               <>
                 <div className="mb-8">
@@ -936,8 +898,6 @@ export default function AuthPage({
           </div>
         </div>
       ) : null}
-
-      {/* Auth-level Terms Modal Overlay */}
       <TermsAndConditionsModal
         isOpen={authTermsOpen}
         onClose={() => {

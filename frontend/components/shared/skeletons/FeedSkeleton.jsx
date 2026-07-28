@@ -1,7 +1,6 @@
 export default function FeedSkeleton() {
   return (
     <div className="space-y-4 w-full max-w-2xl mx-auto">
-      {/* Composer Skeleton */}
       <div className="rounded-xl border border-[#a3b18a]/30 bg-[#f8fbf6]/50 p-4 dark:border-[#353c44]/30 dark:bg-[#22272b]/50">
         <div className="flex gap-3 items-center">
           <div className="h-10 w-10 shrink-0 rounded-full bg-[#e5e7eb] dark:bg-[#2a2f35] animate-pulse" />
@@ -13,7 +12,6 @@ export default function FeedSkeleton() {
         </div>
       </div>
 
-      {/* Post Skeletons */}
       {[...Array(3)].map((_, i) => (
         <div key={i} className="rounded-xl border border-[#a3b18a]/30 bg-white p-4 dark:border-[#353c44]/30 dark:bg-[#1a1d20]">
           <div className="flex gap-3 mb-4">

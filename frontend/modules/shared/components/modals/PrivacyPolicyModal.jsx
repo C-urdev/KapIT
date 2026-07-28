@@ -7,8 +7,6 @@ export default function PrivacyPolicyModal({ isOpen, onClose }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 min-[420px]:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="flex w-full max-w-3xl flex-col bg-white dark:bg-[#121416] rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] animate-in zoom-in-95 duration-200">
-        
-        {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-[#e5e7eb] dark:border-[#353c44] p-4 sm:p-5">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#f0f4ec] dark:bg-[#353c44]">
@@ -22,10 +20,8 @@ export default function PrivacyPolicyModal({ isOpen, onClose }) {
             <X className="w-5 h-5 text-[#344e41] dark:text-white/80" />
           </button>
         </div>
-        
-        {/* Main Content */}
+
         <main className="flex-1 overflow-y-auto p-5 sm:p-7 lg:p-8 space-y-8 custom-scrollbar">
-          
           <div className="text-[#4b5563] dark:text-[#d0d7dd] leading-relaxed text-[14.5px] space-y-4">
             <p>
               This Privacy Policy explains how KapIT collects, uses, and protects your personal and professional information when you use our platform. We are committed to ensuring that your privacy is protected and respected at all times.
@@ -47,7 +43,6 @@ export default function PrivacyPolicyModal({ isOpen, onClose }) {
             </div>
           </section>
 
-          {/* Bottom spacer block */}
           <div className="h-6"></div>
 
         </main>

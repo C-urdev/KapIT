@@ -23,14 +23,10 @@ export default function LandingWhyUsSection() {
           </p>
         </div>
 
-        {/* Two-column comparison */}
         <div className="grid grid-cols-1 min-[900px]:grid-cols-2 gap-4 lg:gap-6">
-          
-          {/* KapIT Column */}
           <div className="group rounded-3xl relative overflow-hidden border border-[#588157]/25 dark:border-[#22C55E]/15 bg-white/60 dark:bg-[#1a1d20]/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-md">
             <div className="absolute inset-0 bg-gradient-to-br from-[#588157]/[0.03] to-transparent dark:from-[#22C55E]/[0.03]" />
-            
-            {/* Column Header */}
+
             <div className="relative px-6 lg:px-8 py-5 border-b border-[#588157]/15 dark:border-[#22C55E]/10 bg-gradient-to-b from-[#fbfaf6] to-[#f0ede6] dark:from-[#1e2124] dark:to-[#1a1d20]">
               <div className="flex items-center gap-3">
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[#588157]/10 dark:bg-[#22C55E]/10">
@@ -40,7 +36,6 @@ export default function LandingWhyUsSection() {
               </div>
             </div>
 
-            {/* Rows */}
             <div className="relative">
               {COMPARISON_ROWS.map((row, i) => (
                 <div
@@ -59,10 +54,7 @@ export default function LandingWhyUsSection() {
             </div>
           </div>
 
-          {/* Others Column */}
           <div className="rounded-3xl relative overflow-hidden border border-[#a3b18a]/15 dark:border-white/5 bg-white/30 dark:bg-[#1a1d20]/30 shadow-[0_8px_30px_rgb(0,0,0,0.02)] backdrop-blur-md">
-            
-            {/* Column Header */}
             <div className="relative px-6 lg:px-8 py-5 border-b border-[#a3b18a]/15 dark:border-white/5 bg-[#f6f4ef]/50 dark:bg-[#1a1d20]/50">
               <div className="flex items-center gap-3">
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[#4a6354]/5 dark:bg-white/5">
@@ -72,7 +64,6 @@ export default function LandingWhyUsSection() {
               </div>
             </div>
 
-            {/* Rows */}
             <div className="relative">
               {COMPARISON_ROWS.map((row, i) => (
                 <div

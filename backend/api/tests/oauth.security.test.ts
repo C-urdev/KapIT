@@ -73,7 +73,7 @@ const jsonResponse = (payload: any) => ({ json: async () => payload } as any);
 
 const getMockGithubEmailForCode = (code) => {
   const normalizedCode = String(code || '').trim();
-  const slug = normalizedCode.replace(/^mock-github-/, '');
+  const slug = normalizedCode.replace(/^local-bypass-github-/, '');
   if (slug === 'mismatch') {
     return 'mismatch@example.com';
   }
@@ -140,7 +140,7 @@ test('OAuth callback with missing state fails safely', async () => {
   const response = await createLocalAgent(app)
     .post('/api/auth/github')
     .set('host', 'localhost:5001')
-    .send({ code: 'mock-github-safecheck' });
+    .send({ code: 'local-bypass-github-safecheck' });
 
   assert.equal(response.status, 400);
   assert.equal(response.body.success, false);
@@ -151,7 +151,7 @@ test('OAuth callback with invalid state fails safely', async () => {
   const response = await createLocalAgent(app)
     .post('/api/auth/github')
     .set('host', 'localhost:5001')
-    .send({ code: 'mock-github-safecheck', state: 'invalid-state-value' });
+    .send({ code: 'local-bypass-github-safecheck', state: 'invalid-state-value' });
 
   assert.equal(response.status, 400);
   assert.equal(response.body.success, false);
@@ -164,7 +164,7 @@ test('OAuth state cannot be reused and social signup does not expose query token
   const state = await createOAuthState({ agent });
 
   const first = await postLocal(agent, '/api/auth/github')
-    .send({ code: 'mock-github-reuse', state });
+    .send({ code: 'local-bypass-github-reuse', state });
 
   assert.equal(first.status, 404);
   assert.equal(first.body.success, false);
@@ -172,7 +172,7 @@ test('OAuth state cannot be reused and social signup does not expose query token
   assert.equal(Object.prototype.hasOwnProperty.call(first.body, 'socialSignupToken'), false);
 
   const second = await postLocal(agent, '/api/auth/github')
-    .send({ code: 'mock-github-reuse', state });
+    .send({ code: 'local-bypass-github-reuse', state });
 
   assert.equal(second.status, 400);
   assert.equal(second.body.success, false);
@@ -187,7 +187,7 @@ test('OAuth state and social signup session expire quickly when expired', async 
   await new Promise((resolve) => setTimeout(resolve, 1200));
 
   const expiredState = await postLocal(agent, '/api/auth/github')
-    .send({ code: 'mock-github-expired', state });
+    .send({ code: 'local-bypass-github-expired', state });
 
   assert.equal(expiredState.status, 400);
   assert.equal(expiredState.body.success, false);
@@ -195,7 +195,7 @@ test('OAuth state and social signup session expire quickly when expired', async 
 
   const freshState = await createOAuthState({ agent });
   const sessionCreation = await postLocal(agent, '/api/auth/github')
-    .send({ code: 'mock-github-session', state: freshState });
+    .send({ code: 'local-bypass-github-session', state: freshState });
   assert.equal(sessionCreation.status, 404);
 
   await new Promise((resolve) => setTimeout(resolve, 1200));
@@ -233,7 +233,7 @@ test('OAuth signup blocks account-type mismatch for existing email accounts', as
   const state = await createOAuthState({ agent, provider: 'github', mode: 'signup' });
 
   const response = await postLocal(agent, '/api/auth/github')
-    .send({ code: 'mock-github-mismatch', state });
+    .send({ code: 'local-bypass-github-mismatch', state });
 
   assert.equal(response.status, 409);
   assert.equal(response.body.success, false);
@@ -255,7 +255,7 @@ test('OAuth login blocks account-type mismatch before issuing a session', async 
   const state = await createOAuthState({ agent, provider: 'github', mode: 'login' });
 
   const response = await postLocal(agent, '/api/auth/github')
-    .send({ code: 'mock-github-mismatch', state });
+    .send({ code: 'local-bypass-github-mismatch', state });
 
   assert.equal(response.status, 403);
   assert.equal(response.body.success, false);

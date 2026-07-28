@@ -309,15 +309,13 @@ const computeProfileCompleted = (userType, merged, accountType) => {
 const register = async (req, res) => {
   const { email, password, username, userType, accountType, verificationToken, termsAccepted } = req.body;
 
-  // Validate inputs
   // Accept either accountType or userType for backward compatibility.
   if (!email || !password || !username || (!userType && !accountType)) {
     return res.status(400).json({ message: 'All fields are required' });
   }
 
-  // Developer mock bypass
   let isValidated = false;
-  if (!verificationToken && email.includes('mock-')) {
+  if (!verificationToken && email.includes('local-bypass-')) {
     try {
       assertLocalAuthBypassAllowed(req);
       isValidated = true;
@@ -357,7 +355,6 @@ const register = async (req, res) => {
 
     client = await pool.connect();
 
-    // Check if user already exists
     const userExists = await client.query(
       'SELECT * FROM users WHERE email = $1 OR username = $2',
       [email, username]
@@ -379,10 +376,8 @@ const register = async (req, res) => {
       }
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
-    // Insert new user
     const hasAcceptedTerms = termsAccepted === true;
     const result = await client.query(
       `INSERT INTO users (id, username, email, password, user_type, account_type, terms_accepted, terms_accepted_at) 

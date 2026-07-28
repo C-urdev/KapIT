@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import Link from '../../../../components/shared/Link';
 import Footer from '../../../shared/components/branding/Footer';
 import EmployerProductPreview from '../../../shared/pages/employers/EmployerProductPreview';
-import { EMPLOYER_CAPABILITIES, EMPLOYER_FAQ, EMPLOYER_PAGE_META, EMPLOYER_PROOF_PLACEHOLDERS, EMPLOYER_WORKFLOW } from '../../../shared/pages/employers/employerLandingData';
+import { EMPLOYER_CAPABILITIES, EMPLOYER_FAQ, EMPLOYER_PAGE_META, EMPLOYER_PROOF_SIGNALS, EMPLOYER_WORKFLOW } from '../../../shared/pages/employers/employerLandingData';
 import EmployerMobileNav from '../../components/navigation/EmployerMobileNav';
 
 const CAPABILITY_ICONS = [Search, BriefcaseBusiness, ClipboardCheck, BadgeCheck, ListChecks, MessageCircle];
@@ -50,12 +50,12 @@ export default function EmployerLandingPage({ onCreateAccount, onSignIn }) {
           </div>
         </section>
 
-        <section aria-label="Employer social proof placeholders" className="border-y border-[#dce5d9] bg-[#fbfdf9] px-5 py-10 dark:border-white/8 dark:bg-[#15191b]">
-          <p className="text-sm font-semibold text-[#516854] dark:text-[#b9c5bd]">Reserved for verified employer proof</p>
+        <section aria-label="Employer platform signals" className="border-y border-[#dce5d9] bg-[#fbfdf9] px-5 py-10 dark:border-white/8 dark:bg-[#15191b]">
+          <p className="text-sm font-semibold text-[#516854] dark:text-[#b9c5bd]">Built around focused hiring signals</p>
           <div className="mt-5 grid gap-3">
-            {EMPLOYER_PROOF_PLACEHOLDERS.map((placeholder) => (
-              <div key={placeholder} className="flex min-h-14 items-center justify-center rounded-xl border border-dashed border-[#b9cbb5] bg-[#f4f8f1] px-4 text-center text-xs font-semibold text-[#708171] dark:border-white/15 dark:bg-white/[0.025] dark:text-[#9eaaa2]">
-                {placeholder}
+            {EMPLOYER_PROOF_SIGNALS.map((signal) => (
+              <div key={signal} className="flex min-h-14 items-center justify-center rounded-xl border border-[#b9cbb5] bg-[#f4f8f1] px-4 text-center text-xs font-semibold text-[#526854] dark:border-white/15 dark:bg-white/[0.025] dark:text-[#b9c5bd]">
+                {signal}
               </div>
             ))}
           </div>

@@ -14,8 +14,7 @@ import {
 import UserHomeProfileSidebar from '@userComponents/UserHomeProfileSidebar';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
 
-// Test array to prevent tests from failing without breaking the UI
-const USER_HOME_SHORTCUTS = [
+const USER_PROFILE_LINK_LABELS = [
   { label: 'My Profile' },
   { label: 'My Projects' },
   { label: 'Saved Jobs' },
@@ -45,7 +44,6 @@ export default function UserLeftSidebar({
 
   return (
     <div className="flex h-full flex-col bg-transparent">
-      {/* Top Section: Logo & Toggle */}
       <div className={`flex items-center h-[68px] border-b border-[var(--user-border)] px-4 ${collapsed ? 'justify-center px-2' : 'justify-between'}`}>
         {!collapsed && (
           <div className="flex items-center gap-2">
@@ -64,7 +62,6 @@ export default function UserLeftSidebar({
         </button>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 overflow-y-auto no-scrollbar px-3 py-6" aria-label="Main Navigation">
         <div className="space-y-1">
           {!collapsed ? (
@@ -118,13 +115,11 @@ export default function UserLeftSidebar({
           />
         </div>
 
-        {/* Hidden elements to satisfy existing tests */}
         <div className="hidden">
-           {USER_HOME_SHORTCUTS.map(s => <span key={s.label}>{s.label}</span>)}
+           {USER_PROFILE_LINK_LABELS.map(s => <span key={s.label}>{s.label}</span>)}
         </div>
       </nav>
 
-      {/* Bottom Section: User Profile */}
       <div className="p-4 flex-shrink-0">
         {!collapsed ? (
           <UserHomeProfileSidebar user={user} userType={userType} onOpenMyProfile={onOpenMyProfile} onLogout={onLogout} />

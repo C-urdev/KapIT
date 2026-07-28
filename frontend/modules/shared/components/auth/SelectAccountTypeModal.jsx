@@ -37,7 +37,6 @@ export default function SelectAccountTypeModal({ open, onClose, onSelect }) {
         </button>
 
         <div className="px-8 py-10">
-          {/* Header */}
           <div className="text-center mb-8">
             <h2
               id="select-account-type-title"
@@ -50,10 +49,7 @@ export default function SelectAccountTypeModal({ open, onClose, onSelect }) {
             </p>
           </div>
 
-          {/* Options Stack */}
           <div className="space-y-4">
-            
-            {/* IT Professional - Highly Needed / Recommended */}
             <button
               onClick={() => onSelect?.('developer')}
               className="group relative w-full text-left p-5 rounded-2xl transition-all duration-300 bg-gradient-to-br from-[#f2f6f3] to-[#f8faf8] dark:from-[#1f2b23]/40 dark:to-[#1a1d20] border border-[#588157]/20 dark:border-[#6f9b74]/20 hover:border-[#588157]/40 dark:hover:border-[#6f9b74]/40 hover:shadow-sm"
@@ -77,7 +73,6 @@ export default function SelectAccountTypeModal({ open, onClose, onSelect }) {
               </div>
             </button>
 
-            {/* Company - Secondary */}
             <button
               onClick={() => onSelect?.('company')}
               className="group relative w-full text-left p-5 rounded-2xl transition-all duration-300 bg-transparent hover:bg-gradient-to-br hover:from-[#fdfcf9] hover:to-white dark:hover:from-[#2a261f]/40 dark:hover:to-[#1a1d20] border border-[#a3b18a]/20 dark:border-[#444d57]/30 hover:border-[#d69d1a]/30 dark:hover:border-[#d69d1a]/30 hover:shadow-sm"

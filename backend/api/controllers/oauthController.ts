@@ -613,16 +613,16 @@ const googleLogin = async (req, res) => {
   }
   const normalizedAccountTypeHint = stateCheck.accountTypeHint;
 
-  if (!GOOGLE_CLIENT_ID && typeof credential === 'string' && credential.includes('mock-google-')) {
+  if (!GOOGLE_CLIENT_ID && typeof credential === 'string' && credential.includes('local-bypass-google-')) {
     try {
       assertLocalAuthBypassAllowed(req);
       logger.warn('GOOGLE_CLIENT_ID missing; using local auth bypass for Google login.');
-      const mockEmail = credential.replace('mock-google-', '') + '@example.com';
+      const localBypassEmail = credential.replace('local-bypass-google-', '') + '@example.com';
       const outcome = await handleSocialLogin({
-        email: mockEmail,
-        name: 'Mock Google User',
+        email: localBypassEmail,
+        name: 'Local Google User',
         provider: 'google',
-        providerId: 'mock-' + Date.now(),
+        providerId: 'local-bypass-' + Date.now(),
         accountTypeHint: normalizedAccountTypeHint,
         oauthMode: stateCheck.mode,
         req,
@@ -687,16 +687,16 @@ const githubLogin = async (req, res) => {
   const clientSecret = process.env.GITHUB_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    if (String(code).includes('mock-github-')) {
+    if (String(code).includes('local-bypass-github-')) {
       try {
         assertLocalAuthBypassAllowed(req);
         logger.warn('GITHUB_CLIENT_ID missing; using local auth bypass for GitHub login.');
-        const mockEmail = String(code).replace('mock-github-', '') + '@example.com';
+        const localBypassEmail = String(code).replace('local-bypass-github-', '') + '@example.com';
         const outcome = await handleSocialLogin({
-          email: mockEmail,
-          name: 'Mock GitHub User',
+          email: localBypassEmail,
+          name: 'Local GitHub User',
           provider: 'github',
-          providerId: 'mock-gh-' + Date.now(),
+          providerId: 'local-bypass-gh-' + Date.now(),
           accountTypeHint: normalizedAccountTypeHint,
           oauthMode: stateCheck.mode,
           req,

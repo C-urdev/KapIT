@@ -35,10 +35,7 @@ export default function Footer() {
   return (
     <footer className="relative w-full overflow-hidden border-t border-black/5 bg-[#FDFBF7] pt-20 pb-28 dark:border-white/8 dark:bg-[#181a1b] lg:pt-24 lg:pb-32">
       <div className="landing-desktop-shell relative z-10">
-        
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-8">
-          
-          {/* Brand & Left Column */}
           <div className="lg:col-span-5 flex flex-col items-start">
             <Link href="/" className="text-3xl font-bold tracking-tight text-[#111] dark:text-white" style={{ fontFamily: 'var(--font-desktop)' }}>
               KapIT
@@ -57,7 +54,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Links Grid */}
           <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-12 lg:gap-8">
             {LINK_GROUPS.map((group) => (
               <div key={group.title}>
@@ -90,7 +86,6 @@ export default function Footer() {
 
         </div>
 
-        {/* Bottom Bar */}
         <div className="mt-20 flex flex-col items-start justify-between gap-4 border-t border-black/5 pt-6 dark:border-white/5 sm:flex-row sm:items-center lg:mt-24">
           <p className="text-sm text-[#787774] dark:text-[#a1a1aa]">
             &copy; {new Date().getFullYear()} KapIT, Inc. All rights reserved.
@@ -103,7 +98,6 @@ export default function Footer() {
 
       </div>
 
-      {/* Giant Background Text */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[clamp(8rem,18vw,14rem)] overflow-hidden" aria-hidden="true">
         <div className="absolute bottom-[-2rem] left-1/2 flex w-full -translate-x-1/2 items-center justify-center sm:bottom-[-3rem]">
           <p className="whitespace-nowrap text-[clamp(4.9rem,17vw,18rem)] font-black leading-[0.88] tracking-[-0.04em] text-[#3a5a40]/[0.08] dark:text-[#a3b18a]/[0.05]">
