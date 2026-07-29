@@ -789,5 +789,3 @@ function MiniUserAvatar({ user }) {
     </div>
   );
 }
-
-
