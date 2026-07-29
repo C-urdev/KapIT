@@ -1385,6 +1385,7 @@ const updateCompanyProfile = async (req, res) => {
   try {
     await ensureBaseUserSchemaReady();
     await ensureHiringSchemaReady();
+    await ensureOnboardingSchemaReady();
     client = await pool.connect();
     await client.query('BEGIN');
 

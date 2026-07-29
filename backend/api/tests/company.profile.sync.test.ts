@@ -157,18 +157,43 @@ const createPoolMock = () => {
   };
 };
 
+const createRuntimeSchemaMock = () => {
+  const calls = {
+    baseUser: 0,
+    hiring: 0,
+    onboarding: 0,
+  };
+
+  return {
+    calls,
+    module: {
+      warmRuntimeSchemas: async () => {},
+      ensureBaseUserSchemaReady: async () => {
+        calls.baseUser += 1;
+      },
+      ensureHiringSchemaReady: async () => {
+        calls.hiring += 1;
+      },
+      ensureOnboardingSchemaReady: async () => {
+        calls.onboarding += 1;
+      },
+    },
+  };
+};
+
 const loadApp = () => {
   clearServerModuleCache();
   const poolMock = createPoolMock();
+  const runtimeSchemaMock = createRuntimeSchemaMock();
 
   mockServerModule('config/database.js', poolMock);
-  mockServerModule('services/authSessionService.js', createAuthSessionServiceMock());
-  mockServerModule('config/runtimeSchema.js', {
-    warmRuntimeSchemas: async () => {},
-    ensureBaseUserSchemaReady: async () => {},
-    ensureHiringSchemaReady: async () => {},
-    ensureOnboardingSchemaReady: async () => {},
+  mockServerModule('config/redis.js', {
+    getRedisClient: async () => null,
+    closeRedisClient: async () => {},
+    logRedisStartupStatus: async () => ({ hasRedisUrl: false, connected: false }),
   });
+  mockServerModule('services/authSessionService.js', createAuthSessionServiceMock());
+  mockServerModule('config/runtimeSchema.js', runtimeSchemaMock.module);
   mockServerModule('services/planAccessService.js', {
     assertCompanyCanCreateDraftJob: async () => ({ isPremium: false, freeCompanyActiveJobLimit: 3 }),
     getPremiumStateForCompanyUser: async () => ({ isPremium: false }),
@@ -180,6 +205,7 @@ const loadApp = () => {
   return {
     app: require('../app').createApp(),
     poolMock,
+    runtimeSchemaMock,
   };
 };
 
@@ -195,7 +221,7 @@ const createCompanyToken = (userId) =>
   );
 
 test('company profile update sync writes industry and company_size from current payload', async () => {
-  const { app, poolMock } = loadApp();
+  const { app, poolMock, runtimeSchemaMock } = loadApp();
   const token = createCompanyToken('company-user-2');
 
   const response = await request(app)
@@ -220,4 +246,5 @@ test('company profile update sync writes industry and company_size from current 
   assert.ok(Array.isArray(upsertParams), 'company_profiles upsert should be executed');
   assert.equal(upsertParams[2], 'Fintech');
   assert.equal(upsertParams[3], '11-50');
+  assert.equal(runtimeSchemaMock.calls.onboarding, 1);
 });
