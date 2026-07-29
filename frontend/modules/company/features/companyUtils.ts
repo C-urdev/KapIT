@@ -17,6 +17,44 @@ export const COMPANY_PATHS = {
   publicProfile: '/company/public-profile',
 };
 
+export const getCompanyPaymentPopupFeatures = (): string => {
+  const width = 760;
+  const screenRef = typeof window !== 'undefined' ? window.screen : null;
+  const availableWidth = Number(screenRef?.availWidth || width);
+  const availableHeight = Number(screenRef?.availHeight || 960);
+  const height = Math.max(860, availableHeight);
+  const left = Math.max(0, Math.round((availableWidth - width) / 2));
+
+  return `width=${width},height=${height},left=${left},top=0,resizable=yes,scrollbars=yes`;
+};
+
+export const openCompanyPaymentPopup = (): Window | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const width = 760;
+  const availableWidth = Number(window.screen?.availWidth || width);
+  const availableHeight = Number(window.screen?.availHeight || 960);
+  const height = Math.max(860, availableHeight);
+  const left = Math.max(0, Math.round((availableWidth - width) / 2));
+  const popup = window.open(COMPANY_PATHS.postJobPayment, 'company-post-job-payment', getCompanyPaymentPopupFeatures());
+
+  if (!popup) {
+    return null;
+  }
+
+  try {
+    popup.moveTo(left, 0);
+    popup.resizeTo(width, height);
+  } catch {
+    // Some browsers ignore script-driven popup resizing; the feature string still covers first open.
+  }
+
+  popup.focus();
+  return popup;
+};
+
 let navigateWithRouter: ((to: string) => void) | null = null;
 
 export const setCompanyNavigator = (handler: ((to: string) => void) | null | undefined): (() => void) => {

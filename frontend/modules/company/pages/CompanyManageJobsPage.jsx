@@ -3,8 +3,8 @@ import { ArrowDownUp, ChevronDown, MapPin, PlusCircle, Search, X } from 'lucide-
 import { CompanyPeriodControl, CompanyStatStrip } from '@companyComponents/CompanyWorkspaceControls';
 import { companyAPI } from '@companyFeatures/companyAPI';
 import { useCompanyAnalytics, useCompanyJobs } from '@companyFeatures/companyHooks';
-import { COMPANY_PATHS, formatJobStatus, formatSkills, navigate } from '@companyFeatures/companyUtils';
-import { PAYMENT_CANCEL_MESSAGE_TYPE, PAYMENT_MESSAGE_TYPE, STORAGE_KEY } from '@companyPages/CompanyPostJobPaymentPage';
+import { COMPANY_PATHS, formatJobStatus, formatSkills, navigate, openCompanyPaymentPopup } from '@companyFeatures/companyUtils';
+import { PAYMENT_CANCEL_MESSAGE_TYPE, PAYMENT_FINISH_MESSAGE_TYPE, PAYMENT_MESSAGE_TYPE, STORAGE_KEY } from '@companyPages/CompanyPostJobPaymentPage';
 import ConfirmModal from '@sharedComponents/ui/ConfirmModal';
 import TimedInfoPopup from '@sharedComponents/ui/TimedInfoPopup';
 import ManageJobsSkeleton from '../../../components/shared/skeletons/ManageJobsSkeleton';
@@ -74,6 +74,11 @@ export default function CompanyManageJobsPage() {
           window.localStorage.removeItem(STORAGE_KEY);
           toast.success('Payment confirmed and the job was published successfully.');
           await refetch();
+          return;
+        }
+        if (event.data?.type === PAYMENT_FINISH_MESSAGE_TYPE) {
+          navigate(COMPANY_PATHS.jobs);
+          window.focus();
           return;
         }
         if (event.data?.type === PAYMENT_CANCEL_MESSAGE_TYPE) {
@@ -187,11 +192,9 @@ export default function CompanyManageJobsPage() {
       if (openInCurrentTab) {
         navigate(COMPANY_PATHS.postJobPayment);
       } else {
-        const paymentWindow = window.open(COMPANY_PATHS.postJobPayment, 'company-post-job-payment', 'width=760,height=860,resizable=yes,scrollbars=yes');
+        const paymentWindow = openCompanyPaymentPopup();
         if (!paymentWindow) {
           navigate(COMPANY_PATHS.postJobPayment);
-        } else {
-          paymentWindow.focus();
         }
       }
       toast.info(`Reposting "${job.title}" requires payment again. Complete the merchant payment to publish it.`);
@@ -227,11 +230,9 @@ export default function CompanyManageJobsPage() {
       if (openInCurrentTab) {
         navigate(COMPANY_PATHS.postJobPayment);
       } else {
-        const paymentWindow = window.open(COMPANY_PATHS.postJobPayment, 'company-post-job-payment', 'width=760,height=860,resizable=yes,scrollbars=yes');
+        const paymentWindow = openCompanyPaymentPopup();
         if (!paymentWindow) {
           navigate(COMPANY_PATHS.postJobPayment);
-        } else {
-          paymentWindow.focus();
         }
       }
       toast.info(`Draft saved for "${job.title}". Complete payment in the merchant window to publish it.`);
@@ -288,98 +289,106 @@ export default function CompanyManageJobsPage() {
         </div>
       </div>
 
-      <CompanyStatStrip metrics={statusMetrics} loading={loading} />
+      <section className="company-analytics-board">
+        <CompanyStatStrip metrics={statusMetrics} loading={loading} />
 
-      <div className="company-workspace-tab-row">
-        {statusTabs.map((statusKey) => (
-          <button
-            key={statusKey}
-            type="button"
-            onClick={() => setActiveTab(statusKey)}
-            data-active={activeTab === statusKey}
-            className="company-workspace-tab-button"
-          >
-            {formatJobStatus(statusKey)} ({Number(summary[statusKey] || 0)})
-          </button>
-        ))}
-      </div>
-
-      <div className="company-workspace-toolbar company-workspace-filter-strip grid-cols-1 min-[520px]:grid-cols-2 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1.1fr)_minmax(160px,0.75fr)_minmax(160px,0.75fr)]">
-        <label className="company-workspace-control flex min-w-0 items-center gap-2.5 px-3.5">
-          <Search className="h-4 w-4 shrink-0 text-[var(--workspace-text-muted)]" />
-          <input
-            value={titleQuery}
-            onChange={(event) => setTitleQuery(event.target.value)}
-            placeholder="Search job titles"
-            className="w-full bg-transparent text-sm text-[var(--workspace-text-strong)] outline-none placeholder:text-[var(--workspace-text-muted)]"
-          />
-        </label>
-
-        <label className="company-workspace-control flex min-w-0 items-center gap-2.5 px-3.5">
-          <MapPin className="h-4 w-4 shrink-0 text-[var(--workspace-text-muted)]" />
-          <input
-            value={locationQuery}
-            onChange={(event) => setLocationQuery(event.target.value)}
-            placeholder="Search locations"
-            className="w-full bg-transparent text-sm text-[var(--workspace-text-strong)] outline-none placeholder:text-[var(--workspace-text-muted)]"
-          />
-        </label>
-
-        <label className="company-workspace-control flex min-w-0 items-center gap-2.5 overflow-hidden px-3.5">
-          <Search className="h-4 w-4 shrink-0 text-[var(--workspace-text-muted)]" />
-          <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="w-full appearance-none bg-transparent text-sm text-[var(--workspace-text-strong)] outline-none">
-            <option value="posting_date">Posting date</option>
-            <option value="title">Job title</option>
-            <option value="applicants">Applicants</option>
-          </select>
-          <ChevronDown className="h-4 w-4 shrink-0 text-[var(--workspace-text-muted)]" />
-        </label>
-
-        <label className="company-workspace-control flex min-w-0 items-center gap-2.5 overflow-hidden px-3.5">
-          <ArrowDownUp className="h-4 w-4 shrink-0 text-[var(--workspace-text-muted)]" />
-          <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} className="w-full appearance-none bg-transparent text-sm text-[var(--workspace-text-strong)] outline-none">
-            <option value="desc">Descending</option>
-            <option value="asc">Ascending</option>
-          </select>
-          <ChevronDown className="h-4 w-4 shrink-0 text-[var(--workspace-text-muted)]" />
-        </label>
-      </div>
-
-      {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
-
-      {loading ? (
-        <ManageJobsSkeleton />
-      ) : emptyState ? (
-        <div className="company-workspace-empty-quiet p-8 text-center">
-          <p>{displayJobs.length === 0 ? 'No job listings yet. Use Post a job to create your first role.' : 'No jobs match the current filters.'}</p>
-        </div>
-      ) : (
-        <section className="company-workspace-panel p-5">
-          <div className="company-workspace-table-header hidden grid-cols-[minmax(0,1.85fr)_0.8fr_0.75fr_0.75fr_0.7fr_1.2fr] gap-4 px-4 py-3 text-xs font-semibold uppercase tracking-[0.05em] xl:grid">
-            <div>Role</div>
-            <div>Status</div>
-            <div>Applicants</div>
-            <div>Plan</div>
-            <div>Posted</div>
-            <div>Actions</div>
-          </div>
-
-          <div className="mt-3 space-y-3">
-            {filteredJobs.map((job) => (
-              <JobRow
-                key={job.id}
-                job={job}
-                actionLoading={actionJobId === job.id}
-                onViewDetails={setDetailsJob}
-                onClose={handleClose}
-                onReopen={handleReopen}
-                onPayNow={handlePayNow}
-                onDelete={setDeleteJob}
-              />
+        <div className="company-analytics-board-section p-4">
+          <div className="company-workspace-tab-row">
+            {statusTabs.map((statusKey) => (
+              <button
+                key={statusKey}
+                type="button"
+                onClick={() => setActiveTab(statusKey)}
+                data-active={activeTab === statusKey}
+                className="company-workspace-tab-button"
+              >
+                {formatJobStatus(statusKey)} ({Number(summary[statusKey] || 0)})
+              </button>
             ))}
           </div>
-        </section>
-      )}
+        </div>
+
+        <div className="company-analytics-board-section p-4">
+          <div className="company-workspace-toolbar company-workspace-filter-strip grid-cols-1 min-[520px]:grid-cols-2 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1.1fr)_minmax(160px,0.75fr)_minmax(160px,0.75fr)]">
+            <label className="company-workspace-control flex min-w-0 items-center gap-2.5 px-3.5">
+              <Search className="h-4 w-4 shrink-0 text-[var(--workspace-text-muted)]" />
+              <input
+                value={titleQuery}
+                onChange={(event) => setTitleQuery(event.target.value)}
+                placeholder="Search job titles"
+                className="w-full bg-transparent text-sm text-[var(--workspace-text-strong)] outline-none placeholder:text-[var(--workspace-text-muted)]"
+              />
+            </label>
+
+            <label className="company-workspace-control flex min-w-0 items-center gap-2.5 px-3.5">
+              <MapPin className="h-4 w-4 shrink-0 text-[var(--workspace-text-muted)]" />
+              <input
+                value={locationQuery}
+                onChange={(event) => setLocationQuery(event.target.value)}
+                placeholder="Search locations"
+                className="w-full bg-transparent text-sm text-[var(--workspace-text-strong)] outline-none placeholder:text-[var(--workspace-text-muted)]"
+              />
+            </label>
+
+            <label className="company-workspace-control flex min-w-0 items-center gap-2.5 overflow-hidden px-3.5">
+              <Search className="h-4 w-4 shrink-0 text-[var(--workspace-text-muted)]" />
+              <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="w-full appearance-none bg-transparent text-sm text-[var(--workspace-text-strong)] outline-none">
+                <option value="posting_date">Posting date</option>
+                <option value="title">Job title</option>
+                <option value="applicants">Applicants</option>
+              </select>
+              <ChevronDown className="h-4 w-4 shrink-0 text-[var(--workspace-text-muted)]" />
+            </label>
+
+            <label className="company-workspace-control flex min-w-0 items-center gap-2.5 overflow-hidden px-3.5">
+              <ArrowDownUp className="h-4 w-4 shrink-0 text-[var(--workspace-text-muted)]" />
+              <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} className="w-full appearance-none bg-transparent text-sm text-[var(--workspace-text-strong)] outline-none">
+                <option value="desc">Descending</option>
+                <option value="asc">Ascending</option>
+              </select>
+              <ChevronDown className="h-4 w-4 shrink-0 text-[var(--workspace-text-muted)]" />
+            </label>
+          </div>
+        </div>
+
+        {error ? <p className="company-analytics-board-section p-4 text-sm text-red-600 dark:text-red-400">{error}</p> : null}
+
+        <div className="company-analytics-board-section p-4">
+          {loading ? (
+            <ManageJobsSkeleton />
+          ) : emptyState ? (
+            <div className="company-workspace-empty-quiet p-8 text-center">
+              <p>{displayJobs.length === 0 ? 'No job listings yet. Use Post a job to create your first role.' : 'No jobs match the current filters.'}</p>
+            </div>
+          ) : (
+            <>
+              <div className="company-workspace-table-header hidden grid-cols-[minmax(0,1.85fr)_0.8fr_0.75fr_0.75fr_0.7fr_1.2fr] gap-4 px-4 py-3 text-xs font-semibold uppercase tracking-[0.05em] xl:grid">
+                <div>Role</div>
+                <div>Status</div>
+                <div>Applicants</div>
+                <div>Plan</div>
+                <div>Posted</div>
+                <div>Actions</div>
+              </div>
+
+              <div className="mt-3 overflow-hidden rounded-lg border border-[var(--workspace-border)]">
+                {filteredJobs.map((job) => (
+                  <JobRow
+                    key={job.id}
+                    job={job}
+                    actionLoading={actionJobId === job.id}
+                    onViewDetails={setDetailsJob}
+                    onClose={handleClose}
+                    onReopen={handleReopen}
+                    onPayNow={handlePayNow}
+                    onDelete={setDeleteJob}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </section>
 
       {detailsJob ? <JobDetailsModal job={detailsJob} onClose={() => setDetailsJob(null)} /> : null}
 
@@ -406,7 +415,7 @@ function JobRow({ job, actionLoading, onViewDetails, onClose, onReopen, onDelete
   const planDuration = String(job?.posting_plan_duration || '').trim();
 
   return (
-    <div className="company-workspace-panel-subtle grid grid-cols-1 gap-3 p-4 xl:grid-cols-[minmax(0,1.85fr)_0.8fr_0.75fr_0.75fr_0.7fr_1.2fr] xl:items-center xl:gap-4">
+    <div className="company-analytics-row grid grid-cols-1 gap-3 p-4 xl:grid-cols-[minmax(0,1.85fr)_0.8fr_0.75fr_0.75fr_0.7fr_1.2fr] xl:items-center xl:gap-4">
       <div className="min-w-0">
         <p className="truncate text-base font-semibold text-[var(--workspace-text-strong)]">{job?.title || 'Untitled job'}</p>
         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--workspace-text-muted)]">

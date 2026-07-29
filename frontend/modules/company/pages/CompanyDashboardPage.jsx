@@ -41,6 +41,24 @@ const formatDelta = (current, previous) => {
   return `${diff > 0 ? '+' : ''}${diff} vs previous period`;
 };
 
+const buildLinePath = (entries, maxValue) => {
+  const safeEntries = entries.length > 1 ? entries : [{ count: 0 }, { count: 0 }];
+  const width = 720;
+  const height = 220;
+  const top = 24;
+  const bottom = 32;
+  const usableHeight = height - top - bottom;
+  const denominator = Math.max(safeEntries.length - 1, 1);
+
+  return safeEntries
+    .map((entry, index) => {
+      const x = Math.round((index / denominator) * width);
+      const y = Math.round(top + usableHeight - (Number(entry?.count || 0) / maxValue) * usableHeight);
+      return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
+    })
+    .join(' ');
+};
+
 export default function CompanyDashboardPage() {
   const [rangeDays, setRangeDays] = useState(30);
   const { jobs, loading: jobsLoading, error: jobsError } = useCompanyJobs();
@@ -110,6 +128,12 @@ export default function CompanyDashboardPage() {
     return Math.max(...values, 1);
   }, [analytics?.applicationsOverTime]);
 
+  const timeline = useMemo(() => (
+    Array.isArray(analytics?.applicationsOverTime) ? analytics.applicationsOverTime : []
+  ), [analytics?.applicationsOverTime]);
+
+  const chartPath = useMemo(() => buildLinePath(timeline, chartMax), [chartMax, timeline]);
+
   const handleStartFreshPostJob = () => {
     clearCompanyPostJobFormDraft();
     if (typeof window !== 'undefined') {
@@ -146,7 +170,6 @@ export default function CompanyDashboardPage() {
           </button>
         </div>
       </div>
-
       {jobsError ? <p className="text-sm text-red-600 dark:text-red-400">{jobsError}</p> : null}
       {analyticsError ? <p className="text-sm text-red-600 dark:text-red-400">{analyticsError}</p> : null}
 
@@ -169,54 +192,46 @@ export default function CompanyDashboardPage() {
           </div>
         </section>
       ) : (
-        <>
+        <section className="company-analytics-board">
           <CompanyStatStrip metrics={metrics} loading={analyticsLoading} />
 
-          <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.95fr)]">
-            <article className="company-workspace-panel p-5">
+          <div className="company-analytics-board-section grid grid-cols-1 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
+            <article className="company-analytics-muted-panel p-5 xl:border-r xl:border-[var(--workspace-border)]">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="company-workspace-section-title">Applications over time</h2>
-                  <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">New applicant volume in the selected range.</p>
+                  <h2 className="company-workspace-section-title">Applicant flow</h2>
+                  <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">New applications across the selected period.</p>
                 </div>
-                <span className="rounded-full bg-[var(--workspace-primary-soft)] px-3 py-1 text-xs font-semibold text-[var(--workspace-primary)]">
-                  {rangeDays} day view
-                </span>
+                <span className="company-analytics-kicker">{rangeDays} days</span>
               </div>
 
-              <div className="mt-5 grid h-[220px] grid-cols-[repeat(auto-fit,minmax(28px,1fr))] items-end gap-2">
-                {(analytics?.applicationsOverTime || []).map((entry) => {
-                  const count = Number(entry?.count || 0);
-                  const height = Math.max(count > 0 ? Math.round((count / chartMax) * 180) : 6, count > 0 ? 18 : 6);
-                  return (
-                    <div key={entry.day} className="flex min-w-0 flex-col items-center gap-2">
-                      <span className="text-[11px] font-semibold tabular-nums text-[var(--workspace-text-strong)]">{count}</span>
-                      <div className="flex h-[180px] w-full items-end">
-                        <div
-                          className="w-full rounded-t-md bg-[var(--workspace-primary)]"
-                          style={{ height: `${height}px`, opacity: count === 0 ? 0.28 : 1 }}
-                          title={`${entry.day}: ${count} applications`}
-                        />
-                      </div>
-                      <span className="text-[11px] text-[var(--workspace-text-muted)]">{formatCompactDate(entry.day)}</span>
-                    </div>
-                  );
-                })}
+              <div className="company-analytics-chart mt-4">
+                <svg viewBox="0 0 720 220" role="img" aria-label="Applications over time">
+                  {[24, 65, 106, 147, 188].map((y) => (
+                    <line key={y} x1="0" x2="720" y1={y} y2={y} stroke="currentColor" strokeOpacity="0.13" strokeDasharray="4 8" />
+                  ))}
+                  <path d={chartPath} fill="none" stroke="var(--workspace-primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <div className="mt-1 flex justify-between text-xs tabular-nums text-[var(--workspace-text-muted)]">
+                  <span>{formatCompactDate(timeline[0]?.day)}</span>
+                  <span>{formatCompactDate(timeline[Math.floor((timeline.length - 1) / 2)]?.day)}</span>
+                  <span>{formatCompactDate(timeline[timeline.length - 1]?.day)}</span>
+                </div>
               </div>
             </article>
 
-            <article className="company-workspace-panel p-5">
+            <article className="p-5">
               <h2 className="company-workspace-section-title">Hiring pipeline</h2>
-              <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">Role and applicant status at a glance.</p>
+              <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">Role and applicant status in one view.</p>
 
-              <div className="mt-5 space-y-5">
+              <div className="mt-5 space-y-6">
                 <StatusList title="Jobs" rows={jobStatusRows} accentClass="bg-[var(--workspace-primary)]" />
-                <StatusList title="Applicants" rows={applicantStatusRows} accentClass="bg-[#4f7d60]" />
+                <StatusList title="Applicants" rows={applicantStatusRows} accentClass="bg-[var(--workspace-primary)]" />
               </div>
             </article>
-          </section>
+          </div>
 
-          <section className="company-workspace-panel p-5">
+          <div className="company-analytics-board-section p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="company-workspace-section-title">Active roles</h2>
@@ -240,9 +255,9 @@ export default function CompanyDashboardPage() {
               <div>Action</div>
             </div>
 
-            <div className="mt-3 space-y-3">
+            <div className="mt-3 overflow-hidden rounded-lg border border-[var(--workspace-border)]">
               {activeJobs.map((job) => (
-                <div key={job.id} className="company-workspace-panel-subtle grid grid-cols-1 gap-3 p-4 xl:grid-cols-[minmax(0,2fr)_0.8fr_0.8fr_0.7fr_0.8fr] xl:items-center xl:gap-4">
+                <div key={job.id} className="company-analytics-row grid grid-cols-1 gap-3 p-4 xl:grid-cols-[minmax(0,2fr)_0.8fr_0.8fr_0.7fr_0.8fr] xl:items-center xl:gap-4">
                   <div className="min-w-0">
                     <p className="truncate text-base font-semibold text-[var(--workspace-text-strong)]">{job?.title || 'Untitled job'}</p>
                     <p className="mt-1 truncate text-sm text-[var(--workspace-text-muted)]">{job?.location || 'No location added'}</p>
@@ -253,11 +268,7 @@ export default function CompanyDashboardPage() {
                   </div>
                   <div className="text-sm text-[var(--workspace-text-muted)]">{formatCompactDate(job?.created_at || job?.createdAt)}</div>
                   <div className="flex flex-wrap items-center gap-2 xl:justify-end">
-                    <button
-                      type="button"
-                      onClick={() => navigate(COMPANY_PATHS.jobs)}
-                      className="company-workspace-secondary-button px-3"
-                    >
+                    <button type="button" onClick={() => navigate(COMPANY_PATHS.jobs)} className="company-workspace-secondary-button px-3">
                       Manage
                     </button>
                     <button
@@ -277,8 +288,8 @@ export default function CompanyDashboardPage() {
                 </div>
               ))}
             </div>
-          </section>
-        </>
+          </div>
+        </section>
       )}
     </div>
   );

@@ -159,7 +159,7 @@ export default function CompanyApplicantsPage() {
         dismissKey="applicants_workspace_direction"
       />
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="company-workspace-page-header">
         <div>
           <h1 className="company-workspace-page-title">Applicants</h1>
           <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">
@@ -167,7 +167,7 @@ export default function CompanyApplicantsPage() {
           </p>
         </div>
 
-        <div className="company-workspace-tab-row">
+        <div className="company-workspace-header-actions">
           {VIEW_OPTIONS.map((option) => {
             const Icon = option.icon;
             return (
@@ -201,37 +201,65 @@ export default function CompanyApplicantsPage() {
         </div>
       </div>
 
-      <CompanyStatStrip metrics={metrics} loading={loading || analyticsLoading} />
+      <section className="company-analytics-board">
+        <CompanyStatStrip metrics={metrics} loading={loading || analyticsLoading} />
 
-      <section>
-        <article className="company-workspace-panel p-5">
-          <h2 className="company-workspace-section-title">Review flow</h2>
-          <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">Current candidate volume by stored applicant status.</p>
-          <StatusRail rows={pipelineRows} />
-        </article>
-      </section>
+        {visibleApplicants.length > 0 ? (
+          <article className="company-analytics-board-section p-5">
+            <h2 className="company-workspace-section-title">Review flow</h2>
+            <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">Current candidate volume by stored applicant status.</p>
+            <StatusRail rows={pipelineRows} />
+          </article>
+        ) : null}
 
-      {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
-      {analyticsError ? <p className="text-sm text-red-600 dark:text-red-400">{analyticsError}</p> : null}
+        {error ? <p className="company-analytics-board-section p-4 text-sm text-red-600 dark:text-red-400">{error}</p> : null}
+        {analyticsError ? <p className="company-analytics-board-section p-4 text-sm text-red-600 dark:text-red-400">{analyticsError}</p> : null}
 
-      {loading ? (
-        <div className="company-workspace-empty-quiet p-8 text-center">
-          <p>Loading applicants...</p>
-        </div>
-      ) : visibleApplicants.length === 0 ? (
-        <div className="company-workspace-empty-quiet p-8 text-center">
-          <p>{selectedJobId ? `No applicants yet for ${selectedJobTitle}.` : 'No applicants yet.'}</p>
-        </div>
-      ) : viewMode === 'grouped' ? (
-        <div className="space-y-5">
-          {groupedApplicants.map((group) => (
-            <section key={group.key} className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="company-workspace-section-title">{group.label}</h2>
-                <span className="text-sm font-semibold tabular-nums text-[var(--workspace-text-muted)]">{group.items.length}</span>
+        <div className="company-analytics-board-section p-4">
+          {loading ? (
+            <div className="company-workspace-empty-quiet p-8 text-center">
+              <p>Loading applicants...</p>
+            </div>
+          ) : visibleApplicants.length === 0 ? (
+            <div className="company-workspace-empty-quiet p-8 text-center">
+              <p>{selectedJobId ? `No applicants yet for ${selectedJobTitle}.` : 'No applicants yet.'}</p>
+            </div>
+          ) : viewMode === 'grouped' ? (
+            <div className="space-y-5">
+              {groupedApplicants.map((group) => (
+                <section key={group.key} className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="company-workspace-section-title">{group.label}</h2>
+                    <span className="text-sm font-semibold tabular-nums text-[var(--workspace-text-muted)]">{group.items.length}</span>
+                  </div>
+                  <div className="overflow-hidden rounded-lg border border-[var(--workspace-border)]">
+                    {group.items.map((applicant) => (
+                      <ApplicantCard
+                        key={applicant.id}
+                        applicant={applicant}
+                        actionLoading={actionApplicantId === applicant.id}
+                        onViewProfile={handleViewProfile}
+                        onMessage={handleMessage}
+                        onReview={(current) => handleStatusUpdate(current, 'reviewed', `Marked ${current?.user?.username || 'applicant'} as reviewed.`)}
+                        onReject={(current) => handleStatusUpdate(current, 'rejected', `Rejected ${current?.user?.username || 'applicant'}.`)}
+                        onHire={(current) => handleStatusUpdate(current, 'accepted', `Hired ${current?.user?.username || 'applicant'}.`)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          ) : (
+            <div>
+              <div className="company-workspace-table-header hidden gap-6 px-6 py-3 text-xs font-semibold uppercase tracking-[0.04em] xl:grid xl:grid-cols-[minmax(0,1.7fr)_minmax(0,0.95fr)_0.9fr_0.95fr_minmax(17.5rem,1.35fr)]">
+                <div>Candidate</div>
+                <div>Applied To</div>
+                <div>Job Status</div>
+                <div>Applicant Status</div>
+                <div className="text-center">Actions</div>
               </div>
-              <div className="space-y-4">
-                {group.items.map((applicant) => (
+              <div className="mt-3 overflow-hidden rounded-lg border border-[var(--workspace-border)]">
+                {visibleApplicants.map((applicant) => (
                   <ApplicantCard
                     key={applicant.id}
                     applicant={applicant}
@@ -244,32 +272,10 @@ export default function CompanyApplicantsPage() {
                   />
                 ))}
               </div>
-            </section>
-          ))}
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="company-workspace-table-header hidden gap-6 px-6 py-3 text-xs font-semibold uppercase tracking-[0.04em] xl:grid xl:grid-cols-[minmax(0,1.7fr)_minmax(0,0.95fr)_0.9fr_0.95fr_minmax(17.5rem,1.35fr)]">
-            <div>Candidate</div>
-            <div>Applied To</div>
-            <div>Job Status</div>
-            <div>Applicant Status</div>
-            <div className="text-center">Actions</div>
-          </div>
-          {visibleApplicants.map((applicant) => (
-            <ApplicantCard
-              key={applicant.id}
-              applicant={applicant}
-              actionLoading={actionApplicantId === applicant.id}
-              onViewProfile={handleViewProfile}
-              onMessage={handleMessage}
-              onReview={(current) => handleStatusUpdate(current, 'reviewed', `Marked ${current?.user?.username || 'applicant'} as reviewed.`)}
-              onReject={(current) => handleStatusUpdate(current, 'rejected', `Rejected ${current?.user?.username || 'applicant'}.`)}
-              onHire={(current) => handleStatusUpdate(current, 'accepted', `Hired ${current?.user?.username || 'applicant'}.`)}
-            />
-          ))}
-        </div>
-      )}
+      </section>
 
       {profile && (
         <Modal onClose={() => setProfile(null)}>

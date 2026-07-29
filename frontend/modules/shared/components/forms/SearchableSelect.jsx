@@ -100,7 +100,7 @@ export default function SearchableSelect({
             }}
             placeholder={placeholder}
             disabled={disabled}
-            className={`min-w-0 flex-1 bg-transparent text-left outline-none placeholder:text-[#6b7280] dark:placeholder:text-[#adb5be] ${hasSelection ? '!text-[#0f3f34] dark:!text-[#e9fbf4]' : 'text-[#344e41] dark:text-white'}`}
+            className={`searchable-select-trigger-input min-w-0 flex-1 bg-transparent text-left outline-none placeholder:text-[#6b7280] dark:placeholder:text-[#adb5be] ${hasSelection ? '!text-[#0f3f34] dark:!text-[#e9fbf4]' : 'text-[#344e41] dark:text-white'}`}
           />
           {showTriggerChevron ? (
             <button

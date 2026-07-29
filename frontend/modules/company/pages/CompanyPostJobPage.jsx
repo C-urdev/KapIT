@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { WalletCards, X } from 'lucide-react';
 import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
-import { COMPANY_PATHS, formatSkills, navigate } from '@companyFeatures/companyUtils';
+import { COMPANY_PATHS, formatSkills, navigate, openCompanyPaymentPopup } from '@companyFeatures/companyUtils';
 import { TECH_JOB_TITLE_OPTIONS } from '@companyFeatures/companyJobTitleOptions';
 import { OTHER_SKILL_VALUE, TECH_SKILL_OPTIONS } from '@companyFeatures/companySkillOptions';
-import { PAYMENT_CANCEL_MESSAGE_TYPE, PAYMENT_MESSAGE_TYPE, STORAGE_KEY } from '@companyPages/CompanyPostJobPaymentPage';
+import { PAYMENT_CANCEL_MESSAGE_TYPE, PAYMENT_FINISH_MESSAGE_TYPE, PAYMENT_MESSAGE_TYPE, STORAGE_KEY } from '@companyPages/CompanyPostJobPaymentPage';
 import { getCountryOptions } from '@sharedUtils/countryOptions';
 import { cleanPlaceName, loadProvinceCityData } from '@sharedUtils/philippinesLocations';
 import { companyAPI } from '@companyFeatures/companyAPI';
@@ -27,6 +27,12 @@ const WORK_PREFERENCE_OPTIONS = [
   { value: 'on-site', label: 'On-site' },
 ];
 const SALARY_CURRENCY_OPTIONS = ['PHP', 'USD', 'EUR'];
+const POST_JOB_SECTIONS = [
+  { label: 'Details', description: 'Role, pay, location' },
+  { label: 'Workflow', description: 'Timeline and filters' },
+  { label: 'Skills', description: 'Search matching' },
+  { label: 'Assessment', description: 'Optional screening' },
+];
 const SALARY_RANGE_OPTIONS = {
   PHP: [
     'PHP 25,000-40,000 / month',
@@ -216,6 +222,12 @@ export default function CompanyPostJobPage() {
         navigate(COMPANY_PATHS.jobs);
         return;
       }
+      if (event.data?.type === PAYMENT_FINISH_MESSAGE_TYPE) {
+        setPaymentPending(false);
+        navigate(COMPANY_PATHS.jobs);
+        window.focus();
+        return;
+      }
       if (event.data?.type === PAYMENT_CANCEL_MESSAGE_TYPE) {
         setPaymentPending(false);
         setError('Payment was canceled or closed. Your job draft is still saved and unpublished, so you can try again.');
@@ -303,14 +315,13 @@ export default function CompanyPostJobPage() {
         navigate(COMPANY_PATHS.postJobPayment);
         return;
       }
-      const paymentWindow = window.open(COMPANY_PATHS.postJobPayment, 'company-post-job-payment', 'width=760,height=860,resizable=yes,scrollbars=yes');
+      const paymentWindow = openCompanyPaymentPopup();
       if (!paymentWindow) {
         setPaymentPending(true);
         navigate(COMPANY_PATHS.postJobPayment);
         return;
       }
       setPaymentPending(true);
-      paymentWindow.focus();
     } catch (err) {
       setError(err?.message || 'Unable to save the draft or open the payment window right now.');
     }
@@ -380,15 +391,31 @@ export default function CompanyPostJobPage() {
       {paymentPending && <p className="text-sm text-[#3a5a40] dark:text-[#f0c766]">Draft saved. Finish the payment in the merchant window to publish this job.</p>}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-      <form onSubmit={handleSubmit} className="company-workspace-form-shell space-y-6">
-        <section className="company-workspace-form-section space-y-6">
-          <div>
-            <h2 className="company-workspace-section-title">Job details</h2>
-            <p className="mt-1 text-xs text-[var(--workspace-text-muted)]">The role information developers will see in the listing.</p>
-          </div>
-          <Field label="Job title">
-            <SearchableSelect value={form.selectedTitle} onChange={(selectedTitle) => setForm((prev) => ({ ...prev, selectedTitle, customTitle: selectedTitle === CUSTOM_JOB_VALUE ? prev.customTitle : '' }))} options={TECH_JOB_TITLE_OPTIONS} placeholder="Select a tech job title" searchPlaceholder="Search tech job titles" />
-          </Field>
+      <form onSubmit={handleSubmit} className="company-workspace-form-shell company-post-job-composer">
+        <aside className="company-post-job-rail" aria-label="Post job sections">
+          <div className="company-post-job-rail-heading">Role setup</div>
+          <ol className="company-post-job-rail-list">
+            {POST_JOB_SECTIONS.map((section, index) => (
+              <li key={section.label} className="company-post-job-rail-item">
+                <span className="company-post-job-rail-number">{index + 1}</span>
+                <span className="min-w-0">
+                  <span className="company-post-job-rail-label">{section.label}</span>
+                  <span className="company-post-job-rail-copy">{section.description}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </aside>
+
+        <div className="company-post-job-main">
+          <section className="company-workspace-form-section company-post-job-section space-y-6">
+            <div className="company-post-job-section-intro">
+              <h2 className="company-workspace-section-title">Job details</h2>
+              <p className="mt-1 text-xs text-[var(--workspace-text-muted)]">The role information developers will see in the listing.</p>
+            </div>
+            <Field label="Job title">
+              <SearchableSelect value={form.selectedTitle} onChange={(selectedTitle) => setForm((prev) => ({ ...prev, selectedTitle, customTitle: selectedTitle === CUSTOM_JOB_VALUE ? prev.customTitle : '' }))} options={TECH_JOB_TITLE_OPTIONS} placeholder="Select a tech job title" searchPlaceholder="Search tech job titles" />
+            </Field>
 
           {form.selectedTitle === CUSTOM_JOB_VALUE && <Field label="Custom job title"><input value={form.customTitle} onChange={(e) => setForm((prev) => ({ ...prev, customTitle: e.target.value }))} className="field" placeholder="Enter the exact tech role" required /></Field>}
 
@@ -536,8 +563,8 @@ export default function CompanyPostJobPage() {
           </div>
         </section>
 
-        <section className="company-workspace-form-section company-workspace-form-section-subtle space-y-4">
-          <div>
+        <section className="company-workspace-form-section company-workspace-form-section-subtle company-post-job-section space-y-4">
+          <div className="company-post-job-section-intro">
             <h2 className="company-workspace-section-title">Hiring workflow</h2>
             <p className="text-xs text-[#4f6654] dark:text-[#b9c1c8]">Role-specific details for matching and recruiter handoff.</p>
           </div>
@@ -559,8 +586,8 @@ export default function CompanyPostJobPage() {
           </div>
         </section>
 
-        <section className="company-workspace-form-section space-y-4">
-          <div>
+        <section className="company-workspace-form-section company-post-job-section space-y-4">
+          <div className="company-post-job-section-intro">
             <h2 className="company-workspace-section-title">Skills</h2>
             <p className="text-xs text-[#4f6654] dark:text-[#b9c1c8]">List the tools and capabilities that should show up in matching and search.</p>
           </div>
@@ -575,9 +602,9 @@ export default function CompanyPostJobPage() {
           </div>
         </section>
 
-        <section className="company-workspace-form-section company-workspace-form-section-subtle space-y-4">
+        <section className="company-workspace-form-section company-workspace-form-section-subtle company-post-job-section space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
+            <div className="company-post-job-section-intro">
               <h2 className="company-workspace-section-title">Assessment</h2>
               <p className="text-xs text-[#4f6654] dark:text-[#b9c1c8]">Enable this to redirect into a dedicated builder page where you can create multiple questions, add images, and define answer criteria.</p>
             </div>
@@ -608,9 +635,10 @@ export default function CompanyPostJobPage() {
           ) : null}
         </section>
 
-        <div className="company-workspace-form-actions">
+        <div className="company-workspace-form-actions company-post-job-actions">
           <button type="button" onClick={() => navigate(COMPANY_PATHS.dashboard)} className="company-workspace-secondary-button px-4 py-2.5">Cancel</button>
           <button type="submit" className="company-workspace-primary-button px-4 py-2.5">Continue to payment</button>
+        </div>
         </div>
       </form>
     </div>
@@ -618,7 +646,7 @@ export default function CompanyPostJobPage() {
 }
 
 function Field({ label, children }) {
-  return <div className="space-y-1"><label className="text-sm font-semibold text-[#3a5a40] dark:text-white">{label}</label>{children}</div>;
+  return <div className="company-post-job-field"><label>{label}</label>{children}</div>;
 }
 
 

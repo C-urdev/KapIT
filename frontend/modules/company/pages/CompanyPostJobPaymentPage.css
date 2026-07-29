@@ -1,0 +1,768 @@
+.company-merchant-window {
+  --workspace-canvas: #f4f6f5;
+  --workspace-surface: #ffffff;
+  --workspace-surface-subtle: #f8faf9;
+  --workspace-surface-selected: #edf4ef;
+  --workspace-text-strong: #18211c;
+  --workspace-text: #34413a;
+  --workspace-text-muted: #66736c;
+  --workspace-border: #e3e8e4;
+  --workspace-border-strong: #cfd9d1;
+  --workspace-primary: #356447;
+  --workspace-primary-hover: #294f38;
+  --workspace-primary-soft: #e7f1ea;
+  --workspace-danger: #b42318;
+  --workspace-elevated-shadow: 0 24px 60px rgba(24, 33, 28, 0.14);
+  min-height: 100dvh;
+  background: radial-gradient(circle at 50% 0%, rgba(53, 100, 71, 0.08), transparent 38%), var(--workspace-canvas);
+  color: var(--workspace-text);
+}
+
+html.dark .company-merchant-window {
+  --workspace-canvas: #060807;
+  --workspace-surface: #101211;
+  --workspace-surface-subtle: #151816;
+  --workspace-surface-selected: #1d241f;
+  --workspace-text-strong: #f4f7f5;
+  --workspace-text: #d7ded9;
+  --workspace-text-muted: #9aa69f;
+  --workspace-border: #262b28;
+  --workspace-border-strong: #3b453f;
+  --workspace-primary: #8cbf98;
+  --workspace-primary-hover: #a5d0ae;
+  --workspace-primary-soft: #1c2b21;
+  --workspace-danger: #ff9b91;
+  --workspace-elevated-shadow: 0 24px 70px rgba(0, 0, 0, 0.48);
+  background: radial-gradient(circle at 50% 0%, rgba(140, 191, 152, 0.08), transparent 40%), var(--workspace-canvas);
+}
+
+.company-merchant-window *,
+.company-merchant-window *::before,
+.company-merchant-window *::after {
+  box-sizing: border-box;
+}
+
+.company-merchant-stage {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  padding: 0.75rem 1rem;
+}
+
+.company-merchant-shell {
+  width: min(100%, 700px);
+  max-height: none;
+  overflow: visible;
+  border: 1px solid var(--workspace-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--workspace-surface) 96%, transparent);
+  box-shadow: var(--workspace-elevated-shadow);
+}
+
+.company-merchant-header {
+  position: relative;
+  border-bottom: 1px solid color-mix(in srgb, var(--workspace-border) 70%, transparent);
+  padding: 1rem 1.5rem 0.875rem;
+}
+
+.company-merchant-stepper,
+.company-merchant-step,
+.company-merchant-title-row,
+.company-merchant-plan-option,
+.company-merchant-provider-option,
+.company-merchant-selected-summary,
+.company-merchant-footer,
+.company-merchant-primary-button,
+.company-merchant-secondary-button,
+.company-merchant-bypass-button {
+  display: flex;
+  align-items: center;
+}
+
+.company-merchant-stepper {
+  gap: 0.5rem;
+  margin-right: 2.75rem;
+  margin-bottom: 0.875rem;
+}
+
+.company-merchant-step {
+  gap: 0.45rem;
+  color: var(--workspace-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.company-merchant-step-active {
+  color: var(--workspace-text-strong);
+}
+
+.company-merchant-step-dot {
+  display: inline-flex;
+  height: 1.625rem;
+  width: 1.625rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--workspace-border-strong);
+  border-radius: 999px;
+  background: var(--workspace-surface);
+  color: var(--workspace-text-muted);
+  font-size: 0.75rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.company-merchant-step-active .company-merchant-step-dot {
+  border-color: var(--workspace-primary);
+  background: var(--workspace-primary);
+  color: #ffffff;
+}
+
+html.dark .company-merchant-step-active .company-merchant-step-dot {
+  color: #07100a;
+}
+
+.company-merchant-step-line {
+  height: 1px;
+  min-width: 1rem;
+  flex: 1 1 auto;
+  background: var(--workspace-border);
+}
+
+.company-merchant-step-line-active {
+  background: var(--workspace-primary);
+}
+
+.company-merchant-title-row {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.company-merchant-header h1,
+.company-merchant-receipt h2 {
+  margin: 0;
+  color: var(--workspace-text-strong);
+  font-size: 1.125rem;
+  font-weight: 750;
+  letter-spacing: 0;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.company-merchant-header p:not(.company-merchant-kicker),
+.company-merchant-receipt p:not(.company-merchant-kicker) {
+  margin: 0.375rem 0 0;
+  color: var(--workspace-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.45rem;
+  text-wrap: pretty;
+}
+
+.company-merchant-kicker {
+  margin: 0;
+  color: var(--workspace-primary);
+  font-size: 0.6875rem;
+  font-weight: 750;
+  letter-spacing: 0.14em;
+  line-height: 1rem;
+  text-transform: uppercase;
+}
+
+.company-merchant-close-button {
+  position: absolute;
+  top: 0.875rem;
+  right: 1rem;
+  display: inline-flex;
+  min-height: 2.5rem;
+  min-width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--workspace-text-muted);
+  transition-property: background-color, color, transform;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+.company-merchant-close-button:hover {
+  background: var(--workspace-surface-selected);
+  color: var(--workspace-text-strong);
+}
+
+.company-merchant-body {
+  overflow: visible;
+  padding: 1rem 1.5rem 0.75rem;
+}
+
+.company-merchant-plan-area h2,
+.company-merchant-payment-block h2,
+.company-merchant-included h3 {
+  margin: 0;
+  color: var(--workspace-text-strong);
+  font-size: 0.875rem;
+  font-weight: 750;
+  line-height: 1.25rem;
+}
+
+.company-merchant-plan-list {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.625rem;
+}
+
+.company-merchant-plan-option,
+.company-merchant-provider-option {
+  width: 100%;
+  min-height: 3.25rem;
+  justify-content: space-between;
+  gap: 0.875rem;
+  border: 1px solid var(--workspace-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--workspace-surface-subtle) 58%, var(--workspace-surface));
+  color: var(--workspace-text);
+  padding: 0.625rem 0.875rem;
+  text-align: left;
+  transition-property: background-color, border-color, box-shadow, transform;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+.company-merchant-plan-option:hover,
+.company-merchant-provider-option:hover {
+  border-color: var(--workspace-border-strong);
+  background: var(--workspace-surface-selected);
+}
+
+.company-merchant-plan-option-selected {
+  border-color: var(--workspace-border-strong);
+  background: color-mix(in srgb, var(--workspace-primary-soft) 74%, var(--workspace-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--workspace-primary) 32%, transparent);
+}
+
+.company-merchant-provider-option-selected {
+  border-color: var(--workspace-border-strong);
+  background: color-mix(in srgb, var(--workspace-primary-soft) 74%, var(--workspace-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--workspace-primary) 32%, transparent);
+}
+
+.company-merchant-radio {
+  display: inline-flex;
+  height: 1.125rem;
+  width: 1.125rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  order: 3;
+  border: 1px solid var(--workspace-border-strong);
+  border-radius: 999px;
+  background: var(--workspace-surface);
+  color: #ffffff;
+}
+
+.company-merchant-plan-option-selected .company-merchant-radio,
+.company-merchant-provider-option-selected .company-merchant-radio {
+  border-color: var(--workspace-primary);
+  background: var(--workspace-primary);
+}
+
+html.dark .company-merchant-plan-option-selected .company-merchant-radio,
+html.dark .company-merchant-provider-option-selected .company-merchant-radio {
+  color: #07100a;
+}
+
+.company-merchant-plan-main,
+.company-merchant-provider-copy {
+  display: grid;
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 0.125rem;
+}
+
+.company-merchant-plan-name {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--workspace-text-strong);
+  font-size: 0.875rem;
+  font-weight: 750;
+  line-height: 1.25rem;
+}
+
+.company-merchant-plan-name span {
+  border: 1px solid color-mix(in srgb, var(--workspace-primary) 26%, var(--workspace-border));
+  border-radius: 999px;
+  color: var(--workspace-primary);
+  padding: 0.0625rem 0.45rem;
+  font-size: 0.625rem;
+  font-weight: 750;
+  line-height: 1rem;
+}
+
+.company-merchant-plan-description {
+  color: var(--workspace-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+}
+
+.company-merchant-plan-price {
+  display: grid;
+  flex: 0 0 auto;
+  justify-items: end;
+  order: 2;
+  color: var(--workspace-text-strong);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+  line-height: 1.2rem;
+  white-space: nowrap;
+}
+
+.company-merchant-plan-price span {
+  margin-top: 0.125rem;
+  color: var(--workspace-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 650;
+}
+
+.company-merchant-included {
+  margin-top: 1rem;
+}
+
+.company-merchant-included ul {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.625rem 0 0;
+  padding: 0;
+  color: var(--workspace-text);
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+  list-style: none;
+}
+
+.company-merchant-included li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+}
+
+.company-merchant-included svg {
+  flex: 0 0 auto;
+  margin-top: 0.125rem;
+  color: var(--workspace-primary);
+}
+
+.company-merchant-summary {
+  margin-top: 1rem;
+}
+
+.company-merchant-selected-summary {
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--workspace-border) 70%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--workspace-border) 70%, transparent);
+  padding: 0.75rem 0;
+}
+
+.company-merchant-selected-summary span {
+  color: var(--workspace-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.company-merchant-selected-summary strong {
+  color: var(--workspace-text-strong);
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+}
+
+.company-merchant-payment-block {
+  margin-top: 0.875rem;
+}
+
+.company-merchant-provider-option {
+  margin-top: 0.625rem;
+}
+
+.company-merchant-provider-icon {
+  display: inline-flex;
+  height: 2rem;
+  width: 2rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--workspace-border);
+  border-radius: 8px;
+  background: var(--workspace-surface);
+  color: var(--workspace-primary);
+}
+
+.company-merchant-provider-copy span {
+  color: var(--workspace-text-strong);
+  font-size: 0.875rem;
+  font-weight: 750;
+}
+
+.company-merchant-provider-copy em {
+  color: #a15c00;
+  font-size: 0.6875rem;
+  font-style: normal;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  line-height: 1rem;
+  text-transform: uppercase;
+}
+
+.company-merchant-alert,
+.company-merchant-error,
+.company-merchant-success,
+.company-merchant-fallback {
+  margin: 0.75rem 0 0;
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+  text-wrap: pretty;
+}
+
+.company-merchant-alert {
+  border: 1px solid #f2d58a;
+  background: #fff8e6;
+  color: #7a4c00;
+}
+
+html.dark .company-merchant-alert {
+  border-color: rgba(245, 190, 73, 0.34);
+  background: rgba(245, 190, 73, 0.1);
+  color: #f8d889;
+}
+
+.company-merchant-error {
+  border: 1px solid rgba(180, 35, 24, 0.22);
+  background: rgba(180, 35, 24, 0.07);
+  color: var(--workspace-danger);
+}
+
+.company-merchant-success {
+  border: 1px solid color-mix(in srgb, var(--workspace-primary) 24%, var(--workspace-border));
+  background: color-mix(in srgb, var(--workspace-primary-soft) 56%, var(--workspace-surface));
+  color: var(--workspace-primary);
+}
+
+.company-merchant-fallback {
+  border: 1px solid var(--workspace-border);
+  background: var(--workspace-surface-subtle);
+}
+
+.company-merchant-fallback p {
+  margin: 0;
+}
+
+.company-merchant-fallback a {
+  display: inline-flex;
+  margin-top: 0.5rem;
+  color: var(--workspace-primary);
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.company-merchant-footer {
+  display: grid;
+  gap: 0.625rem;
+  border-top: 1px solid color-mix(in srgb, var(--workspace-border) 70%, transparent);
+  padding: 1rem 1.5rem 1.125rem;
+}
+
+.company-merchant-primary-button,
+.company-merchant-secondary-button,
+.company-merchant-bypass-button {
+  width: 100%;
+  min-height: 2.625rem;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 8px;
+  padding: 0.65rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 750;
+  transition-property: background-color, border-color, color, transform;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+.company-merchant-primary-button {
+  border: 1px solid var(--workspace-primary);
+  background: var(--workspace-primary);
+  color: #ffffff;
+}
+
+html.dark .company-merchant-primary-button {
+  color: #07100a;
+}
+
+.company-merchant-primary-button:hover {
+  border-color: var(--workspace-primary-hover);
+  background: var(--workspace-primary-hover);
+}
+
+.company-merchant-secondary-button {
+  border: 0;
+  background: transparent;
+  color: var(--workspace-text-strong);
+}
+
+.company-merchant-secondary-button:hover {
+  color: var(--workspace-primary);
+}
+
+.company-merchant-bypass-button {
+  border: 1px dashed var(--workspace-primary);
+  background: var(--workspace-primary-soft);
+  color: var(--workspace-primary);
+}
+
+.company-merchant-close-button:active,
+.company-merchant-plan-option:active,
+.company-merchant-provider-option:active,
+.company-merchant-primary-button:active,
+.company-merchant-secondary-button:active,
+.company-merchant-bypass-button:active {
+  transform: translateY(1px);
+}
+
+.company-merchant-primary-button:disabled,
+.company-merchant-provider-option:disabled,
+.company-merchant-bypass-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.company-merchant-receipt {
+  display: grid;
+  justify-items: center;
+  overflow: visible;
+  padding: 1.75rem 2rem 2rem;
+}
+
+.company-merchant-success-card {
+  display: grid;
+  width: min(100%, 30rem);
+  justify-items: stretch;
+  gap: 1.2rem;
+  background: transparent;
+  padding: 0.25rem 0 0;
+  animation: merchantSuccessIn 420ms cubic-bezier(0.2, 0.75, 0.2, 1) both;
+}
+
+.company-merchant-success-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  background: transparent;
+  color: var(--workspace-primary);
+  filter: drop-shadow(0 10px 18px color-mix(in srgb, var(--workspace-primary) 18%, transparent));
+}
+
+.company-merchant-success-mark svg {
+  overflow: visible;
+}
+
+.company-merchant-success-mark circle {
+  animation: merchantSuccessStroke 560ms ease-out both;
+  stroke-dasharray: 80;
+  stroke-dashoffset: 80;
+  transform-origin: center;
+}
+
+.company-merchant-success-mark path {
+  animation: merchantSuccessStroke 460ms 220ms ease-out both;
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+}
+
+.company-merchant-success-copy {
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  text-align: center;
+}
+
+.company-merchant-success-copy h2 {
+  max-width: 24rem;
+  font-size: 1.65rem;
+  line-height: 1.15;
+}
+
+.company-merchant-success-copy p {
+  margin: 0;
+  max-width: 25rem;
+  color: var(--workspace-text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.35rem;
+  text-wrap: pretty;
+}
+
+.company-merchant-success-ledger {
+  display: grid;
+  margin: 0;
+  gap: 0;
+  animation: merchantSuccessLift 460ms 120ms cubic-bezier(0.2, 0.75, 0.2, 1) both;
+}
+
+.company-merchant-success-ledger div {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 0.82fr) minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: baseline;
+  min-width: 0;
+  border-top: 1px solid color-mix(in srgb, var(--workspace-border) 78%, transparent);
+  padding: 0.875rem 0;
+}
+
+.company-merchant-success-ledger div:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.company-merchant-success-ledger dt {
+  color: var(--workspace-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+}
+
+.company-merchant-success-ledger dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--workspace-text-strong);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  line-height: 1.25rem;
+  text-align: right;
+}
+
+.company-merchant-success-total {
+  padding-bottom: 0;
+}
+
+.company-merchant-success-total dt,
+.company-merchant-success-total dd {
+  color: var(--workspace-text-strong);
+  font-weight: 800;
+}
+
+.company-merchant-success-total dd {
+  font-size: 1rem;
+}
+
+.company-merchant-success-note {
+  margin: -0.25rem 0 0;
+  border-top: 1px solid color-mix(in srgb, var(--workspace-border) 78%, transparent);
+  border-radius: 0;
+  background: transparent;
+  color: var(--workspace-text-muted);
+  padding: 0.875rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.3rem;
+  text-align: center;
+  text-wrap: pretty;
+}
+
+.company-merchant-success-action {
+  min-height: 3rem;
+  margin-top: 0.125rem;
+  animation: merchantSuccessLift 460ms 220ms cubic-bezier(0.2, 0.75, 0.2, 1) both;
+}
+
+@keyframes merchantSuccessIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes merchantSuccessLift {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes merchantSuccessStroke {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.company-merchant-window :is(button, a):focus-visible {
+  outline: 2px solid var(--workspace-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 520px) {
+  .company-merchant-stage {
+    padding: 0;
+  }
+
+  .company-merchant-shell {
+    width: 100%;
+    min-height: 100dvh;
+    max-height: none;
+    border-width: 0;
+    border-radius: 0;
+  }
+
+  .company-merchant-stepper {
+    overflow-x: auto;
+    padding-bottom: 0.125rem;
+  }
+
+  .company-merchant-plan-option {
+    align-items: flex-start;
+  }
+
+  .company-merchant-plan-price {
+    justify-items: start;
+  }
+
+  .company-merchant-success-card {
+    width: 100%;
+    padding: 0.25rem 0 0;
+  }
+
+  .company-merchant-success-ledger div {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+
+  .company-merchant-success-ledger dd {
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .company-merchant-window *,
+  .company-merchant-window *::before,
+  .company-merchant-window *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+  }
+}

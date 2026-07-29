@@ -1,15 +1,17 @@
 import React from 'react';
-import { CheckCircle2, X } from 'lucide-react';
+import { ArrowRight, CheckCircle2, X } from 'lucide-react';
 import { companyAPI } from '@companyFeatures/companyAPI';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
 import { JOB_POST_PLANS, PAYMENT_PROVIDERS, PLAN_FEATURES } from '@companyFeatures/companyPaymentCatalog';
 import { clearCompanyPostJobFormDraft } from '@companyFeatures/postJobDraftStorage';
 import { resolveCheckoutUrls } from '@sharedUtils/checkoutUrlResolver';
 import { getPaymentErrorMessageForUser } from '@sharedUtils/paymentErrorMessages';
+import './CompanyPostJobPaymentPage.css';
 
 const STORAGE_KEY = 'company-post-job-draft';
 const PAYMENT_MESSAGE_TYPE = 'company-post-job-payment-success';
 const PAYMENT_CANCEL_MESSAGE_TYPE = 'company-post-job-payment-cancelled';
+const PAYMENT_FINISH_MESSAGE_TYPE = 'company-post-job-payment-finished';
 const createPaymentIdempotencyKey = () => {
   if (typeof window !== 'undefined' && window.crypto?.randomUUID) {
     return `checkout-${window.crypto.randomUUID()}`;
@@ -202,12 +204,22 @@ export default function CompanyPostJobPaymentPage() {
       }
 
       const type = String(event?.data?.type || '').trim();
-      if (type !== PAYMENT_MESSAGE_TYPE && type !== PAYMENT_CANCEL_MESSAGE_TYPE) {
+      if (type !== PAYMENT_MESSAGE_TYPE && type !== PAYMENT_CANCEL_MESSAGE_TYPE && type !== PAYMENT_FINISH_MESSAGE_TYPE) {
         return;
       }
 
       if (window.opener && !window.opener.closed) {
         window.opener.postMessage(event.data, window.location.origin);
+      }
+
+      if (type === PAYMENT_FINISH_MESSAGE_TYPE) {
+        if (window.opener && !window.opener.closed) {
+          window.opener.focus();
+          window.close();
+          return;
+        }
+
+        navigate(event.data?.navigateTo || COMPANY_PATHS.jobs);
       }
     };
 
@@ -224,7 +236,7 @@ export default function CompanyPostJobPaymentPage() {
   const selectedProvider = PAYMENT_PROVIDERS.find((provider) => provider.id === paymentMethod) || PAYMENT_PROVIDERS[0];
   const selectedProviderState = providerAvailability?.[selectedProvider.id] || { enabled: true, reason: '' };
   const selectedPlan = plans.find((plan) => plan.id === selectedPlanId) || null;
-  const stepState = success ? 3 : verifying || loading ? 2 : 1;
+  const stepState = completedCheckout ? 3 : verifying || loading || success ? 2 : 1;
   const demoChargeAmountLabel = demoPricing?.active && demoPricing?.demoAmountValue
     ? demoPricing.demoAmountValue
     : selectedPlan
@@ -238,6 +250,14 @@ export default function CompanyPostJobPaymentPage() {
   const paidAt = completedCheckout?.payment?.paid_at
     ? new Date(completedCheckout.payment.paid_at).toLocaleString()
     : '';
+  const selectedPlanPriceLabel = selectedPlan ? Number(selectedPlan.price || 0).toLocaleString() : '--';
+  const completedJobTitle = completedCheckout?.job?.title || draft?.title || 'Your job post';
+  const transactionReference =
+    completedCheckout?.payment?.provider_payment_id
+    || completedCheckout?.payment?.provider_checkout_id
+    || completedCheckout?.payment?.id
+    || currentPaymentId
+    || '--';
 
   const handlePayAndPost = async () => {
     if (!draft || !selectedPlan) {
@@ -348,12 +368,27 @@ export default function CompanyPostJobPaymentPage() {
     navigate(COMPANY_PATHS.postJob);
   };
 
+  const handleFinishSuccess = () => {
+    notifyOpener(PAYMENT_FINISH_MESSAGE_TYPE, {
+      job: completedCheckout?.job || null,
+      navigateTo: COMPANY_PATHS.jobs,
+    });
+
+    if (window.opener && !window.opener.closed) {
+      window.opener.focus();
+      window.close();
+      return;
+    }
+
+    navigate(COMPANY_PATHS.jobs);
+  };
+
   return (
-    <div className="company-dashboard-shell min-h-screen bg-[#f4f6f5] px-3 py-3 text-[#34413a] transition-colors duration-300 dark:bg-[#09090b] dark:text-[#e4e4e7] sm:px-4 sm:py-4">
-      <div className="min-h-[calc(100vh-1.5rem)] flex items-center justify-center sm:min-h-[calc(100vh-2rem)]">
-        <div className="company-workspace-panel w-full max-w-6xl overflow-hidden shadow-[var(--workspace-elevated-shadow)]">
-          <div className="border-b border-[var(--workspace-border)] bg-[var(--workspace-surface)] px-5 py-4 sm:px-6">
-            <div className="mb-4 flex flex-wrap items-center gap-2 sm:flex-nowrap">
+    <div className="company-dashboard-shell company-merchant-window">
+      <main className="company-merchant-stage" aria-label="Job checkout">
+        <section className="company-merchant-shell">
+          <header className="company-merchant-header">
+            <div className="company-merchant-stepper" aria-label="Checkout progress">
               {[
                 { key: 1, label: 'Plan' },
                 { key: 2, label: 'Payment' },
@@ -363,317 +398,248 @@ export default function CompanyPostJobPaymentPage() {
                 const complete = stepState > step.key;
                 return (
                   <React.Fragment key={step.key}>
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold transition-colors ${
-                        active
-                          ? 'border-[#588157] bg-[#588157] text-white dark:border-[#82ad86] dark:bg-[#82ad86] dark:text-[#121416]'
-                          : 'border-[#c7d5c0] bg-[#f8fbf6] text-[#7b8a7f] dark:border-[#444d57] dark:bg-[#202428] dark:text-[#b3bcc5]'
-                      }`}>
-                        {complete ? <CheckCircle2 className="h-4 w-4" /> : step.key}
+                    <span className={`company-merchant-step ${active ? 'company-merchant-step-active' : ''}`}>
+                      <span className="company-merchant-step-dot">
+                        {complete ? <CheckCircle2 className="h-3.5 w-3.5" /> : step.key}
                       </span>
-                      <span className={`text-xs sm:text-sm font-medium ${active ? 'text-[#16324f] dark:text-white' : 'text-[#8194a8] dark:text-[#b3bcc5]'}`}>
-                        {step.label}
-                      </span>
-                    </div>
-                    {index < 2 ? <div className={`h-px flex-1 min-w-6 ${stepState > step.key ? 'bg-[#588157] dark:bg-[#82ad86]' : 'bg-[#d8ddd1] dark:bg-[#444d57]'}`} /> : null}
+                      <span>{step.label}</span>
+                    </span>
+                    {index < 2 ? (
+                      <span
+                        className={`company-merchant-step-line ${stepState > step.key ? 'company-merchant-step-line-active' : ''}`}
+                        aria-hidden="true"
+                      />
+                    ) : null}
                   </React.Fragment>
                 );
               })}
             </div>
 
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#588157] dark:text-[#e2b94d]">Secure checkout</p>
-              <h1 className="company-workspace-page-title mt-1.5">Complete payment to publish job</h1>
+            <div className="company-merchant-title-row">
+              <div>
+                <h1>{completedCheckout ? 'Payment verified' : 'Choose posting plan'}</h1>
+                <p>
+                  {completedCheckout
+                    ? 'Your job is published and the payment record is saved.'
+                    : 'Select the visibility length before opening PayPal checkout.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={completedCheckout ? handleFinishSuccess : handleCancel}
+                className="company-merchant-close-button"
+                aria-label="Close payment popup"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ccd5c0] dark:border-[#4b5560] bg-[#f8fbf6]/80 dark:bg-[#2a2f35] text-[#5f6f52] dark:text-[#d0d7dd] hover:bg-[#f8fbf6] dark:hover:bg-[#31363d] transition-colors"
-              aria-label="Close payment popup"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            </div>
-          </div>
+          </header>
 
-          <div className={`${completedCheckout ? 'flex justify-center' : 'grid gap-4 lg:grid-cols-[1.25fr_0.75fr]'} bg-[var(--workspace-surface-subtle)] p-4 sm:p-5`}>
-            <div className={`${completedCheckout ? 'hidden' : 'company-workspace-panel space-y-4'} p-4 sm:p-5`}>
-              <div className="flex flex-col gap-3 border-b border-[#d6d3c9] dark:border-[#444d57] pb-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-[#5f6f52] dark:text-[#b3bcc5]">Selected plan</p>
-                  <p className="mt-1 text-2xl sm:text-[1.75rem] font-semibold tracking-tight text-[#102a1b] dark:text-white">PHP {selectedPlan?.price?.toLocaleString() ?? '--'}</p>
-                  <p className="mt-1 text-sm text-[#5f6f52] dark:text-[#b3bcc5]">{selectedPlan ? `${selectedPlan.label} posting duration` : 'Choose a plan below'}</p>
-                </div>
-                <div className="rounded-2xl border border-[#bfd0af] dark:border-[#4b5560] bg-[#f4f8f1] dark:bg-[#2a2f35] px-3 py-2.5 text-right">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-[#588157] dark:text-[#e2b94d]">Status</p>
-                  <p className="text-sm font-semibold text-[#102a1b] dark:text-white">{verifying ? 'Verifying payment' : selectedPlan ? 'Selected' : 'Waiting'}</p>
-                </div>
-              </div>
+          {completedCheckout ? (
+            <div className="company-merchant-receipt">
+              <section className="company-merchant-success-card" aria-label="Completed transaction">
+                <span className="company-merchant-success-mark" aria-hidden="true">
+                  <CheckCircle2 className="h-12 w-12" />
+                </span>
 
-              <div className="space-y-3">
-                <div>
-                  <h2 className="text-xl font-semibold text-[#102a1b] dark:text-white">Plan Summary</h2>
+                <div className="company-merchant-success-copy">
+                  <h2>Your job post is live</h2>
+                  <p>Payment is complete and the listing is now visible to developers.</p>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  {plans.map((plan) => {
-                    const isSelected = selectedPlanId === plan.id;
-                    return (
-                      <button
-                        key={plan.id}
-                        type="button"
-                        onClick={() => setSelectedPlanId(plan.id)}
-                        className={`relative rounded-lg border p-3.5 text-left transition-[background-color,border-color,box-shadow,transform] duration-150 ${
-                          isSelected
-                            ? 'border-[var(--workspace-primary)] bg-[var(--workspace-primary-soft)]'
-                            : plan.highlighted
-                              ? 'border-[var(--workspace-border-strong)] bg-[var(--workspace-surface)] hover:border-[var(--workspace-primary)]'
-                              : 'border-[var(--workspace-border)] bg-[var(--workspace-surface)] hover:bg-[var(--workspace-surface-subtle)]'
-                        }`}
-                      >
-                        {plan.badge ? (
-                          <span className="absolute right-4 top-4 rounded-full bg-[#3a5a40] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white dark:bg-[#82ad86] dark:text-[#121416]">
-                            {plan.badge}
-                          </span>
-                        ) : null}
+                <dl className="company-merchant-success-ledger">
+                  <div>
+                    <dt>Transaction ID</dt>
+                    <dd>{transactionReference}</dd>
+                  </div>
+                  <div>
+                    <dt>Payment method</dt>
+                    <dd>{completedProvider?.label || completedCheckout?.payment?.provider || '--'}</dd>
+                  </div>
+                  <div>
+                    <dt>Date and time</dt>
+                    <dd>{paidAt || 'Just now'}</dd>
+                  </div>
+                  <div>
+                    <dt>Listing</dt>
+                    <dd>{completedJobTitle}</dd>
+                  </div>
+                  <div className="company-merchant-success-total">
+                    <dt>Total</dt>
+                    <dd>PHP {paidAmount.toLocaleString()}</dd>
+                  </div>
+                </dl>
 
-                        <div className="pr-16 xl:pr-0">
-                          <p className="text-base font-semibold text-[#102a1b] dark:text-white">{plan.label}</p>
-                          <p className="mt-1.5 text-2xl font-semibold tracking-tight text-[#102a1b] dark:text-white">PHP {Number(plan.price || 0).toLocaleString()}</p>
-                          <p className="mt-1.5 text-xs leading-5 text-[#5f6f52] dark:text-[#c0c8d0]">{plan.description}</p>
-                        </div>
+                <p className="company-merchant-success-note">
+                  {paidPlanLabel} selected. This post stays active for {paidPlanDuration}.
+                </p>
 
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#588157] dark:text-[#e2b94d]">
-                            Active for {plan.durationLabel}
-                          </span>
-                          <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                            isSelected
-                              ? 'bg-[#3a5a40] text-white dark:bg-[#82ad86] dark:text-[#121416]'
-                              : 'border border-[#a3b18a] text-[#3a5a40] dark:border-[#4b5560] dark:text-white'
-                          }`}>
-                            {isSelected ? 'Selected' : 'Select'}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div>
-                  <p className="text-sm font-semibold text-[#102a1b] dark:text-white">All plans include</p>
-                  <ul className="mt-2.5 space-y-1.5 text-sm text-[#344e41] dark:text-[#eceff2]">
-                    {PLAN_FEATURES.map((feature) => (
-                      <li key={feature} className="flex items-start gap-2">
-                        <span className="mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full bg-[#588157] dark:bg-[#82ad86]" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-              </div>
-
-              <div className="space-y-2.5">
-                <div>
-                  <h2 className="text-xl font-semibold text-[#102a1b] dark:text-white">Payment Methods</h2>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {PAYMENT_PROVIDERS.map((provider) => {
-                    const Icon = provider.icon;
-                    const selected = paymentMethod === provider.id;
-                    const providerState = providerAvailability?.[provider.id] || { enabled: true, reason: '' };
-                    return (
-                      <button
-                        key={provider.id}
-                        type="button"
-                        onClick={() => {
-                          if (!providerState.enabled) return;
-                          setPaymentMethod(provider.id);
-                        }}
-                        disabled={!providerState.enabled}
-                        className={`rounded-lg border p-3.5 text-left transition-colors ${
-                          !providerState.enabled
-                            ? 'cursor-not-allowed border-[#e1e7ee] bg-[#f8fafc] opacity-60 dark:border-[#444d57] dark:bg-[#202428]'
-                            : selected
-                              ? 'border-[var(--workspace-primary)] bg-[var(--workspace-primary-soft)]'
-                              : 'border-[var(--workspace-border)] bg-[var(--workspace-surface)] hover:bg-[var(--workspace-surface-subtle)]'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <div className="rounded-xl border border-[#d6d3c9] dark:border-[#4b5560] bg-[#f8fbf6] dark:bg-[#1a1d20] p-2">
-                              <Icon className="h-5 w-5 text-[#3a5a40] dark:text-[#e2b94d]" />
-                            </div>
-                            <div>
-                              <p className="font-semibold text-[#102a1b] dark:text-white">{provider.label}</p>
-                              {!providerState.enabled ? (
-                                <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-600 dark:text-amber-300">Setup needed</p>
-                              ) : null}
-                            </div>
-                          </div>
-                          <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full border ${
-                            !providerState.enabled
-                              ? 'border-[#d5dee8] dark:border-[#4b5560]'
-                              : selected
-                                ? 'border-[#588157] bg-[#588157] dark:border-[#82ad86] dark:bg-[#82ad86]'
-                                : 'border-[#c8d6e4] dark:border-[#4b5560]'
-                          }`}>
-                            {selected ? <CheckCircle2 className="h-3.5 w-3.5 text-white dark:text-[#121416]" /> : null}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="text-sm text-[#344e41] dark:text-[#e2e6e9]">
-                The draft stays saved until payment is verified. If checkout fails or is cancelled, the job remains unpublished and you can safely try again.
-              </div>
-
-              {demoPricing?.active ? (
-                <div className="rounded-[22px] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-                  Demo pricing is active. PayPal will charge PHP {demoPricing.demoAmountValue} for this local checkout while the selected posting plan amount and entitlements stay unchanged in internal records.
-                </div>
-              ) : null}
-
-              {!selectedProviderState.enabled ? (
-                <div className="rounded-[22px] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-                  {selectedProviderState.reason || `${selectedProvider.label} is not configured yet.`} Add the required server env keys, then refresh this popup.
-                </div>
-              ) : null}
-
-              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-              {success && (
-                <div className="rounded-[22px] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
-                  {success}
-                </div>
-              )}
-              {checkoutFallbackUrls.length ? (
-                <div className="rounded-[22px] border border-[#bfd0af] dark:border-[#4b5560] bg-[#f8fbf6] dark:bg-[#202428] p-4 text-sm text-[#344e41] dark:text-[#eceff2]">
-                  <p>If PayPal does not load, open this alternate secure checkout link:</p>
-                  <a
-                    href={checkoutFallbackUrls[0]}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-2 inline-flex items-center gap-2 font-semibold text-[#2f6b4f] dark:text-[#9fd7a6] underline underline-offset-2"
-                  >
-                    Open alternate PayPal checkout
-                  </a>
-                </div>
-              ) : null}
-
-              <div className="flex flex-col gap-3 border-t border-[#e3ebf3] dark:border-[#444d57] pt-3 sm:flex-row sm:flex-wrap">
                 <button
                   type="button"
-                  onClick={handleCancel}
-                  className="w-full rounded-2xl border border-[#a3b18a] px-5 py-3 text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#4b5560] dark:text-white dark:hover:bg-[#31363d] sm:w-auto"
+                  onClick={handleFinishSuccess}
+                  className="company-merchant-primary-button company-merchant-success-action"
                 >
-                  Cancel
+                  Go to company jobs
                 </button>
-                <button
-                  type="button"
-                  onClick={handlePayAndPost}
-                  disabled={loading || verifying || !draft || !selectedPlan || !selectedProviderState.enabled}
-                  className="w-full rounded-2xl bg-[#3a5a40] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#344e41] disabled:opacity-60 dark:bg-[#82ad86] dark:text-[#121416] dark:hover:bg-[#9bc49f] sm:w-auto sm:min-w-[240px]"
-                >
-                  {loading
-                    ? 'Opening checkout...'
-                    : verifying
-                      ? 'Verifying payment...'
-                      : selectedPlan
-                        ? `Pay PHP ${demoChargeAmountLabel} with ${selectedProvider.label}`
-                        : 'Select a plan to continue'}
-                </button>
+              </section>
+            </div>
+          ) : (
+            <>
+              <div className="company-merchant-body">
+                <section className="company-merchant-plan-area" aria-labelledby="posting-plan-heading">
+                  <h2 id="posting-plan-heading">Posting plans</h2>
+
+                  <div className="company-merchant-plan-list">
+                    {plans.map((plan) => {
+                      const isSelected = selectedPlanId === plan.id;
+                      return (
+                        <button
+                          key={plan.id}
+                          type="button"
+                          aria-label={`Select ${plan.label} posting plan`}
+                          aria-pressed={isSelected}
+                          onClick={() => setSelectedPlanId(plan.id)}
+                          className={`company-merchant-plan-option ${isSelected ? 'company-merchant-plan-option-selected' : ''}`}
+                        >
+                          <span className="company-merchant-radio" aria-hidden="true">
+                            {isSelected ? <CheckCircle2 className="h-3.5 w-3.5" /> : null}
+                          </span>
+                          <span className="company-merchant-plan-main">
+                            <span className="company-merchant-plan-name">
+                              {plan.label}
+                              {plan.badge ? <span>{plan.badge}</span> : null}
+                            </span>
+                            <span className="company-merchant-plan-description">{plan.description}</span>
+                          </span>
+                          <span className="company-merchant-plan-price">
+                            PHP {Number(plan.price || 0).toLocaleString()}
+                            <span>{plan.durationLabel}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="company-merchant-included">
+                    <h3>Every plan includes</h3>
+                    <ul>
+                      {PLAN_FEATURES.map((feature) => (
+                        <li key={feature}>
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </section>
+
+                <section className="company-merchant-summary" aria-label="Selected payment summary">
+                  <div className="company-merchant-selected-summary">
+                    <span>{selectedPlan ? `${selectedPlan.label} selected` : 'Choose a plan'}</span>
+                    <strong>PHP {selectedPlanPriceLabel}</strong>
+                  </div>
+
+                  <div className="company-merchant-payment-block">
+                    <h2>Payment method</h2>
+                    {PAYMENT_PROVIDERS.map((provider) => {
+                      const Icon = provider.icon;
+                      const selected = paymentMethod === provider.id;
+                      const providerState = providerAvailability?.[provider.id] || { enabled: true, reason: '' };
+                      return (
+                        <button
+                          key={provider.id}
+                          type="button"
+                          onClick={() => {
+                            if (!providerState.enabled) return;
+                            setPaymentMethod(provider.id);
+                          }}
+                          disabled={!providerState.enabled}
+                          className={`company-merchant-provider-option ${selected ? 'company-merchant-provider-option-selected' : ''}`}
+                        >
+                          <span className="company-merchant-provider-icon">
+                            <Icon className="h-5 w-5" />
+                          </span>
+                          <span className="company-merchant-provider-copy">
+                            <span>{provider.label}</span>
+                            {!providerState.enabled ? <em>Setup needed</em> : null}
+                          </span>
+                          <span className="company-merchant-radio" aria-hidden="true">
+                            {selected ? <CheckCircle2 className="h-3.5 w-3.5" /> : null}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {demoPricing?.active ? (
+                    <p className="company-merchant-alert">
+                      Demo pricing is active. PayPal will charge PHP {demoPricing.demoAmountValue}; internal plan records stay unchanged.
+                    </p>
+                  ) : null}
+
+                  {!selectedProviderState.enabled ? (
+                    <p className="company-merchant-alert">
+                      {selectedProviderState.reason || `${selectedProvider.label} is not configured yet.`} Add the required server env keys, then refresh this popup.
+                    </p>
+                  ) : null}
+
+                  {error ? <p className="company-merchant-error">{error}</p> : null}
+                  {success ? <p className="company-merchant-success">{success}</p> : null}
+                  {checkoutFallbackUrls.length ? (
+                    <div className="company-merchant-fallback">
+                      <p>If PayPal does not load, use the alternate checkout link.</p>
+                      <a href={checkoutFallbackUrls[0]} target="_blank" rel="noreferrer">
+                        Open alternate PayPal checkout
+                      </a>
+                    </div>
+                  ) : null}
+                </section>
+              </div>
+
+              <footer className="company-merchant-footer">
                 {isLocalhostBypassAvailable ? (
                   <button
                     type="button"
                     onClick={handleLocalhostBypass}
                     disabled={loading || verifying || !draft || !selectedPlan}
-                    className="w-full rounded-2xl border border-dashed border-[#588157] bg-[#f4f8f1] px-5 py-3 font-semibold text-[#3a5a40] transition-colors hover:bg-[#ecf4e7] disabled:opacity-60 dark:border-[#82ad86] dark:bg-[#202428] dark:text-[#d0d7dd] dark:hover:bg-[#31363d] sm:w-auto"
+                    className="company-merchant-bypass-button"
                   >
-                    Sample success
+                    Sample success (local only)
                   </button>
                 ) : null}
-              </div>
-            </div>
-
-            {completedCheckout ? (
-              <div className="w-full max-w-4xl space-y-4 rounded-[24px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6]/92 dark:bg-[#1b1f23] p-4 sm:p-5 shadow-[0_18px_48px_rgba(58,90,64,0.06)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.22)]">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#588157] dark:text-[#e2b94d]">Post payment information</p>
-                  <h2 className="mt-1 text-xl font-semibold text-[#102a1b] dark:text-white">
-                    {completedProvider?.merchantName || 'KapIT Payment Receipt'}
-                  </h2>
-                  <p className="mt-2 text-sm text-[#5f6f52] dark:text-[#c0c8d0]">
-                    Payment is complete. Step 3 is now done and your job is published.
-                  </p>
-                </div>
-
-                <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4 sm:p-5">
-                  <h3 className="text-base font-semibold text-[#102a1b] dark:text-white">Payment details</h3>
-                  <div className="mt-3 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
-                    <div>
-                      <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Paid plan</p>
-                      <p className="font-semibold text-[#102a1b] dark:text-white">{paidPlanLabel}</p>
-                    </div>
-                    <div>
-                      <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Plan amount</p>
-                      <p className="font-semibold text-[#102a1b] dark:text-white">PHP {paidAmount.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Active duration</p>
-                      <p className="font-semibold text-[#102a1b] dark:text-white">{paidPlanDuration}</p>
-                    </div>
-                    <div>
-                      <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Published job</p>
-                      <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout?.job?.title || draft?.title || '--'}</p>
-                    </div>
-                    <div>
-                      <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Payment provider</p>
-                      <p className="font-semibold text-[#102a1b] dark:text-white">{completedProvider?.label || completedCheckout?.payment?.provider || '--'}</p>
-                    </div>
-                    <div>
-                      <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Payment status</p>
-                      <p className="font-semibold text-emerald-700 dark:text-emerald-300">Verified and paid</p>
-                    </div>
-                    <div>
-                      <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Payment record</p>
-                      <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout?.payment?.id || currentPaymentId || '--'}</p>
-                    </div>
-                    <div>
-                      <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Provider reference</p>
-                      <p className="font-semibold text-[#102a1b] dark:text-white">{completedCheckout?.payment?.provider_payment_id || completedCheckout?.payment?.provider_checkout_id || '--'}</p>
-                    </div>
-                    <div className="sm:col-span-2">
-                      <p className="text-[#5f6f52] dark:text-[#c0c8d0]">Paid on</p>
-                      <p className="font-semibold text-[#102a1b] dark:text-white">{paidAt || 'Just now'}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-[20px] border border-[#d6d3c9] dark:border-[#444d57] bg-[#f8fbf6] dark:bg-[#202428] p-4">
-                  <p className="text-sm font-semibold text-[#102a1b] dark:text-white">All plans include</p>
-                  <ul className="mt-2.5 space-y-1.5 text-sm text-[#344e41] dark:text-[#eceff2]">
-                    {PLAN_FEATURES.map((feature) => (
-                      <li key={`receipt-feature-${feature}`} className="flex items-start gap-2">
-                        <span className="mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full bg-[#588157] dark:bg-[#82ad86]" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </div>
+                <button
+                  type="button"
+                  onClick={handlePayAndPost}
+                  disabled={loading || verifying || !draft || !selectedPlan || !selectedProviderState.enabled}
+                  className="company-merchant-primary-button"
+                >
+                  <span>
+                    {loading
+                      ? 'Opening checkout...'
+                      : verifying
+                        ? 'Verifying payment...'
+                        : selectedPlan
+                          ? `Pay PHP ${demoChargeAmountLabel}`
+                          : 'Select a plan'}
+                  </span>
+                  {!loading && !verifying ? <ArrowRight className="h-4 w-4" /> : null}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="company-merchant-secondary-button"
+                >
+                  Cancel
+                </button>
+              </footer>
+            </>
+          )}
+        </section>
+      </main>
     </div>
   );
 }
 
-export { PAYMENT_MESSAGE_TYPE, PAYMENT_CANCEL_MESSAGE_TYPE, STORAGE_KEY };
+export { PAYMENT_MESSAGE_TYPE, PAYMENT_CANCEL_MESSAGE_TYPE, PAYMENT_FINISH_MESSAGE_TYPE, STORAGE_KEY };
 
 

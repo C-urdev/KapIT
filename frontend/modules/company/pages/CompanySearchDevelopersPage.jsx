@@ -189,23 +189,25 @@ export default function CompanySearchDevelopersPage() {
         className="transition-colors duration-300"
       >
         <div className={`flex flex-col ${hasActiveFilters ? 'gap-4' : 'gap-3'}`}>
-          <div className="company-workspace-toolbar flex flex-col lg:flex-row lg:items-center">
-            <div className="min-w-0 flex-1">
-              <div className="company-workspace-control flex w-full items-center px-2">
+          <div className="company-workspace-toolbar">
+            <div className="grid grid-cols-1 gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+              <label className="company-workspace-control flex min-w-0 items-center gap-2.5 px-3.5">
+                <Search className="h-[18px] w-[18px] shrink-0 text-[var(--workspace-text-muted)]" />
+                <span className="sr-only">Search developers</span>
                 <input
                   value={filters.q}
                   onChange={(event) => handleFilterChange('q', event.target.value)}
                   placeholder="Search by name, desired role, education..."
-                  className="min-w-0 flex-1 border-0 bg-transparent px-4 py-2.5 text-[var(--workspace-text-strong)] outline-none placeholder:text-[var(--workspace-text-muted)]"
+                  className="h-10 min-w-0 flex-1 border-0 bg-transparent py-2 text-[var(--workspace-text-strong)] outline-none placeholder:text-[var(--workspace-text-muted)]"
                 />
-                <button
-                  type="submit"
-                  className="company-workspace-primary-button inline-flex shrink-0 items-center justify-center gap-2 px-3.5 py-2.5 min-[420px]:px-5"
-                >
-                  <Search className="h-4 w-4" />
-                  <span className="hidden min-[380px]:inline">Search</span>
-                </button>
-              </div>
+              </label>
+              <button
+                type="submit"
+                className="company-workspace-primary-button inline-flex h-10 shrink-0 items-center justify-center gap-2 px-4"
+              >
+                <Search className="h-4 w-4" />
+                <span>Search</span>
+              </button>
             </div>
 
             <div ref={filterPopupRef} className="relative lg:min-w-fit">
@@ -217,7 +219,7 @@ export default function CompanySearchDevelopersPage() {
                 aria-expanded={showAdvancedFilters}
                 aria-controls="developer-search-filters-modal"
               >
-                <SlidersHorizontal className="h-4 w-4 text-[#588157] dark:text-[#f0c766]" />
+                <SlidersHorizontal className="h-4 w-4 text-[var(--workspace-primary)]" />
                 Filters
                 <ChevronDown className={`h-4 w-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
               </button>
