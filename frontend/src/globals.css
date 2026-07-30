@@ -622,6 +622,21 @@ html.dark .user-dashboard-shell .user-workspace-surface {
   animation: starTwinkle 14s ease-in-out infinite;
 }
 
+[data-landing-reveal] {
+  --landing-reveal-distance: 4rem;
+  opacity: 0;
+  translate: 0 var(--landing-reveal-distance);
+  filter: blur(6px);
+  will-change: opacity, translate, filter;
+}
+
+[data-landing-reveal][data-revealed='true'] {
+  opacity: 1;
+  translate: 0 0;
+  filter: none;
+  will-change: auto;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .landing-bg-glow,
   .landing-bg-horizon,
@@ -630,6 +645,11 @@ html.dark .user-dashboard-shell .user-workspace-surface {
   .landing-bg-star {
     animation: none !important;
     transform: none !important;
+  }
+
+  [data-landing-reveal] {
+    --landing-reveal-distance: 1.5rem;
+    filter: blur(2px);
   }
 }
 
@@ -2727,6 +2747,32 @@ html.dark .help-workspace-submit {
   .company-pipeline-bar[data-status='reviewed'] { background: #2563eb; }
   .company-pipeline-bar[data-status='accepted'] { background: #16a34a; }
   .company-pipeline-bar[data-status='rejected'] { background: var(--workspace-danger); }
+
+  @media (max-width: 639px) {
+    .company-workspace-page-heading-row {
+      align-items: stretch;
+    }
+
+    .company-workspace-page-heading-row .company-workspace-period-control {
+      max-width: 100%;
+      overflow-x: auto;
+    }
+
+    .company-workspace-page-heading-row .company-workspace-period-select {
+      align-self: flex-start;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .company-jobs-filter-toolbar {
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+    }
+
+    .company-review-pipeline {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .company-dashboard-shell *,

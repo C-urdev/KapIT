@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { ArrowRight, Users, Code2, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import Footer from '../../../shared/components/branding/Footer';
+import ScrollRevealSection from '../../../shared/components/effects/ScrollRevealSection';
+import LandingFaqSection from '../../../shared/pages/landing/LandingFaqSection';
 import { CATEGORIES } from '../../../shared/pages/landing/landingData';
 import PublicMobileNav from '../../components/navigation/PublicMobileNav';
 
@@ -76,9 +78,9 @@ export default function MobileLandingPage({ onLogoClick, onOpenAccountChoice, on
         />
 
         <main className="flex-1 w-full px-5 pb-10 pt-28">
-          <section className="relative flex w-full flex-col items-start pb-16 pt-4">
-            <div className="relative w-full rounded-[2rem] border border-transparent bg-[#1F332A] p-6 pb-10 pt-8 text-white shadow-[0_32px_64px_-12px_rgba(0,0,0,0.15)] dark:border-[#22C55E]/10 dark:bg-[#111111] dark:shadow-none">
-              <h1 className="max-w-[9ch] font-sans text-[3.25rem] font-bold leading-[0.95] tracking-[-0.04em] text-white">
+          <ScrollRevealSection as="section" startVisible className="relative flex w-full flex-col items-start pb-16 pt-4">
+            <div data-landing-reveal className="relative w-full rounded-[2rem] border border-transparent bg-[#1F332A] p-6 pb-10 pt-8 text-white shadow-[0_32px_64px_-12px_rgba(0,0,0,0.15)] dark:border-[#22C55E]/10 dark:bg-[#111111] dark:shadow-none">
+              <h1 data-landing-reveal className="max-w-[9ch] font-sans text-[3.25rem] font-bold leading-[0.95] tracking-[-0.04em] text-white">
                 Focused.
                 <br />
                 Fluid.
@@ -86,12 +88,14 @@ export default function MobileLandingPage({ onLogoClick, onOpenAccountChoice, on
                 Forward.
               </h1>
 
-              <p className="mt-8 max-w-[26ch] text-[15px] font-medium leading-[1.6] text-white/90">
+              <p data-landing-reveal style={{ '--landing-part-delay': '100ms' }} className="mt-8 max-w-[26ch] text-[15px] font-medium leading-[1.6] text-white/90">
                 KapIT&apos;s dedicated mobile experience connects you to real opportunities faster than ever.
               </p>
 
               <div className="mt-12 flex w-full flex-col gap-3">
                 <button
+                  data-landing-reveal
+                  style={{ '--landing-part-delay': '220ms' }}
                   type="button"
                   onClick={onOpenAccountChoice}
                   className="group flex w-full items-center justify-between rounded-full bg-white p-4 px-6 text-[15px] font-semibold text-[#1F332A] transition-all duration-300 active:scale-[0.97]"
@@ -101,19 +105,21 @@ export default function MobileLandingPage({ onLogoClick, onOpenAccountChoice, on
                 </button>
               </div>
             </div>
-          </section>
+          </ScrollRevealSection>
 
-          <section className="relative mt-10 w-full">
+          <ScrollRevealSection as="section" className="relative mt-10 w-full">
             <div className="mb-10 pl-2">
-              <h2 className="text-[2.25rem] font-bold leading-[1.1] tracking-[-0.03em] text-[#3A2E25] dark:text-white">
+              <h2 data-landing-reveal className="text-[2.25rem] font-bold leading-[1.1] tracking-[-0.03em] text-[#3A2E25] dark:text-white">
                 How KapIT works
               </h2>
             </div>
 
             <div className="w-full space-y-4">
-              {HOW_IT_WORKS_STEPS.map(({ step, title, description, Icon, className }) => (
+              {HOW_IT_WORKS_STEPS.map(({ step, title, description, Icon, className }, index) => (
                 <div
                   key={step}
+                  data-landing-reveal
+                  style={{ '--landing-part-delay': `${120 + index * 100}ms` }}
                   className={`w-full rounded-[2.5rem] border border-transparent p-8 shadow-[0_24px_48px_-16px_rgba(0,0,0,0.08)] dark:border-white/5 ${className}`}
                 >
                   <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#2D4A3E] dark:text-[#EAB308]">{step}</p>
@@ -131,18 +137,23 @@ export default function MobileLandingPage({ onLogoClick, onOpenAccountChoice, on
                 </div>
               ))}
             </div>
-          </section>
+          </ScrollRevealSection>
 
-          <section className="relative mb-8 mt-20 w-full">
+          <ScrollRevealSection>
+            <LandingFaqSection compact />
+          </ScrollRevealSection>
+
+          <ScrollRevealSection as="section" className="relative mb-8 mt-20 w-full">
             <div className="mb-6 pl-2">
-              <h2 className="text-[2.25rem] font-bold leading-[1.1] tracking-[-0.03em] text-[#3A2E25] dark:text-white">
+              <h2 data-landing-reveal className="text-[2.25rem] font-bold leading-[1.1] tracking-[-0.03em] text-[#3A2E25] dark:text-white">
                 Explore roles
               </h2>
             </div>
 
-            <div className="relative flex min-h-[340px] w-full flex-col overflow-hidden rounded-[2rem] border border-[#3A2E25]/5 bg-white p-6 pb-10 pt-8 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.06)] dark:border-white/10 dark:bg-[#1A1A1A] dark:shadow-2xl">
+            <div data-landing-reveal style={{ '--landing-part-delay': '140ms' }} className="relative flex min-h-[340px] w-full flex-col overflow-hidden rounded-[2rem] border border-[#3A2E25]/5 bg-white p-6 pb-10 pt-8 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.06)] dark:border-white/10 dark:bg-[#1A1A1A] dark:shadow-2xl">
               <div className="flex items-center justify-end gap-2">
                 <button
+                  data-landing-reveal
                   type="button"
                   onClick={handlePrevCategory}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#3A2E25]/10 bg-[#F6F8F4] text-[#2D4A3E] dark:border-white/10 dark:bg-[#121212] dark:text-white"
@@ -151,6 +162,8 @@ export default function MobileLandingPage({ onLogoClick, onOpenAccountChoice, on
                   <ChevronLeft className="h-4 w-4" />
                 </button>
                 <button
+                  data-landing-reveal
+                  style={{ '--landing-part-delay': '70ms' }}
                   type="button"
                   onClick={handleNextCategory}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#3A2E25]/10 bg-[#F6F8F4] text-[#2D4A3E] dark:border-white/10 dark:bg-[#121212] dark:text-white"
@@ -165,10 +178,10 @@ export default function MobileLandingPage({ onLogoClick, onOpenAccountChoice, on
                   <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-transparent bg-[#EAF0E6] dark:border-[#22C55E]/20 dark:bg-[#22C55E]/10">
                     <ActiveCategoryIcon className="h-6 w-6 text-[#2D4A3E] dark:text-[#22C55E]" />
                   </div>
-                  <h3 className="mb-4 font-sans text-[2rem] font-bold leading-[1.1] tracking-[-0.03em] text-[#3A2E25] dark:text-white">
+                  <h3 data-landing-reveal style={{ '--landing-part-delay': '120ms' }} className="mb-4 font-sans text-[2rem] font-bold leading-[1.1] tracking-[-0.03em] text-[#3A2E25] dark:text-white">
                     {activeCat.title}
                   </h3>
-                  <p className="text-[15px] font-medium leading-[1.7] text-[#5C4D42] dark:text-[#D4D4D8]">
+                  <p data-landing-reveal style={{ '--landing-part-delay': '200ms' }} className="text-[15px] font-medium leading-[1.7] text-[#5C4D42] dark:text-[#D4D4D8]">
                     {activeCategoryDescription}
                   </p>
                 </div>
@@ -190,19 +203,19 @@ export default function MobileLandingPage({ onLogoClick, onOpenAccountChoice, on
                 ))}
               </div>
             </div>
-          </section>
+          </ScrollRevealSection>
 
-          <section className="mb-16 mt-16 w-full">
+          <ScrollRevealSection as="section" className="mb-16 mt-16 w-full">
             <div className="mb-8 text-center">
-              <h2 className="font-sans text-[2.5rem] font-bold leading-[1] tracking-[-0.04em] text-[#3A2E25] dark:text-white">
+              <h2 data-landing-reveal className="font-sans text-[2.5rem] font-bold leading-[1] tracking-[-0.04em] text-[#3A2E25] dark:text-white">
                 Why Us?
               </h2>
-              <p className="mt-3 text-[14px] font-medium text-[#5C4D42] dark:text-[#A1A1AA]">
+              <p data-landing-reveal style={{ '--landing-part-delay': '100ms' }} className="mt-3 text-[14px] font-medium text-[#5C4D42] dark:text-[#A1A1AA]">
                 Side-by-side. No fluff.
               </p>
             </div>
 
-            <div className="overflow-hidden rounded-[1.5rem] border border-[#3A2E25]/10 bg-white shadow-[0_32px_64px_-12px_rgba(0,0,0,0.06)] dark:border-white/10 dark:bg-[#111111] dark:shadow-none">
+            <div data-landing-reveal style={{ '--landing-part-delay': '140ms' }} className="overflow-hidden rounded-[1.5rem] border border-[#3A2E25]/10 bg-white shadow-[0_32px_64px_-12px_rgba(0,0,0,0.06)] dark:border-white/10 dark:bg-[#111111] dark:shadow-none">
               <div className="grid grid-cols-[1fr_1fr_1fr] border-b border-[#3A2E25]/10 bg-[#F6F8F4] px-5 py-4 dark:border-white/10 dark:bg-[#0A0A0A]">
                 <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#5C4D42] dark:text-[#A1A1AA]">Feature</span>
                 <span className="text-center text-[11px] font-bold uppercase tracking-[0.15em] text-[#2D4A3E] dark:text-[#22C55E]">KapIT</span>
@@ -212,6 +225,8 @@ export default function MobileLandingPage({ onLogoClick, onOpenAccountChoice, on
               {WHY_US_ROWS.map((row, index) => (
                 <div
                   key={row.feature}
+                  data-landing-reveal
+                  style={{ '--landing-part-delay': `${160 + index * 55}ms` }}
                   className={`grid grid-cols-[1fr_1fr_1fr] items-center px-5 py-4 ${
                     index % 2 === 0
                       ? 'bg-white dark:bg-[#111111]'
@@ -224,17 +239,17 @@ export default function MobileLandingPage({ onLogoClick, onOpenAccountChoice, on
                 </div>
               ))}
             </div>
-          </section>
+          </ScrollRevealSection>
 
-          <section className="mt-4 w-full">
-            <div className="rounded-[2rem] border border-transparent bg-[#2D4A3E] px-6 py-12 text-center shadow-[0_32px_64px_-12px_rgba(0,0,0,0.15)] dark:border-[#22C55E]/10 dark:bg-[#111111] dark:shadow-none">
-              <p className="mb-4 text-[13px] font-bold uppercase tracking-[0.15em] text-[#EAB308] dark:text-[#22C55E]">
+          <ScrollRevealSection as="section" className="mt-4 w-full">
+            <div data-landing-reveal className="rounded-[2rem] border border-transparent bg-[#2D4A3E] px-6 py-12 text-center shadow-[0_32px_64px_-12px_rgba(0,0,0,0.15)] dark:border-[#22C55E]/10 dark:bg-[#111111] dark:shadow-none">
+              <p data-landing-reveal className="mb-4 text-[13px] font-bold uppercase tracking-[0.15em] text-[#EAB308] dark:text-[#22C55E]">
                 Don&apos;t miss the right match
               </p>
-              <h2 className="mx-auto max-w-[22ch] font-sans text-[1.75rem] font-bold leading-[1.15] tracking-[-0.03em] text-white dark:text-[#FAFAFA]">
+              <h2 data-landing-reveal style={{ '--landing-part-delay': '100ms' }} className="mx-auto max-w-[22ch] font-sans text-[1.75rem] font-bold leading-[1.15] tracking-[-0.03em] text-white dark:text-[#FAFAFA]">
                 Top IT roles in the Philippines fill fast. Get notified before they close.
               </h2>
-              <div className="mx-auto mt-8 flex max-w-md flex-col items-stretch gap-3 sm:flex-row">
+              <div data-landing-reveal style={{ '--landing-part-delay': '220ms' }} className="mx-auto mt-8 flex max-w-md flex-col items-stretch gap-3 sm:flex-row">
                 <input
                   type="email"
                   placeholder="Your email address"
@@ -249,7 +264,7 @@ export default function MobileLandingPage({ onLogoClick, onOpenAccountChoice, on
                 </button>
               </div>
             </div>
-          </section>
+          </ScrollRevealSection>
         </main>
 
         <Footer />

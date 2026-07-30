@@ -25,8 +25,8 @@ export default function EmployerDesktopNav({ onSignIn }) {
 
   const brandTitleClass = isDark ? 'text-white' : 'text-[#344e41]';
   const brandLinkClass = isDark
-    ? 'group flex shrink-0 items-center gap-3.5 rounded-full py-1 pr-3 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8fb995]'
-    : 'group flex shrink-0 items-center gap-3.5 rounded-full py-1 pr-3 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#3a5a40]';
+    ? 'group flex shrink-0 items-center gap-3.5 rounded-full py-1 pr-3 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8fb995]'
+    : 'group flex shrink-0 items-center gap-3.5 rounded-full py-1 pr-3 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#3a5a40]';
   const logoClass = isDark
     ? 'h-11 w-11 rounded-xl border border-white/10 bg-white object-contain p-1 shadow-[0_12px_24px_rgba(0,0,0,0.24)] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.03]'
     : 'h-11 w-11 rounded-xl border border-[#d7e2ce] bg-white object-contain p-1 shadow-[0_12px_24px_rgba(58,90,64,0.16)] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.03]';
@@ -34,8 +34,8 @@ export default function EmployerDesktopNav({ onSignIn }) {
     ? 'rounded-full bg-white/8 px-3 py-1 text-xs font-semibold text-[#b9d5bc]'
     : 'rounded-full bg-[#e5efe2] px-3 py-1 text-xs font-semibold text-[#456247]';
   const navLinkClass = isDark
-    ? 'rounded-full border border-transparent px-4 py-2.5 text-[0.98rem] font-medium text-[#d0d7dd] transition-[background-color,border-color,box-shadow,color,transform] duration-300 hover:-translate-y-0.5 hover:border-white/10 hover:bg-[#202428]/90 hover:text-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_10px_22px_rgba(0,0,0,0.24)] hover:backdrop-blur-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8fb995] active:translate-y-0 active:scale-[0.98]'
-    : 'rounded-full border border-transparent px-4 py-2.5 text-[0.98rem] font-medium text-[#344e41] transition-[background-color,border-color,box-shadow,color,transform] duration-300 hover:-translate-y-0.5 hover:border-[#dce6d4] hover:bg-white/86 hover:text-[#102a1b] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_22px_rgba(58,90,64,0.13)] hover:backdrop-blur-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#3a5a40] active:translate-y-0 active:scale-[0.98]';
+    ? 'rounded-full border border-transparent px-4 py-2.5 text-[0.98rem] font-medium text-[#d0d7dd] transition-[background-color,border-color,box-shadow,color,transform] duration-300 hover:border-white/10 hover:bg-[#202428]/90 hover:text-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_10px_22px_rgba(0,0,0,0.24)] hover:backdrop-blur-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8fb995] active:translate-y-0 active:scale-[0.98]'
+    : 'rounded-full border border-transparent px-4 py-2.5 text-[0.98rem] font-medium text-[#344e41] transition-[background-color,border-color,box-shadow,color,transform] duration-300 hover:border-[#dce6d4] hover:bg-white/86 hover:text-[#102a1b] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_22px_rgba(58,90,64,0.13)] hover:backdrop-blur-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#3a5a40] active:translate-y-0 active:scale-[0.98]';
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 pb-2 pt-5 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] lg:pt-6">

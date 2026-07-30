@@ -73,20 +73,22 @@ export default function LandingSuccessStoriesSection() {
 
       <div className="landing-desktop-shell relative py-[4.5rem] sm:py-20 lg:py-24">
         <div className="mx-auto max-w-3xl text-center">
-          <h3 className="mt-4 text-balance text-[1.85rem] font-semibold tracking-[-0.04em] text-[#151714] dark:text-white sm:text-[2.15rem]">
+          <h3 data-landing-reveal className="mt-4 text-balance text-[1.85rem] font-semibold tracking-[-0.04em] text-[#151714] dark:text-white sm:text-[2.15rem]">
             Made for candidates aiming at serious roles in the Philippines
           </h3>
         </div>
 
         <div className="mx-auto mt-14 max-w-5xl text-center lg:mt-16">
-          <p className="mx-auto max-w-2xl text-balance text-[1.08rem] font-medium tracking-[-0.02em] text-[#3b3a35] dark:text-[#d6dde3]">
+          <p data-landing-reveal style={{ '--landing-part-delay': '100ms' }} className="mx-auto max-w-2xl text-balance text-[1.08rem] font-medium tracking-[-0.02em] text-[#3b3a35] dark:text-[#d6dde3]">
             Built for applicants who want to stand out to leading employers across the Philippines
           </p>
 
           <div className="mx-auto mt-7 flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-5 text-[#8f897f] dark:text-[#c7ced6] sm:gap-x-10 lg:gap-x-12">
-            {EMPLOYER_WORDMARKS.map((company) => (
+            {EMPLOYER_WORDMARKS.map((company, index) => (
               <span
                 key={company.label}
+                data-landing-reveal
+                style={{ '--landing-part-delay': `${160 + index * 55}ms` }}
                 className={`select-none whitespace-nowrap font-semibold opacity-90 ${company.className}`}
               >
                 {company.label}
@@ -95,12 +97,14 @@ export default function LandingSuccessStoriesSection() {
           </div>
         </div>
 
-        <div className="mx-auto mt-14 h-px max-w-6xl bg-[#d2ccbf] dark:bg-white/10" />
+        <div data-landing-reveal style={{ '--landing-part-delay': '220ms' }} className="mx-auto mt-14 h-px max-w-6xl bg-[#d2ccbf] dark:bg-white/10" />
 
         <div className="mt-14 grid gap-6 lg:grid-cols-3">
           {REVIEWS.map((review, index) => (
             <article
               key={review.id}
+              data-landing-reveal
+              style={{ '--landing-part-delay': `${140 + index * 100}ms` }}
               className={`group relative overflow-hidden rounded-[2rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.58))] p-5 shadow-[0_18px_45px_rgba(63,46,24,0.06)] transition-[transform,box-shadow,background-color] duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_22px_50px_rgba(63,46,24,0.1)] dark:bg-[linear-gradient(180deg,rgba(33,36,38,0.82),rgba(28,31,33,0.65))] dark:shadow-[0_20px_44px_rgba(0,0,0,0.18)] ${
                 index === 1 ? 'lg:translate-y-8' : ''
               }`}

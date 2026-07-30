@@ -1,8 +1,10 @@
 import React from 'react';
 import Footer from '../../../shared/components/branding/Footer';
 import LandingFinalCtaSection from '../../../shared/pages/landing/LandingFinalCtaSection';
+import LandingFaqSection from '../../../shared/pages/landing/LandingFaqSection';
 import LandingHeroSection from '../../../shared/pages/landing/LandingHeroSection';
 import LandingHowItWorksSection from '../../../shared/pages/landing/LandingHowItWorksSection';
+import ScrollRevealSection from '../../../shared/components/effects/ScrollRevealSection';
 import PublicDesktopNav from '../../components/navigation/PublicDesktopNav';
 import LandingCategoriesSection from './categories/LandingCategoriesSection';
 import LandingSuccessStoriesSection from './LandingSuccessStoriesSection';
@@ -16,12 +18,27 @@ export default function DesktopLandingPage({ onLogoClick, onOpenAccountChoice, o
         onGetStarted={onOpenAccountChoice}
         onSignIn={onSignIn}
       />
-      <LandingHeroSection onGetStarted={onOpenAccountChoice} onJoinDeveloper={onJoinDeveloperClick} />
-      <LandingSuccessStoriesSection />
-      <LandingCategoriesSection onOpenAccountChoice={onOpenAccountChoice} />
-      <LandingHowItWorksSection />
-      <LandingWhyUsSection />
-      <LandingFinalCtaSection onOpenAccountChoice={onOpenAccountChoice} onJoinDeveloper={onJoinDeveloperClick} />
+      <ScrollRevealSection startVisible>
+        <LandingHeroSection onGetStarted={onOpenAccountChoice} onJoinDeveloper={onJoinDeveloperClick} />
+      </ScrollRevealSection>
+      <ScrollRevealSection>
+        <LandingSuccessStoriesSection />
+      </ScrollRevealSection>
+      <ScrollRevealSection>
+        <LandingCategoriesSection onOpenAccountChoice={onOpenAccountChoice} />
+      </ScrollRevealSection>
+      <ScrollRevealSection>
+        <LandingHowItWorksSection />
+      </ScrollRevealSection>
+      <ScrollRevealSection>
+        <LandingFaqSection />
+      </ScrollRevealSection>
+      <ScrollRevealSection>
+        <LandingWhyUsSection />
+      </ScrollRevealSection>
+      <ScrollRevealSection>
+        <LandingFinalCtaSection onOpenAccountChoice={onOpenAccountChoice} onJoinDeveloper={onJoinDeveloperClick} />
+      </ScrollRevealSection>
       <Footer />
     </div>
   );

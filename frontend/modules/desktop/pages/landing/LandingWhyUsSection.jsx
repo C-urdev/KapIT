@@ -15,16 +15,16 @@ export default function LandingWhyUsSection() {
     <section className="relative overflow-hidden bg-[linear-gradient(180deg,#fffefd_0%,#fcfbf8_48%,#f8f2e9_100%)] dark:bg-none dark:bg-[#101714]">
       <div className="landing-desktop-shell relative py-[6rem] sm:py-24 lg:py-32">
         <div className="mx-auto mb-12 max-w-2xl text-center lg:mb-14">
-          <h3 className="text-3xl lg:text-4xl font-bold text-[#102a1b] dark:text-white">
+          <h3 data-landing-reveal className="text-3xl lg:text-4xl font-bold text-[#102a1b] dark:text-white">
             Why Us?
           </h3>
-          <p className="mt-2 text-sm leading-relaxed text-[#4a6354] dark:text-[#d0d7dd]">
+          <p data-landing-reveal style={{ '--landing-part-delay': '100ms' }} className="mt-2 text-sm leading-relaxed text-[#4a6354] dark:text-[#d0d7dd]">
             Side-by-side. No fluff.
           </p>
         </div>
 
         <div className="grid grid-cols-1 min-[900px]:grid-cols-2 gap-4 lg:gap-6">
-          <div className="group rounded-3xl relative overflow-hidden border border-[#588157]/25 dark:border-[#22C55E]/15 bg-white/60 dark:bg-[#1a1d20]/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-md">
+          <div data-landing-reveal style={{ '--landing-part-delay': '140ms' }} className="group rounded-3xl relative overflow-hidden border border-[#588157]/25 dark:border-[#22C55E]/15 bg-white/60 dark:bg-[#1a1d20]/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-md">
             <div className="absolute inset-0 bg-gradient-to-br from-[#588157]/[0.03] to-transparent dark:from-[#22C55E]/[0.03]" />
 
             <div className="relative px-6 lg:px-8 py-5 border-b border-[#588157]/15 dark:border-[#22C55E]/10 bg-gradient-to-b from-[#fbfaf6] to-[#f0ede6] dark:from-[#1e2124] dark:to-[#1a1d20]">
@@ -40,6 +40,8 @@ export default function LandingWhyUsSection() {
               {COMPARISON_ROWS.map((row, i) => (
                 <div
                   key={row.feature}
+                  data-landing-reveal
+                  style={{ '--landing-part-delay': `${180 + i * 55}ms` }}
                   className={`px-6 lg:px-8 py-4 lg:py-5 flex items-center justify-between transition-colors duration-200 hover:bg-[#588157]/[0.04] dark:hover:bg-[#22C55E]/[0.03] ${
                     i < COMPARISON_ROWS.length - 1 ? 'border-b border-[#a3b18a]/10 dark:border-white/5' : ''
                   }`}
@@ -54,7 +56,7 @@ export default function LandingWhyUsSection() {
             </div>
           </div>
 
-          <div className="rounded-3xl relative overflow-hidden border border-[#a3b18a]/15 dark:border-white/5 bg-white/30 dark:bg-[#1a1d20]/30 shadow-[0_8px_30px_rgb(0,0,0,0.02)] backdrop-blur-md">
+          <div data-landing-reveal style={{ '--landing-part-delay': '260ms' }} className="rounded-3xl relative overflow-hidden border border-[#a3b18a]/15 dark:border-white/5 bg-white/30 dark:bg-[#1a1d20]/30 shadow-[0_8px_30px_rgb(0,0,0,0.02)] backdrop-blur-md">
             <div className="relative px-6 lg:px-8 py-5 border-b border-[#a3b18a]/15 dark:border-white/5 bg-[#f6f4ef]/50 dark:bg-[#1a1d20]/50">
               <div className="flex items-center gap-3">
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[#4a6354]/5 dark:bg-white/5">
@@ -68,6 +70,8 @@ export default function LandingWhyUsSection() {
               {COMPARISON_ROWS.map((row, i) => (
                 <div
                   key={row.feature}
+                  data-landing-reveal
+                  style={{ '--landing-part-delay': `${260 + i * 55}ms` }}
                   className={`px-6 lg:px-8 py-4 lg:py-5 flex items-center justify-between ${
                     i < COMPARISON_ROWS.length - 1 ? 'border-b border-[#a3b18a]/8 dark:border-white/[0.03]' : ''
                   }`}
