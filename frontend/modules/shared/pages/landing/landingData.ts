@@ -18,6 +18,29 @@ export const CATEGORIES = [
   { title: 'Cloud & DevOps', icon: Cloud },
 ];
 
+export const USER_LANDING_FAQ = [
+  {
+    question: 'Who can create a KapIT developer profile?',
+    answer: 'Anyone looking for an IT role in the Philippines can create a profile and share their skills, experience, and work.',
+  },
+  {
+    question: 'What should I add to my profile?',
+    answer: 'Add your skills, experience, projects, portfolio, resume, and the roles you want.',
+  },
+  {
+    question: 'How does KapIT match me with roles?',
+    answer: 'KapIT compares your profile with each role’s skills and requirements to show clearer fit signals.',
+  },
+  {
+    question: 'Can I track my applications in KapIT?',
+    answer: 'Yes. You can follow application statuses, messages, and next steps from one place.',
+  },
+  {
+    question: 'Who makes the final hiring decision?',
+    answer: 'The employer does. KapIT organizes profile and role fit information, while the company controls every hiring decision.',
+  },
+];
+
 export const HERO_DEMO_DOMAIN = 'kapit.online';
 
 type LandingStar = { top: string; left: string; size: string };
