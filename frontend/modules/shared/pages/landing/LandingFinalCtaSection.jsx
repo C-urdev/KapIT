@@ -6,7 +6,7 @@ export default function LandingFinalCtaSection({ onOpenAccountChoice, onJoinDeve
   return (
     <Lamp
       actions={(
-        <div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
+        <div data-landing-reveal style={{ '--landing-part-delay': '240ms' }} className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
           <button
             type="button"
             onClick={onOpenAccountChoice}

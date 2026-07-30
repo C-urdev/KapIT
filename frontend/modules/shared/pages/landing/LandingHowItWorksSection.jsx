@@ -33,10 +33,10 @@ export default function LandingHowItWorksSection() {
     <section className="relative overflow-hidden bg-[linear-gradient(180deg,#fffefd_0%,#fcfaf6_34%,#f6eee2_100%)] dark:bg-none dark:bg-[#181a1b]">
       <div className="landing-desktop-shell relative py-[6rem] sm:py-24 lg:py-32">
         <div className="mx-auto max-w-3xl text-center">
-          <h3 className="text-[2.5rem] font-semibold tracking-[-0.05em] text-[#102a1b] dark:text-white sm:text-[3rem]">
+          <h3 data-landing-reveal className="text-[2.5rem] font-semibold tracking-[-0.05em] text-[#102a1b] dark:text-white sm:text-[3rem]">
             How KapIT works
           </h3>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-[#4e5f54] dark:text-[#cbd5e1]">
+          <p data-landing-reveal style={{ '--landing-part-delay': '100ms' }} className="mx-auto mt-4 max-w-2xl text-base leading-8 text-[#4e5f54] dark:text-[#cbd5e1]">
             A simpler flow for finding opportunities, presenting your work, and moving from interest to real conversations.
           </p>
         </div>
@@ -49,7 +49,9 @@ export default function LandingHowItWorksSection() {
             return (
               <article
                 key={step.id}
-                className={`group relative flex h-full flex-col overflow-hidden rounded-[2rem] border border-[#e6dfd2] bg-white/92 p-7 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-1 hover:border-[#d8cfbf] hover:shadow-[0_18px_40px_rgba(38,30,18,0.06)] dark:border-white/10 dark:bg-[#202224] ${
+                data-landing-reveal
+                style={{ '--landing-part-delay': `${140 + index * 100}ms` }}
+                className={`relative flex h-full flex-col overflow-hidden rounded-[2rem] border border-[#e6dfd2] bg-white/92 p-7 dark:border-white/10 dark:bg-[#202224] ${
                   isMiddle ? 'lg:translate-y-10' : ''
                 }`}
               >
@@ -65,7 +67,7 @@ export default function LandingHowItWorksSection() {
                     </h4>
                   </div>
 
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.2rem] border border-[#ece4d7] bg-[#fbfaf6] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105 dark:border-white/10 dark:bg-[#26292c]">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.2rem] border border-[#ece4d7] bg-[#fbfaf6] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] dark:border-white/10 dark:bg-[#26292c]">
                     <Icon className="h-6 w-6 text-[#5f8a64] dark:text-[#d2ddd6]" strokeWidth={1.85} />
                   </div>
                 </div>
