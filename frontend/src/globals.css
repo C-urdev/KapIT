@@ -875,8 +875,10 @@ html.dark .help-workspace-submit {
   .company-analytics-board {
     overflow: hidden;
     border: 1px solid var(--workspace-border);
-    border-radius: 8px;
+    border-radius: 16px;
     background: color-mix(in srgb, var(--workspace-surface) 54%, transparent);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 6px 16px rgba(0, 0, 0, 0.03);
+    animation: companyCardEnter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   html.dark .company-analytics-board {
@@ -916,11 +918,11 @@ html.dark .help-workspace-submit {
   }
 
   .company-analytics-row {
-    border-top: 1px solid var(--workspace-border);
+    border-top: 1px solid color-mix(in srgb, var(--workspace-border) 60%, transparent);
     background: transparent;
-    transition-property: background-color;
-    transition-duration: 150ms;
-    transition-timing-function: ease-out;
+    transition-property: background-color, box-shadow, transform;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .company-analytics-row:first-child {
@@ -929,6 +931,7 @@ html.dark .help-workspace-submit {
 
   .company-analytics-row:hover {
     background: color-mix(in srgb, var(--workspace-surface-selected) 54%, transparent);
+    box-shadow: inset 3px 0 0 var(--workspace-primary);
   }
 
   .company-analytics-kicker {
@@ -1752,102 +1755,172 @@ html.dark .help-workspace-submit {
     color: var(--workspace-primary);
   }
 
-  .company-workspace-control {
-    min-height: 40px;
-    border: 1px solid var(--workspace-border);
-    border-radius: 8px;
+  .company-workspace-tab-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border-radius: 10px;
     background: var(--workspace-surface-subtle);
+    width: fit-content;
+  }
+
+  .company-workspace-tab-button {
+    min-height: 36px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    padding: 0.375rem 1rem;
+    color: var(--workspace-text-muted);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    transition-property: background-color, color, box-shadow;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .company-workspace-tab-button:hover {
+    background: color-mix(in srgb, var(--workspace-surface) 60%, transparent);
     color: var(--workspace-text-strong);
-    transition-property: border-color, background-color, box-shadow, color;
-    transition-duration: 150ms;
-    transition-timing-function: ease-out;
   }
 
-  .company-workspace-control:focus-within,
-  .company-workspace-control:focus {
-    border-color: var(--workspace-primary);
+  .company-workspace-tab-button[data-active='true'] {
     background: var(--workspace-surface);
-    box-shadow: 0 0 0 1px var(--workspace-primary);
-    outline: none;
+    color: var(--workspace-primary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
   }
 
-  .company-dashboard-shell .company-workspace-control :is(input, select, textarea):focus,
-  .company-dashboard-shell .company-workspace-control :is(input, select, textarea):focus-visible,
-  .company-dashboard-shell .company-workspace-period-control button:focus,
-  .company-dashboard-shell .company-workspace-period-control button:focus-visible {
-    outline: none;
-    box-shadow: none;
-  }
-
-  .company-workspace-filter-strip {
-    gap: 0;
-    overflow: hidden;
-    border: 1px solid var(--workspace-border);
-    border-radius: 8px;
-    background: var(--workspace-surface-subtle);
-  }
-
-  .company-workspace-filter-strip .company-workspace-control {
+  .company-workspace-stat-strip {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    padding: 0.75rem;
     border: 0;
     border-radius: 0;
     background: transparent;
-    box-shadow: none;
   }
 
-  .company-workspace-filter-strip .company-workspace-control:not(:last-child) {
-    border-right: 1px solid var(--workspace-border);
+  .company-analytics-board .company-workspace-stat-strip {
+    border-top: 0;
+    border-bottom: 0;
   }
 
-  .company-workspace-filter-strip .company-workspace-control:focus-within,
-  .company-workspace-filter-strip .company-workspace-control:focus {
-    background: color-mix(in srgb, var(--workspace-primary-soft) 32%, transparent);
-    box-shadow: inset 0 0 0 1px var(--workspace-primary);
-  }
-
-  .company-dashboard-shell .field {
-    min-height: 40px;
+  .company-workspace-stat-cell {
+    min-width: 0;
+    padding: 1rem 1.125rem 1.125rem;
     border: 1px solid var(--workspace-border);
-    border-radius: 8px;
-    background: var(--workspace-surface-subtle);
-    color: var(--workspace-text-strong);
-    box-shadow: none;
-    transition-property: border-color, background-color, box-shadow;
-    transition-duration: 150ms;
-    transition-timing-function: ease-out;
+    border-radius: 14px;
+    background: var(--workspace-surface);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    transition: box-shadow 200ms ease, border-color 200ms ease;
+    position: relative;
+    overflow: hidden;
   }
 
-  .company-dashboard-shell .field::placeholder {
+  .company-workspace-stat-cell::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--workspace-primary-soft) 30%, transparent), transparent 60%);
+    pointer-events: none;
+  }
+
+  .company-workspace-stat-cell:hover {
+    border-color: color-mix(in srgb, var(--workspace-primary) 30%, var(--workspace-border));
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .company-workspace-stat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 10px;
+    background: var(--workspace-primary-soft);
+    color: var(--workspace-primary);
+    margin-bottom: 0.75rem;
+  }
+
+  .company-workspace-stat-icon svg {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  .company-workspace-stat-label {
+    color: var(--workspace-text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    line-height: 1rem;
+    text-transform: uppercase;
+  }
+
+  .company-workspace-stat-value {
+    margin-top: 0.375rem;
+    color: var(--workspace-text-strong);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 2.375rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  .company-workspace-stat-copy {
+    margin-top: 0.375rem;
+    color: var(--workspace-text-muted);
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+  }
+
+  .company-workspace-stat-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1rem;
+  }
+
+  .company-workspace-stat-trend[data-direction='up'] {
+    color: #16a34a;
+  }
+
+  .company-workspace-stat-trend[data-direction='down'] {
+    color: var(--workspace-danger);
+  }
+
+  .company-workspace-stat-trend[data-direction='neutral'] {
     color: var(--workspace-text-muted);
   }
 
-  .company-dashboard-shell .field:focus {
-    border-color: var(--workspace-primary);
-    background: var(--workspace-surface);
-    box-shadow: 0 0 0 2px var(--workspace-primary-soft);
-    outline: none;
+  .company-workspace-table-header {
+    border: 1px solid var(--workspace-border);
+    border-radius: 10px;
+    background: var(--workspace-surface-subtle);
+    color: var(--workspace-text-muted);
   }
 
-  .company-dashboard-shell .field:focus-within {
-    border-color: var(--workspace-primary);
-    background: var(--workspace-surface);
-    box-shadow: 0 0 0 2px var(--workspace-primary-soft);
-  }
-
-  .company-dashboard-shell .searchable-select-trigger-input:focus,
-  .company-dashboard-shell .searchable-select-trigger-input:focus-visible {
-    outline: none;
-    box-shadow: none;
-  }
+  /* ── Buttons ── */
 
   .company-workspace-primary-button,
   .company-workspace-secondary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-height: 40px;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 0.875rem;
     font-weight: 600;
-    transition-property: background-color, border-color, color, transform;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition-property: background-color, border-color, color, box-shadow, transform;
     transition-duration: 150ms;
-    transition-timing-function: ease-out;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .company-workspace-primary-button {
@@ -1863,10 +1936,11 @@ html.dark .help-workspace-submit {
   .company-workspace-primary-button:hover {
     border-color: var(--workspace-primary-hover);
     background: var(--workspace-primary-hover);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--workspace-primary) 28%, transparent);
   }
 
   .company-workspace-secondary-button {
-    border: 1px solid var(--workspace-border);
+    border: 1px solid var(--workspace-border-strong);
     background: var(--workspace-surface);
     color: var(--workspace-text-strong);
   }
@@ -1879,8 +1953,100 @@ html.dark .help-workspace-submit {
   .company-workspace-primary-button:active,
   .company-workspace-secondary-button:active {
     transform: translateY(1px);
+    box-shadow: none;
   }
 
+  /* ── Inputs & Controls ── */
+
+  .company-workspace-control {
+    min-height: 40px;
+    border: 1px solid var(--workspace-border);
+    border-radius: 8px;
+    background: var(--workspace-surface);
+    color: var(--workspace-text-strong);
+    transition-property: border-color, background-color, box-shadow;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+  }
+
+  .company-workspace-control:focus-within,
+  .company-workspace-control:focus {
+    border-color: var(--workspace-primary);
+    background: var(--workspace-surface);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--workspace-primary) 12%, transparent);
+    outline: none;
+  }
+
+  .company-dashboard-shell .company-workspace-control :is(input, select, textarea):focus,
+  .company-dashboard-shell .company-workspace-control :is(input, select, textarea):focus-visible,
+  .company-dashboard-shell .company-workspace-period-control button:focus,
+  .company-dashboard-shell .company-workspace-period-control button:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  /* Filter strip — joined row of controls */
+  .company-workspace-filter-strip {
+    overflow: hidden;
+    border: 1px solid var(--workspace-border);
+    border-radius: 10px;
+    background: var(--workspace-surface);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  }
+
+  .company-workspace-filter-strip .company-workspace-control {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .company-workspace-filter-strip .company-workspace-control:not(:last-child) {
+    border-right: 1px solid var(--workspace-border);
+  }
+
+  .company-workspace-filter-strip .company-workspace-control:focus-within {
+    background: color-mix(in srgb, var(--workspace-primary-soft) 28%, transparent);
+    box-shadow: inset 0 0 0 1.5px var(--workspace-primary);
+  }
+
+  /* .field class overrides inside company shell */
+  .company-dashboard-shell .field {
+    min-height: 40px;
+    border: 1px solid var(--workspace-border);
+    border-radius: 8px;
+    background: var(--workspace-surface);
+    color: var(--workspace-text-strong);
+    box-shadow: none;
+    transition-property: border-color, background-color, box-shadow;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+  }
+
+  .company-dashboard-shell .field::placeholder {
+    color: var(--workspace-text-muted);
+  }
+
+  .company-dashboard-shell .field:focus {
+    border-color: var(--workspace-primary);
+    background: var(--workspace-surface);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--workspace-primary) 12%, transparent);
+    outline: none;
+  }
+
+  .company-dashboard-shell .field:focus-within {
+    border-color: var(--workspace-primary);
+    background: var(--workspace-surface);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--workspace-primary) 12%, transparent);
+  }
+
+  .company-dashboard-shell .searchable-select-trigger-input:focus,
+  .company-dashboard-shell .searchable-select-trigger-input:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  /* Inline metric divider */
   .company-workspace-metric {
     min-width: 0;
     border-right: 1px solid var(--workspace-border);
@@ -1891,135 +2057,141 @@ html.dark .help-workspace-submit {
     border-right: 0;
   }
 
-  .company-workspace-tab-row {
-    display: flex;
-    flex-wrap: wrap;
+  .company-workspace-status-badge {
+    display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
-  }
-
-  .company-workspace-tab-button {
-    min-height: 38px;
-    border: 0;
-    border-radius: 6px;
-    background: transparent;
-    padding: 0.5rem 0.875rem;
-    color: var(--workspace-text);
-    font-size: 0.875rem;
-    font-weight: 600;
-    transition-property: background-color, color, transform;
-    transition-duration: 150ms;
-    transition-timing-function: ease-out;
-  }
-
-  .company-workspace-tab-button:hover {
-    background: color-mix(in srgb, var(--workspace-surface-selected) 70%, transparent);
-    color: var(--workspace-text-strong);
-  }
-
-  .company-workspace-tab-button[data-active='true'] {
-    background: var(--workspace-primary-soft);
-    color: var(--workspace-primary);
-  }
-
-  .company-workspace-stat-strip {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    overflow: hidden;
-    border: 0;
-    border-top: 1px solid var(--workspace-border);
-    border-bottom: 1px solid var(--workspace-border);
-    border-radius: 0;
-    background: transparent;
-  }
-
-  .company-analytics-board .company-workspace-stat-strip {
-    border-top: 0;
-    border-bottom: 0;
-  }
-
-  .company-workspace-stat-cell {
-    min-width: 0;
-    padding: 0.875rem 1rem 1rem;
-    border-right: 1px solid var(--workspace-border);
-    border-bottom: 1px solid var(--workspace-border);
-  }
-
-  .company-workspace-stat-cell:nth-child(2n) {
-    border-right: 0;
-  }
-
-  .company-workspace-stat-cell:nth-last-child(-n + 2) {
-    border-bottom: 0;
-  }
-
-  .company-workspace-stat-label {
-    color: var(--workspace-text-muted);
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 999px;
     font-size: 0.75rem;
     font-weight: 600;
-    letter-spacing: 0.08em;
-    line-height: 1rem;
-    text-transform: uppercase;
+    line-height: 1.125rem;
+    white-space: nowrap;
   }
 
-  .company-workspace-stat-value {
-    margin-top: 0.5rem;
-    color: var(--workspace-text-strong);
-    font-size: 1.875rem;
-    font-weight: 600;
-    line-height: 2.25rem;
-    font-variant-numeric: tabular-nums;
+  .company-workspace-status-badge::before {
+    content: '';
+    width: 0.4375rem;
+    height: 0.4375rem;
+    border-radius: 50%;
+    flex-shrink: 0;
   }
 
-  .company-workspace-stat-copy {
-    margin-top: 0.5rem;
+  .company-workspace-status-badge[data-status='open'] {
+    background: color-mix(in srgb, #16a34a 12%, var(--workspace-surface));
+    color: #16a34a;
+  }
+  .company-workspace-status-badge[data-status='open']::before {
+    background: #16a34a;
+  }
+
+  .company-workspace-status-badge[data-status='draft'] {
+    background: color-mix(in srgb, #d97706 12%, var(--workspace-surface));
+    color: #b45309;
+  }
+  .company-workspace-status-badge[data-status='draft']::before {
+    background: #d97706;
+  }
+
+  .company-workspace-status-badge[data-status='filled'] {
+    background: color-mix(in srgb, #2563eb 12%, var(--workspace-surface));
+    color: #2563eb;
+  }
+  .company-workspace-status-badge[data-status='filled']::before {
+    background: #2563eb;
+  }
+
+  .company-workspace-status-badge[data-status='closed'] {
+    background: var(--workspace-surface-subtle);
     color: var(--workspace-text-muted);
-    font-size: 0.875rem;
-    line-height: 1.375rem;
+  }
+  .company-workspace-status-badge[data-status='closed']::before {
+    background: var(--workspace-text-muted);
   }
 
-  .company-workspace-table-header {
-    border: 1px solid var(--workspace-border);
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--workspace-surface-subtle) 76%, var(--workspace-surface));
-    color: var(--workspace-text-muted);
+  .company-workspace-status-badge[data-status='pending'] {
+    background: color-mix(in srgb, #d97706 12%, var(--workspace-surface));
+    color: #b45309;
+  }
+  .company-workspace-status-badge[data-status='pending']::before {
+    background: #d97706;
+  }
+
+  .company-workspace-status-badge[data-status='reviewed'] {
+    background: color-mix(in srgb, #2563eb 12%, var(--workspace-surface));
+    color: #2563eb;
+  }
+  .company-workspace-status-badge[data-status='reviewed']::before {
+    background: #2563eb;
+  }
+
+  .company-workspace-status-badge[data-status='accepted'],
+  .company-workspace-status-badge[data-status='hired'] {
+    background: color-mix(in srgb, #16a34a 12%, var(--workspace-surface));
+    color: #16a34a;
+  }
+  .company-workspace-status-badge[data-status='accepted']::before,
+  .company-workspace-status-badge[data-status='hired']::before {
+    background: #16a34a;
+  }
+
+  .company-workspace-status-badge[data-status='rejected'] {
+    background: color-mix(in srgb, var(--workspace-danger) 10%, var(--workspace-surface));
+    color: var(--workspace-danger);
+  }
+  .company-workspace-status-badge[data-status='rejected']::before {
+    background: var(--workspace-danger);
   }
 
   .company-workspace-empty {
     border: 1px dashed var(--workspace-border-strong);
-    border-radius: 8px;
+    border-radius: 16px;
     background: var(--workspace-surface);
     color: var(--workspace-text-muted);
   }
 
   .company-workspace-empty-quiet {
-    min-height: 18rem;
+    min-height: 20rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 1px dashed color-mix(in srgb, var(--workspace-border-strong) 70%, transparent);
+    border-radius: 16px;
+    background:
+      radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--workspace-primary-soft) 18%, transparent), transparent 70%),
+      var(--workspace-surface-subtle);
+    color: var(--workspace-text-muted);
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .company-workspace-empty-quiet .empty-icon {
+    width: 3.5rem;
+    height: 3.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid color-mix(in srgb, var(--workspace-border) 72%, transparent);
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--workspace-surface) 38%, transparent);
-    color: var(--workspace-text-muted);
+    border-radius: 16px;
+    background: var(--workspace-primary-soft);
+    color: var(--workspace-primary);
+    margin-bottom: 0.5rem;
+    animation: companyFloatIdle 3s ease-in-out infinite;
   }
 
-  @media (min-width: 1536px) {
+  .company-workspace-empty-quiet .empty-icon svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  @media (min-width: 1280px) {
     .company-workspace-stat-strip {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
+  }
 
-    .company-workspace-stat-cell {
-      border-bottom: 0;
-    }
-
-    .company-workspace-stat-cell:nth-child(2n) {
-      border-right: 1px solid var(--workspace-border);
-    }
-
-    .company-workspace-stat-cell:last-child {
-      border-right: 0;
-    }
-
+  @media (min-width: 1536px) {
     .company-analytics-board-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
@@ -2133,6 +2305,88 @@ html.dark .help-workspace-submit {
   .company-dashboard-shell :is(.bg-\[\#f8fbf6\], .dark\:bg-\[\#22272b\], .dark\:bg-\[\#202428\]) {
     background-color: var(--workspace-surface);
   }
+
+  /* ── Keyframe Animations ── */
+
+  @keyframes companyCardEnter {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes companyStatEnter {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes companyChartDraw {
+    from {
+      stroke-dashoffset: var(--chart-length, 2000);
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes companyFloatIdle {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+
+  .company-stat-enter {
+    animation: companyStatEnter 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .company-stat-enter:nth-child(2) { animation-delay: 60ms; }
+  .company-stat-enter:nth-child(3) { animation-delay: 120ms; }
+  .company-stat-enter:nth-child(4) { animation-delay: 180ms; }
+
+  .company-chart-line-animated {
+    stroke-dasharray: var(--chart-length, 2000);
+    stroke-dashoffset: var(--chart-length, 2000);
+    animation: companyChartDraw 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
+  }
+
+  .company-chart-area {
+    opacity: 0;
+    animation: companyCardEnter 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.6s forwards;
+  }
+
+  .company-chart-dot {
+    opacity: 0;
+    transition: opacity 200ms ease, r 200ms ease;
+  }
+
+  .company-chart-dot:hover {
+    opacity: 1;
+    r: 5;
+  }
+
+  /* ── Pipeline Bar Colors ── */
+
+  .company-pipeline-bar[data-status='open'] { background: #16a34a; }
+  .company-pipeline-bar[data-status='draft'] { background: #d97706; }
+  .company-pipeline-bar[data-status='filled'] { background: #2563eb; }
+  .company-pipeline-bar[data-status='closed'] { background: var(--workspace-text-muted); }
+  .company-pipeline-bar[data-status='pending'] { background: #d97706; }
+  .company-pipeline-bar[data-status='reviewed'] { background: #2563eb; }
+  .company-pipeline-bar[data-status='accepted'] { background: #16a34a; }
+  .company-pipeline-bar[data-status='rejected'] { background: var(--workspace-danger); }
 
   @media (prefers-reduced-motion: reduce) {
     .company-dashboard-shell *,
