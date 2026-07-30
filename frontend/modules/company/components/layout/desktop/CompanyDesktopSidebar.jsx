@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   BriefcaseBusiness,
-  Building2,
   ChevronsUpDown,
   CircleHelp,
   LayoutDashboard,
@@ -12,7 +11,6 @@ import {
   Search,
   Settings,
   Users,
-  WalletCards,
 } from 'lucide-react';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
@@ -31,7 +29,6 @@ export default function CompanyDesktopSidebar({
   user,
   onHelp,
   onLogout,
-  onOpenPricing,
   onToggleSidebarCollapsed,
 }) {
   const [profileMenuOpen, setProfileMenuOpen] = React.useState(false);
@@ -107,22 +104,6 @@ export default function CompanyDesktopSidebar({
       <div ref={profileMenuRef} className="relative shrink-0 p-4">
         {profileMenuOpen ? (
           <div className={`absolute bottom-[calc(100%-0.5rem)] z-30 w-52 rounded-lg border border-[var(--workspace-border)] bg-[var(--workspace-surface)] p-1.5 shadow-[var(--workspace-elevated-shadow)] ${collapsed ? 'left-3' : 'right-4'}`}>
-            <ProfileMenuButton
-              icon={Building2}
-              label="Company profile"
-              onClick={() => {
-                setProfileMenuOpen(false);
-                navigate(COMPANY_PATHS.profile);
-              }}
-            />
-            <ProfileMenuButton
-              icon={WalletCards}
-              label="Pricing"
-              onClick={() => {
-                setProfileMenuOpen(false);
-                onOpenPricing?.();
-              }}
-            />
             <ProfileMenuButton
               icon={LogOut}
               label="Log out"

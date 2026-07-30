@@ -108,7 +108,6 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
             user={user}
             onHelp={onHelp}
             onLogout={onLogout}
-            onOpenPricing={() => navigate('/for-employers/pricing')}
             onToggleSidebarCollapsed={() => setSidebarCollapsed((value) => !value)}
             unreadNotificationCount={unreadNotificationCount}
           />

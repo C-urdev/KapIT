@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowDownUp, ChevronDown, MapPin, PlusCircle, Search, X } from 'lucide-react';
-import { CompanyPeriodControl, CompanyStatStrip } from '@companyComponents/CompanyWorkspaceControls';
+import { ArrowDownUp, BriefcaseBusiness, ChevronDown, FileCheck, Lock, MapPin, Search, Trash2, X } from 'lucide-react';
+import { CompanyPeriodControl, CompanySegmentedControl, CompanyStatStrip } from '@companyComponents/CompanyWorkspaceControls';
+import CompanyOverflowMenu from '@companyComponents/CompanyOverflowMenu';
 import { companyAPI } from '@companyFeatures/companyAPI';
 import { useCompanyAnalytics, useCompanyJobs } from '@companyFeatures/companyHooks';
 import { COMPANY_PATHS, formatJobStatus, formatSkills, navigate, openCompanyPaymentPopup } from '@companyFeatures/companyUtils';
@@ -54,6 +55,7 @@ export default function CompanyManageJobsPage() {
   const toast = useToast();
   const [displayJobs, setDisplayJobs] = useState([]);
   const [detailsJob, setDetailsJob] = useState(null);
+  const [closeJob, setCloseJob] = useState(null);
   const [deleteJob, setDeleteJob] = useState(null);
   const [activeTab, setActiveTab] = useState('open');
   const [titleQuery, setTitleQuery] = useState('');
@@ -102,9 +104,17 @@ export default function CompanyManageJobsPage() {
     closed: Number(analytics?.closedJobs || 0),
   }), [analytics]);
 
+  const STATUS_ICONS = {
+    open: <BriefcaseBusiness />,
+    draft: <FileCheck />,
+    filled: <Lock />,
+    closed: <X />,
+  };
+
   const statusMetrics = useMemo(() => statusTabs.map((statusKey) => ({
     label: formatJobStatus(statusKey),
     value: Number(summary[statusKey] || 0),
+    icon: STATUS_ICONS[statusKey],
     sublabel: statusKey === 'open'
       ? `${Number(analytics?.newApplicantsInRange || 0)} new applicants. Last ${rangeDays} days`
       : 'Live company data',
@@ -271,45 +281,28 @@ export default function CompanyManageJobsPage() {
         dismissKey="manage_jobs_workspace_direction"
       />
 
-      <div className="company-workspace-page-header">
+      <div className="company-workspace-page-heading-row">
         <div>
           <h1 className="company-workspace-page-title">Jobs</h1>
           <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">Review publishing status, applicants, and plan details across every role.</p>
         </div>
-        <div className="company-workspace-header-actions">
-          <CompanyPeriodControl value={rangeDays} options={RANGE_OPTIONS} onChange={setRangeDays} />
-          <button
-            type="button"
-            onClick={() => navigate(COMPANY_PATHS.postJob)}
-            className="company-workspace-primary-button inline-flex items-center gap-2 px-4"
-          >
-            <PlusCircle className="h-4 w-4" />
-            <span>Post a job</span>
-          </button>
-        </div>
+        <CompanyPeriodControl value={rangeDays} options={RANGE_OPTIONS} onChange={setRangeDays} />
       </div>
 
       <section className="company-analytics-board">
         <CompanyStatStrip metrics={statusMetrics} loading={loading} />
 
-        <div className="company-analytics-board-section p-4">
-          <div className="company-workspace-tab-row">
-            {statusTabs.map((statusKey) => (
-              <button
-                key={statusKey}
-                type="button"
-                onClick={() => setActiveTab(statusKey)}
-                data-active={activeTab === statusKey}
-                className="company-workspace-tab-button"
-              >
-                {formatJobStatus(statusKey)} ({Number(summary[statusKey] || 0)})
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="company-analytics-board-section p-4">
-          <div className="company-workspace-toolbar company-workspace-filter-strip grid-cols-1 min-[520px]:grid-cols-2 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1.1fr)_minmax(160px,0.75fr)_minmax(160px,0.75fr)]">
+        <div className="company-analytics-board-section company-jobs-filter-toolbar">
+          <CompanySegmentedControl
+            label="Job status"
+            value={activeTab}
+            options={statusTabs.map((statusKey) => ({
+              value: statusKey,
+              label: `${formatJobStatus(statusKey)} (${Number(summary[statusKey] || 0)})`,
+            }))}
+            onChange={setActiveTab}
+          />
+          <div className="company-workspace-toolbar company-workspace-filter-strip min-w-0 grid-cols-1 min-[520px]:grid-cols-2 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1.1fr)_minmax(160px,0.75fr)_minmax(160px,0.75fr)]">
             <label className="company-workspace-control flex min-w-0 items-center gap-2.5 px-3.5">
               <Search className="h-4 w-4 shrink-0 text-[var(--workspace-text-muted)]" />
               <input
@@ -357,8 +350,16 @@ export default function CompanyManageJobsPage() {
           {loading ? (
             <ManageJobsSkeleton />
           ) : emptyState ? (
-            <div className="company-workspace-empty-quiet p-8 text-center">
-              <p>{displayJobs.length === 0 ? 'No job listings yet. Use Post a job to create your first role.' : 'No jobs match the current filters.'}</p>
+            <div className="company-workspace-empty-quiet p-8">
+              <div className="empty-icon">
+                <BriefcaseBusiness />
+              </div>
+              <h3 className="text-base font-semibold text-[var(--workspace-text-strong)]">
+                {displayJobs.length === 0 ? 'No job listings yet' : 'No matching jobs'}
+              </h3>
+              <p className="mt-1 max-w-sm text-sm">
+                {displayJobs.length === 0 ? 'Use Post a job to create your first role.' : 'Try adjusting your filters or search terms.'}
+              </p>
             </div>
           ) : (
             <>
@@ -371,17 +372,17 @@ export default function CompanyManageJobsPage() {
                 <div>Actions</div>
               </div>
 
-              <div className="mt-3 overflow-hidden rounded-lg border border-[var(--workspace-border)]">
+              <div className="mt-3 overflow-hidden rounded-xl border border-[var(--workspace-border)]">
                 {filteredJobs.map((job) => (
                   <JobRow
                     key={job.id}
                     job={job}
                     actionLoading={actionJobId === job.id}
                     onViewDetails={setDetailsJob}
-                    onClose={handleClose}
+                    onRequestClose={setCloseJob}
                     onReopen={handleReopen}
                     onPayNow={handlePayNow}
-                    onDelete={setDeleteJob}
+                    onRequestDelete={setDeleteJob}
                   />
                 ))}
               </div>
@@ -391,6 +392,20 @@ export default function CompanyManageJobsPage() {
       </section>
 
       {detailsJob ? <JobDetailsModal job={detailsJob} onClose={() => setDetailsJob(null)} /> : null}
+
+      <ConfirmModal
+        open={Boolean(closeJob)}
+        title="Close job posting?"
+        message={closeJob ? `Close "${closeJob.title}"? Candidates will no longer see it as an open role.` : ''}
+        confirmLabel="Close job"
+        cancelLabel="Cancel"
+        onCancel={() => setCloseJob(null)}
+        onConfirm={() => {
+          const selected = closeJob;
+          setCloseJob(null);
+          handleClose(selected);
+        }}
+      />
 
       <ConfirmModal
         open={Boolean(deleteJob)}
@@ -406,7 +421,15 @@ export default function CompanyManageJobsPage() {
   );
 }
 
-function JobRow({ job, actionLoading, onViewDetails, onClose, onReopen, onDelete, onPayNow }) {
+function JobRow({
+  job,
+  actionLoading,
+  onViewDetails,
+  onRequestClose,
+  onReopen,
+  onRequestDelete,
+  onPayNow,
+}) {
   const status = String(job?.status || 'open').toLowerCase();
   const isOpen = status === 'open';
   const isDraft = status === 'draft' || String(job?.posting_payment_status || '').toLowerCase() !== 'paid';
@@ -429,7 +452,9 @@ function JobRow({ job, actionLoading, onViewDetails, onClose, onReopen, onDelete
         </div>
       </div>
 
-      <div className="text-sm font-medium text-[var(--workspace-text)]">{formatJobStatus(status)}</div>
+      <div>
+        <span className="company-workspace-status-badge" data-status={status}>{formatJobStatus(status)}</span>
+      </div>
       <div className="text-sm font-semibold tabular-nums text-[var(--workspace-text-strong)]">{applicants}</div>
       <div className="text-sm text-[var(--workspace-text)]">{planPrice > 0 ? `PHP ${planPrice.toLocaleString()}` : 'Plan saved'}{planDuration ? ` / ${planDuration}` : ''}</div>
       <div className="text-sm text-[var(--workspace-text-muted)]">{formatJobDate(job?.created_at || job?.createdAt)}</div>
@@ -438,11 +463,6 @@ function JobRow({ job, actionLoading, onViewDetails, onClose, onReopen, onDelete
         <button type="button" onClick={() => onViewDetails?.(job)} className="company-workspace-secondary-button px-3">
           Details
         </button>
-        {isOpen ? (
-          <button type="button" onClick={() => onClose(job)} disabled={actionLoading} className="company-workspace-secondary-button px-3 disabled:opacity-60">
-            {actionLoading ? 'Updating...' : 'Close'}
-          </button>
-        ) : null}
         {isDraft ? (
           <button type="button" onClick={() => onPayNow(job)} disabled={actionLoading} className="company-workspace-primary-button px-3 disabled:opacity-60">
             {actionLoading ? 'Opening...' : 'Pay now'}
@@ -453,10 +473,26 @@ function JobRow({ job, actionLoading, onViewDetails, onClose, onReopen, onDelete
             {actionLoading ? 'Reopening...' : 'Repost'}
           </button>
         ) : null}
-        <button type="button" onClick={() => onDelete(job)} disabled={actionLoading} className="company-workspace-secondary-button inline-flex items-center gap-1.5 px-3 text-[var(--workspace-danger)] disabled:opacity-60">
-          <X className="h-4 w-4" />
-          <span>Delete</span>
-        </button>
+        <CompanyOverflowMenu
+          label={`More actions for ${job?.title || 'job'}`}
+          items={[
+            ...(isOpen ? [{
+              key: 'close',
+              label: 'Close job',
+              icon: Lock,
+              onSelect: () => onRequestClose(job),
+              disabled: actionLoading,
+            }] : []),
+            {
+              key: 'delete',
+              label: 'Delete job',
+              icon: Trash2,
+              onSelect: () => onRequestDelete(job),
+              danger: true,
+              disabled: actionLoading,
+            },
+          ]}
+        />
       </div>
     </div>
   );

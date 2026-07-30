@@ -1,10 +1,20 @@
 import React from 'react';
 import { MapPin, FileText, User, CheckCircle2, XCircle, Eye, Briefcase } from 'lucide-react';
 import { statusBadgeClass, formatJobStatus } from '@companyFeatures/companyUtils';
+import CompanyOverflowMenu from '@companyComponents/CompanyOverflowMenu';
 import ResumeOpenChoiceModal from '@sharedComponents/modals/ResumeOpenChoiceModal';
 import { resumeService } from '@sharedServices/resumeService';
 
-export default function CompanyApplicantCard({ applicant, onViewProfile, onMessage, onHire, onReject, onReview, actionLoading }) {
+export default function CompanyApplicantCard({
+  applicant,
+  onViewProfile,
+  onOpenReview,
+  onMessage,
+  onHire,
+  onReject,
+  onReview,
+  actionLoading,
+}) {
   const user = applicant?.user || {};
   const name = user.username || user.email || 'Applicant';
   const jobTitle = applicant?.job?.title || 'Job';
@@ -129,7 +139,13 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
           <div className="flex items-start gap-3">
             <Avatar user={user} name={name} />
             <div className="min-w-0">
-              <p className="truncate text-[1.05rem] font-semibold text-[var(--workspace-text-strong)]">{name}</p>
+              <button
+                type="button"
+                onClick={() => onOpenReview?.(applicant)}
+                className="block max-w-full truncate text-left text-[1.05rem] font-semibold text-[var(--workspace-text-strong)] transition-colors duration-150 hover:text-[var(--workspace-primary)]"
+              >
+                {name}
+              </button>
               <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--workspace-text-muted)]">
                 <span className="inline-flex items-center gap-1">
                   <Briefcase className="h-4 w-4 text-[#588157] dark:text-[#f0c766]" />
@@ -159,22 +175,17 @@ export default function CompanyApplicantCard({ applicant, onViewProfile, onMessa
           <StatusBlock applicantStatus={applicantStatus} desktop />
         </div>
         <div className="min-w-0 justify-self-stretch">
-          <ActionRow
+          <DesktopApplicantActions
             applicant={applicant}
             user={user}
             resumeUrl={resumeHref}
             actionLoading={actionLoading}
-            canReview={canReview}
             canReject={canReject}
             canHire={canHire}
-            isReviewed={isReviewed}
-            isRejected={isRejected}
-            isAccepted={isAccepted}
-            onViewProfile={onViewProfile}
             onMessage={onMessage}
-            onReview={onReview}
             onReject={onReject}
             onHire={onHire}
+            onOpenReview={onOpenReview}
             onOpenResumeChoice={() => setResumeChoiceOpen(true)}
           />
         </div>
@@ -302,6 +313,67 @@ function ActionRow({
         <CheckCircle2 className="h-4 w-4 shrink-0" />
         {isAccepted ? 'Hired' : actionLoading ? 'Hiring...' : 'Hire'}
       </button>
+    </div>
+  );
+}
+
+function DesktopApplicantActions({
+  applicant,
+  user,
+  resumeUrl,
+  actionLoading,
+  canReject,
+  canHire,
+  onMessage,
+  onReject,
+  onHire,
+  onOpenReview,
+  onOpenResumeChoice,
+}) {
+  const name = user.username || user.email || 'applicant';
+
+  return (
+    <div className="company-applicant-desktop-actions">
+      {resumeUrl ? (
+        <button
+          type="button"
+          onClick={onOpenResumeChoice}
+          className="company-workspace-secondary-button px-3"
+        >
+          Resume
+        </button>
+      ) : null}
+      <button
+        type="button"
+        onClick={() => onOpenReview?.(applicant)}
+        className="company-workspace-primary-button px-4"
+      >
+        Review application
+      </button>
+      <CompanyOverflowMenu
+        label={`More actions for ${name}`}
+        items={[
+          {
+            key: 'message',
+            label: 'Message',
+            onSelect: () => onMessage?.(user),
+            disabled: actionLoading,
+          },
+          {
+            key: 'hire',
+            label: 'Hire',
+            onSelect: () => onHire?.(applicant),
+            disabled: !canHire,
+          },
+          {
+            key: 'reject',
+            label: 'Reject',
+            onSelect: () => onReject?.(applicant),
+            danger: true,
+            disabled: !canReject,
+          },
+        ]}
+      />
     </div>
   );
 }

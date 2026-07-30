@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { LayoutList, Layers3 } from 'lucide-react';
+import { CheckCircle2, Clock, LayoutList, Layers3, Search, UserCheck, Users } from 'lucide-react';
 import { useSearchParams } from '@shared/hooks/useAppRouter';
 import ApplicantCard from '@companyComponents/CompanyApplicantCard';
-import { CompanyStatStrip } from '@companyComponents/CompanyWorkspaceControls';
+import { CompanySegmentedControl, CompanyStatStrip } from '@companyComponents/CompanyWorkspaceControls';
 import { companyAPI } from '@companyFeatures/companyAPI';
 import { useCompanyAnalytics, useCompanyApplicants } from '@companyFeatures/companyHooks';
 import { COMPANY_PATHS, navigate } from '@companyFeatures/companyUtils';
@@ -47,6 +47,7 @@ export default function CompanyApplicantsPage() {
   const { applicants, plan, loading, error, refetch } = useCompanyApplicants();
   const { analytics, loading: analyticsLoading, error: analyticsError, refetch: refetchAnalytics } = useCompanyAnalytics({ days: 30 });
   const [profile, setProfile] = useState(null);
+  const [reviewApplicant, setReviewApplicant] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [actionApplicantId, setActionApplicantId] = useState(null);
   const [rankingJobId, setRankingJobId] = useState(null);
@@ -82,10 +83,10 @@ export default function CompanyApplicantsPage() {
     const reviewed = Number(statusSummary.reviewed || 0);
     const hired = Number(statusSummary.accepted || 0);
     return [
-      { label: 'Applicants', value: totalApplicants, sublabel: selectedJobId ? 'For selected role' : 'Across all roles' },
-      { label: 'Awaiting review', value: awaitingReview, sublabel: `${Number(statusSummary.rejected || 0)} rejected` },
-      { label: 'Reviewed', value: reviewed, sublabel: selectedJobId ? 'Within selected role' : 'Across all roles' },
-      { label: 'Hired', value: hired, sublabel: `${Number(statusSummary.accepted || 0)} accepted in current scope` },
+      { label: 'Applicants', value: totalApplicants, icon: <Users />, sublabel: selectedJobId ? 'For selected role' : 'Across all roles' },
+      { label: 'Awaiting review', value: awaitingReview, icon: <Clock />, sublabel: `${Number(statusSummary.rejected || 0)} rejected` },
+      { label: 'Reviewed', value: reviewed, icon: <UserCheck />, sublabel: selectedJobId ? 'Within selected role' : 'Across all roles' },
+      { label: 'Hired', value: hired, icon: <CheckCircle2 />, sublabel: `${Number(statusSummary.accepted || 0)} accepted in current scope` },
     ];
   }, [analytics?.totalApplicants, applicants.length, selectedJobId, statusSummary, visibleApplicants.length]);
 
@@ -124,17 +125,29 @@ export default function CompanyApplicantsPage() {
   };
 
   const handleStatusUpdate = async (applicant, status, successMessage) => {
-    if (!applicant?.id) return;
+    if (!applicant?.id) return false;
     setActionApplicantId(applicant.id);
     try {
       await companyAPI.updateApplicantStatus(applicant.id, status);
       toast.success(successMessage);
       await Promise.all([refetch({ force: true }), refetchAnalytics({ force: true })]);
+      return true;
     } catch (err) {
       toast.error(err?.message || 'Failed to update applicant.');
+      return false;
     } finally {
       setActionApplicantId(null);
     }
+  };
+
+  const handleOpenReview = (applicant) => {
+    setReviewApplicant(applicant);
+    handleViewProfile(applicant?.user);
+  };
+
+  const handleCloseReview = () => {
+    setProfile(null);
+    setReviewApplicant(null);
   };
 
   const handleRankApplicants = async (jobId) => {
@@ -150,6 +163,15 @@ export default function CompanyApplicantsPage() {
       setRankingJobId(null);
     }
   };
+
+  const reviewJobStatus = String(reviewApplicant?.job?.status || 'open').toLowerCase();
+  const reviewStatus = normalizeApplicantStatus(reviewApplicant?.status);
+  const reviewActionLoading = actionApplicantId === reviewApplicant?.id;
+  const reviewDecisionDisabled = reviewActionLoading
+    || reviewJobStatus !== 'open'
+    || reviewStatus === 'accepted'
+    || reviewStatus === 'rejected';
+  const reviewMarkDisabled = reviewDecisionDisabled || reviewStatus === 'reviewed';
 
   return (
     <div className="company-workspace-page space-y-6">
@@ -168,21 +190,12 @@ export default function CompanyApplicantsPage() {
         </div>
 
         <div className="company-workspace-header-actions">
-          {VIEW_OPTIONS.map((option) => {
-            const Icon = option.icon;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setViewMode(option.value)}
-                data-active={viewMode === option.value}
-                className="company-workspace-tab-button inline-flex items-center gap-2"
-              >
-                <Icon className="h-4 w-4" />
-                <span>{option.label}</span>
-              </button>
-            );
-          })}
+          <CompanySegmentedControl
+            label="Applicant view"
+            value={viewMode}
+            options={VIEW_OPTIONS}
+            onChange={setViewMode}
+          />
           {plan?.isPremium ? (
             <button
               type="button"
@@ -208,7 +221,7 @@ export default function CompanyApplicantsPage() {
           <article className="company-analytics-board-section p-5">
             <h2 className="company-workspace-section-title">Review flow</h2>
             <p className="mt-1 text-sm text-[var(--workspace-text-muted)]">Current candidate volume by stored applicant status.</p>
-            <StatusRail rows={pipelineRows} />
+            <ReviewPipeline rows={pipelineRows} />
           </article>
         ) : null}
 
@@ -217,12 +230,29 @@ export default function CompanyApplicantsPage() {
 
         <div className="company-analytics-board-section p-4">
           {loading ? (
-            <div className="company-workspace-empty-quiet p-8 text-center">
-              <p>Loading applicants...</p>
+            <div className="company-workspace-empty-quiet p-8">
+              <div className="empty-icon">
+                <Users />
+              </div>
+              <p className="text-sm font-medium">Loading applicants...</p>
             </div>
           ) : visibleApplicants.length === 0 ? (
-            <div className="company-workspace-empty-quiet p-8 text-center">
-              <p>{selectedJobId ? `No applicants yet for ${selectedJobTitle}.` : 'No applicants yet.'}</p>
+            <div className="company-workspace-empty-quiet p-8">
+              <div className="empty-icon">
+                <Users />
+              </div>
+              <h3 className="text-base font-semibold text-[var(--workspace-text-strong)]">
+                {selectedJobId ? 'No applicants yet' : 'No applicants yet'}
+              </h3>
+              <p className="mt-1 max-w-sm text-sm">
+                {selectedJobId ? `No one has applied for ${selectedJobTitle} yet.` : 'Applicants will appear here once candidates apply to your open roles.'}
+              </p>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                <button type="button" onClick={() => navigate(COMPANY_PATHS.search)} className="company-workspace-secondary-button inline-flex items-center gap-2 px-4">
+                  <Search className="h-4 w-4" />
+                  <span>Try Talent Search</span>
+                </button>
+              </div>
             </div>
           ) : viewMode === 'grouped' ? (
             <div className="space-y-5">
@@ -239,6 +269,7 @@ export default function CompanyApplicantsPage() {
                         applicant={applicant}
                         actionLoading={actionApplicantId === applicant.id}
                         onViewProfile={handleViewProfile}
+                        onOpenReview={handleOpenReview}
                         onMessage={handleMessage}
                         onReview={(current) => handleStatusUpdate(current, 'reviewed', `Marked ${current?.user?.username || 'applicant'} as reviewed.`)}
                         onReject={(current) => handleStatusUpdate(current, 'rejected', `Rejected ${current?.user?.username || 'applicant'}.`)}
@@ -258,13 +289,14 @@ export default function CompanyApplicantsPage() {
                 <div>Applicant Status</div>
                 <div className="text-center">Actions</div>
               </div>
-              <div className="mt-3 overflow-hidden rounded-lg border border-[var(--workspace-border)]">
+              <div className="mt-3 overflow-hidden rounded-xl border border-[var(--workspace-border)]">
                 {visibleApplicants.map((applicant) => (
                   <ApplicantCard
                     key={applicant.id}
                     applicant={applicant}
                     actionLoading={actionApplicantId === applicant.id}
                     onViewProfile={handleViewProfile}
+                    onOpenReview={handleOpenReview}
                     onMessage={handleMessage}
                     onReview={(current) => handleStatusUpdate(current, 'reviewed', `Marked ${current?.user?.username || 'applicant'} as reviewed.`)}
                     onReject={(current) => handleStatusUpdate(current, 'rejected', `Rejected ${current?.user?.username || 'applicant'}.`)}
@@ -278,22 +310,80 @@ export default function CompanyApplicantsPage() {
       </section>
 
       {profile && (
-        <Modal onClose={() => setProfile(null)}>
+        <Modal onClose={handleCloseReview}>
           {profileLoading ? (
             <p className="text-sm text-[var(--workspace-text-muted)]">Loading profile...</p>
           ) : (
             <div className="company-workspace-panel p-4">
               <PublicProfilePage
                 profile={profile}
-                onBack={() => setProfile(null)}
+                onBack={handleCloseReview}
                 onMessage={handleMessage}
                 viewer={viewer}
                 onMore={(currentProfile) => {
                   if (!currentProfile?.id) return;
-                  setProfile(null);
+                  handleCloseReview();
                   navigate(`${COMPANY_PATHS.publicProfile}?id=${encodeURIComponent(currentProfile.id)}&from=${encodeURIComponent(COMPANY_PATHS.applicants)}`);
                 }}
               />
+              {reviewApplicant ? (
+                <div className="company-candidate-detail-actions hidden xl:flex">
+                  <button
+                    type="button"
+                    className="company-workspace-secondary-button px-4"
+                    onClick={() => handleMessage(reviewApplicant.user)}
+                  >
+                    Message
+                  </button>
+                  <button
+                    type="button"
+                    className="company-workspace-secondary-button px-4"
+                    disabled={reviewMarkDisabled}
+                    onClick={async () => {
+                      const updated = await handleStatusUpdate(
+                        reviewApplicant,
+                        'reviewed',
+                        `Marked ${reviewApplicant?.user?.username || 'applicant'} as reviewed.`,
+                      );
+                      if (updated) {
+                        setReviewApplicant((current) => ({ ...current, status: 'reviewed' }));
+                      }
+                    }}
+                  >
+                    Mark reviewed
+                  </button>
+                  <button
+                    type="button"
+                    className="company-workspace-secondary-button px-4 text-[var(--workspace-danger)]"
+                    disabled={reviewDecisionDisabled}
+                    onClick={async () => {
+                      const updated = await handleStatusUpdate(
+                        reviewApplicant,
+                        'rejected',
+                        `Rejected ${reviewApplicant?.user?.username || 'applicant'}.`,
+                      );
+                      if (updated) handleCloseReview();
+                    }}
+                  >
+                    Reject
+                  </button>
+                  <button
+                    type="button"
+                    className="company-workspace-primary-button px-4"
+                    disabled={reviewDecisionDisabled}
+                    onClick={async () => {
+                      const updated = await handleStatusUpdate(
+                        reviewApplicant,
+                        'accepted',
+                        `Hired ${reviewApplicant?.user?.username || 'applicant'}.`,
+                      );
+                      if (updated) handleCloseReview();
+                    }}
+                  >
+                    Hire
+                  </button>
+                </div>
+              ) : null}
             </div>
           )}
         </Modal>
@@ -302,25 +392,30 @@ export default function CompanyApplicantsPage() {
   );
 }
 
-function StatusRail({ rows }) {
+function ReviewPipeline({ rows }) {
   const maxValue = Math.max(...rows.map((row) => Number(row?.value || 0)), 1);
 
   return (
-    <div className="mt-5 space-y-3">
-      {rows.map((row) => (
-        <div key={row.key}>
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-sm font-medium text-[var(--workspace-text)]">{row.label}</span>
-            <span className="text-sm font-semibold tabular-nums text-[var(--workspace-text-strong)]">{row.value}</span>
+    <div className="company-review-pipeline" aria-label="Applicant review pipeline">
+      {rows.map((row) => {
+        const value = Number(row.value || 0);
+        const width = value === 0 ? 0 : Math.round((value / maxValue) * 100);
+        return (
+          <div key={row.key} className="company-review-pipeline-stage">
+            <div>
+              <span>{row.label}</span>
+              <strong>{value}</strong>
+            </div>
+            <div className="company-review-pipeline-track" aria-hidden="true">
+              <span
+                className="company-pipeline-bar"
+                data-status={row.key}
+                style={{ width: `${width}%` }}
+              />
+            </div>
           </div>
-          <div className="mt-2 h-2 rounded-full bg-[var(--workspace-surface-subtle)]">
-            <div
-              className="h-2 rounded-full bg-[var(--workspace-primary)]"
-              style={{ width: `${Math.max(10, Math.round((Number(row.value || 0) / maxValue) * 100))}%` }}
-            />
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
