@@ -69,11 +69,11 @@ export default function EmployerMobileNav({ onCreateAccount, onSignIn }) {
               </Link>
               <div className="mt-5 grid gap-3">
                 {onSignIn ? (
-                  <button type="button" onClick={() => closeThen(onSignIn)} className="min-h-12 rounded-full border border-[#cad8c6] bg-white px-5 font-semibold text-[#173225] dark:border-white/10 dark:bg-white/5 dark:text-white">
+                  <button type="button" onClick={() => closeThen(onSignIn)} className="min-h-12 rounded-full border border-[#31572c] bg-[#31572c] px-5 font-semibold text-white dark:border-[#8db692] dark:bg-[#8db692] dark:text-[#102115]">
                     Sign in
                   </button>
                 ) : (
-                  <Link href="/for-employers?login=1" onClick={() => setMenuOpen(false)} className="inline-flex min-h-12 items-center justify-center rounded-full border border-[#cad8c6] bg-white px-5 font-semibold text-[#173225] dark:border-white/10 dark:bg-white/5 dark:text-white">
+                  <Link href="/for-employers?login=1" onClick={() => setMenuOpen(false)} className="inline-flex min-h-12 items-center justify-center rounded-full border border-[#31572c] bg-[#31572c] px-5 font-semibold text-white dark:border-[#8db692] dark:bg-[#8db692] dark:text-[#102115]">
                     Sign in
                   </Link>
                 )}

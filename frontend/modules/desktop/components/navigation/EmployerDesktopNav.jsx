@@ -69,14 +69,14 @@ export default function EmployerDesktopNav({ onSignIn }) {
             <button
               type="button"
               onClick={onSignIn}
-              className="min-h-11 rounded-full border border-[#cad8c6] bg-white/70 px-4 text-sm font-semibold text-[#173225] transition-[background-color,transform] duration-200 hover:bg-white active:scale-[0.98] dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/8"
+              className="min-h-11 rounded-full border border-[#31572c] bg-[#31572c] px-4 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(49,87,44,0.22)] transition-[background-color,transform] duration-200 hover:bg-[#274723] active:scale-[0.98] dark:border-[#8db692] dark:bg-[#8db692] dark:text-[#102115] dark:hover:bg-[#9fc6a4]"
             >
               Sign in
             </button>
           ) : (
             <Link
               href="/for-employers?login=1"
-              className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#cad8c6] bg-white/70 px-4 text-sm font-semibold text-[#173225] transition-[background-color,transform] duration-200 hover:bg-white active:scale-[0.98] dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/8"
+              className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#31572c] bg-[#31572c] px-4 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(49,87,44,0.22)] transition-[background-color,transform] duration-200 hover:bg-[#274723] active:scale-[0.98] dark:border-[#8db692] dark:bg-[#8db692] dark:text-[#102115] dark:hover:bg-[#9fc6a4]"
             >
               Sign in
             </Link>
