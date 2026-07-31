@@ -1,4 +1,5 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
+import CookieConsentBanner from '../../components/ui/CookieConsentBanner';
 
 const LANDING_DESKTOP_BREAKPOINT = 1100;
 const DesktopLandingPage = lazy(() => import('../../../desktop/pages/landing/LandingPage'));
@@ -44,22 +45,25 @@ export default function LandingPage({ onGetStarted, onJoinDeveloper, onSignIn })
   };
 
   return (
-    <Suspense fallback={<div className="min-h-[100dvh] w-full bg-[#FDFBF7] dark:bg-[#121416]" />}>
-      {isDesktopLayout ? (
-        <DesktopLandingPage
-          onLogoClick={scrollToTop}
-          onOpenAccountChoice={handleOpenAccountChoice}
-          onJoinDeveloperClick={handleJoinDeveloperClick}
-          onSignIn={onSignIn}
-        />
-      ) : (
-        <MobileLandingPage
-          onLogoClick={scrollToTop}
-          onOpenAccountChoice={handleOpenAccountChoice}
-          onJoinDeveloperClick={handleJoinDeveloperClick}
-          onSignIn={onSignIn}
-        />
-      )}
-    </Suspense>
+    <>
+      <Suspense fallback={<div className="min-h-[100dvh] w-full bg-[#FDFBF7] dark:bg-[#121416]" />}>
+        {isDesktopLayout ? (
+          <DesktopLandingPage
+            onLogoClick={scrollToTop}
+            onOpenAccountChoice={handleOpenAccountChoice}
+            onJoinDeveloperClick={handleJoinDeveloperClick}
+            onSignIn={onSignIn}
+          />
+        ) : (
+          <MobileLandingPage
+            onLogoClick={scrollToTop}
+            onOpenAccountChoice={handleOpenAccountChoice}
+            onJoinDeveloperClick={handleJoinDeveloperClick}
+            onSignIn={onSignIn}
+          />
+        )}
+      </Suspense>
+      <CookieConsentBanner />
+    </>
   );
 }

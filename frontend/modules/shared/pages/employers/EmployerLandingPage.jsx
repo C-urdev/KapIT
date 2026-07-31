@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
+import CookieConsentBanner from '../../components/ui/CookieConsentBanner';
 
 const DesktopEmployerLandingPage = lazy(() => import('../../../desktop/pages/employers/EmployerLandingPage'));
 const MobileEmployerLandingPage = lazy(() => import('../../../mobile/pages/employers/EmployerLandingPage'));
@@ -30,12 +31,15 @@ export default function EmployerLandingPage({ onCreateAccount, onSignIn }) {
   }, []);
 
   return (
-    <Suspense fallback={<div className="min-h-[100dvh] bg-[#f7faf5] dark:bg-[#121416]" />}>
-      {isDesktopLayout ? (
-        <DesktopEmployerLandingPage onCreateAccount={onCreateAccount} onSignIn={onSignIn} />
-      ) : (
-        <MobileEmployerLandingPage onCreateAccount={onCreateAccount} onSignIn={onSignIn} />
-      )}
-    </Suspense>
+    <>
+      <Suspense fallback={<div className="min-h-[100dvh] bg-[#f7faf5] dark:bg-[#121416]" />}>
+        {isDesktopLayout ? (
+          <DesktopEmployerLandingPage onCreateAccount={onCreateAccount} onSignIn={onSignIn} />
+        ) : (
+          <MobileEmployerLandingPage onCreateAccount={onCreateAccount} onSignIn={onSignIn} />
+        )}
+      </Suspense>
+      <CookieConsentBanner />
+    </>
   );
 }
