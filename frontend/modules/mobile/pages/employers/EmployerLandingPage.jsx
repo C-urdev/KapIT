@@ -1,11 +1,10 @@
-import { ArrowRight, BadgeCheck, BriefcaseBusiness, ClipboardCheck, ListChecks, MessageCircle, Search } from 'lucide-react';
+import { ArrowRight, BadgeCheck, BriefcaseBusiness, ClipboardCheck, ListChecks, MessageCircle, Search, Star } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
-import Link from '../../../../components/shared/Link';
 import Footer from '../../../shared/components/branding/Footer';
 import ScrollRevealSection from '../../../shared/components/effects/ScrollRevealSection';
 import EmployerProductPreview from '../../../shared/pages/employers/EmployerProductPreview';
 import LandingFaqList from '../../../shared/pages/landing/LandingFaqList';
-import { EMPLOYER_CAPABILITIES, EMPLOYER_FAQ, EMPLOYER_PAGE_META, EMPLOYER_PROOF_SIGNALS, EMPLOYER_WORKFLOW } from '../../../shared/pages/employers/employerLandingData';
+import { EMPLOYER_CAPABILITIES, EMPLOYER_FAQ, EMPLOYER_PAGE_META, EMPLOYER_PROOF_SIGNALS, EMPLOYER_REVIEWS, EMPLOYER_WORKFLOW } from '../../../shared/pages/employers/employerLandingData';
 import EmployerMobileNav from '../../components/navigation/EmployerMobileNav';
 
 const CAPABILITY_ICONS = [Search, BriefcaseBusiness, ClipboardCheck, BadgeCheck, ListChecks, MessageCircle];
@@ -41,9 +40,6 @@ export default function EmployerLandingPage({ onCreateAccount, onSignIn }) {
             <div data-landing-reveal style={{ '--landing-part-delay': '340ms' }} className="mt-8 grid gap-3">
               <button type="button" onClick={onCreateAccount} className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-[#31572c] px-6 font-semibold text-white shadow-[0_14px_30px_rgba(49,87,44,0.22)] active:scale-[0.98] dark:bg-[#8db692] dark:text-[#102115]">
                 Create company account <ArrowRight className="h-4.5 w-4.5" />
-              </button>
-              <button type="button" onClick={onSignIn} className="min-h-[52px] rounded-full border border-[#c7d7c3] bg-white/75 px-6 font-semibold text-[#173225] active:scale-[0.98] dark:border-white/10 dark:bg-white/5 dark:text-white">
-                Sign in
               </button>
             </div>
             <div data-landing-reveal style={{ '--landing-part-delay': '460ms' }} className="mt-9">
@@ -108,13 +104,67 @@ export default function EmployerLandingPage({ onCreateAccount, onSignIn }) {
           </div>
         </ScrollRevealSection>
 
-        <ScrollRevealSection as="section" id="employer-pricing" className="scroll-mt-24 bg-[#173225] px-5 py-20 text-white dark:bg-[#1a241e]">
-          <p data-landing-reveal className="text-sm font-semibold text-[#b8cfba]">Current employer posting options</p>
-          <h2 data-landing-reveal style={{ '--landing-part-delay': '100ms' }} className="mt-5 text-[2.6rem] font-bold leading-[1.02] tracking-[-0.055em]">Choose a posting plan when the role is ready.</h2>
-          <p data-landing-reveal style={{ '--landing-part-delay': '200ms' }} className="mt-5 leading-7 text-[#c9d8cc]">Review current options before publishing. Final payable amounts remain part of checkout.</p>
-          <Link href="/for-employers/pricing" data-landing-reveal style={{ '--landing-part-delay': '300ms' }} className="mt-8 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#f2f7ef] px-6 font-semibold text-[#173225] active:scale-[0.98]">
-            View pricing <ArrowRight className="h-4.5 w-4.5" />
-          </Link>
+        <ScrollRevealSection as="section" aria-label="Employer reviews" className="bg-[#edf4ea] px-5 py-20 dark:bg-[#171d19]">
+          <h2 data-landing-reveal className="max-w-[11ch] text-[2.6rem] font-bold leading-[1.02] tracking-[-0.055em] text-[#102a1b] dark:text-white">Employers keep the hiring signal close.</h2>
+          <p data-landing-reveal style={{ '--landing-part-delay': '100ms' }} className="mt-5 leading-7 text-[#536b58] dark:text-[#bdc8c0]">KapIT gives company teams a quieter way to review Filipino IT talent: role context, profile details, and outreach decisions stay together.</p>
+          <div data-landing-reveal style={{ '--landing-part-delay': '180ms' }} className="mt-8 grid gap-3">
+            {[
+              ['Focused pool', 'Philippine IT talent only'],
+              ['Role-fit review', 'Skills matched to opening'],
+              ['One workspace', 'Profiles, notes, outreach'],
+            ].map(([title, detail]) => (
+              <div key={title} className="rounded-2xl border border-[#cbdcc7] bg-[#f8fbf5] px-5 py-4 shadow-[0_10px_28px_rgba(34,62,45,0.045)] dark:border-white/10 dark:bg-[#121614]">
+                <p className="text-sm font-semibold text-[#31572c] dark:text-[#a8c9ac]">{title}</p>
+                <p className="mt-1 text-sm leading-6 text-[#647765] dark:text-[#aab8af]">{detail}</p>
+              </div>
+            ))}
+          </div>
+          <article data-landing-reveal style={{ '--landing-part-delay': '260ms' }} className="mt-6 flex min-h-[26rem] flex-col overflow-hidden rounded-[1.75rem] border border-[#c8dac3] bg-[#fbfdf9] p-6 shadow-[0_20px_56px_rgba(34,62,45,0.09)] dark:border-white/10 dark:bg-[#121614]">
+            <div>
+              <p className="text-[1.55rem] font-semibold leading-[1.14] tracking-[-0.04em] text-[#183622] dark:text-[#e8eeea]">"{EMPLOYER_REVIEWS[0].quote}"</p>
+            </div>
+            <div className="mt-auto border-t border-[#dce5d9] pt-5 dark:border-white/8">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#cbdcc7] bg-[#edf4ea] text-base font-bold text-[#31572c] dark:border-white/10 dark:bg-white/8 dark:text-[#a8c9ac]">MS</div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-[#102a1b] dark:text-white">{EMPLOYER_REVIEWS[0].name}</p>
+                    <p className="mt-1 text-sm leading-6 text-[#647765] dark:text-[#aab8af]">{EMPLOYER_REVIEWS[0].role}</p>
+                  </div>
+                </div>
+                <div className="flex text-[#527656] dark:text-[#a8c9ac]" aria-label="Five star review">
+                  {Array.from({ length: 5 }).map((_, starIndex) => (
+                    <Star key={starIndex} className="h-3.5 w-3.5 fill-current" />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </article>
+          <div className="mt-4 grid gap-4">
+            {EMPLOYER_REVIEWS.slice(1).map((review, index) => (
+              <article key={review.name} data-landing-reveal style={{ '--landing-part-delay': `${340 + index * 90}ms` }} className="flex min-h-[18rem] flex-col rounded-[1.35rem] border border-[#d0dec9] bg-[#f7fbf4] p-5 shadow-[0_14px_36px_rgba(34,62,45,0.06)] dark:border-white/8 dark:bg-[#151a17]">
+                <div>
+                  <p className="text-lg font-semibold leading-snug tracking-[-0.025em] text-[#25432b] dark:text-[#e8eeea]">"{review.quote}"</p>
+                </div>
+                <div className="mt-auto border-t border-[#dce5d9] pt-4 dark:border-white/8">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#cbdcc7] bg-[#edf4ea] text-sm font-bold text-[#31572c] dark:border-white/10 dark:bg-white/8 dark:text-[#a8c9ac]">{review.name.split(' ').map((part) => part[0]).join('')}</div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-[#102a1b] dark:text-white">{review.name}</p>
+                        <p className="mt-1 text-xs leading-5 text-[#647765] dark:text-[#aab8af]">{review.role}</p>
+                      </div>
+                    </div>
+                    <div className="flex text-[#527656] dark:text-[#a8c9ac]" aria-label="Five star review">
+                      {Array.from({ length: 5 }).map((_, starIndex) => (
+                        <Star key={starIndex} className="h-3 w-3 fill-current" />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
         </ScrollRevealSection>
 
         <ScrollRevealSection as="section" className="bg-[#fbfdf9] px-5 py-20 dark:bg-[#15191b]">

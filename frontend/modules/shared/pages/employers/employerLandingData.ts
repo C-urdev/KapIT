@@ -51,3 +51,24 @@ export const EMPLOYER_PROOF_SIGNALS = [
   'Role-fit applicant review',
   'Connected candidate pipeline',
 ];
+
+export const EMPLOYER_REVIEWS = [
+  {
+    quote: 'KapIT keeps the short list focused. We spend less time opening mismatched profiles and more time talking to candidates who fit the role.',
+    name: 'Mara Santos',
+    role: 'Talent Lead, Cebu software studio',
+    signal: 'Cleaner applicant review',
+  },
+  {
+    quote: 'The employer workspace feels built for IT hiring. Skills, role intent, and applicant context stay together instead of getting scattered across files.',
+    name: 'Rafael Uy',
+    role: 'Founder, Makati systems consultancy',
+    signal: 'Hiring context in one place',
+  },
+  {
+    quote: 'For Philippine roles, the narrower pool helps. The team can compare developers by actual role fit before deciding who to message.',
+    name: 'Leah Villanueva',
+    role: 'Operations Manager, remote-first IT team',
+    signal: 'Better fit before outreach',
+  },
+];
