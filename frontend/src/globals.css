@@ -779,6 +779,46 @@ html.dark .help-workspace-submit {
   color: var(--help-text);
 }
 
+.employer-product-preview {
+  --workspace-canvas: #f4f6f5;
+  --workspace-surface: #ffffff;
+  --workspace-surface-subtle: #f8faf9;
+  --workspace-surface-selected: #edf4ef;
+  --workspace-appbar: #ffffff;
+  --workspace-text-strong: #18211c;
+  --workspace-text: #34413a;
+  --workspace-text-muted: #66736c;
+  --workspace-border: #e3e8e4;
+  --workspace-border-strong: #ced8d0;
+  --workspace-primary: #356447;
+  --workspace-primary-hover: #294f38;
+  --workspace-primary-soft: #ddeadf;
+  --workspace-premium: #e2b93f;
+  --workspace-premium-ink: #332a0a;
+  --workspace-danger: #b42318;
+  --workspace-elevated-shadow: 0 14px 36px rgba(24, 33, 28, 0.1);
+}
+
+html.dark .employer-product-preview {
+  --workspace-canvas: #09090b;
+  --workspace-surface: #121212;
+  --workspace-surface-subtle: #18181b;
+  --workspace-surface-selected: #27272a;
+  --workspace-appbar: rgba(34, 39, 43, 0.7);
+  --workspace-text-strong: #fafafa;
+  --workspace-text: #e4e4e7;
+  --workspace-text-muted: #a1a1aa;
+  --workspace-border: #27272a;
+  --workspace-border-strong: #3f3f46;
+  --workspace-primary: #7db08a;
+  --workspace-primary-hover: #93c19e;
+  --workspace-primary-soft: #243b2b;
+  --workspace-premium: #e8c24d;
+  --workspace-premium-ink: #211b07;
+  --workspace-danger: #ff9b91;
+  --workspace-elevated-shadow: 0 16px 42px rgba(0, 0, 0, 0.4);
+}
+
 @media (min-width: 1280px) {
   .company-dashboard-shell {
     --workspace-canvas: #f4f6f5;
