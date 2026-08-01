@@ -27,6 +27,8 @@ test('landing top nav logo and auth actions do not move on hover', () => {
 
 test('employer desktop landing nav controls do not move upward on hover', () => {
   assert.match(employerDesktopNavSource, /const brandLinkClass = isDark/);
+  assert.match(employerDesktopNavSource, /const logoClass = isDark/);
   assert.match(employerDesktopNavSource, /const navLinkClass = isDark/);
   assert.doesNotMatch(employerDesktopNavSource, /hover:-translate-y/);
+  assert.doesNotMatch(employerDesktopNavSource, /logoClass[\s\S]*group-hover:scale-\[1\.03\]/);
 });

@@ -25,11 +25,11 @@ export default function EmployerDesktopNav({ onSignIn }) {
 
   const brandTitleClass = isDark ? 'text-white' : 'text-[#344e41]';
   const brandLinkClass = isDark
-    ? 'group flex shrink-0 items-center gap-3.5 rounded-full py-1 pr-3 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8fb995]'
-    : 'group flex shrink-0 items-center gap-3.5 rounded-full py-1 pr-3 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#3a5a40]';
+    ? 'flex shrink-0 items-center gap-3.5 rounded-full py-1 pr-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8fb995]'
+    : 'flex shrink-0 items-center gap-3.5 rounded-full py-1 pr-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#3a5a40]';
   const logoClass = isDark
-    ? 'h-11 w-11 rounded-xl border border-white/10 bg-white object-contain p-1 shadow-[0_12px_24px_rgba(0,0,0,0.24)] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.03]'
-    : 'h-11 w-11 rounded-xl border border-[#d7e2ce] bg-white object-contain p-1 shadow-[0_12px_24px_rgba(58,90,64,0.16)] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.03]';
+    ? 'h-11 w-11 rounded-xl border border-white/10 bg-white object-contain p-1 shadow-[0_12px_24px_rgba(0,0,0,0.24)]'
+    : 'h-11 w-11 rounded-xl border border-[#d7e2ce] bg-white object-contain p-1 shadow-[0_12px_24px_rgba(58,90,64,0.16)]';
   const employerBadgeClass = isDark
     ? 'rounded-full bg-white/8 px-3 py-1 text-xs font-semibold text-[#b9d5bc]'
     : 'rounded-full bg-[#e5efe2] px-3 py-1 text-xs font-semibold text-[#456247]';
