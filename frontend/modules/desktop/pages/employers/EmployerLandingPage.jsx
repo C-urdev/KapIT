@@ -28,26 +28,27 @@ export default function EmployerLandingPage({ onCreateAccount, onSignIn }) {
 
       <main>
         <ScrollRevealSection as="section" startVisible className="relative min-h-[100dvh] overflow-hidden pt-32">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_20%,rgba(127,171,130,0.22),transparent_32%),linear-gradient(180deg,#f7faf5_0%,#edf4ea_100%)] dark:bg-[radial-gradient(circle_at_78%_18%,rgba(127,171,130,0.13),transparent_30%),linear-gradient(180deg,#121416_0%,#171d19_100%)]" />
-          <div className="relative mx-auto grid max-w-[1400px] grid-cols-2 items-center gap-12 px-8 pb-20 pt-8">
-            <div className="max-w-[42rem]">
-              <h1 data-landing-reveal className="text-balance text-[clamp(3.2rem,4.4vw,4.5rem)] font-bold leading-[0.96] tracking-[-0.06em] text-[#102a1b] dark:text-white">
-                Find stronger-fit Filipino IT talent.
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(127,171,130,0.2),transparent_34%),linear-gradient(180deg,#f7faf5_0%,#edf4ea_100%)] dark:bg-[radial-gradient(circle_at_50%_18%,rgba(127,171,130,0.13),transparent_32%),linear-gradient(180deg,#121416_0%,#171d19_100%)]" />
+          <div className="relative mx-auto flex max-w-[1180px] flex-col items-center px-8 pb-24 pt-12 text-center">
+            <div className="relative z-10 flex max-w-[52rem] flex-col items-center">
+              <h1 data-landing-reveal className="max-w-[14ch] text-balance text-[clamp(3.2rem,5.2vw,5rem)] font-bold leading-[0.96] tracking-[-0.065em] text-[#102a1b] dark:text-white">
+                Find stronger-fit <span className="text-[#588157] dark:text-[#a3b18a]">Filipino IT talent.</span>
               </h1>
-              <p data-landing-reveal style={{ '--landing-part-delay': '120ms' }} className="mt-7 max-w-[34rem] text-pretty text-lg leading-8 text-[#4b6251] dark:text-[#c6d0c9]">
+              <p data-landing-reveal style={{ '--landing-part-delay': '120ms' }} className="mt-7 max-w-[38rem] text-pretty text-lg leading-8 text-[#4b6251] dark:text-[#c6d0c9]">
                 Search focused developer profiles, compare role fit, and manage every hiring step in one workspace.
               </p>
-              <div data-landing-reveal style={{ '--landing-part-delay': '260ms' }} className="mt-9 flex flex-wrap gap-3">
-                <button type="button" onClick={onCreateAccount} className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-[#31572c] px-7 font-semibold text-white shadow-[0_16px_32px_rgba(49,87,44,0.23)] transition-[background-color,transform] duration-200 hover:bg-[#274823] active:scale-[0.98] dark:bg-[#8db692] dark:text-[#102115] dark:hover:bg-[#9bc49f]">
-                  Create company account <ArrowRight className="h-4.5 w-4.5" />
+              <div data-landing-reveal style={{ '--landing-part-delay': '220ms' }} className="mt-9 flex flex-wrap justify-center gap-3">
+                <button type="button" onClick={onCreateAccount} className="group inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-[#31572c] px-8 font-semibold text-white shadow-[0_16px_32px_rgba(49,87,44,0.23)] transition-[background-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:bg-[#274823] hover:shadow-[0_20px_36px_rgba(49,87,44,0.28)] active:translate-y-0 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#31572c] dark:bg-[#8db692] dark:text-[#102115] dark:hover:bg-[#9bc49f] dark:focus-visible:outline-[#a8c9ac]">
+                  Create company account <ArrowRight className="h-4.5 w-4.5 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </button>
               </div>
-              <div data-landing-reveal style={{ '--landing-part-delay': '360ms' }} className="mt-10 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-[#d5e1d1] pt-6 text-sm font-medium text-[#536b58] dark:border-white/10 dark:text-[#b9c5bd]">
-                <span className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Focused on IT roles</span>
-                <span className="inline-flex items-center gap-2"><UsersRound className="h-4 w-4" /> Built for Philippine hiring</span>
+              <div data-landing-reveal style={{ '--landing-part-delay': '320ms' }} className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 border-t border-[#d5e1d1] px-5 pt-6 text-sm font-medium text-[#536b58] dark:border-white/10 dark:text-[#b9c5bd]">
+                <span className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[#527656]" /> Focused on IT roles</span>
+                <span className="hidden h-4 w-px bg-[#cbdac7] sm:block dark:bg-white/15" aria-hidden="true" />
+                <span className="inline-flex items-center gap-2"><UsersRound className="h-4 w-4 text-[#527656]" /> Built for Philippine hiring</span>
               </div>
             </div>
-            <div data-landing-reveal style={{ '--landing-part-delay': '240ms' }}>
+            <div data-landing-reveal style={{ '--landing-part-delay': '420ms' }} className="relative z-10 mt-12 w-full max-w-[1040px] text-left">
               <EmployerProductPreview onExplore={onCreateAccount} />
             </div>
           </div>
