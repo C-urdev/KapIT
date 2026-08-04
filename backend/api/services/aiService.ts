@@ -41,6 +41,7 @@ type MatchJobsBySkillsInput = {
 type ChatbotReplyInput = {
   message?: unknown;
   lastIntent?: unknown;
+  audience?: unknown;
 };
 
 const createServiceError = (message: string): ServiceError => new Error(message) as ServiceError;
@@ -258,7 +259,7 @@ const matchJobsBySkills = async ({
     candidate: candidate ? buildCandidateProfilePayload(candidate) : undefined,
   });
 
-const getChatbotReply = async ({ message, lastIntent }: ChatbotReplyInput): Promise<FastApiJson> =>
+const getChatbotReply = async ({ message, lastIntent, audience }: ChatbotReplyInput): Promise<FastApiJson> =>
   (async () => {
     if (Date.now() < chatbotUpstreamCooldownUntilMs) {
       const cooldownError = createServiceError('FastAPI chatbot upstream is temporarily unavailable.');
@@ -271,6 +272,7 @@ const getChatbotReply = async ({ message, lastIntent }: ChatbotReplyInput): Prom
       const data = await postToFastApi('/api/chatbot/message', {
         message: String(message || '').trim(),
         last_intent: String(lastIntent || '').trim().toLowerCase() || undefined,
+        audience: audience === 'employer' ? 'employer' : 'general',
       });
       chatbotUpstreamCooldownUntilMs = 0;
       return data;

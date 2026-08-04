@@ -34,6 +34,22 @@ test('resolveChatbotResponse recognizes auth-related support queries', async () 
   assert.equal(result.intentId, 'reset-password');
 });
 
+test('resolveChatbotResponse uses employer language for employer audience', async () => {
+  const { resolveChatbotResponse } = await import(matcherModuleUrl);
+  const result = resolveChatbotResponse('How do I review applicants?', { audience: 'employer' });
+  assert.equal(result.kind, 'intent');
+  assert.equal(result.intentId, 'review-applicants');
+  assert.match(result.response, /applicants|role-fit|pipeline/i);
+});
+
+test('resolveChatbotResponse recognizes expanded user questions', async () => {
+  const { resolveChatbotResponse } = await import(matcherModuleUrl);
+  const matching = resolveChatbotResponse('How does matching work in KapIT?');
+  const status = resolveChatbotResponse('Where is my application?');
+  assert.equal(matching.intentId, 'how-matching-works');
+  assert.equal(status.intentId, 'application-status');
+});
+
 test('resolveChatbotResponse recognizes platform questions', async () => {
   const { resolveChatbotResponse } = await import(matcherModuleUrl);
   const result = resolveChatbotResponse('How do I upload my resume?');

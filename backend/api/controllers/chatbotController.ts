@@ -22,10 +22,11 @@ const sendChatbotMessage = async (req, res) => {
   const payload = req.body || {};
   const message = String(payload.message || '').trim();
   const lastIntent = String(payload.lastIntent || '').trim().toLowerCase();
+  const audience = payload.audience === 'employer' ? 'employer' : 'general';
   const mode = resolveChatbotMode();
 
   if (mode === 'local') {
-    const local = resolveLocalChatbotFallback({ message, lastIntent });
+    const local = resolveLocalChatbotFallback({ message, lastIntent, audience });
     res.setHeader('X-Chatbot-Mode', 'local');
     return res.status(200).json({
       success: true,
@@ -35,7 +36,7 @@ const sendChatbotMessage = async (req, res) => {
   }
 
   try {
-    const response = await getChatbotReply({ message, lastIntent });
+    const response = await getChatbotReply({ message, lastIntent, audience });
 
     res.setHeader('X-Chatbot-Mode', 'fastapi');
     return res.json({
@@ -53,7 +54,7 @@ const sendChatbotMessage = async (req, res) => {
       },
       'Chatbot API upstream failed; returning safe fallback response'
     );
-    const safe = resolveLocalChatbotFallback({ message, lastIntent });
+    const safe = resolveLocalChatbotFallback({ message, lastIntent, audience });
     res.setHeader('X-Chatbot-Degraded', '1');
     res.setHeader('X-Chatbot-Mode', 'auto-fallback');
     return res.status(200).json({

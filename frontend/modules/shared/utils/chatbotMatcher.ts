@@ -6,6 +6,12 @@ import {
   CHATBOT_INTENTS,
   CHATBOT_NONSENSE_RESPONSES,
 } from '../data/chatbotFaq.ts';
+import {
+  EMPLOYER_CHATBOT_DEFAULT_SUGGESTIONS,
+  EMPLOYER_CHATBOT_FALLBACK_RESPONSES,
+  EMPLOYER_CHATBOT_INTENTS,
+  EMPLOYER_CHATBOT_NONSENSE_RESPONSES,
+} from '../data/employerChatbotFaq.ts';
 
 const LETTER_REPEAT_PATTERN = /([a-z])\1{2,}/g;
 const REPEATED_PUNCTUATION_PATTERN = /([!?.,])\1+/g;
@@ -106,9 +112,23 @@ const isNonsenseInput = (rawInput, normalizedInput) => {
   return false;
 };
 
-const buildIntentLexicon = () => {
+const getChatbotCatalog = (audience = 'general') => audience === 'employer'
+  ? {
+      suggestions: EMPLOYER_CHATBOT_DEFAULT_SUGGESTIONS,
+      fallbackResponses: EMPLOYER_CHATBOT_FALLBACK_RESPONSES,
+      nonsenseResponses: EMPLOYER_CHATBOT_NONSENSE_RESPONSES,
+      intents: EMPLOYER_CHATBOT_INTENTS,
+    }
+  : {
+      suggestions: CHATBOT_DEFAULT_SUGGESTIONS,
+      fallbackResponses: CHATBOT_FALLBACK_RESPONSES,
+      nonsenseResponses: CHATBOT_NONSENSE_RESPONSES,
+      intents: CHATBOT_INTENTS,
+    };
+
+const buildIntentLexicon = (intents) => {
   const lexicon = new Set();
-  CHATBOT_INTENTS.forEach((intent) => {
+  intents.forEach((intent) => {
     intent.keywords.forEach((keyword) => {
       normalizeChatInput(keyword)
         .split(' ')
@@ -119,14 +139,11 @@ const buildIntentLexicon = () => {
   return lexicon;
 };
 
-const INTENT_TOKEN_LEXICON = buildIntentLexicon();
-const INTENT_TOKEN_LIST = Array.from(INTENT_TOKEN_LEXICON);
-
 const scoreKeywordMatch = (normalizedMessage, messageTokens, keyword) => {
   const normalizedKeyword = normalizeChatInput(keyword);
   if (!normalizedKeyword) return 0;
 
-  if (normalizedMessage.includes(normalizedKeyword)) {
+  if (normalizedKeyword.includes(' ') ? normalizedMessage.includes(normalizedKeyword) : messageTokens.includes(normalizedKeyword)) {
     return 1;
   }
 
@@ -152,43 +169,46 @@ const scoreIntent = (normalizedMessage, messageTokens, intent) => {
   }, 0);
 };
 
-const resolveSuggestionsForIntent = (intentId) => {
-  const intentSpecificSuggestions = CHATBOT_DEFAULT_SUGGESTIONS.filter((item) => item.id !== intentId).slice(0, 4);
-  return intentSpecificSuggestions.length > 0 ? intentSpecificSuggestions : CHATBOT_DEFAULT_SUGGESTIONS.slice(0, 4);
+const resolveSuggestionsForIntent = (intentId, suggestions) => {
+  const intentSpecificSuggestions = suggestions.filter((item) => item.id !== intentId).slice(0, 4);
+  return intentSpecificSuggestions.length > 0 ? intentSpecificSuggestions : suggestions.slice(0, 4);
 };
 
-const resolveFallback = (normalizedInput, type = 'fallback') => {
-  const fallbackPool = type === 'nonsense' ? CHATBOT_NONSENSE_RESPONSES : CHATBOT_FALLBACK_RESPONSES;
+const resolveFallback = (normalizedInput, type = 'fallback', catalog) => {
+  const fallbackPool = type === 'nonsense' ? catalog.nonsenseResponses : catalog.fallbackResponses;
   return {
     kind: type,
     intentId: type,
     confidence: 0,
     response: pickByInputHash(fallbackPool, normalizedInput),
-    suggestions: CHATBOT_DEFAULT_SUGGESTIONS.slice(0, 5),
+    suggestions: catalog.suggestions.slice(0, 5),
   };
 };
 
-export const resolveChatbotResponse = (userMessage) => {
+export const resolveChatbotResponse = (userMessage, { audience = 'general' } = {}) => {
+  const catalog = getChatbotCatalog(audience);
+  const intentTokenLexicon = buildIntentLexicon(catalog.intents);
+  const intentTokenList = Array.from(intentTokenLexicon);
   const rawInput = String(userMessage || '');
   const normalizedInput = normalizeChatInput(userMessage);
   if (!normalizedInput) {
     if (rawInput.trim()) {
-      return resolveFallback(rawInput, 'nonsense');
+      return resolveFallback(rawInput, 'nonsense', catalog);
     }
-    return resolveFallback('', 'fallback');
+    return resolveFallback('', 'fallback', catalog);
   }
 
   if (isNonsenseInput(rawInput, normalizedInput)) {
-    return resolveFallback(normalizedInput, 'nonsense');
+    return resolveFallback(normalizedInput, 'nonsense', catalog);
   }
 
   const messageTokens = normalizedInput.split(' ').filter(Boolean);
   const lexiconHits = messageTokens.filter((token) => {
-    if (INTENT_TOKEN_LEXICON.has(token)) return true;
-    return INTENT_TOKEN_LIST.some((lexiconToken) => wordSimilarity(token, lexiconToken) >= 0.82);
+    if (intentTokenLexicon.has(token)) return true;
+    return intentTokenList.some((lexiconToken) => wordSimilarity(token, lexiconToken) >= 0.82);
   }).length;
   const strongestLexiconSimilarity = messageTokens.reduce((bestScore, token) => {
-    const tokenBest = INTENT_TOKEN_LIST.reduce((bestTokenScore, lexiconToken) => {
+    const tokenBest = intentTokenList.reduce((bestTokenScore, lexiconToken) => {
       return Math.max(bestTokenScore, wordSimilarity(token, lexiconToken));
     }, 0);
     return Math.max(bestScore, tokenBest);
@@ -196,10 +216,10 @@ export const resolveChatbotResponse = (userMessage) => {
 
   const lexicalCoverage = messageTokens.length > 0 ? lexiconHits / messageTokens.length : 0;
   if (lexiconHits === 0 && messageTokens.join('').length >= 5 && strongestLexiconSimilarity < 0.46) {
-    return resolveFallback(normalizedInput, 'nonsense');
+    return resolveFallback(normalizedInput, 'nonsense', catalog);
   }
 
-  const scoredIntents = CHATBOT_INTENTS.map((intent) => ({
+  const scoredIntents = catalog.intents.map((intent) => ({
     intent,
     score: scoreIntent(normalizedInput, messageTokens, intent),
   })).sort((left, right) => right.score - left.score);
@@ -208,7 +228,7 @@ export const resolveChatbotResponse = (userMessage) => {
   const topScore = bestMatch?.score || 0;
   const minimumConfidence = lexicalCoverage > 0.5 ? 0.52 : 0.62;
   if (!bestMatch || topScore < minimumConfidence) {
-    return resolveFallback(normalizedInput, 'fallback');
+    return resolveFallback(normalizedInput, 'fallback', catalog);
   }
 
   return {
@@ -216,12 +236,12 @@ export const resolveChatbotResponse = (userMessage) => {
     intentId: bestMatch.intent.id,
     confidence: Number(topScore.toFixed(3)),
     response: pickByInputHash(bestMatch.intent.responses, normalizedInput),
-    suggestions: resolveSuggestionsForIntent(bestMatch.intent.id),
+    suggestions: resolveSuggestionsForIntent(bestMatch.intent.id, catalog.suggestions),
   };
 };
 
-export const resolveChatbotReply = (userMessage) => {
-  return resolveChatbotResponse(userMessage).response;
+export const resolveChatbotReply = (userMessage, options) => {
+  return resolveChatbotResponse(userMessage, options).response;
 };
 
 export const resolveChatbotErrorResponse = (userMessage) => {

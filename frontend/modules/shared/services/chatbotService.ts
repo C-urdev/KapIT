@@ -29,8 +29,8 @@ const sanitizeActions = (actions) => {
 
 export const getChatbotErrorReply = () => FALLBACK_ERROR_REPLY;
 
-const mapMatcherPayload = (userMessage) => {
-  const resolved = resolveChatbotResponse(userMessage);
+const mapMatcherPayload = (userMessage, audience = 'general') => {
+  const resolved = resolveChatbotResponse(userMessage, { audience });
   const resolvedIntent = String(resolved?.intentId || '').trim();
   const normalizedIntent =
     resolvedIntent && resolvedIntent !== 'nonsense'
@@ -62,12 +62,13 @@ const shouldTripOutageCooldown = (error) => {
 export const requestChatbotMessage = async (message, context = {}) => {
   const rawMessage = String(message || '').trim();
   const lastIntent = String(context?.lastIntent || '').trim().toLowerCase();
+  const audience = context?.audience === 'employer' ? 'employer' : 'general';
   if (!rawMessage) {
     throw new Error('Chatbot message is required.');
   }
 
   if (Date.now() < outageCooldownUntilMs) {
-    return mapMatcherPayload(rawMessage);
+    return mapMatcherPayload(rawMessage, audience);
   }
 
   const payload = await apiRequest('/public/chatbot/message', {
@@ -75,6 +76,7 @@ export const requestChatbotMessage = async (message, context = {}) => {
     body: JSON.stringify({
       message: rawMessage,
       ...(lastIntent ? { lastIntent } : {}),
+      audience,
     }),
     retryOnUnauthorized: false,
     retryOnRouterExternalError: false,
@@ -85,7 +87,7 @@ export const requestChatbotMessage = async (message, context = {}) => {
         outageCooldownUntilMs = Date.now() + CHATBOT_OUTAGE_COOLDOWN_MS;
       }
     }
-    return mapMatcherPayload(rawMessage);
+    return mapMatcherPayload(rawMessage, audience);
   });
 
   outageCooldownUntilMs = 0;

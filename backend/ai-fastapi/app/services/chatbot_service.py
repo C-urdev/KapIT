@@ -1,6 +1,10 @@
 import re
 
 from app.data.chatbot_intents import (
+    EMPLOYER_FALLBACK_RESPONSES,
+    EMPLOYER_INTENT_DEFINITIONS,
+    EMPLOYER_NAVIGATION_ACTIONS_BY_INTENT,
+    EMPLOYER_NONSENSE_RESPONSES,
     FALLBACK_RESPONSES,
     FOLLOW_UP_NAVIGATION_PHRASES,
     INTENT_DEFINITIONS,
@@ -110,7 +114,49 @@ def _build_navigation_follow_up_reply(intent_id: str, actions: list[dict[str, st
     return f'You can find it here: {label}. Tap the button below and I will open it.'
 
 
-def process_message(message: str, last_intent: str | None = None) -> dict[str, str | float | list[dict[str, str]]]:
+def _process_employer_message(message: str, last_intent: str | None = None) -> dict[str, str | float | list[dict[str, str]]]:
+    raw_message = str(message or '')
+    normalized = normalize_message(raw_message)
+    normalized_last_intent = str(last_intent or '').strip().lower()
+    if not normalized:
+        return {
+            'reply': _pick_response(EMPLOYER_NONSENSE_RESPONSES, raw_message),
+            'intent': 'fallback',
+            'confidence': 0.0,
+            'actions': [],
+        }
+
+    for intent in EMPLOYER_INTENT_DEFINITIONS:
+        if any(keyword in normalized for keyword in intent.keywords):
+            return {
+                'reply': _pick_response(intent.responses, normalized),
+                'intent': intent.intent_id,
+                'confidence': 0.9,
+                'actions': [dict(action) for action in EMPLOYER_NAVIGATION_ACTIONS_BY_INTENT.get(intent.intent_id, tuple())],
+            }
+
+    if normalized_last_intent and any(token in normalized.split(' ') for token in ('where', 'which', 'link', 'page')):
+        actions = [dict(action) for action in EMPLOYER_NAVIGATION_ACTIONS_BY_INTENT.get(normalized_last_intent, tuple())]
+        if actions:
+            return {
+                'reply': _build_navigation_follow_up_reply(normalized_last_intent, actions),
+                'intent': normalized_last_intent,
+                'confidence': 0.88,
+                'actions': actions,
+            }
+
+    return {
+        'reply': _pick_response(EMPLOYER_FALLBACK_RESPONSES, normalized),
+        'intent': 'fallback',
+        'confidence': 0.0,
+        'actions': [],
+    }
+
+
+def process_message(message: str, last_intent: str | None = None, audience: str = 'general') -> dict[str, str | float | list[dict[str, str]]]:
+    if audience == 'employer':
+        return _process_employer_message(message, last_intent)
+
     raw_message = str(message or '')
     normalized = normalize_message(raw_message)
     normalized_last_intent = str(last_intent or '').strip().lower()

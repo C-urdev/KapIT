@@ -244,6 +244,7 @@ const writeSchemas = {
       .object({
         message: z.coerce.string().trim().min(1).max(320),
         lastIntent: z.coerce.string().trim().min(1).max(40).optional(),
+        audience: z.enum(['general', 'employer']).optional(),
       })
       .strict()
   ),

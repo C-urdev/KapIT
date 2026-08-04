@@ -7,13 +7,13 @@ import { Send, Volume2, VolumeX, Paperclip, Ellipsis, SquarePen, X } from 'lucid
 import ChatbotBrandMark from './ChatbotBrandMark';
 import { useTheme } from '@sharedContext/ThemeContext';
 import { CHATBOT_DEFAULT_SUGGESTIONS, CHATBOT_WELCOME_MESSAGE } from '@shared/data/chatbotFaq';
+import { EMPLOYER_CHATBOT_DEFAULT_SUGGESTIONS, EMPLOYER_CHATBOT_WELCOME_MESSAGE } from '@shared/data/employerChatbotFaq';
 import { getChatbotErrorReply, requestChatbotMessage } from '@sharedServices/chatbotService';
 import { playNotificationSound, safeGetStorage, safeSetStorage } from './chatbotSafety';
 
 const STORAGE_KEY = 'kapit-chatbot-minimized';
 const SOUND_STORAGE_KEY = 'kapit-chatbot-sound';
 const CHAT_STATE_STORAGE_KEY = 'kapit-chatbot-state-v1';
-const INITIAL_PROMPTS = CHATBOT_DEFAULT_SUGGESTIONS.map((item) => item.prompt);
 
 const createBotMessage = (text, extras = {}) => ({ id: `${Date.now()}-${Math.random()}`, role: 'bot', text, ...extras });
 const createUserMessage = (text) => ({ id: `${Date.now()}-${Math.random()}`, role: 'user', text });
@@ -53,17 +53,23 @@ const getStoredSessionUser = () => {
   }
 };
 
-export default function FaqChatbot() {
+export default function FaqChatbot({ audience = 'general' }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const pathname = usePathname();
   const router = useRouter();
   const isLandingPage = pathname === '/';
+  const isEmployerLandingPage = pathname === '/for-employers';
+  const isEmployerAudience = audience === 'employer';
   const isUserDashboardPage = String(pathname || '').startsWith('/dashboard/');
   const isCompanyPage = String(pathname || '').startsWith('/company/');
-  const useLandingPosition = isLandingPage || isCompanyPage;
+  const useLandingPosition = isLandingPage || isEmployerLandingPage || isCompanyPage;
+  const isPublicLandingPage = isLandingPage || isEmployerLandingPage;
   const isPricingPage = pathname === '/pricing' || pathname === '/for-employers/pricing';
-  const anchorClassName = `chatbot-fab-anchor${useLandingPosition ? ' chatbot-fab-anchor--landing' : ''}${isLandingPage ? ' chatbot-fab-anchor--public-landing' : ''}${isUserDashboardPage ? ' chatbot-fab-anchor--dashboard' : ''}${isPricingPage ? ' chatbot-fab-anchor--pricing' : ''}`;
+  const anchorClassName = `chatbot-fab-anchor${useLandingPosition ? ' chatbot-fab-anchor--landing' : ''}${isPublicLandingPage ? ' chatbot-fab-anchor--public-landing' : ''}${isUserDashboardPage ? ' chatbot-fab-anchor--dashboard' : ''}${isPricingPage ? ' chatbot-fab-anchor--pricing' : ''}`;
+  const chatbotWelcomeMessage = isEmployerAudience ? EMPLOYER_CHATBOT_WELCOME_MESSAGE : CHATBOT_WELCOME_MESSAGE;
+  const chatbotSuggestions = isEmployerAudience ? EMPLOYER_CHATBOT_DEFAULT_SUGGESTIONS : CHATBOT_DEFAULT_SUGGESTIONS;
+  const chatStateStorageKey = `${CHAT_STATE_STORAGE_KEY}-${isEmployerAudience ? 'employer' : 'general'}`;
   const launcherButtonClass = isDark
     ? 'group relative z-10 inline-flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#202428]/92 text-[#e2e6e9] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_38px_rgba(0,0,0,0.34)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-[#2a2f35] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_22px_42px_rgba(0,0,0,0.4)] active:scale-[0.98]'
     : 'group relative z-10 inline-flex h-[52px] w-[52px] items-center justify-center rounded-full border border-[#9ab896] bg-[#bcd3af]/96 text-[#2f4a36] shadow-[0_16px_34px_rgba(58,90,64,0.18),inset_0_1px_0_rgba(255,255,255,0.52)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-[#c8dcbf] hover:shadow-[0_20px_40px_rgba(58,90,64,0.24),inset_0_1px_0_rgba(255,255,255,0.58)] active:scale-[0.98]';
@@ -83,7 +89,7 @@ export default function FaqChatbot() {
   const [showPolicyNotice, setShowPolicyNotice] = useState(true);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [suggestedPrompts, setSuggestedPrompts] = useState(CHATBOT_DEFAULT_SUGGESTIONS.slice(0, 5));
+  const [suggestedPrompts, setSuggestedPrompts] = useState(chatbotSuggestions.slice(0, 5));
 
   const scrollRef = useRef(null);
   const pendingReplyTimeoutRef = useRef(null);
@@ -91,9 +97,16 @@ export default function FaqChatbot() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    setMessages([]);
+    setInputValue('');
+    setIsTyping(false);
+    setIsOpen(false);
+    setHasUserInteracted(false);
+    setShowPolicyNotice(true);
+    setSuggestedPrompts(chatbotSuggestions.slice(0, 5));
     const saved = safeGetStorage(STORAGE_KEY, null);
     const soundPref = safeGetStorage(SOUND_STORAGE_KEY, null);
-    const savedChatState = safeGetStorage(CHAT_STATE_STORAGE_KEY, null);
+    const savedChatState = safeGetStorage(chatStateStorageKey, null);
     setIsMinimized(saved === '1');
     setSoundEnabled(soundPref !== '0');
     if (savedChatState) {
@@ -111,7 +124,7 @@ export default function FaqChatbot() {
       }
     }
     lastKnownSessionUserRef.current = getStoredSessionUser();
-  }, []);
+  }, [audience, chatStateStorageKey, chatbotSuggestions]);
 
   useEffect(() => {
     const currentUser = getStoredSessionUser();
@@ -124,7 +137,7 @@ export default function FaqChatbot() {
         pendingReplyTimeoutRef.current = null;
       }
       try {
-        window.localStorage.removeItem(CHAT_STATE_STORAGE_KEY);
+        window.localStorage.removeItem(chatStateStorageKey);
       } catch {
         // ignore storage clear failures
       }
@@ -135,11 +148,11 @@ export default function FaqChatbot() {
       setHasUserInteracted(false);
       setIsOpen(false);
       setIsMinimized(false);
-      setSuggestedPrompts(CHATBOT_DEFAULT_SUGGESTIONS.slice(0, 5));
+      setSuggestedPrompts(chatbotSuggestions.slice(0, 5));
     }
 
     lastKnownSessionUserRef.current = currentUser;
-  }, [pathname]);
+  }, [chatbotSuggestions, chatStateStorageKey, pathname]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -151,12 +164,12 @@ export default function FaqChatbot() {
     if (typeof window === 'undefined') return;
     try {
       if (messages.length === 0) {
-        window.localStorage.removeItem(CHAT_STATE_STORAGE_KEY);
+        window.localStorage.removeItem(chatStateStorageKey);
         return;
       }
 
       window.localStorage.setItem(
-        CHAT_STATE_STORAGE_KEY,
+        chatStateStorageKey,
         JSON.stringify({
           messages: messages.map((message) => ({
             id: message.id,
@@ -171,7 +184,7 @@ export default function FaqChatbot() {
     } catch {
       // ignore storage write failures
     }
-  }, [messages]);
+  }, [chatStateStorageKey, messages]);
 
   useEffect(() => {
     return () => {
@@ -219,7 +232,7 @@ export default function FaqChatbot() {
       (async () => {
         let replyPayload;
         try {
-          replyPayload = await requestChatbotMessage(trimmed, { lastIntent: lastActionableBotIntent });
+          replyPayload = await requestChatbotMessage(trimmed, { lastIntent: lastActionableBotIntent, audience });
         } catch {
           replyPayload = {
             reply: getChatbotErrorReply(),
@@ -247,12 +260,12 @@ export default function FaqChatbot() {
         }, remainingDelay);
       })();
     },
-    [isTyping, messages, playBotSound]
+    [audience, isTyping, messages, playBotSound]
   );
 
   const startNewChat = useCallback(() => {
     try {
-      window.localStorage.removeItem(CHAT_STATE_STORAGE_KEY);
+      window.localStorage.removeItem(chatStateStorageKey);
     } catch {
       // ignore storage clear failures
     }
@@ -262,8 +275,8 @@ export default function FaqChatbot() {
     setShowPolicyNotice(true);
     setHasUserInteracted(false);
     setIsMenuOpen(false);
-    setSuggestedPrompts(CHATBOT_DEFAULT_SUGGESTIONS.slice(0, 5));
-  }, []);
+    setSuggestedPrompts(chatbotSuggestions.slice(0, 5));
+  }, [chatStateStorageKey, chatbotSuggestions]);
 
   const toggleLauncher = () => {
     if (isMinimized) {
@@ -342,10 +355,10 @@ export default function FaqChatbot() {
             <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto pr-1">
               <div className="space-y-2 pb-1">
                 <div className={`max-w-[92%] rounded-2xl px-4 py-2.5 text-sm ${isDark ? 'bg-white/10' : 'bg-[#ebe6da] text-[#344e41]'}`}>
-                  {CHATBOT_WELCOME_MESSAGE}
+                  {chatbotWelcomeMessage}
                 </div>
                 <div className={`max-w-[92%] rounded-2xl px-4 py-2.5 text-sm ${isDark ? 'bg-white/10' : 'bg-[#ebe6da] text-[#344e41]'}`}>
-                  Ask anything, even short or informal messages. I will guide you step by step.
+                    {isEmployerAudience ? 'Ask about your next hiring step, even in a short message.' : 'Ask anything, even short or informal messages. I will guide you step by step.'}
                 </div>
               </div>
 
@@ -403,7 +416,7 @@ export default function FaqChatbot() {
             {suggestedPrompts.length > 0 && !hasUserInteracted && messages.length === 0 ? (
               <div className="mb-3">
                 <div className="flex flex-wrap items-center justify-center gap-2 px-1 py-1">
-                  {(messages.length === 0 ? INITIAL_PROMPTS : suggestedPrompts.map((item) => item.prompt || item.label)).map((prompt) => (
+                  {(messages.length === 0 ? chatbotSuggestions.map((item) => item.prompt) : suggestedPrompts.map((item) => item.prompt || item.label)).map((prompt) => (
                     <button
                       key={prompt}
                       type="button"
@@ -416,7 +429,7 @@ export default function FaqChatbot() {
                 </div>
                 <div className="mt-3 flex items-center justify-center gap-2 text-xs text-[#8b8f8a]">
                   <ChatbotBrandMark size="xs" showStatus={false} isDark={isDark} />
-                  <span>Powered by KapIT Assistant</span>
+                  <span>Powered by {isEmployerAudience ? 'KapIT Employer Assistant' : 'KapIT Assistant'}</span>
                 </div>
               </div>
             ) : null}
@@ -461,7 +474,7 @@ export default function FaqChatbot() {
                 type="text"
                 value={inputValue}
                 onChange={(event) => setInputValue(event.target.value)}
-                placeholder="Ask support anything..."
+                placeholder={isEmployerAudience ? 'Ask about hiring...' : 'Ask support anything...'}
                 className={`h-9 flex-1 bg-transparent px-1 text-sm outline-none ${isDark ? 'text-white placeholder:text-white/45' : 'text-[#111827] placeholder:text-[#9ca3af]'}`}
               />
               <button
@@ -484,7 +497,7 @@ export default function FaqChatbot() {
 
       {(!isOpen || isMinimized) ? (
         <div className="flex items-center justify-end">
-          {isLandingPage ? (
+            {isPublicLandingPage ? (
             <button
               type="button"
               onClick={toggleLauncher}
