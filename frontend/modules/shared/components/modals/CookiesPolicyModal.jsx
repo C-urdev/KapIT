@@ -8,7 +8,6 @@ export default function CookiesPolicyModal({ isOpen, onClose }) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 min-[420px]:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="flex w-full max-w-3xl flex-col bg-white dark:bg-[#121416] rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] animate-in zoom-in-95 duration-200">
 
-        {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-[#e5e7eb] dark:border-[#353c44] p-4 sm:p-5">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#f0f4ec] dark:bg-[#353c44]">
@@ -25,7 +24,6 @@ export default function CookiesPolicyModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* Content */}
         <main className="flex-1 overflow-y-auto p-5 sm:p-7 lg:p-8 space-y-6 custom-scrollbar">
 
           <div className="bg-[#f8fbf6] dark:bg-[#202428] rounded-xl p-5 border border-[#dce5d4] dark:border-[#353c44]">
@@ -100,7 +98,6 @@ export default function CookiesPolicyModal({ isOpen, onClose }) {
           <div className="h-4" />
         </main>
 
-        {/* Footer Actions */}
         <div className="flex flex-col sm:flex-row items-center justify-end gap-3 border-t border-[#e5e7eb] dark:border-[#353c44] p-4 sm:p-5 bg-[#f9fafb] dark:bg-[#0d1b2e]">
           <button
             onClick={onClose}

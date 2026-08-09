@@ -107,7 +107,6 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={api}>
       {children}
 
-      {/* Toast container */}
       <div
         aria-label="Notifications"
         className="pointer-events-none fixed inset-x-0 bottom-0 z-[200] flex flex-col-reverse items-center gap-2.5 px-4 pb-[calc(env(safe-area-inset-bottom)+6rem)] sm:bottom-auto sm:right-0 sm:top-0 sm:flex-col sm:items-end sm:px-5 sm:pb-0 sm:pt-20"
@@ -117,7 +116,6 @@ export function ToastProvider({ children }) {
         ))}
       </div>
 
-      {/* Keyframe animation injected once */}
       <style>{`
         @keyframes toast-slide-in {
           from {

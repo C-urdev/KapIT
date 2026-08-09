@@ -458,10 +458,10 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
   }
 
   return (
-    <div className={`mx-auto flex h-full min-h-0 w-full ${isCompanyVariant ? 'max-w-[min(100%,1560px)] px-0 xl:px-4' : 'max-w-[min(100%,1420px)] px-0'} justify-center xl:transition-all xl:duration-300 xl:ease-out ${introReady ? 'xl:translate-y-0 xl:opacity-100' : 'xl:translate-y-1 xl:opacity-0'}`}>
-      <div className={`flex h-full min-h-0 w-full overflow-hidden rounded-none border-0 border-[#d9e0d2] ${isCompanyVariant ? 'bg-[#f0f4eb]' : 'bg-[#f5f7f2]'} shadow-none dark:border-[#3d454e] dark:bg-[#202428] xl:rounded-3xl xl:border`}>
+    <div className={`mx-auto flex h-full min-h-0 w-full ${isCompanyVariant ? 'company-messages-workspace max-w-[min(100%,1600px)] px-0' : 'user-messages-workspace max-w-[min(100%,1420px)] px-0'} justify-center xl:transition-[opacity,transform] xl:duration-300 xl:ease-out ${introReady ? 'xl:translate-y-0 xl:opacity-100' : 'xl:translate-y-1 xl:opacity-0'}`}>
+      <div className="user-messages-frame flex h-full min-h-0 w-full overflow-hidden rounded-none border-0 border-white/40 bg-white/70 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 xl:rounded-[2rem] xl:border">
         {/* Narrow icon rail — layout only; KapIT palette */}
-        <aside className="hidden w-[52px] shrink-0 flex-col items-center border-r border-[#d9e0d2] bg-[#f8faf6] py-3 dark:border-[#3d454e] dark:bg-[#2f343b] md:flex md:w-14">
+        <aside className="user-messages-utility-rail hidden w-[52px] shrink-0 flex-col items-center border-r border-white/40 bg-white/40 py-3 backdrop-blur-sm dark:border-white/10 dark:bg-[#1a1d20]/40 md:flex md:w-14">
           <button
             type="button"
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eef6ee] text-[#3a5a40] dark:bg-[#353c44] dark:text-[#e2b94d]"
@@ -477,12 +477,12 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
 
         {/* Conversation list */}
         <div
-          className={`flex h-full min-h-0 w-full min-w-0 shrink-0 flex-col border-[#d9e0d2] ${isCompanyVariant ? 'bg-[#f6faf3] sm:max-w-[min(100%,340px)] md:w-[320px]' : 'bg-[#f8fbf6] sm:max-w-[min(100%,320px)] md:w-[300px]'} dark:border-[#3d454e] dark:bg-[#22272b] md:border-r ${
+          className={`user-messages-list flex h-full min-h-0 w-full min-w-0 shrink-0 flex-col border-white/40 bg-white/40 backdrop-blur-sm ${isCompanyVariant ? 'sm:max-w-[min(100%,340px)] md:w-[320px]' : 'sm:max-w-[min(100%,320px)] md:w-[300px]'} dark:border-white/10 dark:bg-[#1a1d20]/40 md:border-r ${
             listHiddenOnMobile ? 'hidden lg:flex' : 'flex'
           }`}
         >
           {isCompanyVariant ? (
-            <div className="border-b border-[#e4e7de] bg-[linear-gradient(180deg,#f8fbf6,#eef5ea)] px-3 py-2.5 dark:border-[#3d454e] dark:bg-[#22272b] lg:hidden">
+            <div className="border-b border-white/40 bg-[linear-gradient(180deg,rgba(255,255,255,0.6),rgba(255,255,255,0.2))] px-3 py-2.5 dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(34,39,43,0.6),rgba(34,39,43,0.2))] lg:hidden">
               <div className="flex items-center gap-2">
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#e7f0e4] text-[#3a5a40] dark:bg-[#353c44] dark:text-[#e2b94d]">
                   <Building2 className="h-4 w-4" />
@@ -494,7 +494,7 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
               </div>
             </div>
           ) : null}
-          <div className="border-b border-[#e4e7de] px-3 py-2.5 dark:border-[#3d454e] sm:px-4">
+          <div className="border-b border-white/40 px-3 py-3 dark:border-white/10 sm:px-4">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6b7c6a] dark:text-[#adb5be]" />
               <input
@@ -503,7 +503,7 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
                 value={contactSearchQuery}
                 onChange={(event) => setContactSearchQuery(event.target.value)}
                 placeholder="Search conversations..."
-                className="w-full rounded-full border border-[#cfd9c4] bg-[#f5f7f2] py-2.5 pl-10 pr-4 text-sm text-[#344e41] outline-none transition-shadow placeholder:text-[#6b7c6a] focus:border-[#588157] focus:ring-2 focus:ring-[#588157]/25 dark:border-[#444d57] dark:bg-[#1a1d20] dark:text-white dark:placeholder:text-[#adb5be] dark:focus:border-[#6f9b74] dark:focus:ring-[#6f9b74]/25"
+                className="w-full rounded-2xl border border-white/40 bg-white/50 py-2.5 pl-10 pr-4 text-sm text-[#344e41] outline-none shadow-[0_10px_20px_rgba(0,0,0,0.05)] transition-shadow placeholder:text-[#6b7c6a] focus:shadow-[0_10px_20px_rgba(0,0,0,0.08)] dark:border-white/10 dark:bg-[#1a1d20]/50 dark:text-white dark:placeholder:text-[#adb5be]"
               />
             </div>
           </div>
@@ -520,7 +520,8 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
                       <button
                         type="button"
                         onClick={() => handleSelectConversation(conversation)}
-                        className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${
+                        data-active={active ? 'true' : 'false'}
+                        className={`${isCompanyVariant ? 'company-message-row' : 'user-message-row'} flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${
                           active
                             ? 'bg-[#eef6ee] dark:bg-[#353c44]'
                             : isCompanyVariant
@@ -555,15 +556,15 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
 
         {/* Thread */}
         <div
-          className={`min-h-0 min-w-0 flex-1 flex-col ${isCompanyVariant ? 'bg-[#edf3e5]' : 'bg-[#eef3e8]'} dark:bg-[#121416] ${
+          className={`user-messages-thread min-h-0 min-w-0 flex-1 flex-col bg-transparent ${
             threadHiddenOnMobile ? 'hidden lg:flex' : 'flex'
           }`}
         >
           {selectedConversation ? (
             <>
               <header
-                className="flex shrink-0 items-center gap-2 border-b border-[#e0e6da] bg-[#f8fbf6] px-2 pb-2.5 pt-2.5 dark:border-[#3d454e] dark:bg-[#22272b] sm:gap-3 sm:px-4"
-                style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}
+                className="user-messages-thread-header flex shrink-0 items-center gap-2 border-b border-white/40 bg-white/30 px-3 pb-3 pt-3 backdrop-blur-md dark:border-white/10 dark:bg-[#1a1d20]/30 sm:gap-4 sm:px-5"
+                style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}
               >
                 <button
                   type="button"
@@ -598,10 +599,10 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
                   {threadMessages.map((message) => (
                     <div key={message.id} className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
                       <div
-                        className={`max-w-[min(100%,420px)] px-3.5 py-2 shadow-sm ${
+                        className={`user-message-bubble max-w-[min(100%,420px)] px-4 py-2.5 shadow-sm backdrop-blur-md ${
                           message.sender === 'me'
-                            ? 'rounded-[20px] rounded-br-md bg-[#588157] text-white dark:bg-[#82ad86]'
-                            : 'rounded-[20px] rounded-bl-md border border-[#d5dccf] bg-white text-[#344e41] dark:border-[#444d57] dark:bg-[#353c44] dark:text-white'
+                            ? 'rounded-[24px] rounded-br-md bg-[#588157]/90 text-white dark:bg-[#82ad86]/90'
+                            : 'rounded-[24px] rounded-bl-md border border-white/40 bg-white/70 text-[#344e41] dark:border-white/10 dark:bg-[#22272b]/70 dark:text-white'
                         }`}
                       >
                         <p className="whitespace-pre-wrap text-[0.9375rem] leading-relaxed">{message.text}</p>
@@ -622,8 +623,8 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
                 </div>
               </div>
 
-              <footer className="shrink-0 border-t border-[#e0e6da] bg-[#f8fbf6] px-2 py-2.5 dark:border-[#3d454e] dark:bg-[#22272b] sm:px-4" ref={composerRef}>
-                <div className="mx-auto flex max-w-3xl items-end gap-1.5 sm:gap-2">
+              <footer className="user-messages-composer shrink-0 border-t border-white/40 bg-white/40 px-3 py-3 backdrop-blur-md dark:border-white/10 dark:bg-[#1a1d20]/40 sm:px-5 sm:py-4" ref={composerRef}>
+                <div className="mx-auto flex max-w-3xl items-end gap-2 sm:gap-3">
                   <div className="relative shrink-0">
                     <ComposerIconButton label="Attach image or link" onClick={() => setAttachMenuOpen((current) => !current)}>
                       <Plus className="h-5 w-5" />
@@ -723,11 +724,11 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
             </>
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center px-6 py-8 text-center lg:px-10">
-              <div className={`${isCompanyVariant ? 'w-full max-w-[440px] rounded-3xl border border-[#d5e0cc] bg-[#eef5ea] p-7 shadow-[0_16px_40px_rgba(58,90,64,0.08)] dark:border-[#3d454e] dark:bg-[#2a2f35]' : ''}`}>
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#eef6ee] text-[#588157] dark:bg-[#2a2f35] dark:text-[#e2b94d]">
-                  <MessageCircle className="h-8 w-8" />
+              <div className="user-messages-empty w-full max-w-[440px] rounded-[2rem] border border-white/40 bg-white/70 p-10 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70">
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white/50 text-[#588157] shadow-sm dark:bg-[#1a1d20]/50 dark:text-[#82ad86]">
+                  <MessageCircle className="h-10 w-10" />
                 </div>
-                <p className="mt-4 max-w-sm text-sm font-medium text-[#3a5a40] dark:text-[#e2e6e9]">
+                <p className="mx-auto mt-6 max-w-xs text-[15px] font-medium text-[#4a6b57] dark:text-[#a8b1ba]">
                   {isCompanyVariant ? 'Select a candidate conversation to view messages and continue hiring updates.' : 'Select a chat from the list to open the conversation.'}
                 </p>
               </div>
@@ -736,25 +737,6 @@ export default function MessagesInbox({ user, initialContactId = '', onThreadVis
         </div>
       </div>
     </div>
-  );
-}
-
-function RailIconButton({ children, label, onClick, disabled }) {
-  return (
-    <button
-      type="button"
-      onClick={disabled ? undefined : onClick}
-      disabled={disabled}
-      title={label}
-      aria-label={label}
-      className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-[#5c6d58] transition-colors dark:text-[#b3bcc5] ${
-        disabled
-          ? 'cursor-not-allowed opacity-40'
-          : 'hover:bg-[#eef6ee] dark:hover:bg-[#353c44]'
-      }`}
-    >
-      {children}
-    </button>
   );
 }
 
@@ -807,5 +789,3 @@ function MiniUserAvatar({ user }) {
     </div>
   );
 }
-
-

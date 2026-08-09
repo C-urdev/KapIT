@@ -63,7 +63,7 @@ export default function UserPreAssessmentPage({ job, onBack }) {
       </div>
 
       <div className="space-y-0">
-        <section className="rounded-t-[20px] rounded-b-none border border-b-0 border-[#a3b18a] bg-[#f8fbf6] p-5 shadow-sm dark:border-[#353c44] dark:bg-[#22272b] sm:p-7">
+        <section className="user-desktop-flat-surface rounded-t-[20px] rounded-b-none border border-b-0 border-[#a3b18a] bg-[#f8fbf6] p-5 shadow-sm dark:border-[#353c44] dark:bg-[#22272b] sm:p-7">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">
               <p className="inline-flex items-center gap-2 rounded-full bg-[#eef6ee] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#3a5a40] dark:bg-[#2a2f35] dark:text-[#e2e6e9]">
@@ -96,7 +96,7 @@ export default function UserPreAssessmentPage({ job, onBack }) {
 
         </section>
 
-        <section className="space-y-4 rounded-b-[20px] rounded-t-none border border-t-0 border-[#a3b18a] bg-[#f8fbf6] p-5 shadow-sm dark:border-[#353c44] dark:bg-[#22272b] sm:p-7">
+        <section className="user-desktop-flat-surface space-y-4 rounded-b-[20px] rounded-t-none border border-t-0 border-[#a3b18a] bg-[#f8fbf6] p-5 shadow-sm dark:border-[#353c44] dark:bg-[#22272b] sm:p-7">
           <h2 className="text-2xl font-extrabold text-[#1f3a2b] dark:text-white">PART I. DESIGN ANALYSIS</h2>
           {DESIGN_ANALYSIS_QUESTIONS.map((item) => (
             <article
@@ -114,7 +114,7 @@ export default function UserPreAssessmentPage({ job, onBack }) {
         </section>
       </div>
 
-      <section className="space-y-4 rounded-[20px] border border-[#a3b18a] bg-[#f8fbf6] p-5 shadow-sm dark:border-[#353c44] dark:bg-[#22272b] sm:p-7">
+      <section className="user-desktop-flat-surface space-y-4 rounded-[20px] border border-[#a3b18a] bg-[#f8fbf6] p-5 shadow-sm dark:border-[#353c44] dark:bg-[#22272b] sm:p-7">
         <h2 className="text-2xl font-extrabold text-[#1f3a2b] dark:text-white">PART II. REDESIGN TASK</h2>
         <div className="space-y-4 text-sm leading-7 text-[#344e41] dark:text-[#d0d7dd]">
           <p>
@@ -167,7 +167,7 @@ export default function UserPreAssessmentPage({ job, onBack }) {
         </div>
       </section>
 
-      <section className="rounded-[20px] border border-[#a3b18a] bg-[#f8fbf6] p-5 shadow-sm dark:border-[#353c44] dark:bg-[#22272b] sm:p-7">
+      <section className="user-desktop-flat-surface rounded-[20px] border border-[#a3b18a] bg-[#f8fbf6] p-5 shadow-sm dark:border-[#353c44] dark:bg-[#22272b] sm:p-7">
         <h2 className="text-2xl font-extrabold text-[#1f3a2b] dark:text-white">EVALUATION CRITERIA</h2>
         <ul className="mt-3 list-disc space-y-1 pl-6 text-sm leading-7 text-[#344e41] marker:text-[#3a5a40] dark:text-[#d0d7dd] dark:marker:text-[#82ad86]">
           <li>Clarity of design thinking</li>

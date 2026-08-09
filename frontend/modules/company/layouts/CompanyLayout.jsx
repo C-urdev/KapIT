@@ -44,7 +44,7 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
 
   useEffect(() => {
     if (pathname === COMPANY_PATHS.premium) {
-      navigate('/pricing');
+      navigate('/for-employers/pricing');
     }
   }, [pathname]);
 
@@ -95,58 +95,59 @@ export default function CompanyLayout({ pathname, user, onLogout, onHelp, childr
   }, [pathname]);
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#eef2ec] dark:bg-[#0e1114] text-[#344e41] dark:text-white transition-colors duration-300">
-      {!isPaymentPage ? (
-        <CompanyHeader
-          title={title}
-          user={user}
-          onLogout={onLogout}
-          onHelp={onHelp}
-          mobileHidden={hideMobileChromeForThread}
-          onOpenMobileNav={() => setMobileNavOpen(true)}
-          sidebarCollapsed={sidebarCollapsed}
-          onToggleSidebarCollapsed={() => setSidebarCollapsed((value) => !value)}
-          unreadNotificationCount={unreadNotificationCount}
-        />
-      ) : null}
+    <div className={`company-dashboard-shell min-h-screen overflow-x-hidden bg-[#eef2ec] text-[#344e41] transition-colors duration-300 dark:bg-[#0e1114] dark:text-white ${
+      isPaymentPage ? '' : 'xl:flex xl:h-[100dvh] xl:min-h-0 xl:items-stretch xl:overflow-hidden'
+    }`}>
+      {isPaymentPage ? (
+        <main className="h-full min-h-screen w-full px-0 py-0">{children}</main>
+      ) : (
+        <>
+          <CompanySidebar
+            activePath={pathname}
+            collapsed={sidebarCollapsed}
+            user={user}
+            onHelp={onHelp}
+            onLogout={onLogout}
+            onToggleSidebarCollapsed={() => setSidebarCollapsed((value) => !value)}
+            unreadNotificationCount={unreadNotificationCount}
+          />
 
-      {!isPaymentPage ? (
-        <CompanySidebar
-          activePath={pathname}
-          collapsed={sidebarCollapsed}
-          user={user}
-          onHelp={onHelp}
-          onLogout={onLogout}
-          onOpenPricing={() => navigate('/pricing')}
-          onToggleSidebarCollapsed={() => setSidebarCollapsed((value) => !value)}
-          unreadNotificationCount={unreadNotificationCount}
-        />
-      ) : null}
+          <div className="flex min-h-screen min-w-0 flex-1 flex-col xl:h-[100dvh] xl:min-h-0 xl:overflow-hidden">
+            <CompanyHeader
+              title={title}
+              user={user}
+              onLogout={onLogout}
+              onHelp={onHelp}
+              mobileHidden={hideMobileChromeForThread}
+              onOpenMobileNav={() => setMobileNavOpen(true)}
+              sidebarCollapsed={sidebarCollapsed}
+              onToggleSidebarCollapsed={() => setSidebarCollapsed((value) => !value)}
+              unreadNotificationCount={unreadNotificationCount}
+            />
 
-      <div
-        className={`${
-          isPaymentPage
-            ? 'min-h-screen pt-0 pb-0'
-            : isMessagesPage
-            ? (hideMobileChromeForThread
-              ? 'h-[100dvh] pt-0 pb-0 xl:h-[100dvh] xl:pt-[5.125rem] xl:pb-0'
-              : 'h-[100dvh] pt-16 pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pt-16 sm:pb-[calc(4rem+env(safe-area-inset-bottom))] xl:h-[100dvh] xl:pt-[5.125rem] xl:pb-0')
-            : 'min-h-screen pt-[5.5rem] sm:pt-[6rem] xl:pt-20'
-        } transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${isPaymentPage ? '' : (sidebarCollapsed ? 'xl:pl-20' : 'xl:pl-72')}`}
-      >
-        <main
-          className={`mx-auto w-full max-w-[min(100%,1800px)] ${
-            isPaymentPage
-              ? 'h-full min-h-screen px-0 py-0'
-              : isMessagesPage
-              ? 'h-full min-h-0 overflow-hidden px-0 py-2 sm:px-3 sm:py-3 xl:px-4 xl:py-4'
-              : 'px-3 sm:px-5 lg:px-6 xl:px-7 2xl:px-9 py-4 sm:py-6 pb-24 md:pb-10'
-          }`}
-          style={isMessagesPage || isPaymentPage ? undefined : { paddingBottom: 'max(6rem, calc(4.5rem + env(safe-area-inset-bottom)))' }}
-        >
-          {children}
-        </main>
-      </div>
+            <div
+              className={
+                isMessagesPage
+                  ? hideMobileChromeForThread
+                    ? 'h-[100dvh] pb-0 pt-0 xl:h-[calc(100dvh-68px)] xl:min-h-0'
+                    : 'h-[100dvh] pb-[calc(4rem+env(safe-area-inset-bottom))] pt-16 sm:pt-16 xl:h-[calc(100dvh-68px)] xl:min-h-0 xl:pb-0 xl:pt-0'
+                  : 'min-h-screen pt-[5.5rem] sm:pt-[6rem] xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pt-0'
+              }
+            >
+              <main
+                className={`mx-auto w-full max-w-[min(100%,1800px)] ${
+                  isMessagesPage
+                    ? 'h-full min-h-0 overflow-hidden px-0 py-2 sm:px-3 sm:py-3 xl:px-0 xl:py-0'
+                    : 'px-3 pb-24 pt-4 sm:px-5 sm:py-6 md:pb-10 lg:px-6 xl:px-7 xl:py-6 xl:pb-8 2xl:px-9'
+                }`}
+                style={isMessagesPage ? undefined : { paddingBottom: 'max(6rem, calc(4.5rem + env(safe-area-inset-bottom)))' }}
+              >
+                {children}
+              </main>
+            </div>
+          </div>
+        </>
+      )}
 
       {!isPaymentPage ? (
         <CompanyMobileMenuDrawer

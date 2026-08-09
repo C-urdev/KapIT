@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter } from '@shared/hooks/useAppRouter';
 import { logoutAndRedirect } from '@sharedServices/authService';
 import { ToastProvider } from '@sharedComponents/ui/ToastProvider';
@@ -9,19 +9,40 @@ import CompanyLayout from '@companyLayouts/CompanyLayout';
 import { COMPANY_PATHS, navigate, setCompanyNavigator } from '@companyFeatures/companyUtils';
 import { primeCompanyProfileData, primeCompanyWorkspaceData } from '@companyFeatures/companyHooks';
 import CompanyDashboardPage from '@companyPages/CompanyDashboardPage';
-import CompanyPostJobPage from '@companyPages/CompanyPostJobPage';
-import CompanyPostJobPreAssessmentPage from '@companyPages/CompanyPostJobPreAssessmentPage';
-import CompanyPostJobPaymentPage from '@companyPages/CompanyPostJobPaymentPage';
-import CompanyManageJobsPage from '@companyPages/CompanyManageJobsPage';
-import CompanyApplicantsPage from '@companyPages/CompanyApplicantsPage';
-import CompanyMessagesPage from '@companyPages/CompanyMessagesPage';
-import CompanyNotificationsPage from '@companyPages/CompanyNotificationsPage';
-import CompanySearchDevelopersPage from '@companyPages/CompanySearchDevelopersPage';
-import CompanyProfilePage from '@companyPages/CompanyProfilePage';
-import CompanySettingsPage from '@companyPages/CompanySettingsPage';
-import CompanyPublicProfilePage from '@companyPages/CompanyPublicProfilePage';
-import { CompanyInfoSettingsPage, CompanyNotificationSettingsPage } from '@companyPages/CompanySettingsUtilityPages';
-import HelpPage from '@sharedPages/help/HelpPage';
+const loadCompanyPostJobPage = () => import('@companyPages/CompanyPostJobPage');
+const loadCompanyPostJobPreAssessmentPage = () => import('@companyPages/CompanyPostJobPreAssessmentPage');
+const loadCompanyPostJobPaymentPage = () => import('@companyPages/CompanyPostJobPaymentPage');
+const loadCompanyManageJobsPage = () => import('@companyPages/CompanyManageJobsPage');
+const loadCompanyApplicantsPage = () => import('@companyPages/CompanyApplicantsPage');
+const loadCompanyMessagesPage = () => import('@companyPages/CompanyMessagesPage');
+const loadCompanyNotificationsPage = () => import('@companyPages/CompanyNotificationsPage');
+const loadCompanySearchDevelopersPage = () => import('@companyPages/CompanySearchDevelopersPage');
+const loadCompanyProfilePage = () => import('@companyPages/CompanyProfilePage');
+const loadCompanySettingsPage = () => import('@companyPages/CompanySettingsPage');
+const loadCompanyPublicProfilePage = () => import('@companyPages/CompanyPublicProfilePage');
+const loadCompanySettingsUtilityPages = () => import('@companyPages/CompanySettingsUtilityPages');
+const loadHelpPage = () => import('@sharedPages/help/HelpPage');
+
+const CompanyPostJobPage = lazy(loadCompanyPostJobPage);
+const CompanyPostJobPreAssessmentPage = lazy(loadCompanyPostJobPreAssessmentPage);
+const CompanyPostJobPaymentPage = lazy(loadCompanyPostJobPaymentPage);
+const CompanyManageJobsPage = lazy(loadCompanyManageJobsPage);
+const CompanyApplicantsPage = lazy(loadCompanyApplicantsPage);
+const CompanyMessagesPage = lazy(loadCompanyMessagesPage);
+const CompanyNotificationsPage = lazy(loadCompanyNotificationsPage);
+const CompanySearchDevelopersPage = lazy(loadCompanySearchDevelopersPage);
+const CompanyProfilePage = lazy(loadCompanyProfilePage);
+const CompanySettingsPage = lazy(loadCompanySettingsPage);
+const CompanyPublicProfilePage = lazy(loadCompanyPublicProfilePage);
+const CompanyInfoSettingsPage = lazy(async () => {
+  const module = await loadCompanySettingsUtilityPages();
+  return { default: module.CompanyInfoSettingsPage };
+});
+const CompanyNotificationSettingsPage = lazy(async () => {
+  const module = await loadCompanySettingsUtilityPages();
+  return { default: module.CompanyNotificationSettingsPage };
+});
+const HelpPage = lazy(loadHelpPage);
 
 function renderCompanyRoute(pathname, user, updateUser, onBackFromHelp, onMessagesThreadVisibilityChange, notificationPreference, setNotificationPreference) {
   if (pathname === COMPANY_PATHS.postJobPayment) return <CompanyPostJobPaymentPage />;
@@ -100,15 +121,21 @@ export default function CompanyAppClient() {
 
   useEffect(() => {
     const prefetchCandidates = [
-      COMPANY_PATHS.dashboard,
-      COMPANY_PATHS.jobs,
-      COMPANY_PATHS.postJob,
-      COMPANY_PATHS.postJobPreAssessment,
+      loadCompanyManageJobsPage,
+      loadCompanyPostJobPage,
+      loadCompanyPostJobPreAssessmentPage,
+      loadCompanyPostJobPaymentPage,
+      loadCompanyApplicantsPage,
+      loadCompanyMessagesPage,
+      loadCompanyNotificationsPage,
+      loadCompanySearchDevelopersPage,
+      loadCompanyProfilePage,
+      loadCompanySettingsPage,
     ];
 
     const schedulePrefetch = () => {
-      prefetchCandidates.forEach((targetPath) => {
-        router.prefetch?.(targetPath);
+      prefetchCandidates.forEach((loadModule) => {
+        void loadModule();
       });
     };
 
@@ -123,7 +150,7 @@ export default function CompanyAppClient() {
 
     const timer = window.setTimeout(schedulePrefetch, 350);
     return () => window.clearTimeout(timer);
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     if (normalizedPathname !== COMPANY_PATHS.messages) {
@@ -175,6 +202,12 @@ export default function CompanyAppClient() {
     logoutAndRedirect('/');
   };
 
+  const lazyRouteFallback = (
+    <div className="flex min-h-[240px] items-center justify-center rounded-[28px] border border-[#a3b18a]/20 bg-white/60 px-6 py-10 text-sm font-medium text-[#3a5a40] shadow-sm backdrop-blur-sm dark:border-[#444d57]/40 dark:bg-[#1f2328]/70 dark:text-[#e2e6e9]">
+      Loading workspace...
+    </div>
+  );
+
   return (
     <ToastProvider>
       <SessionGate requiredAccountType="company" redirectTo="/">
@@ -188,15 +221,17 @@ export default function CompanyAppClient() {
               onHelp={() => router.push(COMPANY_PATHS.help)}
               messagesThreadOpen={mobileMessagesThreadOpen}
             >
-              {renderCompanyRoute(
-                normalizedPathname,
-                user,
-                updateUser,
-                () => router.push(COMPANY_PATHS.dashboard),
-                (open) => setMobileMessagesThreadOpen(Boolean(open)),
-                notificationPreference,
-                setNotificationPreference,
-              )}
+              <Suspense fallback={lazyRouteFallback}>
+                {renderCompanyRoute(
+                  normalizedPathname,
+                  user,
+                  updateUser,
+                  () => router.push(COMPANY_PATHS.dashboard),
+                  (open) => setMobileMessagesThreadOpen(Boolean(open)),
+                  notificationPreference,
+                  setNotificationPreference,
+                )}
+              </Suspense>
             </CompanyLayout>
           </>
         )}
@@ -206,6 +241,14 @@ export default function CompanyAppClient() {
 }
 
 function CompanyWorkspaceBootstrap({ user, updateUser }) {
+  const latestUserRef = useRef(user);
+  const latestUpdateUserRef = useRef(updateUser);
+
+  useEffect(() => {
+    latestUserRef.current = user;
+    latestUpdateUserRef.current = updateUser;
+  }, [updateUser, user]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -213,19 +256,20 @@ function CompanyWorkspaceBootstrap({ user, updateUser }) {
       try {
         const profileData = await primeCompanyProfileData();
         const company = profileData?.company || {};
+        const currentUser = latestUserRef.current;
         if (cancelled) {
           return;
         }
 
         const updates = {
-          companyName: String(company?.name || user?.companyName || user?.username || '').trim(),
-          profileImage: String(company?.logo || user?.profileImage || '').trim(),
-          bio: String(company?.short_description || company?.description || user?.bio || '').trim(),
-          address: String(company?.location || user?.address || '').trim(),
-          website: String(company?.website || user?.website || '').trim(),
+          companyName: String(company?.name || currentUser?.companyName || currentUser?.username || '').trim(),
+          profileImage: String(company?.logo || currentUser?.profileImage || '').trim(),
+          bio: String(company?.short_description || company?.description || currentUser?.bio || '').trim(),
+          address: String(company?.location || currentUser?.address || '').trim(),
+          website: String(company?.website || currentUser?.website || '').trim(),
         };
 
-        updateUser(updates);
+        latestUpdateUserRef.current(updates);
       } catch {
         // Keep existing user snapshot if preloading profile fails.
       }

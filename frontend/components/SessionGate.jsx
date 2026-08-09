@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback, useLayoutEffect, useState } from 'react';
 import { useRouter } from '@shared/hooks/useAppRouter';
 import {
   acceptTermsAndConditions,

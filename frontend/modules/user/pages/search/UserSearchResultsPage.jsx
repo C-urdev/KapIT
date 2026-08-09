@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Search } from 'lucide-react';
 import { searchAccounts } from '@sharedServices/authService';
 import UserSearchScopeChips from '@userComponents/search/UserSearchScopeChips';
@@ -35,7 +35,7 @@ export default function UserSearchResultsPage({
     return items;
   };
 
-  const runSearch = async (nextQuery, nextScope) => {
+  const runSearch = useCallback(async (nextQuery, nextScope) => {
     const normalizedQuery = String(nextQuery || '').trim();
     if (!normalizedQuery) {
       setResults([]);
@@ -63,23 +63,31 @@ export default function UserSearchResultsPage({
         setLoading(false);
       }
     }
-  };
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       void runSearch(query, scope);
     }, 300);
     return () => clearTimeout(timer);
-  }, [query, scope]);
+  }, [query, runSearch, scope]);
 
   return (
-    <div className="mx-auto w-full max-w-[min(100%,980px)]">
-      <section className="rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] p-3 shadow-sm dark:border-[#444d57] dark:bg-[#22272b] sm:p-4">
+    <div className="mx-auto w-full max-w-[min(100%,980px)] xl:max-w-[1200px]">
+      <header className="mb-5 hidden items-center gap-3 xl:flex">
+        <button type="button" onClick={onBack} className="flex h-10 w-10 items-center justify-center rounded-md text-[var(--user-text-muted)] hover:bg-[var(--user-surface)] hover:text-[var(--user-text-strong)]" aria-label="Back"><ArrowLeft className="h-5 w-5" /></button>
+        <div>
+          <p className="text-sm font-medium text-[var(--user-primary)]">Discovery</p>
+          <h1 className="user-workspace-page-title mt-1">Search KapIT</h1>
+        </div>
+      </header>
+
+      <section className="user-desktop-flat-surface rounded-2xl border border-[#a3b18a] bg-[#f8fbf6] p-3 shadow-sm dark:border-[#444d57] dark:bg-[#22272b] sm:p-4 xl:p-4">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#344e41] transition-colors hover:bg-[#f1f3ec] dark:text-white dark:hover:bg-[#353c44]"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#344e41] transition-colors hover:bg-[#f1f3ec] dark:text-white dark:hover:bg-[#353c44] xl:hidden"
             aria-label="Back"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -97,7 +105,7 @@ export default function UserSearchResultsPage({
                 }
               }}
               placeholder="Search people or companies"
-              className="w-full rounded-full border border-[#b8c4a4] bg-[#f1f3ec] py-3 pl-11 pr-4 text-base text-[#344e41] outline-none transition-colors placeholder:text-[#6b7280] focus:ring-2 focus:ring-[#588157] dark:border-[#444d57] dark:bg-[#202428] dark:text-white dark:placeholder:text-white/40 dark:focus:ring-[#6f9b74]"
+              className="w-full rounded-full border border-[#b8c4a4] bg-[#f1f3ec] py-3 pl-11 pr-4 text-base text-[#344e41] outline-none transition-colors placeholder:text-[#6b7280] focus:ring-2 focus:ring-[#588157] dark:border-[#444d57] dark:bg-[#202428] dark:text-white dark:placeholder:text-white/40 dark:focus:ring-[#6f9b74] xl:h-10 xl:rounded-md xl:border-[var(--user-border)] xl:bg-[var(--user-surface-subtle)] xl:py-2 xl:text-sm xl:text-[var(--user-text-strong)] xl:focus:border-[var(--user-primary)] xl:focus:ring-[var(--user-primary-soft)] dark:xl:bg-[var(--user-surface-subtle)]"
             />
           </div>
         </div>
@@ -137,7 +145,7 @@ export default function UserSearchResultsPage({
                   onOpenPublicProfile?.(result);
                 }}
                 onClick={() => onOpenPublicProfile?.(result)}
-                className="flex w-full items-center gap-3 rounded-2xl border border-transparent bg-[#f8fbf6] px-3 py-3 text-left transition-colors hover:border-[#c7ceba] hover:bg-[#f1f3ec] dark:bg-[#22272b] dark:hover:border-[#444d57] dark:hover:bg-[#353c44]"
+                className="flex w-full items-center gap-3 rounded-2xl border border-transparent bg-[#f8fbf6] px-3 py-3 text-left transition-colors hover:border-[#c7ceba] hover:bg-[#f1f3ec] dark:bg-[#22272b] dark:hover:border-[#444d57] dark:hover:bg-[#353c44] xl:rounded-lg xl:border-[var(--user-border)] xl:bg-[var(--user-surface)] xl:px-4 xl:py-4 xl:hover:border-[var(--user-border-strong)] xl:hover:bg-[var(--user-surface-subtle)] dark:xl:bg-[var(--user-surface)]"
               >
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#588157] font-bold text-white dark:bg-[#6f9b74]">
                   {result.profileImage ? (
@@ -151,7 +159,7 @@ export default function UserSearchResultsPage({
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-lg font-semibold text-[#3a5a40] dark:text-white">
+                  <p className="truncate text-lg font-semibold text-[#3a5a40] dark:text-white xl:text-base xl:text-[var(--user-text-strong)]">
                     {result.companyName || result.fullName || result.username || result.email}
                   </p>
                   <p className="truncate text-sm text-[#5f6f52] dark:text-white/70">

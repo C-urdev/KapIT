@@ -13,6 +13,26 @@
     <meta property="og:type" content="website" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="shortcut icon" type="image/png" href="/favicon.png" />
+    <script>
+      (function () {
+        var root = document.documentElement;
+        var storedTheme = '';
+        try {
+          storedTheme = String(window.localStorage.getItem('theme') || '').trim();
+        } catch (_) {}
+
+        if (!storedTheme) {
+          var match = document.cookie.match(/(?:^|;\s*)theme=([^;]*)/);
+          storedTheme = match ? String(match[1] || '').trim() : '';
+        }
+
+        if (storedTheme === 'dark') {
+          root.classList.add('dark');
+        } else {
+          root.classList.remove('dark');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

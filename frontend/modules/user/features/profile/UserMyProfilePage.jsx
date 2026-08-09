@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Edit3, FileText, GraduationCap, Link2, Loader2, MapPin, Mail, Pencil, Phone, User } from 'lucide-react';
 import { useToast } from '@sharedComponents/ui/ToastProvider';
 import PremiumBadge from '@sharedComponents/ui/PremiumBadge';
-import { Avatar } from '@userPages/home/CenterFeedPostShared';
 import FeedPostCard from '@userPages/home/FeedPostCard';
 import { normalizeSocialsText } from '@sharedUtils/socials';
 import ImageCropperModal from '@sharedComponents/modals/ImageCropperModal';
@@ -35,6 +34,18 @@ export default function UserMyProfilePage({
 }) {
   const toast = useToast();
   const displayName = user?.fullName || user?.name || user?.username || 'User';
+  const preferredRoles = useMemo(() => {
+    if (Array.isArray(user?.preferredRoles) && user.preferredRoles.length) {
+      return user.preferredRoles.filter(Boolean).slice(0, 3);
+    }
+    if (user?.preferredRole) {
+      return [user.preferredRole];
+    }
+    if (user?.desiredJob) {
+      return [user.desiredJob];
+    }
+    return [];
+  }, [user?.desiredJob, user?.preferredRole, user?.preferredRoles]);
   const initial = displayName.charAt(0).toUpperCase();
   const profileImage = user?.profileImage || '';
   const projectCount = Array.isArray(user?.projects)
@@ -99,8 +110,8 @@ export default function UserMyProfilePage({
     if (user?.type === 'company') {
       return 'Company Profile';
     }
-    return user?.desiredJob || user?.education || 'IT Professional';
-  }, [user?.type, user?.desiredJob, user?.education]);
+    return preferredRoles[0] || user?.education || 'IT Professional';
+  }, [preferredRoles, user?.type, user?.education]);
 
   const ownPosts = useMemo(() => {
     const viewerId = String(user?.id || '').trim();
@@ -201,13 +212,13 @@ export default function UserMyProfilePage({
 
   return (
     <div className="mx-auto w-full max-w-[min(100%,1180px)] space-y-5">
-      <div className="bg-[#f8fbf6] dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl overflow-hidden">
-        <div className="h-16 sm:h-20 bg-gradient-to-r from-[#588157] to-[#3a5a40] dark:from-[#82ad86] dark:to-[#6f9b74]" />
-        <div className="px-6 sm:px-8 py-6 min-h-[170px]">
+      <div className="user-desktop-flat-surface rounded-3xl border border-white/40 bg-white/70 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 overflow-hidden transition-shadow hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)] xl:overflow-visible">
+        <div className="h-24 sm:h-32 bg-gradient-to-r from-[#588157] to-[#3a5a40] dark:from-[#82ad86] dark:to-[#6f9b74] opacity-90 xl:hidden" />
+        <div className="px-6 sm:px-8 py-6 min-h-[170px] xl:min-h-0 xl:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-5">
-              <div className="relative w-28 h-28 sm:w-32 sm:h-32">
-                <div className="w-full h-full rounded-full border-4 border-white dark:border-[#22272b] bg-[#588157] dark:bg-[#6f9b74] text-white flex items-center justify-center text-4xl font-bold overflow-hidden">
+              <div className="relative w-32 h-32 sm:w-36 sm:h-36 -mt-12 sm:-mt-16 xl:mt-0 xl:h-28 xl:w-28">
+                <div className="w-full h-full rounded-full border-[6px] border-white/90 dark:border-[#22272b]/90 bg-[#588157] dark:bg-[#6f9b74] text-white flex items-center justify-center text-5xl font-bold overflow-hidden shadow-sm backdrop-blur-md xl:border xl:border-[var(--user-border)] xl:bg-[var(--user-primary)] xl:text-3xl xl:shadow-none xl:backdrop-blur-none dark:xl:bg-[var(--user-primary)]">
                 {profileImage ? (
                   <img src={profileImage} alt={`${displayName} profile`} className="w-full h-full object-cover" />
                 ) : (
@@ -221,10 +232,22 @@ export default function UserMyProfilePage({
               </div>
               <div className="space-y-0.5 max-w-[460px]">
                 <div className="mb-2 sm:mb-2.5 flex flex-wrap items-center gap-2">
-                  <h1 className="text-[1.7rem] min-[420px]:text-[2rem] sm:text-[2.2rem] font-bold text-[#1f3a2a] dark:text-white leading-[1.05] -mt-1 sm:-mt-1.5">{displayName}</h1>
+                  <h1 className="text-[1.7rem] min-[420px]:text-[2rem] sm:text-[2.2rem] font-bold text-[#1f3a2a] dark:text-white leading-[1.05] -mt-1 sm:-mt-1.5 xl:mt-0 xl:text-3xl xl:font-semibold xl:leading-9 xl:text-[var(--user-text-strong)]">{displayName}</h1>
                   {user?.isPremium ? <PremiumBadge /> : null}
                 </div>
                 <p className="text-[1rem] sm:text-[1.05rem] leading-[1.15] font-medium text-[#2f4e39] dark:text-[#d0d7dd]">{profileSubtitle}</p>
+                {preferredRoles.length ? (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {preferredRoles.map((role) => (
+                      <span
+                        key={role}
+                        className="inline-flex items-center rounded-full border border-[#c7d6bf] bg-[#f4f9f1] px-3 py-1 text-[12px] font-semibold text-[#3a5a40] dark:border-[#4a545f] dark:bg-[#2b3137] dark:text-[#e6f1e8]"
+                      >
+                        {role}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
                 <p className="text-[0.92rem] sm:text-[0.95rem] leading-[1.15] text-[#2f4e39] dark:text-[#d0d7dd]">
                   {projectCount} project{projectCount === 1 ? '' : 's'}
                 </p>
@@ -241,7 +264,7 @@ export default function UserMyProfilePage({
             <div className="flex w-full items-stretch sm:items-center gap-2 sm:w-auto">
                 <button
                   onClick={() => setEditing(true)}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#3a5a40] px-4 py-2 text-sm min-[420px]:text-base text-white font-semibold transition-colors hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] sm:w-auto"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white/50 border border-[#a3b18a]/30 px-5 py-2.5 text-sm min-[420px]:text-[15px] text-[#4a6b57] font-medium transition-all hover:bg-white hover:shadow-sm dark:bg-[#353c44]/50 dark:border-[#444d57]/50 dark:text-[#a8b1ba] dark:hover:bg-[#353c44] sm:w-auto"
                 >
                   <Edit3 className="w-4 h-4" />
                   Edit Profile
@@ -251,17 +274,17 @@ export default function UserMyProfilePage({
         </div>
       </div>
 
-      <div className="bg-[#f8fbf6] dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-5 sm:p-6">
+      <div className="user-desktop-flat-surface rounded-3xl border border-white/40 bg-white/70 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 p-5 sm:p-6 transition-shadow hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)]">
         <button
           onClick={onOpenComposer}
-          className="w-full text-left px-5 py-4 bg-[#f5f5f2] dark:bg-[#353c44] border border-[#a3b18a] dark:border-[#444d57] rounded-full text-[#344e41] dark:text-[#d0d7dd] hover:bg-[#dad7cd] dark:hover:bg-[#1a1d20] transition-colors"
+          className="w-full text-left px-5 py-3.5 bg-white/50 dark:bg-[#353c44]/50 border border-[#a3b18a]/30 dark:border-[#444d57]/50 rounded-2xl text-[15px] text-[#4a6b57] dark:text-[#a8b1ba] font-medium transition-all hover:bg-white hover:shadow-sm dark:hover:bg-[#353c44]"
         >
           What's on your mind, {displayName}?
         </button>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-5">
-        <div className="bg-[#f8fbf6] dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-5 space-y-3 min-h-[280px]">
+        <div className="user-desktop-flat-surface rounded-3xl border border-white/40 bg-white/70 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 p-6 space-y-4 min-h-[280px]">
           <h3 className="text-lg font-semibold text-[#3a5a40] dark:text-white">Personal details</h3>
           <InfoRow icon={User} text={displayName} />
           {user?.address && <InfoRow icon={MapPin} text={user.address} />}
@@ -289,8 +312,8 @@ export default function UserMyProfilePage({
         </div>
 
         <div className="space-y-4">
-          <div className="bg-[#f8fbf6] dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-5">
-            <h3 className="text-xl font-semibold text-[#3a5a40] dark:text-white">Posts</h3>
+          <div className="user-desktop-flat-surface rounded-3xl border border-white/40 bg-white/70 shadow-[0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#22272b]/70 p-6">
+            <h3 className="text-xl font-bold tracking-tight text-[#2d4632] dark:text-white">Posts</h3>
           </div>
 
           {ownPosts.length > 0 ? (

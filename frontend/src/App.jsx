@@ -2,8 +2,9 @@ import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import PageSkeleton from '../components/shared/PageSkeleton';
 
-// Lazy-loaded page components
 const LandingPageClient = lazy(() => import('../components/LandingPageClient'));
+const EmployerLandingPageClient = lazy(() => import('../components/EmployerLandingPageClient'));
+const EmployerPricingPage = lazy(() => import('./pages/EmployerPricingPage'));
 const AuthPage = lazy(() => import('./pages/AuthPage'));
 const SocialSignupPage = lazy(() => import('./pages/SocialSignupPage'));
 const GoogleCallbackPage = lazy(() => import('./pages/GoogleCallbackPage'));
@@ -26,12 +27,13 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const App = () => {
   return (
-    <div className="flex flex-col min-h-screen bg-[#f7f6f1] text-slate-900 dark:bg-[#121416] dark:text-white">
+    <div className="flex flex-col min-h-screen bg-[#dad7cd] text-slate-900 dark:bg-[#121416] dark:text-white">
       <main className="flex-grow">
         <Suspense fallback={<PageSkeleton />}>
           <Routes>
-            {/* Public routes */}
             <Route index element={<LandingPageClient />} />
+            <Route path="/for-employers" element={<EmployerLandingPageClient />} />
+            <Route path="/for-employers/pricing" element={<EmployerPricingPage />} />
             <Route path="/auth/login" element={<Navigate to="/?login=1" replace />} />
             <Route path="/auth/register" element={<AuthPage mode="signup" />} />
             <Route path="/auth/social-signup" element={<SocialSignupPage />} />
@@ -46,7 +48,6 @@ const App = () => {
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
             <Route path="/resume/:resumeId" element={<ResumeViewerPage />} />
 
-            {/* Protected routes */}
             <Route path="/dashboard/user" element={<UserDashboardPage />} />
             <Route path="/dashboard/company" element={<Navigate to="/company/dashboard" replace />} />
             <Route path="/company/*" element={<CompanyAppPage />} />
@@ -55,7 +56,6 @@ const App = () => {
             <Route path="/job-match" element={<JobMatchPage />} />
             <Route path="/premium/payment" element={<PremiumPaymentPage />} />
 
-            {/* Catch-all */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>

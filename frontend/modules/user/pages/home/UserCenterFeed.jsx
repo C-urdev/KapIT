@@ -75,17 +75,30 @@ export default function CenterFeed(props) {
   }, [hasMorePosts, loading, loadingMorePosts, onLoadMorePosts]);
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-[#a3b18a] bg-[#f8fbf6] p-4 dark:border-[#353c44] dark:bg-[#22272b]">
-        <div className="flex gap-3">
-          <Avatar profileImage={profileImage} fallback={userInitial} sizeClass="h-10 w-10" />
-          <button onClick={onOpenComposer} className="flex-1 rounded-full border border-[#a3b18a] bg-[#f5f5f2] px-4 py-3 text-left text-[#344e41] transition-colors hover:bg-[#dad7cd] dark:border-[#444d57] dark:bg-[#353c44] dark:text-[#d0d7dd] dark:hover:bg-[#1a1d20]">Share an update or project...</button>
+    <div className="space-y-5">
+      <header className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="user-workspace-page-title mt-1">Welcome back, {displayName.split(' ')[0]}</h1>
+          <p className="mt-1 text-sm text-[var(--user-text-muted)]">Keep your profile active and your next opportunity moving.</p>
         </div>
-        <div className="mt-3 flex items-center justify-between border-t border-[#a3b18a] pt-3 dark:border-[#444d57]">
+      </header>
+
+      <section className="user-desktop-flat-surface p-4" aria-label="Create an update">
+        <div className="flex gap-3">
+          <Avatar profileImage={profileImage} fallback={userInitial} sizeClass="h-10 w-10 border border-[var(--user-border)]" />
+          <button
+            type="button"
+            onClick={onOpenComposer}
+            className="min-h-10 flex-1 rounded-md border border-[var(--user-border)] bg-[var(--user-surface-subtle)] px-4 py-2 text-left text-sm text-[var(--user-text-muted)] transition-colors duration-150 hover:border-[var(--user-border-strong)] hover:bg-[var(--user-surface)]"
+          >
+            Share an update, project, or insight...
+          </button>
+        </div>
+        <div className="mt-3 flex items-center justify-between border-t border-[var(--user-border)] pt-3">
           <ComposerButton icon={Plus} text={userType === 'employee' ? 'Add Project' : 'Post Job'} onClick={onOpenComposer} />
           <ComposerButton icon={Plus} text="Share Update" onClick={onOpenComposer} />
         </div>
-      </div>
+      </section>
 
       {loading ? (
         <FeedSkeleton />
@@ -118,17 +131,19 @@ export default function CenterFeed(props) {
           ) : null}
         </>
       ) : (
-        <div className="rounded-xl border border-[#a3b18a] bg-[#f8fbf6] p-12 text-center dark:border-[#353c44] dark:bg-[#22272b]">
-          <div className="mx-auto max-w-sm">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[#f5f5f2] dark:bg-[#353c44]"><Search className="h-10 w-10 text-[#a3b18a] dark:text-[#6f9b74]" /></div>
-            <h3 className="mb-2 text-xl font-semibold text-[#3a5a40] dark:text-white">Try searching to get started</h3>
-            <p className="mb-6 text-[#344e41] dark:text-[#d0d7dd]">Discover IT professionals, companies, and projects in the Philippines</p>
-            <div className="flex flex-col justify-center gap-3 sm:flex-row">
-              <button type="button" onClick={onBrowsePeople} className="rounded-lg bg-[#3a5a40] px-4 py-2 font-semibold text-white transition-colors hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86]">Browse {userType === 'employee' ? 'Companies' : 'Developers'}</button>
-              <button type="button" onClick={onExploreProjects} className="rounded-lg border border-[#a3b18a] px-4 py-2 font-semibold text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:text-white dark:hover:bg-[#353c44]">Explore Projects</button>
+        <section className="user-desktop-flat-surface px-6 py-10 text-center">
+          <div className="mx-auto max-w-lg">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-[var(--user-primary-soft)] text-[var(--user-primary)]">
+              <Search className="h-6 w-6" />
+            </div>
+            <h2 className="mt-4 text-xl font-semibold text-[var(--user-text-strong)]">Build your professional network</h2>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--user-text-muted)]">Discover IT companies, professionals, and projects while you wait for new updates.</p>
+            <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
+              <button type="button" onClick={onBrowsePeople} className="user-workspace-primary-button px-5 py-2 text-sm font-semibold">Browse {userType === 'employee' ? 'Companies' : 'Developers'}</button>
+              <button type="button" onClick={onExploreProjects} className="min-h-10 rounded-md border border-[var(--user-border-strong)] bg-[var(--user-surface)] px-5 py-2 text-sm font-semibold text-[var(--user-text-strong)] transition-colors duration-150 hover:bg-[var(--user-surface-subtle)]">Explore Projects</button>
             </div>
           </div>
-        </div>
+        </section>
       )}
     </div>
   );
@@ -139,7 +154,6 @@ function BottomFeedLoader() {
     <div className="space-y-3">
       {[...Array(2)].map((_, index) => (
         <div
-          // eslint-disable-next-line react/no-array-index-key
           key={index}
           className="rounded-xl border border-[#a3b18a]/30 bg-[#f8fbf6]/70 p-4 dark:border-[#353c44]/30 dark:bg-[#22272b]/70"
         >
@@ -152,5 +166,5 @@ function BottomFeedLoader() {
 }
 
 function ComposerButton({ icon: Icon, text, onClick }) {
-  return <button onClick={onClick} className="flex items-center gap-2 rounded-lg px-4 py-2 text-[#344e41] transition-colors hover:bg-[#f5f5f2] dark:text-[#d0d7dd] dark:hover:bg-[#353c44]"><Icon className="h-4 w-4" /><span className="text-sm font-medium">{text}</span></button>;
+  return <button type="button" onClick={onClick} className="flex min-h-10 items-center gap-2 rounded-md px-3 py-2 text-[var(--user-text)] transition-colors duration-150 hover:bg-[var(--user-surface-selected)] hover:text-[var(--user-primary)]"><Icon className="h-4 w-4" /><span className="text-sm font-medium">{text}</span></button>;
 }

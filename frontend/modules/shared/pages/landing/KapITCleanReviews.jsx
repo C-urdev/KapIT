@@ -48,9 +48,16 @@ const REVIEWS = [
     role: 'Startup Founder',
     rating: 4.1,
     text: 'The platform feels clean, fast, and very trustworthy. We loved the positive candidate flow.',
-    cardStyle: 'absolute left-[760px] top-[220px] w-[276px]',
+    cardStyle: 'absolute left-[760px] top-[220px] w-[276px] min-[1280px]:-translate-x-[60px] min-[1700px]:translate-x-0',
     anchorStyle: 'top-[227px] left-[202px]',
     line: { x1: 780, y1: 300, x2: 670, y2: 275 },
+    responsiveLine: {
+      className: 'hidden min-[1280px]:block min-[1700px]:hidden',
+      x1: 720,
+      y1: 300,
+      x2: 670,
+      y2: 275,
+    },
   },
 ];
 
@@ -79,70 +86,86 @@ export default function KapITCleanReviews({ children }) {
 
   return (
     <>
-      <div className="hidden lg:flex relative w-full bg-transparent py-12 justify-center items-center overflow-visible">
-        <div className="relative w-[1600px] h-[620px] flex items-center justify-center scale-75 xl:scale-90 2xl:scale-100 origin-right">
-          <div className="hero-review-orbit absolute left-[400px] top-0 w-[1100px] h-[620px] z-20">
-            <svg className="absolute inset-0 w-full h-full pointer-events-none z-30" xmlns="http://www.w3.org/2000/svg">
-              {REVIEWS.map((review) => (
-                <line
-                  key={`line-${review.id}`}
-                  x1={review.line.x1}
-                  y1={review.line.y1}
-                  x2={review.line.x2}
-                  y2={review.line.y2}
-                  stroke="rgba(16, 185, 129, 0.5)"
-                  strokeWidth="1.5"
-                  className={`transition-all duration-500 ease-in-out ${
-                    activeHover === review.id ? 'stroke-emerald-500/80 stroke-[2px] opacity-100' : 'opacity-70'
-                  }`}
-                />
-              ))}
-            </svg>
-
-            <div className="absolute left-[460px] top-[40px] w-[260px] z-20 select-none pointer-events-auto">
-              <div className="relative w-full h-full">
-                <div className="w-[314px] h-[622px] origin-top-left scale-[0.828]">
-                  {children}
-                </div>
-
+      <div className="relative hidden w-full items-center justify-center overflow-visible bg-transparent py-5 lg:flex xl:py-6">
+        <div className="relative h-[620px] w-[1100px] flex items-center justify-center">
+          <div className="hero-review-orbit absolute left-0 top-0 h-[620px] w-[1100px] z-20">
+            <div className="relative h-full w-full min-[1100px]:-translate-x-[92px] min-[1280px]:translate-x-0">
+              <svg className="absolute inset-0 w-full h-full pointer-events-none z-30" xmlns="http://www.w3.org/2000/svg">
                 {REVIEWS.map((review) => (
-                  <div
-                    key={`anchor-${review.id}`}
-                    className={`absolute ${review.anchorStyle} w-4 h-4 flex items-center justify-center cursor-pointer transition-all duration-300 opacity-100`}
-                    onMouseEnter={() => setActiveHover(review.id)}
-                    onMouseLeave={() => setActiveHover(null)}
-                  >
-                    <span
-                      className={`absolute inline-flex h-full w-full rounded-full bg-emerald-400/40 animate-ping ${
-                        activeHover === review.id ? 'opacity-75' : 'opacity-50'
+                  <React.Fragment key={`line-${review.id}`}>
+                    <line
+                      x1={review.line.x1}
+                      y1={review.line.y1}
+                      x2={review.line.x2}
+                      y2={review.line.y2}
+                      stroke="rgba(16, 185, 129, 0.5)"
+                      strokeWidth="1.5"
+                      className={`${review.responsiveLine ? 'min-[1280px]:hidden min-[1700px]:block' : ''} transition-all duration-500 ease-in-out ${
+                        activeHover === review.id ? 'stroke-emerald-500/80 stroke-[2px] opacity-100' : 'opacity-70'
                       }`}
                     />
-                    <span
-                      className={`relative inline-flex rounded-full h-2.5 w-2.5 transition-all duration-300 ${
-                        activeHover === review.id
-                          ? 'bg-emerald-500 scale-150 shadow-[0_0_12px_#10b981]'
-                          : 'bg-emerald-500/80'
-                      }`}
-                    />
-                  </div>
+                    {review.responsiveLine ? (
+                      <line
+                        x1={review.responsiveLine.x1}
+                        y1={review.responsiveLine.y1}
+                        x2={review.responsiveLine.x2}
+                        y2={review.responsiveLine.y2}
+                        stroke="rgba(16, 185, 129, 0.5)"
+                        strokeWidth="1.5"
+                        className={`${review.responsiveLine.className} transition-all duration-500 ease-in-out ${
+                          activeHover === review.id ? 'stroke-emerald-500/80 stroke-[2px] opacity-100' : 'opacity-70'
+                        }`}
+                      />
+                    ) : null}
+                  </React.Fragment>
                 ))}
-              </div>
-            </div>
+              </svg>
 
-            {REVIEWS.map((review) => (
-              <article
-                key={review.id}
-                onMouseEnter={() => setActiveHover(review.id)}
-                onMouseLeave={() => setActiveHover(null)}
-                className={`hero-review-card ${review.cardStyle} z-30 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] cursor-pointer pointer-events-auto ${
-                  activeHover === review.id
-                    ? 'opacity-100 scale-[1.05] -translate-y-3 z-40 [filter:drop-shadow(0_24px_48px_rgba(0,0,0,0.12))]'
-                    : 'opacity-100 scale-100 [filter:drop-shadow(0_8px_24px_rgba(0,0,0,0.04))]'
-                }`}
-              >
-                {renderReviewBody(review)}
-              </article>
-            ))}
+              <div className="absolute left-[460px] top-[40px] w-[260px] z-20 select-none pointer-events-auto">
+                <div className="relative w-full h-full">
+                  <div className="w-[314px] h-[622px] origin-top-left scale-[0.828]">
+                    {children}
+                  </div>
+
+                  {REVIEWS.map((review) => (
+                    <div
+                      key={`anchor-${review.id}`}
+                      className={`absolute ${review.anchorStyle} w-4 h-4 flex items-center justify-center cursor-pointer transition-all duration-300 opacity-100`}
+                      onMouseEnter={() => setActiveHover(review.id)}
+                      onMouseLeave={() => setActiveHover(null)}
+                    >
+                      <span
+                        className={`absolute inline-flex h-full w-full rounded-full bg-emerald-400/40 animate-ping ${
+                          activeHover === review.id ? 'opacity-75' : 'opacity-50'
+                        }`}
+                      />
+                      <span
+                        className={`relative inline-flex rounded-full h-2.5 w-2.5 transition-all duration-300 ${
+                          activeHover === review.id
+                            ? 'bg-emerald-500 scale-150 shadow-[0_0_12px_#10b981]'
+                            : 'bg-emerald-500/80'
+                        }`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {REVIEWS.map((review) => (
+                <article
+                  key={review.id}
+                  onMouseEnter={() => setActiveHover(review.id)}
+                  onMouseLeave={() => setActiveHover(null)}
+                  className={`hero-review-card ${review.cardStyle} z-30 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] cursor-pointer pointer-events-auto ${
+                    activeHover === review.id
+                      ? 'opacity-100 scale-[1.05] -translate-y-3 z-40 [filter:drop-shadow(0_24px_48px_rgba(0,0,0,0.12))]'
+                      : 'opacity-100 scale-100 [filter:drop-shadow(0_8px_24px_rgba(0,0,0,0.04))]'
+                  }`}
+                >
+                  {renderReviewBody(review)}
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </div>

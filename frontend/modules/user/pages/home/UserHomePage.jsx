@@ -1,45 +1,45 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import UserNavbar from '@userComponents/UserNavbar';
 import UserLeftSidebar from '@userComponents/UserLeftSidebar';
-import UserRightSidebar from '@userComponents/UserRightSidebar';
+
 import CenterFeed from './UserCenterFeed';
-import UserJobsPage from '@userPages/jobs/UserJobsPage';
-import UserJobDetailPage from '@userPages/jobs/UserJobDetailPage';
-import UserPreAssessmentPage from '@userPages/jobs/UserPreAssessmentPage';
-import UserProjectsPage from '@userPages/projects/UserProjectsPage';
-import UserSearchResultsPage from '@userPages/search/UserSearchResultsPage';
-import UserMessagesPage from '@userPages/messages/UserMessagesPage';
-import UserNotificationsPage from '@userPages/notifications/UserNotificationsPage';
-import PublicProfilePage from '@sharedPages/public-profile/PublicProfilePage';
-import HelpPage from '@sharedPages/help/HelpPage';
-import UserPremiumPopup from '@userPages/premium/UserPremiumPopup';
 import { USER_PREMIUM_PAYMENT_PATH, USER_PREMIUM_PAYMENT_SUCCESS, USER_PREMIUM_PAYMENT_STORAGE_KEY } from '@userPages/premium/UserPremiumPopup';
-import PostComposerModal from '@userFeatures/posts/UserPostComposerModal';
-import UserMyProfilePage from '@userFeatures/profile/UserMyProfilePage';
-import UserAccountSettingsModal from '@userFeatures/profile/UserAccountSettingsModal';
-import UserFaqModal from '@userFeatures/profile/UserFaqModal';
-import TermsAndConditionsModal from '@sharedComponents/modals/TermsAndConditionsModal';
-import PrivacyPolicyModal from '@sharedComponents/modals/PrivacyPolicyModal';
-import CookiesPolicyModal from '@sharedComponents/modals/CookiesPolicyModal';
-import UserSettingsPage from '@userPages/settings/UserSettingsPage';
+import UserMobileBottomNav from '@userComponents/navigation/mobile/UserMobileBottomNav';
 import {
+  CookiesPolicyModal,
+  HelpPage,
+  PostComposerModal,
+  PrivacyPolicyModal,
+  PublicProfilePage,
+  TermsAndConditionsModal,
+  UserAccountSettingsModal,
+  UserApplicationsPanel,
+  UserCalendarPage,
+  UserApplicationsSettingsPage,
+  UserFeedbackPage,
+  UserFaqModal,
+  UserJobDetailPage,
+  UserJobsPage,
+  UserMessagesPage,
+  UserMyProfilePage,
+  UserNotificationSettingsPage,
+  UserNotificationsPage,
+  UserPreAssessmentPage,
+  UserPremiumPopup,
   UserPrivacyChangePasswordPage,
   UserPrivacyCommentsPage,
   UserPrivacyFollowingPage,
   UserPrivacyLikesPage,
   UserPrivacyMentionsPage,
   UserPrivacySettingsPage,
-} from '@userPages/settings/UserPrivacyPages';
-import {
-  UserApplicationsSettingsPage,
-  UserNotificationSettingsPage,
+  UserProjectsPage,
+  UserResumeAtsPreviewPage,
+  UserResumeProfileViewerPage,
+  UserSavedJobsPanel,
   UserSavedJobsSettingsPage,
-} from '@userPages/settings/UserSettingsUtilityPages';
-import UserResumeAtsPreviewPage from '@userPages/settings/UserResumeAtsPreviewPage';
-import UserMobileBottomNav from '@userComponents/navigation/mobile/UserMobileBottomNav';
-import UserApplicationsPanel from './UserApplicationsPanel';
-import UserSavedJobsPanel from './UserSavedJobsPanel';
-import UserResumeProfileViewerPage from './UserResumeProfileViewerPage';
+  UserSearchResultsPage,
+  UserSettingsPage,
+} from './userHomeLazyViews';
 import { developerAPI } from '@userFeatures/developer/userDeveloperAPI';
 import {
   addCommentToPost,
@@ -63,7 +63,7 @@ const USER_NAV_QUERY_KEY = 'tab';
 const FEED_PAGE_SIZE = 10;
 const USER_PROFILE_QUERY_KEY = 'profileId';
 const USER_JOB_QUERY_KEY = 'jobId';
-const USER_NAV_TABS = new Set(['home', 'jobs', 'job-detail', 'pre-assessment', 'projects', 'search', 'messages', 'notifications', 'saved-jobs', 'applications', 'my-profile', 'resume-viewer', 'help', 'tips', 'verified', 'settings', 'public-profile', 'settings-account', 'settings-career', 'settings-resume-ats', 'settings-notifications', 'settings-saved-jobs', 'settings-applications', 'privacy-settings', 'privacy-change-password', 'privacy-comments', 'privacy-mentions', 'privacy-following', 'privacy-likes']);
+const USER_NAV_TABS = new Set(['home', 'jobs', 'job-detail', 'pre-assessment', 'projects', 'search', 'messages', 'notifications', 'calendar', 'saved-jobs', 'applications', 'my-profile', 'resume-viewer', 'help', 'feedback', 'tips', 'verified', 'settings', 'public-profile', 'settings-account', 'settings-career', 'settings-resume-ats', 'settings-notifications', 'settings-saved-jobs', 'settings-applications', 'privacy-settings', 'privacy-change-password', 'privacy-comments', 'privacy-mentions', 'privacy-following', 'privacy-likes']);
 const resolveProfileId = (value) => {
   const normalized = String(value || '').trim();
   return normalized || '';
@@ -130,8 +130,9 @@ const syncUserNavToUrl = (nextNav, options = {}) => {
   }
 };
 
-export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onUpdateUser }) {
+export default function UserHomePage({ user, userType, onOpenHelp: _onOpenHelp, onLogout, onUpdateUser }) {
   const [activeNav, setActiveNav] = useState(() => getUserNavFromUrl());
+  const [homeSidebarCollapsed, setHomeSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [premiumPopupOpen, setPremiumPopupOpen] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
@@ -204,7 +205,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
   const isEdgeToEdgeView = isMessagesActive || isSettingsActive;
   const pageBackgroundClass = isMessagesActive
     ? 'bg-[#e7e2d7] dark:bg-[#121212]'
-    : 'bg-[#eef2ec] dark:bg-[#0e1114]';
+    : 'bg-[#e7e2d7] dark:bg-[#121212]';
   const hideMobileChromeForMessages = isTabletViewport && isMessagesActive && mobileThreadOpen;
   const effectiveMobileChromeHidden = mobileChromeHidden || hideMobileChromeForMessages;
   const canAccessPreAssessment = Boolean(user?.isPremium);
@@ -539,7 +540,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
     setSavedJobs([]);
     setSavedPosts([]);
     setApplications(getApplicationsForUser(user));
-  }, [user]);
+  }, [syncPostState, user]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -779,7 +780,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
     return () => {
       cancelled = true;
     };
-  }, [onUpdateUser, user?.id, user?.optimizedResumeDocxUrl, user?.optimizedResumePdfUrl, user?.resume, user?.resumeUrl]);
+  }, [onUpdateUser, user, user?.id, user?.optimizedResumeDocxUrl, user?.optimizedResumePdfUrl, user?.resume, user?.resumeUrl]);
 
   const handleOpenPremiumMerchantWindow = () => {
     if (isMobileViewport) {
@@ -1193,29 +1194,63 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
     updateActiveNav('messages');
   };
 
+  const lazyViewFallback = (
+    <div className="flex min-h-[240px] items-center justify-center rounded-[24px] border border-[#a3b18a]/20 bg-white/60 px-6 py-10 text-sm font-medium text-[#3a5a40] shadow-sm backdrop-blur-sm dark:border-[#444d57]/40 dark:bg-[#1f2328]/70 dark:text-[#e2e6e9]">
+      Loading view...
+    </div>
+  );
+
+  const lazyOverlayFallback = null;
+
   return (
-    <div className={`min-h-[100dvh] no-scrollbar transition-colors duration-150 ease-out ${pageBackgroundClass} ${isResumeAtsPreviewActive ? 'overflow-hidden' : ''}`}>
-      <UserNavbar
-        activeNav={activeNav}
-        setActiveNav={updateActiveNav}
-        user={user}
-        mobileHidden={effectiveMobileChromeHidden}
-        mobileMenuOpen={mobileMenuOpen}
-        setMobileMenuOpen={setMobileMenuOpen}
-        onHelp={() => updateActiveNav('help', { preserveSettingsReturn: true })}
-        onLogout={onLogout}
-        onOpenSettings={() => updateActiveNav('settings')}
-        onOpenTips={() => updateActiveNav('tips')}
-        onOpenVerifiedDirectory={() => updateActiveNav('verified')}
-        onOpenPremium={() => setPremiumPopupOpen(true)}
-        onOpenPublicProfile={handleOpenPublicProfile}
-        onSubmitSearch={handleSubmitSearch}
-        onOpenMyProfile={() => updateActiveNav('my-profile')}
-        onOpenProjects={() => updateActiveNav('projects')}
-        onOpenSavedJobs={() => updateActiveNav('saved-jobs')}
-        onOpenApplications={() => updateActiveNav('applications')}
-        unreadNotificationCount={unreadNotificationCount}
-      />
+    <div className={`user-dashboard-shell min-h-[100dvh] no-scrollbar transition-colors duration-150 ease-out ${pageBackgroundClass} ${isResumeAtsPreviewActive ? 'overflow-hidden' : ''}`}>
+      <div className="xl:flex xl:min-h-[100dvh] xl:items-start">
+        {/* Global Desktop Sidebar */}
+        <aside
+          className="hidden xl:block flex-shrink-0 border-r border-[var(--user-border)] bg-[var(--user-appbar)] transition-[width] duration-200 ease-out xl:sticky xl:top-0 xl:h-[100dvh] overflow-y-auto no-scrollbar z-[60]"
+          style={{ width: homeSidebarCollapsed ? '4.5rem' : '18rem' }}
+        >
+          <UserLeftSidebar
+            user={user}
+            userType={userType}
+            collapsed={homeSidebarCollapsed}
+            onToggleCollapsed={() => setHomeSidebarCollapsed((current) => !current)}
+            onOpenMyProfile={() => updateActiveNav('my-profile')}
+            onOpenHelp={() => updateActiveNav('help', { preserveSettingsReturn: true })}
+            onOpenFeedback={() => updateActiveNav('feedback')}
+            onOpenProjects={() => updateActiveNav('projects')}
+            onOpenSavedJobs={() => updateActiveNav('saved-jobs')}
+            onOpenApplications={() => updateActiveNav('applications')}
+            activeNav={activeNav}
+            setActiveNav={updateActiveNav}
+            onLogout={onLogout}
+          />
+        </aside>
+
+        {/* Main Content Area */}
+        <div className="flex-1 min-w-0 flex flex-col min-h-[100dvh]">
+          <UserNavbar
+            activeNav={activeNav}
+            setActiveNav={updateActiveNav}
+            user={user}
+            hideDesktopProfileControl={false}
+            mobileHidden={effectiveMobileChromeHidden}
+            mobileMenuOpen={mobileMenuOpen}
+            setMobileMenuOpen={setMobileMenuOpen}
+            onHelp={() => updateActiveNav('help', { preserveSettingsReturn: true })}
+            onLogout={onLogout}
+            onOpenSettings={() => updateActiveNav('settings')}
+            onOpenTips={() => updateActiveNav('tips')}
+            onOpenVerifiedDirectory={() => updateActiveNav('verified')}
+            onOpenPremium={() => setPremiumPopupOpen(true)}
+            onOpenPublicProfile={handleOpenPublicProfile}
+            onSubmitSearch={handleSubmitSearch}
+            onOpenMyProfile={() => updateActiveNav('my-profile')}
+            onOpenProjects={() => updateActiveNav('projects')}
+            onOpenSavedJobs={() => updateActiveNav('saved-jobs')}
+            onOpenApplications={() => updateActiveNav('applications')}
+            unreadNotificationCount={unreadNotificationCount}
+          />
 
       <div
         className={`mx-auto w-full ${
@@ -1254,7 +1289,7 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
                 setCanReturnToSettings(false);
                 updateActiveNav('settings-account');
               }}
-              className="inline-flex items-center gap-2 rounded-lg border border-[#a3b18a] bg-[#f8fbf6] px-3.5 py-2 text-sm font-semibold text-[#3a5a40] shadow-sm transition-colors hover:bg-[#f5f5f2] dark:border-[#444d57] dark:bg-[#22272b] dark:text-white dark:hover:bg-[#202428]"
+              className="inline-flex items-center gap-2 rounded-lg border border-[#a3b18a]/30 bg-white/70 px-3.5 py-2 text-sm font-semibold text-[#3a5a40] shadow-sm backdrop-blur-md transition-all hover:bg-white dark:border-[#444d57]/30 dark:bg-[#22272b]/70 dark:text-white dark:hover:bg-[#22272b]"
             >
               <ArrowLeft className="h-4 w-4" />
               Back
@@ -1262,19 +1297,8 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
           </div>
         )}
         {activeNav === 'home' && (
-          <div className="mx-auto grid w-full max-w-[min(100%,1680px)] grid-cols-1 gap-6 xl:grid-cols-12 2xl:gap-8">
-            <aside className="hidden xl:block xl:col-span-3">
-              <UserLeftSidebar
-                user={user}
-                userType={userType}
-                onOpenPremium={() => setPremiumPopupOpen(true)}
-                onOpenMyProfile={() => updateActiveNav('my-profile')}
-                onOpenProjects={() => updateActiveNav('projects')}
-                onOpenSavedJobs={() => updateActiveNav('saved-jobs')}
-                onOpenApplications={() => updateActiveNav('applications')}
-              />
-            </aside>
-            <main className="xl:col-span-9 2xl:col-span-6">
+          <div className="mx-auto w-full grid grid-cols-1 gap-6 xl:gap-6 2xl:gap-8">
+            <main className="min-w-0">
               <CenterFeed
                 loading={loadingPosts}
                 loadingMorePosts={loadingMorePosts}
@@ -1295,231 +1319,287 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
                 onExploreProjects={() => updateActiveNav('projects')}
               />
             </main>
-            <aside className="hidden 2xl:block 2xl:col-span-3">
-              <UserRightSidebar userType={userType} />
-            </aside>
+
           </div>
         )}
 
         {activeNav === 'my-profile' && (
-          <UserMyProfilePage
-            user={user}
-            posts={posts}
-            savedPostIds={savedPosts.map((entry) => Number(entry?.id)).filter((id) => Number.isInteger(id) && id > 0)}
-            onUpdateUser={onUpdateUser}
-            onOpenComposer={() => setComposerOpen(true)}
-            onToggleSavePost={handleToggleSavePost}
-            onReactToPost={handleReactToPost}
-            onAddComment={handleAddComment}
-            onReactToComment={handleReactToComment}
-            onToggleSharePost={handleToggleSharePost}
-            onDeletePost={handleDeletePost}
-            onOpenResumeViewer={(payload) => {
-              setResumeViewerPayload({
-                resumeUrl: String(payload?.resumeUrl || '').trim(),
-                isAts: Boolean(payload?.isAts),
-                fileLabel: String(payload?.fileLabel || 'Resume'),
-              });
-              updateActiveNav('resume-viewer');
-            }}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserMyProfilePage
+              user={user}
+              posts={posts}
+              savedPostIds={savedPosts.map((entry) => Number(entry?.id)).filter((id) => Number.isInteger(id) && id > 0)}
+              onUpdateUser={onUpdateUser}
+              onOpenComposer={() => setComposerOpen(true)}
+              onToggleSavePost={handleToggleSavePost}
+              onReactToPost={handleReactToPost}
+              onAddComment={handleAddComment}
+              onReactToComment={handleReactToComment}
+              onToggleSharePost={handleToggleSharePost}
+              onDeletePost={handleDeletePost}
+              onOpenResumeViewer={(payload) => {
+                setResumeViewerPayload({
+                  resumeUrl: String(payload?.resumeUrl || '').trim(),
+                  isAts: Boolean(payload?.isAts),
+                  fileLabel: String(payload?.fileLabel || 'Resume'),
+                });
+                updateActiveNav('resume-viewer');
+              }}
+            />
+          </Suspense>
         )}
         {activeNav === 'resume-viewer' && (
-          <UserResumeProfileViewerPage
-            resumeUrl={resumeViewerPayload.resumeUrl}
-            isAts={resumeViewerPayload.isAts}
-            fileLabel={resumeViewerPayload.fileLabel}
-            onBack={() => updateActiveNav('my-profile')}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserResumeProfileViewerPage
+              resumeUrl={resumeViewerPayload.resumeUrl}
+              isAts={resumeViewerPayload.isAts}
+              fileLabel={resumeViewerPayload.fileLabel}
+              onBack={() => updateActiveNav('my-profile')}
+            />
+          </Suspense>
         )}
 
         {activeNav === 'jobs' && (
-          <UserJobsPage
-            userType={userType}
-            user={user}
-            jobCardStateById={jobCardStateById}
-            onOpenCompanyProfile={handleOpenCompanyProfileFromJob}
-            onOpenJobDetail={handleOpenJobDetail}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserJobsPage
+              userType={userType}
+              user={user}
+              jobCardStateById={jobCardStateById}
+              onOpenCompanyProfile={handleOpenCompanyProfileFromJob}
+              onOpenJobDetail={handleOpenJobDetail}
+            />
+          </Suspense>
         )}
         {activeNav === 'job-detail' && (
-          <UserJobDetailPage
-            user={user}
-            job={selectedJob}
-            onBack={() => updateActiveNav('jobs')}
-            onOpenCompanyProfile={handleOpenCompanyProfileFromJob}
-            onJobMutation={handleJobMutation}
-            onOpenPreAssessment={handleOpenPreAssessment}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserJobDetailPage
+              user={user}
+              job={selectedJob}
+              onBack={() => updateActiveNav('jobs')}
+              onOpenCompanyProfile={handleOpenCompanyProfileFromJob}
+              onJobMutation={handleJobMutation}
+              onOpenPreAssessment={handleOpenPreAssessment}
+            />
+          </Suspense>
         )}
         {activeNav === 'pre-assessment' && (
-          <UserPreAssessmentPage
-            job={selectedJob}
-            onBack={() => {
-              const jobId = resolveJobId(selectedJob?.id);
-              if (jobId) {
-                updateActiveNav('job-detail', { jobId });
-                return;
-              }
-              updateActiveNav('jobs');
-            }}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserPreAssessmentPage
+              job={selectedJob}
+              onBack={() => {
+                const jobId = resolveJobId(selectedJob?.id);
+                if (jobId) {
+                  updateActiveNav('job-detail', { jobId });
+                  return;
+                }
+                updateActiveNav('jobs');
+              }}
+            />
+          </Suspense>
         )}
         {activeNav === 'search' && (
-          <UserSearchResultsPage
-            initialQuery={searchPageQuery}
-            initialScope={searchPageScope}
-            onBack={() => updateActiveNav('home')}
-            onOpenPublicProfile={handleOpenPublicProfile}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserSearchResultsPage
+              initialQuery={searchPageQuery}
+              initialScope={searchPageScope}
+              onBack={() => updateActiveNav('home')}
+              onOpenPublicProfile={handleOpenPublicProfile}
+            />
+          </Suspense>
         )}
-        {activeNav === 'projects' && <UserProjectsPage userType={userType} user={user} onUpdateUser={onUpdateUser} />}
+        {activeNav === 'projects' && (
+          <Suspense fallback={lazyViewFallback}>
+            <UserProjectsPage userType={userType} user={user} onUpdateUser={onUpdateUser} />
+          </Suspense>
+        )}
         {activeNav === 'saved-jobs' && (
-          <UserSavedJobsPanel
-            savedJobs={savedJobs}
-            savedPosts={savedPosts}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserSavedJobsPanel
+              savedJobs={savedJobs}
+              savedPosts={savedPosts}
+            />
+          </Suspense>
         )}
         {activeNav === 'applications' && (
-          <UserApplicationsPanel
-            applications={applications}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserApplicationsPanel
+              applications={applications}
+            />
+          </Suspense>
         )}
         {activeNav === 'messages' && (
-          <UserMessagesPage
-            user={user}
-            initialContactId={messageTargetId}
-            onThreadVisibilityChange={(open) => {
-              setMobileThreadOpen(Boolean(open));
-            }}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserMessagesPage
+              user={user}
+              initialContactId={messageTargetId}
+              onThreadVisibilityChange={(open) => {
+                setMobileThreadOpen(Boolean(open));
+              }}
+            />
+          </Suspense>
         )}
-        {activeNav === 'notifications' && <UserNotificationsPage user={user} onReadAll={() => setUnreadNotificationCount(0)} />}
-        {activeNav === 'help' && <HelpPage onBack={() => updateActiveNav('home')} />}
+        {activeNav === 'notifications' && (
+          <Suspense fallback={lazyViewFallback}>
+            <UserNotificationsPage user={user} onReadAll={() => setUnreadNotificationCount(0)} />
+          </Suspense>
+        )}
+        {activeNav === 'calendar' && (
+          <Suspense fallback={lazyViewFallback}>
+            <UserCalendarPage user={user} />
+          </Suspense>
+        )}
+        {activeNav === 'help' && (
+          <Suspense fallback={lazyViewFallback}>
+            <HelpPage onBack={() => updateActiveNav('home')} />
+          </Suspense>
+        )}
+        {activeNav === 'feedback' && (
+          <Suspense fallback={lazyViewFallback}>
+            <UserFeedbackPage user={user} onBack={() => updateActiveNav('home')} />
+          </Suspense>
+        )}
         {activeNav === 'tips' && <TipsPanel />}
         {activeNav === 'verified' && <VerifiedProfilesPanel />}
         {activeNav === 'public-profile' && (
-          <PublicProfilePage
-            profile={publicProfile}
-            viewer={user}
-            savedPostIds={savedPosts.map((entry) => Number(entry?.id)).filter((id) => Number.isInteger(id) && id > 0)}
-            onBack={handleBackFromPublicProfile}
-            onMessage={handleMessageProfile}
-            onToggleSavePost={handleToggleSavePost}
-            onReactToPost={handleReactToPost}
-            onAddComment={handleAddComment}
-            onReactToComment={handleReactToComment}
-            onToggleSharePost={handleToggleSharePost}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <PublicProfilePage
+              profile={publicProfile}
+              viewer={user}
+              savedPostIds={savedPosts.map((entry) => Number(entry?.id)).filter((id) => Number.isInteger(id) && id > 0)}
+              onBack={handleBackFromPublicProfile}
+              onMessage={handleMessageProfile}
+              onToggleSavePost={handleToggleSavePost}
+              onReactToPost={handleReactToPost}
+              onAddComment={handleAddComment}
+              onReactToComment={handleReactToComment}
+              onToggleSharePost={handleToggleSharePost}
+            />
+          </Suspense>
         )}
         {activeNav === 'settings' && (
-          <UserSettingsPage
-            user={user}
-            onBack={() => updateActiveNav('home')}
-            onOpenAccountDetails={() => updateActiveNav('settings-account')}
-            onOpenCareerPreferences={() => updateActiveNav('settings-career')}
-            onOpenPrivacySettings={() => updateActiveNav('privacy-settings')}
-            onOpenSavedJobs={() => updateActiveNav('settings-saved-jobs')}
-            onOpenApplications={() => updateActiveNav('settings-applications')}
-            onOpenNotifications={() => updateActiveNav('settings-notifications')}
-            onOpenFaq={() => setFaqOpen(true)}
-            onOpenTerms={() => setTermsOpen(true)}
-            onOpenPrivacy={() => setPrivacyOpen(true)}
-            onOpenCookies={() => setCookiesOpen(true)}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserSettingsPage
+              user={user}
+              onBack={() => updateActiveNav('home')}
+              onOpenAccountDetails={() => updateActiveNav('settings-account')}
+              onOpenCareerPreferences={() => updateActiveNav('settings-career')}
+              onOpenPrivacySettings={() => updateActiveNav('privacy-settings')}
+              onOpenSavedJobs={() => updateActiveNav('settings-saved-jobs')}
+              onOpenApplications={() => updateActiveNav('settings-applications')}
+              onOpenNotifications={() => updateActiveNav('settings-notifications')}
+              onOpenFaq={() => setFaqOpen(true)}
+              onOpenTerms={() => setTermsOpen(true)}
+              onOpenPrivacy={() => setPrivacyOpen(true)}
+              onOpenCookies={() => setCookiesOpen(true)}
+            />
+          </Suspense>
         )}
         {activeNav === 'settings-account' && (
-          <UserAccountSettingsModal
-            isOpen
-            asPage
-            user={user}
-            mode="account"
-            onClose={() => updateActiveNav('settings')}
-            onSave={(nextUser) => onUpdateUser?.(nextUser, { persist: false })}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserAccountSettingsModal
+              isOpen
+              asPage
+              user={user}
+              mode="account"
+              onClose={() => updateActiveNav('settings')}
+              onSave={(nextUser) => onUpdateUser?.(nextUser, { persist: false })}
+            />
+          </Suspense>
         )}
         {activeNav === 'settings-career' && (
-          <UserAccountSettingsModal
-            isOpen
-            asPage
-            user={user}
-            mode="career"
-            onClose={() => updateActiveNav('settings')}
-            onSave={(nextUser) => onUpdateUser?.(nextUser, { persist: false })}
-            onResumeUploadComplete={(payload) => {
-              setResumeUploadPreview({
-                resumeUrl: String(payload?.resumeUrl || ''),
-                fileName: String(payload?.fileName || ''),
-                contentType: String(payload?.contentType || ''),
-                extractedTextPreview: String(payload?.extractedTextPreview || ''),
-                optimized: null,
-                optimizedDocxUrl: '',
-                optimizedPdfUrl: '',
-                optimizing: false,
-                optimizeError: '',
-                applyingOptimizedResume: false,
-                applyOptimizedError: '',
-              });
-              updateActiveNav('settings-resume-ats');
-            }}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserAccountSettingsModal
+              isOpen
+              asPage
+              user={user}
+              mode="career"
+              onClose={() => updateActiveNav('settings')}
+              onSave={(nextUser) => onUpdateUser?.(nextUser, { persist: false })}
+              onResumeUploadComplete={(payload) => {
+                setResumeUploadPreview({
+                  resumeUrl: String(payload?.resumeUrl || ''),
+                  fileName: String(payload?.fileName || ''),
+                  contentType: String(payload?.contentType || ''),
+                  extractedTextPreview: String(payload?.extractedTextPreview || ''),
+                  optimized: null,
+                  optimizedDocxUrl: '',
+                  optimizedPdfUrl: '',
+                  optimizing: false,
+                  optimizeError: '',
+                  applyingOptimizedResume: false,
+                  applyOptimizedError: '',
+                });
+                updateActiveNav('settings-resume-ats');
+              }}
+            />
+          </Suspense>
         )}
         {activeNav === 'settings-resume-ats' && (
-          <UserResumeAtsPreviewPage
-            user={user}
-            resumeUrl={resumeUploadPreview.resumeUrl}
-            fileName={resumeUploadPreview.fileName}
-            contentType={resumeUploadPreview.contentType}
-            extractedTextPreview={resumeUploadPreview.extractedTextPreview}
-            optimized={resumeUploadPreview.optimized}
-            optimizedDocxUrl={resumeUploadPreview.optimizedDocxUrl}
-            optimizedPdfUrl={resumeUploadPreview.optimizedPdfUrl}
-            optimizing={resumeUploadPreview.optimizing}
-            optimizeError={resumeUploadPreview.optimizeError}
-            onOptimize={async () => {
-              setResumeUploadPreview((prev) => ({ ...prev, optimizing: true, optimizeError: '', applyOptimizedError: '' }));
-              try {
-                const result = await developerAPI.optimizeResume();
-                setResumeUploadPreview((prev) => ({
-                  ...prev,
-                  optimizing: false,
-                  optimized: result?.optimized || null,
-                  optimizedDocxUrl: String(result?.optimizedDocxUrl || ''),
-                  optimizedPdfUrl: String(result?.optimizedPdfUrl || ''),
-                  extractedTextPreview: String(result?.sourceResumeText || prev.extractedTextPreview || ''),
-                  optimizeError: '',
-                }));
-              } catch (error) {
-                setResumeUploadPreview((prev) => ({
-                  ...prev,
-                  optimizing: false,
-                  optimizeError: String(error?.message || 'Failed to optimize resume.'),
-                }));
-              }
-            }}
-            onUseOptimizedResume={async () => {
-              setResumeUploadPreview((prev) => ({ ...prev, applyingOptimizedResume: true, applyOptimizedError: '' }));
-              try {
-                const result = await developerAPI.useOptimizedResume();
-                const nextResumeUrl = String(result?.resumeUrl || result?.optimizedPdfUrl || result?.optimizedDocxUrl || '').trim();
-                const nextOptimizedPdfUrl = String(result?.optimizedPdfUrl || resumeUploadPreview.optimizedPdfUrl || '').trim();
-                const nextOptimizedDocxUrl = String(result?.optimizedDocxUrl || resumeUploadPreview.optimizedDocxUrl || '').trim();
+          <Suspense fallback={lazyViewFallback}>
+            <UserResumeAtsPreviewPage
+              user={user}
+              resumeUrl={resumeUploadPreview.resumeUrl}
+              fileName={resumeUploadPreview.fileName}
+              contentType={resumeUploadPreview.contentType}
+              extractedTextPreview={resumeUploadPreview.extractedTextPreview}
+              optimized={resumeUploadPreview.optimized}
+              optimizedDocxUrl={resumeUploadPreview.optimizedDocxUrl}
+              optimizedPdfUrl={resumeUploadPreview.optimizedPdfUrl}
+              optimizing={resumeUploadPreview.optimizing}
+              optimizeError={resumeUploadPreview.optimizeError}
+              onOptimize={async () => {
+                setResumeUploadPreview((prev) => ({ ...prev, optimizing: true, optimizeError: '', applyOptimizedError: '' }));
+                try {
+                  const result = await developerAPI.optimizeResume();
+                  setResumeUploadPreview((prev) => ({
+                    ...prev,
+                    optimizing: false,
+                    optimized: result?.optimized || null,
+                    optimizedDocxUrl: String(result?.optimizedDocxUrl || ''),
+                    optimizedPdfUrl: String(result?.optimizedPdfUrl || ''),
+                    extractedTextPreview: String(result?.sourceResumeText || prev.extractedTextPreview || ''),
+                    optimizeError: '',
+                  }));
+                } catch (error) {
+                  setResumeUploadPreview((prev) => ({
+                    ...prev,
+                    optimizing: false,
+                    optimizeError: String(error?.message || 'Failed to optimize resume.'),
+                  }));
+                }
+              }}
+              onUseOptimizedResume={async () => {
+                setResumeUploadPreview((prev) => ({ ...prev, applyingOptimizedResume: true, applyOptimizedError: '' }));
+                try {
+                  const result = await developerAPI.useOptimizedResume();
+                  const nextResumeUrl = String(result?.resumeUrl || result?.optimizedPdfUrl || result?.optimizedDocxUrl || '').trim();
+                  const nextOptimizedPdfUrl = String(result?.optimizedPdfUrl || resumeUploadPreview.optimizedPdfUrl || '').trim();
+                  const nextOptimizedDocxUrl = String(result?.optimizedDocxUrl || resumeUploadPreview.optimizedDocxUrl || '').trim();
 
-                if (nextResumeUrl) {
-                  try {
-                    const me = await getCurrentUser();
-                    const nextUser = me?.user
-                      ? {
-                          ...me.user,
+                  if (nextResumeUrl) {
+                    try {
+                      const me = await getCurrentUser();
+                      const nextUser = me?.user
+                        ? {
+                            ...me.user,
+                            resume: nextResumeUrl,
+                            resumeUrl: nextResumeUrl,
+                            optimizedResumePdfUrl: nextOptimizedPdfUrl,
+                            optimizedResumeDocxUrl: nextOptimizedDocxUrl,
+                          }
+                        : null;
+                      if (nextUser) {
+                        await onUpdateUser?.(nextUser, { persist: false });
+                      } else {
+                        await onUpdateUser?.({
+                          ...user,
                           resume: nextResumeUrl,
                           resumeUrl: nextResumeUrl,
                           optimizedResumePdfUrl: nextOptimizedPdfUrl,
                           optimizedResumeDocxUrl: nextOptimizedDocxUrl,
-                        }
-                      : null;
-                    if (nextUser) {
-                      await onUpdateUser?.(nextUser, { persist: false });
-                    } else {
+                        }, { persist: false });
+                      }
+                    } catch {
                       await onUpdateUser?.({
                         ...user,
                         resume: nextResumeUrl,
@@ -1528,131 +1608,167 @@ export default function UserHomePage({ user, userType, onOpenHelp, onLogout, onU
                         optimizedResumeDocxUrl: nextOptimizedDocxUrl,
                       }, { persist: false });
                     }
-                  } catch {
-                    await onUpdateUser?.({
-                      ...user,
-                      resume: nextResumeUrl,
-                      resumeUrl: nextResumeUrl,
-                      optimizedResumePdfUrl: nextOptimizedPdfUrl,
-                      optimizedResumeDocxUrl: nextOptimizedDocxUrl,
-                    }, { persist: false });
                   }
-                }
 
-                setResumeUploadPreview((prev) => ({
-                  ...prev,
-                  applyingOptimizedResume: false,
-                  applyOptimizedError: '',
-                  resumeUrl: nextResumeUrl || prev.resumeUrl,
-                  optimizedPdfUrl: nextOptimizedPdfUrl || prev.optimizedPdfUrl,
-                  optimizedDocxUrl: nextOptimizedDocxUrl || prev.optimizedDocxUrl,
-                }));
-                updateActiveNav('my-profile');
-              } catch (error) {
-                setResumeUploadPreview((prev) => ({
-                  ...prev,
-                  applyingOptimizedResume: false,
-                  applyOptimizedError: String(error?.message || 'Failed to use ATS resume in your profile.'),
-                }));
-              }
-            }}
-            applyingOptimizedResume={resumeUploadPreview.applyingOptimizedResume}
-            applyOptimizedError={resumeUploadPreview.applyOptimizedError}
-            onBack={() => updateActiveNav('settings-career')}
-          />
+                  setResumeUploadPreview((prev) => ({
+                    ...prev,
+                    applyingOptimizedResume: false,
+                    applyOptimizedError: '',
+                    resumeUrl: nextResumeUrl || prev.resumeUrl,
+                    optimizedPdfUrl: nextOptimizedPdfUrl || prev.optimizedPdfUrl,
+                    optimizedDocxUrl: nextOptimizedDocxUrl || prev.optimizedDocxUrl,
+                  }));
+                  updateActiveNav('my-profile');
+                } catch (error) {
+                  setResumeUploadPreview((prev) => ({
+                    ...prev,
+                    applyingOptimizedResume: false,
+                    applyOptimizedError: String(error?.message || 'Failed to use ATS resume in your profile.'),
+                  }));
+                }
+              }}
+              applyingOptimizedResume={resumeUploadPreview.applyingOptimizedResume}
+              applyOptimizedError={resumeUploadPreview.applyOptimizedError}
+              onBack={() => updateActiveNav('settings-career')}
+            />
+          </Suspense>
         )}
         {activeNav === 'settings-notifications' && (
-          <UserNotificationSettingsPage
-            onBack={() => updateActiveNav('settings')}
-            value={notificationPreference}
-            onChange={(next) => {
-              setNotificationPreference(next);
-              if (typeof window !== 'undefined') {
-                window.localStorage.setItem('kapit_notification_preference', next);
-              }
-            }}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserNotificationSettingsPage
+              onBack={() => updateActiveNav('settings')}
+              value={notificationPreference}
+              onChange={(next) => {
+                setNotificationPreference(next);
+                if (typeof window !== 'undefined') {
+                  window.localStorage.setItem('kapit_notification_preference', next);
+                }
+              }}
+            />
+          </Suspense>
         )}
         {activeNav === 'settings-saved-jobs' && (
-          <UserSavedJobsSettingsPage
-            onBack={() => updateActiveNav('settings')}
-            savedJobs={savedJobs}
-            savedPosts={savedPosts}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserSavedJobsSettingsPage
+              onBack={() => updateActiveNav('settings')}
+              savedJobs={savedJobs}
+              savedPosts={savedPosts}
+            />
+          </Suspense>
         )}
         {activeNav === 'settings-applications' && (
-          <UserApplicationsSettingsPage
-            onBack={() => updateActiveNav('settings')}
-            applications={applications}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserApplicationsSettingsPage
+              onBack={() => updateActiveNav('settings')}
+              applications={applications}
+            />
+          </Suspense>
         )}
         {activeNav === 'privacy-settings' && (
-          <UserPrivacySettingsPage
-            onBack={() => updateActiveNav('settings')}
-            onOpenPage={(page) => updateActiveNav(page)}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserPrivacySettingsPage
+              onBack={() => updateActiveNav('settings')}
+              onOpenPage={(page) => updateActiveNav(page)}
+            />
+          </Suspense>
         )}
         {activeNav === 'privacy-change-password' && (
-          <UserPrivacyChangePasswordPage
-            onBack={() => updateActiveNav('privacy-settings')}
-            onProceed={() => window.location.assign('/forgot-password')}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserPrivacyChangePasswordPage
+              onBack={() => updateActiveNav('privacy-settings')}
+              onProceed={() => window.location.assign('/forgot-password')}
+            />
+          </Suspense>
         )}
         {activeNav === 'privacy-comments' && (
-          <UserPrivacyCommentsPage
-            onBack={() => updateActiveNav('privacy-settings')}
-            onOpenNotifications={() => updateActiveNav('settings-notifications')}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserPrivacyCommentsPage
+              onBack={() => updateActiveNav('privacy-settings')}
+              onOpenNotifications={() => updateActiveNav('settings-notifications')}
+            />
+          </Suspense>
         )}
         {activeNav === 'privacy-mentions' && (
-          <UserPrivacyMentionsPage
-            onBack={() => updateActiveNav('privacy-settings')}
-            onOpenNotifications={() => updateActiveNav('settings-notifications')}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserPrivacyMentionsPage
+              onBack={() => updateActiveNav('privacy-settings')}
+              onOpenNotifications={() => updateActiveNav('settings-notifications')}
+            />
+          </Suspense>
         )}
         {activeNav === 'privacy-following' && (
-          <UserPrivacyFollowingPage
-            onBack={() => updateActiveNav('privacy-settings')}
-            items={followingEntries}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserPrivacyFollowingPage
+              onBack={() => updateActiveNav('privacy-settings')}
+              items={followingEntries}
+            />
+          </Suspense>
         )}
         {activeNav === 'privacy-likes' && (
-          <UserPrivacyLikesPage
-            onBack={() => updateActiveNav('privacy-settings')}
-            items={likedByEntries}
-          />
+          <Suspense fallback={lazyViewFallback}>
+            <UserPrivacyLikesPage
+              onBack={() => updateActiveNav('privacy-settings')}
+              items={likedByEntries}
+            />
+          </Suspense>
         )}
       </div>
 
-      <UserPremiumPopup
-        isOpen={premiumPopupOpen}
-        onClose={() => setPremiumPopupOpen(false)}
-        user={user}
-        onOpenMerchantWindow={handleOpenPremiumMerchantWindow}
-      />
-      <PostComposerModal isOpen={composerOpen} user={user} onClose={() => setComposerOpen(false)} onSubmit={handleCreatePost} />
-      <UserFaqModal
-        isOpen={faqOpen}
-        onClose={() => setFaqOpen(false)}
-      />
-      <TermsAndConditionsModal
-        isOpen={termsOpen}
-        onClose={() => setTermsOpen(false)}
-      />
-      <PrivacyPolicyModal
-        isOpen={privacyOpen}
-        onClose={() => setPrivacyOpen(false)}
-      />
-      <CookiesPolicyModal
-        isOpen={cookiesOpen}
-        onClose={() => setCookiesOpen(false)}
-      />
+      {premiumPopupOpen ? (
+        <Suspense fallback={lazyOverlayFallback}>
+          <UserPremiumPopup
+            isOpen={premiumPopupOpen}
+            onClose={() => setPremiumPopupOpen(false)}
+            user={user}
+            onOpenMerchantWindow={handleOpenPremiumMerchantWindow}
+          />
+        </Suspense>
+      ) : null}
+      {composerOpen ? (
+        <Suspense fallback={lazyOverlayFallback}>
+          <PostComposerModal isOpen={composerOpen} user={user} onClose={() => setComposerOpen(false)} onSubmit={handleCreatePost} />
+        </Suspense>
+      ) : null}
+      {faqOpen ? (
+        <Suspense fallback={lazyOverlayFallback}>
+          <UserFaqModal
+            isOpen={faqOpen}
+            onClose={() => setFaqOpen(false)}
+          />
+        </Suspense>
+      ) : null}
+      {termsOpen ? (
+        <Suspense fallback={lazyOverlayFallback}>
+          <TermsAndConditionsModal
+            isOpen={termsOpen}
+            onClose={() => setTermsOpen(false)}
+          />
+        </Suspense>
+      ) : null}
+      {privacyOpen ? (
+        <Suspense fallback={lazyOverlayFallback}>
+          <PrivacyPolicyModal
+            isOpen={privacyOpen}
+            onClose={() => setPrivacyOpen(false)}
+          />
+        </Suspense>
+      ) : null}
+      {cookiesOpen ? (
+        <Suspense fallback={lazyOverlayFallback}>
+          <CookiesPolicyModal
+            isOpen={cookiesOpen}
+            onClose={() => setCookiesOpen(false)}
+          />
+        </Suspense>
+      ) : null}
       <UserMobileBottomNav
         activeNav={activeNav}
         setActiveNav={updateActiveNav}
         hiddenOnScroll={effectiveMobileChromeHidden}
         unreadNotificationCount={unreadNotificationCount}
       />
+      </div>
+      </div>
     </div>
   );
 }

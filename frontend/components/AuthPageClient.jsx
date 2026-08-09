@@ -35,6 +35,8 @@ export default function AuthPageClient({ initialMode = 'login' }) {
       ? socialNoAccountProviderRaw
       : '';
   const normalizedInitialMode = initialMode === 'signup' && !accountType ? 'login' : initialMode;
+  const loginEntryPath = accountType === 'company' ? '/for-employers?login=1' : '/?login=1';
+  const backPath = accountType === 'company' ? '/for-employers' : '/';
 
   const [pendingSignup, setPendingSignup] = useState(null);
   const [otpCode, setOtpCode] = useState('');
@@ -344,7 +346,8 @@ export default function AuthPageClient({ initialMode = 'login' }) {
         accountType={accountType}
         initialMode={normalizedInitialMode}
         socialNoAccountProvider={socialNoAccountProvider}
-        onBack={() => router.push('/')}
+        onBack={() => router.push(backPath)}
+        onRequestLogin={() => router.push(loginEntryPath)}
         onRequestAccountType={() => router.push('/?accountTypeModal=1')}
         onForgotPassword={() => router.push('/forgot-password')}
         onBeginSignup={handleBeginSignup}

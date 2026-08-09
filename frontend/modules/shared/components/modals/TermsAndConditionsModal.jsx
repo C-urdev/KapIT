@@ -103,8 +103,6 @@ export default function TermsAndConditionsModal({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 min-[420px]:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="flex w-full max-w-3xl flex-col bg-white dark:bg-[#121416] rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] animate-in zoom-in-95 duration-200">
-        
-        {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-[#e5e7eb] dark:border-[#353c44] p-4 sm:p-5">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#f0f4ec] dark:bg-[#353c44]">
@@ -120,8 +118,7 @@ export default function TermsAndConditionsModal({
             </button>
           )}
         </div>
-        
-        {/* Main Content */}
+
         <main
           ref={contentRef}
           onScroll={handleContentScroll}
@@ -132,7 +129,6 @@ export default function TermsAndConditionsModal({
           className={`min-h-0 flex-1 overflow-y-auto overscroll-contain no-scrollbar touch-pan-y p-5 sm:p-7 lg:p-8 space-y-8 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          
           <div className="text-[#4b5563] dark:text-[#d0d7dd] leading-relaxed text-[14.5px] space-y-4">
             <p>
               This page outlines the Terms of Use ("Terms") that govern your access to and use of the KapIT website and related services (collectively, the "Platform"). By accessing or using KapIT, you ("you" or "your") agree to comply with these Terms, which define your rights and responsibilities when using the Platform.
@@ -148,7 +144,6 @@ export default function TermsAndConditionsModal({
             </p>
           </div>
 
-          {/* Section 1 */}
           <section className="space-y-4">
             <h4 className="text-[17px] font-bold text-[#1c2b1f] dark:text-white border-b border-[#dce5d4] dark:border-[#353c44] pb-2">1. Use of the Platform</h4>
             <div className="space-y-4 text-[#4b5563] dark:text-[#d0d7dd] leading-relaxed text-[14.5px]">
@@ -160,7 +155,6 @@ export default function TermsAndConditionsModal({
             </div>
           </section>
 
-          {/* Section 2 */}
           <section className="space-y-4">
             <h4 className="text-[17px] font-bold text-[#1c2b1f] dark:text-white border-b border-[#dce5d4] dark:border-[#353c44] pb-2">2. User Accounts</h4>
             <div className="space-y-4 text-[#4b5563] dark:text-[#d0d7dd] leading-relaxed text-[14.5px]">
@@ -170,7 +164,6 @@ export default function TermsAndConditionsModal({
             </div>
           </section>
 
-          {/* Section 3 */}
           <section className="space-y-4">
             <h4 className="text-[17px] font-bold text-[#1c2b1f] dark:text-white border-b border-[#dce5d4] dark:border-[#353c44] pb-2">3. User Conduct</h4>
             <div className="space-y-4 text-[#4b5563] dark:text-[#d0d7dd] leading-relaxed text-[14.5px]">
@@ -180,7 +173,6 @@ export default function TermsAndConditionsModal({
             </div>
           </section>
 
-          {/* Section 4 */}
           <section className="space-y-4">
             <h4 className="text-[17px] font-bold text-[#1c2b1f] dark:text-white border-b border-[#dce5d4] dark:border-[#353c44] pb-2">4. Communication Between Users</h4>
             <div className="space-y-4 text-[#4b5563] dark:text-[#d0d7dd] leading-relaxed text-[14.5px]">
@@ -189,7 +181,6 @@ export default function TermsAndConditionsModal({
             </div>
           </section>
 
-          {/* Section 5 */}
           <section className="space-y-4">
             <h4 className="text-[17px] font-bold text-[#1c2b1f] dark:text-white border-b border-[#dce5d4] dark:border-[#353c44] pb-2">5. Fees and Payments</h4>
             <div className="space-y-4 text-[#4b5563] dark:text-[#d0d7dd] leading-relaxed text-[14.5px]">
@@ -199,7 +190,6 @@ export default function TermsAndConditionsModal({
             </div>
           </section>
 
-          {/* Section 6 */}
           <section className="space-y-4">
             <h4 className="text-[17px] font-bold text-[#1c2b1f] dark:text-white border-b border-[#dce5d4] dark:border-[#353c44] pb-2">6. Intellectual Property</h4>
             <div className="space-y-4 text-[#4b5563] dark:text-[#d0d7dd] leading-relaxed text-[14.5px]">
@@ -208,7 +198,6 @@ export default function TermsAndConditionsModal({
             </div>
           </section>
 
-          {/* Section 7 */}
           <section className="space-y-4">
             <h4 className="text-[17px] font-bold text-[#1c2b1f] dark:text-white border-b border-[#dce5d4] dark:border-[#353c44] pb-2">7. Data and Privacy</h4>
             <div className="space-y-4 text-[#4b5563] dark:text-[#d0d7dd] leading-relaxed text-[14.5px]">
@@ -217,7 +206,6 @@ export default function TermsAndConditionsModal({
             </div>
           </section>
 
-          {/* Section 8 */}
           <section className="space-y-4">
             <h4 className="text-[17px] font-bold text-[#1c2b1f] dark:text-white border-b border-[#dce5d4] dark:border-[#353c44] pb-2">8. Limitation of Liability</h4>
             <div className="space-y-4 text-[#4b5563] dark:text-[#d0d7dd] leading-relaxed text-[14.5px]">
@@ -226,7 +214,6 @@ export default function TermsAndConditionsModal({
             </div>
           </section>
 
-          {/* Section 9 */}
           <section className="space-y-4">
             <h4 className="text-[17px] font-bold text-[#1c2b1f] dark:text-white border-b border-[#dce5d4] dark:border-[#353c44] pb-2">9. Termination</h4>
             <div className="space-y-4 text-[#4b5563] dark:text-[#d0d7dd] leading-relaxed text-[14.5px]">
@@ -235,7 +222,6 @@ export default function TermsAndConditionsModal({
             </div>
           </section>
 
-          {/* Section 10 */}
           <section className="space-y-4">
             <h4 className="text-[17px] font-bold text-[#1c2b1f] dark:text-white border-b border-[#dce5d4] dark:border-[#353c44] pb-2">10. Changes to the Terms</h4>
             <div className="space-y-4 text-[#4b5563] dark:text-[#d0d7dd] leading-relaxed text-[14.5px]">
@@ -244,7 +230,6 @@ export default function TermsAndConditionsModal({
             </div>
           </section>
 
-          {/* Section 11 */}
           <section className="space-y-4">
             <h4 className="text-[17px] font-bold text-[#1c2b1f] dark:text-white border-b border-[#dce5d4] dark:border-[#353c44] pb-2">11. Governing Law</h4>
             <div className="space-y-4 text-[#4b5563] dark:text-[#d0d7dd] leading-relaxed text-[14.5px]">
@@ -252,7 +237,6 @@ export default function TermsAndConditionsModal({
             </div>
           </section>
 
-          {/* Section 12 */}
           <section className="space-y-4">
             <h4 className="text-[17px] font-bold text-[#1c2b1f] dark:text-white border-b border-[#dce5d4] dark:border-[#353c44] pb-2">12. Contact Information</h4>
             <div className="space-y-4 text-[#4b5563] dark:text-[#d0d7dd] leading-relaxed text-[14.5px]">
@@ -260,7 +244,6 @@ export default function TermsAndConditionsModal({
             </div>
           </section>
 
-          {/* Bottom spacer block */}
           <div className="h-6"></div>
 
         </main>

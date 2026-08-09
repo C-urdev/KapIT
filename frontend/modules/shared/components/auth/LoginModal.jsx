@@ -1,14 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { X, GitFork, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
-import { createOAuthState, loginUser } from '@sharedServices/authService';
+import {
+  createOAuthState,
+  getUserAccountType,
+  loginUser,
+  logoutUser,
+  normalizeAccountType,
+} from '@sharedServices/authService';
 
-export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterClick }) {
+const OAUTH_LOGIN_AUDIENCE_STORAGE_KEY = 'kapit_oauth_login_account_type_hint';
+
+const getAudienceErrorMessage = (accountType) => (
+  accountType === 'company'
+    ? 'This sign-in is for employer accounts. Use the user landing page for developer accounts.'
+    : accountType === 'developer'
+      ? 'This sign-in is for user accounts. Use the employer landing page for employer accounts.'
+      : ''
+);
+
+export default function LoginModal({ open, accountType, initialError, onClose, onLoginSuccess, onRegisterClick }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const isLocalAuthBypassEnabled = import.meta.env.VITE_ENABLE_LOCAL_AUTH_BYPASS === 'true';
+  const normalizedAccountType = normalizeAccountType(accountType);
 
   const isLoopbackHost = () => {
     const host = String(window.location.hostname || '').trim().toLowerCase();
@@ -21,8 +38,13 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
       setPassword('');
       setError('');
       setShowPassword(false);
+      return;
     }
-  }, [open]);
+
+    if (initialError === 'accountType') {
+      setError(getAudienceErrorMessage(normalizedAccountType));
+    }
+  }, [initialError, normalizedAccountType, open]);
 
   if (!open) return null;
 
@@ -37,8 +59,18 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
     setError('');
 
     try {
-      const data = await loginUser({ email, password });
+      const data = await loginUser({
+        email,
+        password,
+        ...(normalizedAccountType ? { accountTypeHint: normalizedAccountType } : {}),
+      });
       if (data?.user) {
+        if (normalizedAccountType && getUserAccountType(data.user) !== normalizedAccountType) {
+          await logoutUser().catch(() => {});
+          setError(getAudienceErrorMessage(normalizedAccountType));
+          return;
+        }
+
         onLoginSuccess?.(data.user);
       } else {
         throw new Error('Invalid response from server');
@@ -67,6 +99,11 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
     try {
       window.sessionStorage.setItem('oauth_in_progress', '1');
       window.sessionStorage.setItem('oauth_start_mode', 'login');
+      if (normalizedAccountType) {
+        window.sessionStorage.setItem(OAUTH_LOGIN_AUDIENCE_STORAGE_KEY, normalizedAccountType);
+      } else {
+        window.sessionStorage.removeItem(OAUTH_LOGIN_AUDIENCE_STORAGE_KEY);
+      }
     } catch {
       // Ignore
     }
@@ -88,7 +125,11 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
     setLoading(true);
     let state;
     try {
-      const oauthState = await createOAuthState({ provider: 'google', mode: 'login' });
+      const oauthState = await createOAuthState({
+        provider: 'google',
+        mode: 'login',
+        accountTypeHint: normalizedAccountType,
+      });
       state = String(oauthState?.state || '').trim();
       if (!state) throw new Error('Unable to verify request.');
     } catch (err) {
@@ -124,7 +165,11 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
     setLoading(true);
     let state;
     try {
-      const oauthState = await createOAuthState({ provider: 'github', mode: 'login' });
+      const oauthState = await createOAuthState({
+        provider: 'github',
+        mode: 'login',
+        accountTypeHint: normalizedAccountType,
+      });
       state = String(oauthState?.state || '').trim();
       if (!state) throw new Error('Unable to verify request.');
     } catch (err) {
@@ -143,16 +188,16 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-200">
       <div 
-        className="relative w-full max-w-[400px] rounded-2xl bg-[#202123] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-[400px] rounded-[24px] bg-white/95 dark:bg-[#1a1d20]/95 shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[#a3b18a]/20 dark:border-[#444d57]/30 backdrop-blur-xl overflow-hidden animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
         aria-labelledby="login-modal-title"
       >
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 text-[#c5c5d2] hover:text-white transition-colors"
+          className="absolute right-4 top-4 text-[#3a5a40]/60 hover:text-[#344e41] dark:text-[#adb5be] dark:hover:text-white transition-colors"
           aria-label="Close modal"
         >
           <X className="w-5 h-5" />
@@ -160,18 +205,18 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
 
         <div className="px-8 py-10">
           <div className="text-center mb-8">
-            <h2 id="login-modal-title" className="text-2xl font-bold text-white mb-3">
+            <h2 id="login-modal-title" className="text-2xl font-semibold text-[#344e41] tracking-tight dark:text-white mb-3">
               Log in to KapIT
             </h2>
-            <p className="text-[14px] text-[#c5c5d2] leading-relaxed">
+            <p className="text-[14px] text-[#3a5a40]/80 dark:text-[#adb5be] leading-relaxed">
               Find vetted developers and real, skill-matched opportunities.
             </p>
           </div>
 
           {error && (
-            <div className="mb-6 p-3 bg-red-950/40 border border-red-900 rounded-lg flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-              <p className="text-xs text-red-400">{error}</p>
+            <div className="mb-6 p-3.5 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+              <AlertCircle className="w-4 h-4 text-red-500 dark:text-red-400 flex-shrink-0" />
+              <p className="text-sm font-medium text-red-600 dark:text-red-400">{error}</p>
             </div>
           )}
 
@@ -180,7 +225,7 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
               type="button"
               disabled={loading}
               onClick={handleGoogleClick}
-              className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-[#2A2B32] hover:bg-[#343541] rounded-full border border-white/10 transition-colors text-white font-medium text-sm disabled:opacity-50"
+              className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-transparent hover:bg-[#eef6ee]/50 dark:hover:bg-[#1f2b23]/50 rounded-xl border border-[#a3b18a]/40 dark:border-[#444d57]/40 transition-all duration-200 text-[#344e41] dark:text-[#e7f4ea] font-medium text-[14px] shadow-sm hover:shadow disabled:opacity-50"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -195,7 +240,7 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
               type="button"
               disabled={loading}
               onClick={handleGithubClick}
-              className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-[#2A2B32] hover:bg-[#343541] rounded-full border border-white/10 transition-colors text-white font-medium text-sm disabled:opacity-50"
+              className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-transparent hover:bg-[#eef6ee]/50 dark:hover:bg-[#1f2b23]/50 rounded-xl border border-[#a3b18a]/40 dark:border-[#444d57]/40 transition-all duration-200 text-[#344e41] dark:text-[#e7f4ea] font-medium text-[14px] shadow-sm hover:shadow disabled:opacity-50"
             >
               <GitFork className="w-5 h-5" />
               Continue with GitHub
@@ -203,8 +248,8 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
           </div>
 
           <div className="relative flex items-center justify-center mb-6">
-            <div className="absolute inset-x-0 h-px bg-white/10"></div>
-            <span className="relative bg-[#202123] px-2 text-xs text-[#c5c5d2] font-medium uppercase tracking-wider">
+            <div className="absolute inset-x-0 h-px bg-[#a3b18a]/30 dark:bg-[#444d57]/50"></div>
+            <span className="relative bg-white dark:bg-[#1a1d20] px-2 text-xs text-[#3a5a40]/60 dark:text-[#adb5be]/60 font-medium uppercase tracking-wider">
               OR
             </span>
           </div>
@@ -216,7 +261,7 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-[#2A2B32] border border-white/10 rounded-full text-white placeholder-[#8e8ea0] focus:outline-none focus:border-white/30 transition-colors text-sm"
+                className="w-full px-4 py-3.5 bg-[#f8faf8] dark:bg-[#1f2b23]/50 border border-[#a3b18a]/40 dark:border-[#5f8a68]/40 rounded-xl text-[#344e41] dark:text-[#e7f4ea] placeholder:text-[#3a5a40]/50 dark:placeholder:text-[#adb5be]/50 focus:outline-none focus:ring-2 focus:ring-[#588157]/20 focus:border-[#588157] transition-all text-[14px] shadow-sm"
                 required
               />
             </div>
@@ -227,13 +272,13 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 pr-10 bg-[#2A2B32] border border-white/10 rounded-full text-white placeholder-[#8e8ea0] focus:outline-none focus:border-white/30 transition-colors text-sm"
+                className="w-full px-4 py-3.5 pr-10 bg-[#f8faf8] dark:bg-[#1f2b23]/50 border border-[#a3b18a]/40 dark:border-[#5f8a68]/40 rounded-xl text-[#344e41] dark:text-[#e7f4ea] placeholder:text-[#3a5a40]/50 dark:placeholder:text-[#adb5be]/50 focus:outline-none focus:ring-2 focus:ring-[#588157]/20 focus:border-[#588157] transition-all text-[14px] shadow-sm"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8e8ea0] hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3a5a40]/60 hover:text-[#344e41] dark:text-[#adb5be]/60 dark:hover:text-[#e7f4ea]"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -242,13 +287,13 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#10a37f] hover:bg-[#0e906f] text-white font-medium py-3 rounded-full transition-colors disabled:opacity-50 flex items-center justify-center text-sm mt-2"
+              className="w-full bg-[#344e41] hover:bg-[#1f3a2a] dark:bg-[#588157] dark:hover:bg-[#344e41] text-white font-medium py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 flex items-center justify-center text-[14px] mt-2"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Continue'}
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-[#8e8ea0]">
+          <div className="mt-6 text-center text-[14px] text-[#3a5a40]/80 dark:text-[#adb5be]">
             Don't have an account?{' '}
             <button
               type="button"
@@ -256,7 +301,7 @@ export default function LoginModal({ open, onClose, onLoginSuccess, onRegisterCl
                 onClose();
                 onRegisterClick?.();
               }}
-              className="text-[#10a37f] hover:underline"
+              className="text-[#588157] dark:text-[#6f9b74] hover:text-[#344e41] dark:hover:text-white font-medium hover:underline transition-colors"
             >
               Sign up
             </button>

@@ -73,7 +73,8 @@ const resolveTitleText = (pathname) => {
 
 export default function AppProviders({ children, initialTheme = 'light' }) {
   const pathname = usePathname();
-  const shouldShowChatbot = pathname === '/' || String(pathname || '').startsWith('/dashboard/');
+  const isEmployerLandingPage = pathname === '/for-employers';
+  const shouldShowChatbot = pathname === '/' || isEmployerLandingPage || String(pathname || '').startsWith('/dashboard/');
 
   useEffect(() => {
     const isEventLike = (value) => {
@@ -122,7 +123,7 @@ export default function AppProviders({ children, initialTheme = 'light' }) {
       {children}
       {shouldShowChatbot ? (
         <ChatbotErrorBoundary>
-          <FaqChatbot />
+          <FaqChatbot audience={isEmployerLandingPage ? 'employer' : 'general'} />
         </ChatbotErrorBoundary>
       ) : null}
     </ThemeProvider>

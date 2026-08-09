@@ -23,8 +23,6 @@ import {
   resetPasswordWithOtp,
 } from '@sharedServices/authService';
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
 const PASSWORD_HINT = 'At least 8 characters with uppercase, lowercase, and a number.';
 
 const hasValidPassword = (v) =>
@@ -36,8 +34,6 @@ const maskEmail = (email) => {
   const visible = local.slice(0, Math.min(3, local.length));
   return `${visible}***@${domain}`;
 };
-
-// ─── Sub-components ──────────────────────────────────────────────────────────
 
 function StepDots({ step }) {
   return (
@@ -106,8 +102,6 @@ function PrimaryButton({ loading, disabled, children, ...props }) {
     </button>
   );
 }
-
-// ─── Step 1 — Email ──────────────────────────────────────────────────────────
 
 function StepEmail({ onNext }) {
   const [email, setEmail] = useState('');
@@ -185,9 +179,7 @@ function StepEmail({ onNext }) {
   );
 }
 
-// ─── Step 2 — OTP Verify ─────────────────────────────────────────────────────
-
-function StepVerify({ email, onNext, onBack }) {
+function StepVerify({ email, onNext, onBack: _onBack }) {
   const [digits, setDigits] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -329,8 +321,6 @@ function StepVerify({ email, onNext, onBack }) {
 
       <Alert type="error" message={error} />
       <Alert type="success" message={info} />
-
-      {/* OTP boxes */}
       <div className="flex items-center justify-center gap-2 sm:gap-3 my-2" onPaste={handlePaste}>
         {digits.map((d, i) => (
           <input
@@ -387,8 +377,6 @@ function StepVerify({ email, onNext, onBack }) {
   );
 }
 
-// ─── Step 3 — New Password ────────────────────────────────────────────────────
-
 function StepReset({ resetToken, onDone }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -396,8 +384,6 @@ function StepReset({ resetToken, onDone }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
-
   const strength = (() => {
     if (!password) return 0;
     let s = 0;
@@ -464,8 +450,6 @@ function StepReset({ resetToken, onDone }) {
       <StepDots step={3} />
 
       <Alert type="error" message={error} />
-
-      {/* New password */}
       <div>
         <InputLabel>New password</InputLabel>
         <div className="relative">
@@ -489,8 +473,6 @@ function StepReset({ resetToken, onDone }) {
             {showPw ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
           </button>
         </div>
-
-        {/* Strength bar */}
         {password && (
           <div className="mt-2 space-y-1">
             <div className="flex gap-1">
@@ -507,8 +489,6 @@ function StepReset({ resetToken, onDone }) {
           </div>
         )}
       </div>
-
-      {/* Confirm password */}
       <div>
         <InputLabel>Confirm new password</InputLabel>
         <div className="relative">
@@ -552,8 +532,6 @@ function StepReset({ resetToken, onDone }) {
   );
 }
 
-// ─── Success Screen ───────────────────────────────────────────────────────────
-
 function SuccessScreen() {
   const router = useRouter();
   return (
@@ -577,8 +555,6 @@ function SuccessScreen() {
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 export default function ForgotPasswordClient() {
   const { theme, toggleTheme } = useTheme();
   const router = useRouter();
@@ -590,7 +566,6 @@ export default function ForgotPasswordClient() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header */}
       <header className="border-b border-[#a3b18a] dark:border-[#353c44] bg-white dark:bg-[#121416]">
         <div className="mx-auto flex w-full max-w-[min(100%,1800px)] items-center justify-between px-3 py-4 sm:px-5 lg:px-6 xl:px-7 2xl:px-9">
           <button
@@ -613,8 +588,6 @@ export default function ForgotPasswordClient() {
           </button>
         </div>
       </header>
-
-      {/* Main */}
       <main className="flex-1 flex items-center justify-center px-3 sm:px-6 py-8 sm:py-12 bg-gradient-to-br from-[#dad7cd] to-[#f5f5f2] dark:from-[#121416] dark:to-[#22272b]">
         <div className="w-full max-w-md">
           <div className="bg-white dark:bg-[#22272b] rounded-2xl border border-[#a3b18a] dark:border-[#353c44] p-5 sm:p-8 shadow-lg dark:shadow-[#6f9b74]/10 transition-all duration-300">

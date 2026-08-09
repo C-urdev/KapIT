@@ -188,16 +188,18 @@ export default function UserNotificationsPage({ onReadAll }) {
 
   return (
     <div className="mx-auto w-full max-w-[min(100%,1200px)]">
-      <div className="mb-4 px-1 sm:mb-5">
-        <h1 className="text-[2rem] leading-none text-[#183622] dark:text-white sm:text-[2.35rem]">Notifications</h1>
-      </div>
+      <header className="mb-5">
+        <p className="text-sm font-medium text-[var(--user-primary)]">Activity</p>
+        <h1 className="user-workspace-page-title mt-1">Notifications</h1>
+        <p className="mt-1 text-sm text-[var(--user-text-muted)]">Review messages, profile activity, and important account updates.</p>
+      </header>
 
       {loading ? (
         <NotificationsSkeleton />
       ) : error ? (
         <StateBlock tone="error">{error}</StateBlock>
       ) : items.length > 0 ? (
-        <div className="overflow-hidden rounded-[28px] border border-[#c9d2bc] bg-[#f6f5ef] shadow-[0_18px_48px_rgba(58,90,64,0.08)] dark:border-[#353c44] dark:bg-[#22272b] dark:shadow-[0_18px_48px_rgba(0,0,0,0.24)]">
+        <div className="user-desktop-flat-surface overflow-hidden">
           {recentItems.length > 0 ? (
             <NotificationSection
               title="New"
@@ -233,24 +235,33 @@ export default function UserNotificationsPage({ onReadAll }) {
 }
 
 function StateBlock({ children, tone = 'default' }) {
+  const isError = tone === 'error';
+  const Icon = isError ? AlertCircle : Bell;
+
   return (
     <div
-      className={`rounded-[28px] border px-6 py-12 text-center sm:px-8 ${
-        tone === 'error'
+      className={`user-desktop-flat-surface flex min-h-[360px] items-center justify-center px-6 py-12 text-center sm:px-8 ${
+        isError
           ? 'border-red-200 bg-[#fff8f7] text-red-600 dark:border-red-900/50 dark:bg-[#22272b] dark:text-red-400'
           : 'border-[#c9d2bc] bg-[#f8fbf6] text-[#344e41] dark:border-[#353c44] dark:bg-[#22272b] dark:text-[#d0d7dd]'
       }`}
     >
-      <p>{children}</p>
+      <div className="max-w-md">
+        <span className={`mx-auto flex h-12 w-12 items-center justify-center rounded-md ${isError ? 'bg-red-50 text-[var(--user-danger)] dark:bg-red-950/30' : 'bg-[var(--user-primary-soft)] text-[var(--user-primary)]'}`}>
+          <Icon className="h-6 w-6" />
+        </span>
+        <h2 className="mt-4 text-xl font-semibold text-[var(--user-text-strong)]">{isError ? 'Notifications could not be loaded' : 'You are all caught up'}</h2>
+        <p className="mt-2 text-sm leading-6 text-[var(--user-text-muted)]">{children}</p>
+      </div>
     </div>
   );
 }
 
 function NotificationSection({ title, items, expandedId, onToggle, onOpenMenu, withTopDivider = false }) {
   return (
-    <section className={withTopDivider ? 'border-t border-[#d8decf] dark:border-[#4b5560]' : ''}>
+    <section className={withTopDivider ? 'border-t border-[var(--user-border)]' : ''}>
       <div className="px-5 pb-3 pt-5 sm:px-7">
-        <h2 className="text-xl text-[#183622] dark:text-white">{title}</h2>
+        <h2 className="text-base font-semibold text-[var(--user-text-strong)]">{title}</h2>
       </div>
       <div>
         {items.map((item, index) => (
@@ -382,7 +393,7 @@ function NotificationActionSheet({ item, onClose, onDelete, onReport }) {
         onClick={onClose}
       />
       <div className="absolute inset-x-0 bottom-0 flex items-end justify-center px-0 pb-0 xl:inset-0 xl:px-6 xl:pb-6">
-        <div className="w-screen max-w-none rounded-t-[32px] border-t border-[#bfd0af] bg-[#dad7cd] px-4 pb-6 pt-3 text-[#344e41] shadow-[0_-18px_42px_rgba(58,90,64,0.18)] xl:w-full xl:max-w-md xl:rounded-[32px] xl:border xl:shadow-[0_24px_80px_rgba(58,90,64,0.2)] dark:border-[#444d57] dark:bg-[#1c2431] dark:text-white">
+        <div className="w-screen max-w-none rounded-t-[32px] border-t border-[#bfd0af] bg-[#dad7cd] px-4 pb-6 pt-3 text-[#344e41] shadow-[0_-18px_42px_rgba(58,90,64,0.18)] xl:w-full xl:max-w-md xl:rounded-lg xl:border xl:border-[var(--user-border)] xl:bg-[var(--user-surface)] xl:text-[var(--user-text)] xl:shadow-[var(--user-elevated-shadow)] dark:border-[#444d57] dark:bg-[#1c2431] dark:text-white dark:xl:bg-[var(--user-surface)]">
           <div className="flex justify-center">
             <div className="h-1.5 w-12 rounded-full bg-[#b9c3b2] dark:bg-white/34 xl:hidden" />
           </div>

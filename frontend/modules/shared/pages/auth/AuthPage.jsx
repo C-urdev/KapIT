@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Moon, Sun, AlertCircle, Eye, EyeOff, GitFork, X } from 'lucide-react';
+import { Moon, Sun, AlertCircle, Eye, EyeOff, GitFork, X, ArrowLeft } from 'lucide-react';
 import { useTheme } from '@sharedContext/ThemeContext';
 import KapITLogo from '@sharedComponents/branding/KapITLogo';
 import { createOAuthState, loginUser, loginWithGoogle, loginWithGithub } from '@sharedServices/authService';
@@ -13,6 +13,7 @@ export default function AuthPage({
   socialNoAccountProvider = '',
   onLogin,
   onBeginSignup,
+  onRequestLogin,
   onRequestAccountType,
   onBack,
   onForgotPassword,
@@ -29,6 +30,7 @@ export default function AuthPage({
 
   const { theme, toggleTheme } = useTheme();
   const [authMode, setAuthMode] = useState(initialMode);
+  const [signupStep, setSignupStep] = useState('email'); // 'email' | 'password'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
@@ -94,6 +96,7 @@ export default function AuthPage({
 
   useEffect(() => {
     setAuthMode(initialMode);
+    setSignupStep('email');
     setError('');
     setInfoMessage('');
     setAuthTermsOpen(false);
@@ -196,6 +199,18 @@ export default function AuthPage({
         return;
       }
 
+      // Step 1: validate email and advance to password step
+      if (signupStep === 'email') {
+        const email = String(formData.email || '').trim();
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          setError('Please enter a valid email address.');
+          return;
+        }
+        setSignupStep('password');
+        return;
+      }
+
+      // Step 2: validate passwords and proceed to terms
       if (formData.password !== formData.confirmPassword) {
         setError('Passwords do not match');
         return;
@@ -302,7 +317,6 @@ export default function AuthPage({
     setLoading(true);
     let state;
     try {
-<<<<<<< HEAD:frontend/modules/shared/pages/auth/AuthPage.jsx
       const oauthState = await createOAuthState({
         provider: 'google',
         mode: authMode,
@@ -316,19 +330,6 @@ export default function AuthPage({
       setLoading(false);
       setError(String(requestError?.message || 'Unable to start Google sign-in right now.'));
       return;
-=======
-      window.sessionStorage.setItem('oauth_google_state', state);
-      window.sessionStorage.setItem(
-        'oauth_google_intent',
-        JSON.stringify({
-          state,
-          mode: authMode,
-          accountType: accountType || null,
-        })
-      );
-    } catch {
-      // Continue without persisted state if storage is unavailable.
->>>>>>> bd8e61b2 (fix(auth): route Google company accounts to company onboarding):apps/web/modules/shared/pages/auth/AuthPage.jsx
     }
     const redirectUri = `${getSocialAuthBaseUrl()}/auth/callback/google`;
     const params = new URLSearchParams({
@@ -413,14 +414,9 @@ export default function AuthPage({
 
       let data;
       if (provider === 'Google') {
-<<<<<<< HEAD:frontend/modules/shared/pages/auth/AuthPage.jsx
-        data = await loginWithGoogle('mock-google-' + email.split('@')[0], { state });
-=======
-        const accountTypeHint = authMode === 'signup' ? (accountType || null) : null;
-        data = await loginWithGoogle('mock-google-' + email.split('@')[0], { accountTypeHint });
->>>>>>> bd8e61b2 (fix(auth): route Google company accounts to company onboarding):apps/web/modules/shared/pages/auth/AuthPage.jsx
+        data = await loginWithGoogle('local-bypass-google-' + email.split('@')[0], { state });
       } else {
-        data = await loginWithGithub('mock-github-' + email.split('@')[0], { state });
+        data = await loginWithGithub('local-bypass-github-' + email.split('@')[0], { state });
       }
 
       if (data?.success && data?.user) {
@@ -438,223 +434,425 @@ export default function AuthPage({
     }
   };
 
+  const returnToSignupEmailStep = () => {
+    setSignupStep('email');
+    setError('');
+    setFormData((current) => ({ ...current, password: '', confirmPassword: '' }));
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+  };
+
+  const isDarkTheme = theme === 'dark';
+  const isSignupMode = authMode === 'signup';
+  const brandTitleClass = isDarkTheme ? 'text-white' : 'text-[#344e41]';
+  const brandLinkClass = isDarkTheme
+    ? 'group flex items-center gap-3.5 rounded-full py-1 pr-3 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8fb995]'
+    : 'group flex items-center gap-3.5 rounded-full py-1 pr-3 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#3a5a40]';
+  const logoClass = isDarkTheme
+    ? 'h-11 w-11 rounded-xl border border-white/10 bg-white object-contain p-1 shadow-[0_12px_24px_rgba(0,0,0,0.24)] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.03]'
+    : 'h-11 w-11 rounded-xl border border-[#d7e2ce] bg-white object-contain p-1 shadow-[0_12px_24px_rgba(58,90,64,0.16)] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.03]';
+  const themeToggleClass = isDarkTheme
+    ? 'relative z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-[#202428]/88 text-[#e2e6e9] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-xl transition-colors hover:bg-[#2a2f35]'
+    : 'relative z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d7e2ce] bg-white/86 text-[#344e41] shadow-[0_10px_22px_rgba(58,90,64,0.12)] backdrop-blur-xl transition-colors hover:bg-[#eef4ea]';
+
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="border-b border-[#a3b18a] dark:border-[#353c44] bg-white dark:bg-[#121416]">
-        <div className="mx-auto flex w-full max-w-[min(100%,1700px)] items-center justify-between px-6 py-4 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
-          <button onClick={onBack} className="flex items-center gap-2 text-[#344e41] dark:text-[#d0d7dd] hover:text-[#3a5a40] dark:hover:text-white">
-            <KapITLogo className="h-9 w-9 rounded-lg object-contain bg-white" />
-            <span className="text-2xl font-bold text-[#3a5a40] dark:text-white">kapIT</span>
+    <div className={`min-h-screen flex flex-col relative overflow-hidden ${isSignupMode ? 'bg-[#e9e1d3] dark:bg-[#0f1112]' : 'bg-[#f8faf8] dark:bg-[#121416]'}`}>
+      {isSignupMode ? (
+        <>
+          <div className="absolute inset-0">
+            <img
+              src={theme === 'dark' ? '/hero_visual_dark.png' : '/hero_visual_light_taste_stretched.png'}
+              alt=""
+              className="h-full w-full scale-[1.04] object-cover object-center opacity-70 dark:opacity-30"
+            />
+          </div>
+          <div className="absolute inset-0 bg-[#f7f2ea]/58 backdrop-blur-[12px] dark:bg-[#101314]/74 dark:backdrop-blur-[16px]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.3),transparent_44%),radial-gradient(circle_at_bottom,rgba(88,129,87,0.12),transparent_40%)] dark:bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_40%),radial-gradient(circle_at_bottom,rgba(88,129,87,0.18),transparent_42%)]" />
+        </>
+      ) : (
+        <>
+          <div className="absolute top-[-15%] left-[-10%] w-[60%] h-[60%] rounded-full bg-[#a3b18a]/20 blur-[120px] pointer-events-none dark:bg-[#444d57]/10" />
+          <div className="absolute bottom-[-15%] right-[-10%] w-[60%] h-[60%] rounded-full bg-[#588157]/15 blur-[120px] pointer-events-none dark:bg-[#344e41]/15" />
+          <div className="absolute top-[20%] right-[-5%] w-[40%] h-[40%] rounded-full bg-[#dad7cd]/40 blur-[100px] pointer-events-none dark:hidden" />
+        </>
+      )}
+      <header className={`absolute inset-x-0 top-5 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] lg:top-6 ${isSignupMode ? 'z-20 opacity-65' : 'z-50'}`}>
+        <div className="landing-desktop-shell relative flex items-center justify-between py-2 lg:gap-8">
+          <button type="button" onClick={onBack} className={brandLinkClass} aria-label="Back to home">
+            <KapITLogo className={logoClass} />
+            <h1 className={`text-[1.24rem] font-bold tracking-[-0.035em] ${brandTitleClass}`}>KapIT</h1>
           </button>
+          
           <button
+            type="button"
             onClick={toggleTheme}
-            className="p-2 rounded-lg hover:bg-[#f5f5f2] dark:hover:bg-[#353c44] transition-colors"
+            className={themeToggleClass}
+            aria-label="Toggle theme"
           >
-            {theme === 'light' ? <Moon className="w-5 h-5 text-[#344e41]" /> : <Sun className="w-5 h-5 text-white" />}
+            {isDarkTheme ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
           </button>
         </div>
       </header>
-
-      {/* Auth Form */}
-      <main className="flex-1 flex items-center justify-center px-3 sm:px-6 py-8 sm:py-12 bg-gradient-to-br from-[#dad7cd] to-[#f5f5f2] dark:from-[#121416] dark:to-[#22272b]">
-        <div className="w-full max-w-md">
-          <div className="bg-white dark:bg-[#22272b] rounded-2xl border border-[#a3b18a] dark:border-[#353c44] p-5 sm:p-8 shadow-lg dark:shadow-[#6f9b74]/10">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-[#3a5a40] dark:text-white mb-2">
-                {authMode === 'login' ? 'Welcome Back' : 'Create Account'}
-              </h2>
-              {authMode === 'signup' && signupAccountTypeLabel ? (
-                <p className="text-sm font-medium text-[#5f6f52] dark:text-[#d0d7dd]">
-                  {signupAccountTypeLabel}
-                </p>
-              ) : null}
-            </div>
-
-            {/* Error Message */}
+      <main className={`relative flex-1 px-4 py-12 sm:px-6 ${isSignupMode ? 'z-20 flex items-center justify-center' : 'z-10 flex flex-col items-center justify-center'}`}>
+        <div className={`w-full ${isSignupMode ? 'max-w-[400px]' : 'max-w-[420px]'}`}>
+          <div className={`rounded-[24px] border backdrop-blur-xl px-7 py-9 sm:px-8 sm:py-10 ${isSignupMode ? 'relative overflow-hidden bg-white/95 shadow-[0_16px_40px_rgba(0,0,0,0.18)] border-[#a3b18a]/20 animate-in zoom-in-95 duration-200 dark:bg-[#1a1d20]/95 dark:border-[#444d57]/30 dark:shadow-[0_20px_48px_rgba(0,0,0,0.45)]' : 'bg-white/95 shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:bg-[#1a1d20]/95 dark:shadow-[0_20px_40px_rgb(0,0,0,0.4)] border-[#a3b18a]/15 dark:border-[#444d57]/30'}`}>
+            {isSignupMode ? (
+              <button
+                type="button"
+                onClick={() => onBack?.()}
+                className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full text-[#3a5a40]/60 transition-colors hover:bg-[#eef4ea] hover:text-[#344e41] dark:text-[#adb5be] dark:hover:bg-white/5 dark:hover:text-white"
+                aria-label="Close sign up"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            ) : null}
             {error && (
-              <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              <div className="mb-5 p-3.5 bg-red-50 dark:bg-red-500/10 border border-red-200/80 dark:border-red-500/20 rounded-xl flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-red-500 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                <p className="text-[13px] font-medium text-red-600 dark:text-red-400 leading-snug">{error}</p>
               </div>
             )}
 
             {infoMessage && (
-              <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 rounded-lg">
-                <p className="text-sm text-emerald-700 dark:text-emerald-300">{infoMessage}</p>
+              <div className="mb-5 p-3.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/80 dark:border-emerald-500/20 rounded-xl">
+                <p className="text-[13px] font-medium text-emerald-700 dark:text-emerald-400 leading-snug">{infoMessage}</p>
               </div>
             )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-[#3a5a40] dark:text-[#d0d7dd] mb-1">Email</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => {
-                    setFormData({...formData, email: e.target.value});
-                    setShowRegisterPrompt(false);
-                  }}
-                  className="w-full px-4 py-2 border border-[#a3b18a] dark:border-[#444d57] rounded-lg bg-white dark:bg-[#1a1d20] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74] focus:border-transparent outline-none transition-colors"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[#3a5a40] dark:text-[#d0d7dd] mb-1">Password</label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={formData.password}
-                    onChange={(e) => {
-                      setFormData({...formData, password: e.target.value});
-                      setShowRegisterPrompt(false);
-                    }}
-                    className="w-full px-4 py-2 pr-12 border border-[#a3b18a] dark:border-[#444d57] rounded-lg bg-white dark:bg-[#1a1d20] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74] focus:border-transparent outline-none transition-colors"
-                    required
-                  />
+            {authMode === 'login' && (
+              <>
+                <div className="text-center mb-7">
+                  <h2 className="text-[22px] sm:text-2xl font-semibold text-[#344e41] tracking-tight dark:text-white mb-2">
+                    Welcome back
+                  </h2>
+                  <p className="text-[14px] text-[#3a5a40]/65 dark:text-[#adb5be] leading-relaxed">
+                    Sign in to continue to KapIT
+                  </p>
+                </div>
+                <div className="space-y-2.5 mb-6">
                   <button
                     type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute inset-y-0 right-0 px-3 flex items-center text-[#3a5a40] dark:text-[#adb5be] hover:text-[#344e41] dark:hover:text-white"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    disabled={loading}
+                    onClick={handleGoogleClick}
+                    className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-transparent hover:bg-[#f0f5ef]/60 dark:hover:bg-[#1f2b23]/40 rounded-xl border border-[#a3b18a]/30 dark:border-[#444d57]/35 transition-all duration-200 text-[#344e41] dark:text-[#e7f4ea] font-medium text-[14px] shadow-sm hover:shadow disabled:opacity-50"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24">
+                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                    </svg>
+                    Continue with Google
+                  </button>
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={handleGithubClick}
+                    className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-transparent hover:bg-[#f0f5ef]/60 dark:hover:bg-[#1f2b23]/40 rounded-xl border border-[#a3b18a]/30 dark:border-[#444d57]/35 transition-all duration-200 text-[#344e41] dark:text-[#e7f4ea] font-medium text-[14px] shadow-sm hover:shadow disabled:opacity-50"
+                  >
+                    <GitFork className="w-[18px] h-[18px]" />
+                    Continue with GitHub
                   </button>
                 </div>
-                {authMode === 'signup' && formData.password ? (
-                  <div className="mt-2 space-y-1">
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map((value) => (
-                        <div
-                          key={value}
-                          className={`h-1 flex-1 rounded-full transition-all ${
-                            value <= passwordStrength ? passwordStrengthColor : 'bg-[#e5e7eb] dark:bg-[#444d57]'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-xs text-[#6b7280] dark:text-[#adb5be]">{passwordStrengthLabel}</p>
-                  </div>
-                ) : null}
-              </div>
-
-              {authMode === 'signup' && (
-                <div>
-                  <label className="block text-sm font-medium text-[#3a5a40] dark:text-[#d0d7dd] mb-1">Confirm Password</label>
-                  <div className="relative">
+                <div className="relative flex items-center justify-center mb-6">
+                  <div className="absolute inset-x-0 h-px bg-[#a3b18a]/25 dark:bg-[#444d57]/40"></div>
+                  <span className="relative bg-white dark:bg-[#1a1d20] px-3 text-[11px] text-[#3a5a40]/50 dark:text-[#adb5be]/50 font-medium uppercase tracking-widest">
+                    or
+                  </span>
+                </div>
+                <form onSubmit={handleSubmit} className="space-y-3.5">
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#344e41]/80 dark:text-[#adb5be] mb-1.5">Email</label>
                     <input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      value={formData.confirmPassword}
-                      onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                      className="w-full px-4 py-2 pr-12 border border-[#a3b18a] dark:border-[#444d57] rounded-lg bg-white dark:bg-[#1a1d20] text-[#344e41] dark:text-white focus:ring-2 focus:ring-[#588157] dark:focus:ring-[#6f9b74] focus:border-transparent outline-none transition-colors"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => {
+                        setFormData({...formData, email: e.target.value});
+                        setShowRegisterPrompt(false);
+                      }}
+                      placeholder="name@example.com"
+                      className="w-full px-4 py-3 bg-[#f8faf8] dark:bg-[#1f2b23]/40 border border-[#a3b18a]/30 dark:border-[#5f8a68]/30 rounded-xl text-[#344e41] dark:text-[#e7f4ea] placeholder:text-[#3a5a40]/35 dark:placeholder:text-[#adb5be]/35 focus:outline-none focus:ring-2 focus:ring-[#588157]/20 focus:border-[#588157]/60 transition-all text-[14px]"
                       required
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#344e41]/80 dark:text-[#adb5be] mb-1.5">Password</label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.password}
+                        onChange={(e) => {
+                          setFormData({...formData, password: e.target.value});
+                          setShowRegisterPrompt(false);
+                        }}
+                        placeholder="••••••••"
+                        className="w-full px-4 py-3 pr-11 bg-[#f8faf8] dark:bg-[#1f2b23]/40 border border-[#a3b18a]/30 dark:border-[#5f8a68]/30 rounded-xl text-[#344e41] dark:text-[#e7f4ea] placeholder:text-[#3a5a40]/35 dark:placeholder:text-[#adb5be]/35 focus:outline-none focus:ring-2 focus:ring-[#588157]/20 focus:border-[#588157]/60 transition-all text-[14px]"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3a5a40]/40 hover:text-[#344e41] dark:text-[#adb5be]/40 dark:hover:text-[#e7f4ea] transition-colors"
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end -mt-1">
                     <button
                       type="button"
-                      onClick={() => setShowConfirmPassword((prev) => !prev)}
-                      className="absolute inset-y-0 right-0 px-3 flex items-center text-[#3a5a40] dark:text-[#adb5be] hover:text-[#344e41] dark:hover:text-white"
-                      aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                      onClick={() => onForgotPassword?.()}
+                      className="text-[13px] text-[#588157] dark:text-[#6f9b74] hover:text-[#344e41] dark:hover:text-white font-medium hover:underline transition-colors"
                     >
-                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      Forgot password?
                     </button>
                   </div>
-                  {formData.confirmPassword && formData.password ? (
-                    <p
-                      className={`mt-1 text-xs ${
-                        formData.password === formData.confirmPassword
-                          ? 'text-emerald-600 dark:text-emerald-400'
-                          : 'text-red-500 dark:text-red-400'
-                      }`}
-                    >
-                      {formData.password === formData.confirmPassword ? '✓ Passwords match' : '✗ Passwords do not match'}
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-[#344e41] hover:bg-[#1f3a2a] dark:bg-[#588157] dark:hover:bg-[#344e41] text-white font-medium py-3 rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-[14px] mt-1"
+                  >
+                    {loading ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Please wait
+                      </span>
+                    ) : 'Continue'}
+                  </button>
+                </form>
+                <div className="mt-6 text-center text-[14px] text-[#3a5a40]/65 dark:text-[#adb5be]">
+                  Don't have an account?{' '}
+                  <button
+                    onClick={() => {
+                      if (!accountType) {
+                        onRequestAccountType?.();
+                        return;
+                      }
+                      setAuthMode('signup');
+                      setSignupStep('email');
+                      setError('');
+                      setInfoMessage('');
+                      setShowRegisterPrompt(false);
+                    }}
+                    className="text-[#588157] dark:text-[#6f9b74] hover:text-[#344e41] dark:hover:text-white font-medium hover:underline transition-colors"
+                  >
+                    Sign up
+                  </button>
+                </div>
+              </>
+            )}
+            {authMode === 'signup' && signupStep === 'email' && (
+              <>
+                <div className="text-center mb-7">
+                  <h2 className="text-[22px] sm:text-2xl font-semibold text-[#344e41] tracking-tight dark:text-white mb-2">
+                    Create your account
+                  </h2>
+                  {signupAccountTypeLabel ? (
+                    <p className="text-[13px] text-[#588157] dark:text-[#6f9b74] font-medium">
+                      {signupAccountTypeLabel}
                     </p>
                   ) : null}
                 </div>
-              )}
-
-              {authMode === 'login' && (
-                <div className="text-right">
+                <div className="space-y-2.5 mb-6">
                   <button
                     type="button"
-                    onClick={() => onForgotPassword?.()}
-                    className="text-sm text-[#588157] dark:text-[#6f9b74] hover:underline"
+                    disabled={loading}
+                    onClick={handleGoogleClick}
+                    className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-transparent hover:bg-[#f0f5ef]/60 dark:hover:bg-[#1f2b23]/40 rounded-xl border border-[#a3b18a]/30 dark:border-[#444d57]/35 transition-all duration-200 text-[#344e41] dark:text-[#e7f4ea] font-medium text-[14px] shadow-sm hover:shadow disabled:opacity-50"
                   >
-                    Forgot password?
+                    <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24">
+                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                    </svg>
+                    Continue with Google
+                  </button>
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={handleGithubClick}
+                    className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-transparent hover:bg-[#f0f5ef]/60 dark:hover:bg-[#1f2b23]/40 rounded-xl border border-[#a3b18a]/30 dark:border-[#444d57]/35 transition-all duration-200 text-[#344e41] dark:text-[#e7f4ea] font-medium text-[14px] shadow-sm hover:shadow disabled:opacity-50"
+                  >
+                    <GitFork className="w-[18px] h-[18px]" />
+                    Continue with GitHub
                   </button>
                 </div>
-              )}
+                <div className="relative flex items-center justify-center mb-6">
+                  <div className="absolute inset-x-0 h-px bg-[#a3b18a]/25 dark:bg-[#444d57]/40"></div>
+                  <span className="relative bg-white dark:bg-[#1a1d20] px-3 text-[11px] text-[#3a5a40]/50 dark:text-[#adb5be]/50 font-medium uppercase tracking-widest">
+                    or
+                  </span>
+                </div>
+                <form onSubmit={handleSubmit} className="space-y-3.5">
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#344e41]/80 dark:text-[#adb5be] mb-1.5">Email</label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => {
+                        setFormData({...formData, email: e.target.value});
+                        setShowRegisterPrompt(false);
+                      }}
+                      placeholder="name@example.com"
+                      className="w-full px-4 py-3 bg-[#f8faf8] dark:bg-[#1f2b23]/40 border border-[#a3b18a]/30 dark:border-[#5f8a68]/30 rounded-xl text-[#344e41] dark:text-[#e7f4ea] placeholder:text-[#3a5a40]/35 dark:placeholder:text-[#adb5be]/35 focus:outline-none focus:ring-2 focus:ring-[#588157]/20 focus:border-[#588157]/60 transition-all text-[14px]"
+                      required
+                      autoFocus
+                    />
+                  </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-[#3a5a40] hover:bg-[#344e41] dark:bg-[#6f9b74] dark:hover:bg-[#82ad86] text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Please wait...' : (authMode === 'login' ? 'Sign In' : 'Create Account')}
-              </button>
-            </form>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-[#344e41] hover:bg-[#1f3a2a] dark:bg-[#588157] dark:hover:bg-[#344e41] text-white font-medium py-3 rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-[14px] mt-1"
+                  >
+                    Continue
+                  </button>
+                </form>
+                <div className="mt-6 text-center text-[14px] text-[#3a5a40]/65 dark:text-[#adb5be]">
+                  Already have an account?{' '}
+                  <button
+                    onClick={() => {
+                      onRequestLogin?.();
+                    }}
+                    className="text-[#588157] dark:text-[#6f9b74] hover:text-[#344e41] dark:hover:text-white font-medium hover:underline transition-colors"
+                  >
+                    Sign in
+                  </button>
+                </div>
+              </>
+            )}
+            {authMode === 'signup' && signupStep === 'password' && (
+              <>
+                <div className="mb-8">
+                  <button
+                    type="button"
+                    onClick={returnToSignupEmailStep}
+                    className="inline-flex min-h-10 items-center gap-1.5 text-[13px] font-medium text-[#3a5a40]/60 transition-colors hover:text-[#344e41] dark:text-[#adb5be]/70 dark:hover:text-white"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    Back
+                  </button>
+                  <div className="mt-5 text-center">
+                    <h2 className="text-2xl font-semibold tracking-tight text-[#344e41] dark:text-white">
+                      Create your account
+                    </h2>
+                    <p className="mt-3 text-[14px] leading-relaxed text-[#3a5a40]/80 dark:text-[#adb5be]">
+                      Set a password to finish your KapIT signup.
+                    </p>
+                  </div>
+                </div>
 
-            <div className="mt-6 flex items-center justify-between">
-              <span className="w-1/5 border-b border-gray-300 dark:border-gray-600 lg:w-1/4"></span>
-              <span className="text-xs text-center text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">or continue with</span>
-              <span className="w-1/5 border-b border-gray-300 dark:border-gray-600 lg:w-1/4"></span>
-            </div>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#344e41]/80 dark:text-[#adb5be] mb-1.5">Password</label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.password}
+                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                        placeholder="Min. 8 characters"
+                        className="w-full rounded-xl border border-[#a3b18a]/40 bg-[#f8faf8] px-4 py-3.5 pr-11 text-[14px] text-[#344e41] shadow-sm transition-all placeholder:text-[#3a5a40]/50 focus:outline-none focus:ring-2 focus:ring-[#588157]/20 focus:border-[#588157] dark:border-[#5f8a68]/40 dark:bg-[#1f2b23]/50 dark:text-[#e7f4ea] dark:placeholder:text-[#adb5be]/50"
+                        required
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3a5a40]/40 hover:text-[#344e41] dark:text-[#adb5be]/40 dark:hover:text-[#e7f4ea] transition-colors"
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {formData.password ? (
+                      <div className="mt-2.5 space-y-1.5">
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map((value) => (
+                            <div
+                              key={value}
+                              className={`h-[3px] flex-1 rounded-full transition-all duration-300 ${
+                                value <= passwordStrength ? passwordStrengthColor : 'bg-[#a3b18a]/20 dark:bg-[#444d57]/40'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-[11px] text-[#3a5a40]/50 dark:text-[#adb5be]/50">{passwordStrengthLabel}</p>
+                      </div>
+                    ) : null}
+                  </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-3 mt-6">
-              <button
-                type="button"
-                disabled={loading}
-                onClick={handleGoogleClick}
-                className="flex items-center justify-center w-full px-4 py-2.5 bg-[#f0f5f1] dark:bg-[#353c44] hover:bg-[#e2e8e4] dark:hover:bg-[#353c44] border border-[#a3b18a] dark:border-[#444d57] rounded-lg transition-colors disabled:opacity-50 text-[#344e41] dark:text-gray-200 font-medium"
-              >
-                <svg className="w-5 h-5 mr-2 -ml-1" viewBox="0 0 24 24">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                </svg>
-                Google
-              </button>
-              <button
-                type="button"
-                disabled={loading}
-                onClick={handleGithubClick}
-                className="flex items-center justify-center w-full px-4 py-2.5 bg-[#f0f5f1] dark:bg-[#353c44] hover:bg-[#e2e8e4] dark:hover:bg-[#353c44] border border-[#a3b18a] dark:border-[#444d57] rounded-lg transition-colors disabled:opacity-50 text-[#344e41] dark:text-gray-200 font-medium"
-              >
-                <GitFork className="w-5 h-5 mr-2 -ml-1" />
-                GitHub
-              </button>
-            </div>
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#344e41]/80 dark:text-[#adb5be] mb-1.5">Confirm password</label>
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={formData.confirmPassword}
+                        onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                        placeholder="Re-enter your password"
+                        className="w-full rounded-xl border border-[#a3b18a]/40 bg-[#f8faf8] px-4 py-3.5 pr-11 text-[14px] text-[#344e41] shadow-sm transition-all placeholder:text-[#3a5a40]/50 focus:outline-none focus:ring-2 focus:ring-[#588157]/20 focus:border-[#588157] dark:border-[#5f8a68]/40 dark:bg-[#1f2b23]/50 dark:text-[#e7f4ea] dark:placeholder:text-[#adb5be]/50"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3a5a40]/40 hover:text-[#344e41] dark:text-[#adb5be]/40 dark:hover:text-[#e7f4ea] transition-colors"
+                        aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {formData.confirmPassword && formData.password ? (
+                      <p
+                        className={`mt-1.5 text-[11px] font-medium ${
+                          formData.password === formData.confirmPassword
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-red-500 dark:text-red-400'
+                        }`}
+                      >
+                        {formData.password === formData.confirmPassword ? 'Passwords match' : 'Passwords do not match'}
+                      </p>
+                    ) : null}
+                  </div>
 
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => {
-                  if (authMode === 'login') {
-                    if (!accountType) {
-                      onRequestAccountType?.();
-                      return;
-                    }
-                    setAuthMode('signup');
-                    setError('');
-                    setInfoMessage('');
-                    setShowRegisterPrompt(false);
-                    return;
-                  }
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="mt-2 flex w-full items-center justify-center rounded-xl bg-[#344e41] py-3.5 text-[14px] font-medium text-white shadow-md transition-all hover:bg-[#1f3a2a] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#588157] dark:hover:bg-[#344e41]"
+                  >
+                    {loading ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Please wait
+                      </span>
+                    ) : 'Create account'}
+                  </button>
+                </form>
 
-                  setAuthMode('login');
-                  setError('');
-                  setInfoMessage('');
-                  setShowRegisterPrompt(false);
-                }}
-                className="text-sm text-[#344e41] dark:text-[#d0d7dd]"
-              >
-                {authMode === 'login' ? "Don't have an account? " : 'Already have an account? '}
-                <span className="text-[#588157] dark:text-[#6f9b74] hover:underline font-semibold">
-                  {authMode === 'login' ? 'Register' : 'Sign in'}
-                </span>
-              </button>
-            </div>
+                <div className="mt-6 text-center text-[14px] text-[#3a5a40]/80 dark:text-[#adb5be]">
+                  Already have an account?{' '}
+                  <button
+                    onClick={() => {
+                      onRequestLogin?.();
+                    }}
+                    className="text-[#588157] dark:text-[#6f9b74] hover:text-[#344e41] dark:hover:text-white font-medium hover:underline transition-colors"
+                  >
+                    Sign in
+                  </button>
+                </div>
+              </>
+            )}
+
           </div>
         </div>
       </main>
@@ -690,6 +888,7 @@ export default function AuthPage({
                     return;
                   }
                   setAuthMode('signup');
+                  setSignupStep('email');
                 }}
                 className="rounded-lg bg-[#d69d1a] px-4 py-2 text-sm font-semibold text-[#2b1b00] transition-colors hover:bg-[#bf8a11] dark:bg-[#f2cf6d] dark:text-[#3d2b00] dark:hover:bg-[#f7d982]"
               >
@@ -699,8 +898,6 @@ export default function AuthPage({
           </div>
         </div>
       ) : null}
-
-      {/* Auth-level Terms Modal Overlay */}
       <TermsAndConditionsModal
         isOpen={authTermsOpen}
         onClose={() => {

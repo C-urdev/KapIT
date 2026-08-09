@@ -100,7 +100,7 @@ export default function UserJobDetailPage({
 
   if (!currentJob?.id) {
     return (
-      <div className="mx-auto w-full max-w-[min(100%,1040px)] rounded-xl border border-[#a3b18a] bg-[#f8fbf6] p-6 dark:border-[#353c44] dark:bg-[#22272b]">
+      <div className="user-desktop-flat-surface mx-auto w-full max-w-[min(100%,1040px)] rounded-xl border border-[#a3b18a] bg-[#f8fbf6] p-6 dark:border-[#353c44] dark:bg-[#22272b]">
         <p className="text-sm text-[#344e41] dark:text-[#d0d7dd]">Job details are not available.</p>
         <button
           type="button"
@@ -126,10 +126,10 @@ export default function UserJobDetailPage({
         </button>
       </div>
 
-      <article className="flex min-h-[640px] flex-col rounded-lg border border-[#a3b18a] bg-[#f8fbf6] p-5 shadow-sm dark:border-[#353c44] dark:bg-[#22272b] sm:p-6">
+      <article className="user-desktop-flat-surface flex min-h-[640px] flex-col rounded-lg border border-[#a3b18a] bg-[#f8fbf6] p-5 shadow-sm dark:border-[#353c44] dark:bg-[#22272b] sm:p-6">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex items-start gap-3">
-            <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#588157] to-[#3a5a40] text-white dark:from-[#82ad86] dark:to-[#6f9b74]">
+            <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#588157] to-[#3a5a40] text-white dark:from-[#82ad86] dark:to-[#6f9b74] xl:rounded-md xl:border xl:border-[var(--user-border)] xl:bg-none xl:bg-[var(--user-surface-subtle)] xl:text-[var(--user-primary)]">
               {currentJob?.company?.logo ? (
                 <img
                   src={currentJob.company.logo}

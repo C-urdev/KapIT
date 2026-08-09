@@ -2,11 +2,11 @@ import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import Lamp from '@sharedComponents/effects/Lamp';
 
-export default function LandingFinalCtaSection({ onOpenAccountChoice, onJoinDeveloper }) {
+export default function LandingFinalCtaSection({ onOpenAccountChoice, onJoinDeveloper: _onJoinDeveloper }) {
   return (
     <Lamp
       actions={(
-        <div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
+        <div data-landing-reveal style={{ '--landing-part-delay': '240ms' }} className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
           <button
             type="button"
             onClick={onOpenAccountChoice}

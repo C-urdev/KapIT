@@ -3,4 +3,8 @@ packages:
 
 allowBuilds:
   bcrypt: true
+  esbuild: true
   msgpackr-extract: true
+overrides:
+  path-to-regexp: 0.1.13
+  qs: 6.15.2

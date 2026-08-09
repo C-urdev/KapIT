@@ -1,6 +1,6 @@
 // ThemeContext
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 const ThemeContext = createContext();
 
@@ -32,12 +32,17 @@ export const ThemeProvider = ({ children, initialTheme = 'light' }) => {
     document.cookie = `theme=${theme}; path=/; max-age=31536000; samesite=lax`;
   }, [theme, themeHydrated]);
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
-  };
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    theme,
+    toggleTheme,
+  }), [theme, toggleTheme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={contextValue}>
       {children}
     </ThemeContext.Provider>
   );

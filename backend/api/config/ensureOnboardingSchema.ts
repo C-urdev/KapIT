@@ -1,0 +1,146 @@
+const pool = require('./database');
+const { isDatabaseConnectivityError, summarizeDatabaseConnectivityError } = require('./database');
+
+const ensureOnboardingSchema = async () => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS developer_profiles (
+        user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        full_name VARCHAR(160),
+        username VARCHAR(50),
+        location TEXT,
+        phone_number VARCHAR(40),
+        email VARCHAR(255),
+        job_title VARCHAR(160),
+        experience_years INTEGER,
+        skills TEXT[] DEFAULT ARRAY[]::TEXT[],
+        preferred_it_role VARCHAR(160),
+        preferred_it_roles TEXT[] DEFAULT ARRAY[]::TEXT[],
+        education TEXT,
+        bio TEXT,
+        github_link TEXT,
+        portfolio_link TEXT,
+        linkedin_link TEXT,
+        resume_url TEXT,
+        optimized_resume_docx_url TEXT,
+        optimized_resume_pdf_url TEXT,
+        optimized_resume_json JSONB DEFAULT '{}'::jsonb,
+        profile_photo_url TEXT,
+        other_links TEXT,
+        work_preference VARCHAR(20),
+        actively_looking BOOLEAN DEFAULT false,
+        role_categories TEXT[] DEFAULT ARRAY[]::TEXT[],
+        job_priorities TEXT[] DEFAULT ARRAY[]::TEXT[],
+        salary_expectation_min INTEGER,
+        salary_expectation_max INTEGER,
+        job_search_goal VARCHAR(80),
+        experience_level VARCHAR(40),
+        certifications TEXT,
+        school_university TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS company_profiles (
+        user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        company_name VARCHAR(160),
+        industry VARCHAR(160),
+        company_size VARCHAR(40),
+        website TEXT,
+        description TEXT,
+        location TEXT,
+        logo_url TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS projects (
+        project_id BIGSERIAL PRIMARY KEY,
+        company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+        title VARCHAR(200) NOT NULL,
+        description TEXT NOT NULL,
+        budget VARCHAR(120),
+        timeline VARCHAR(120),
+        status VARCHAR(40) DEFAULT 'draft',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS company_related_companies (
+        id BIGSERIAL PRIMARY KEY,
+        company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+        name VARCHAR(160) NOT NULL,
+        short_description VARCHAR(220),
+        website TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query('CREATE INDEX IF NOT EXISTS idx_dev_profiles_experience ON developer_profiles(experience_years);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_dev_profiles_location ON developer_profiles(location);');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS full_name VARCHAR(160);');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS username VARCHAR(50);');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS location TEXT;');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS phone_number VARCHAR(40);');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS email VARCHAR(255);');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS job_title VARCHAR(160);');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS experience_years INTEGER;');
+    await client.query("ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS skills TEXT[] DEFAULT ARRAY[]::TEXT[];");
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS preferred_it_role VARCHAR(160);');
+    await client.query("ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS preferred_it_roles TEXT[] DEFAULT ARRAY[]::TEXT[];");
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS education TEXT;');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS bio TEXT;');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS github_link TEXT;');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS portfolio_link TEXT;');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS linkedin_link TEXT;');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS resume_url TEXT;');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS optimized_resume_docx_url TEXT;');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS optimized_resume_pdf_url TEXT;');
+    await client.query("ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS optimized_resume_json JSONB DEFAULT '{}'::jsonb;");
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS profile_photo_url TEXT;');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS other_links TEXT;');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS work_preference VARCHAR(20);');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS actively_looking BOOLEAN DEFAULT false;');
+    await client.query("ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS role_categories TEXT[] DEFAULT ARRAY[]::TEXT[];");
+    await client.query("ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS job_priorities TEXT[] DEFAULT ARRAY[]::TEXT[];");
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS salary_expectation_min INTEGER;');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS salary_expectation_max INTEGER;');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS job_search_goal VARCHAR(80);');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS experience_level VARCHAR(40);');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS certifications TEXT;');
+    await client.query('ALTER TABLE developer_profiles ADD COLUMN IF NOT EXISTS school_university TEXT;');
+    await client.query('ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS company_name VARCHAR(160);');
+    await client.query('ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS industry VARCHAR(160);');
+    await client.query('ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS company_size VARCHAR(40);');
+    await client.query('ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS website TEXT;');
+    await client.query('ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS description TEXT;');
+    await client.query('ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS location TEXT;');
+    await client.query('ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS logo_url TEXT;');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_company_profiles_industry ON company_profiles(industry);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_projects_company_id_created ON projects(company_id, created_at DESC);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_company_related_company_id_created ON company_related_companies(company_id, created_at DESC);');
+
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    if (isDatabaseConnectivityError(error)) {
+      console.warn(`Onboarding schema bootstrap skipped: ${summarizeDatabaseConnectivityError(error)}.`);
+      throw error;
+    }
+    console.error('Onboarding schema bootstrap failed:', error);
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+module.exports = { ensureOnboardingSchema };

@@ -74,20 +74,20 @@ export default function CompanySettingsPage() {
     .filter((section) => section.items.length > 0 || section.title.toLowerCase().includes(query));
 
   return (
-    <div className="mx-auto flex w-full max-w-[min(100%,1120px)] flex-col bg-transparent px-4 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] pt-4 sm:px-5 sm:pb-10 sm:pt-6 lg:px-6">
+    <div className="company-workspace-page mx-auto flex w-full max-w-[min(100%,1120px)] flex-col bg-transparent px-4 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] pt-4 sm:px-5 sm:pb-10 sm:pt-6 lg:px-6 xl:px-0 xl:pt-0">
       <div className="flex items-start gap-3 sm:gap-4">
         <button
           type="button"
           onClick={() => navigate(COMPANY_PATHS.dashboard)}
           aria-label="Go back"
-          className="mt-1 inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-[#9caf97] bg-[#d9ddcf] text-[#344e41] transition-colors hover:bg-[#dde2d4] hover:border-[#8ea488] dark:border-[#5e8b67] dark:bg-transparent dark:text-white dark:hover:bg-[#353c44]"
+          className="company-workspace-secondary-button mt-1 inline-flex h-10 w-10 shrink-0 items-center justify-center"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
 
-        <div className="min-w-0 flex-1 overflow-hidden rounded-2xl border border-[#a8bc94] bg-white shadow-sm shadow-black/5 dark:border-[#3a434d] dark:bg-[#1f2429]">
+        <div className="company-workspace-panel min-w-0 flex-1 overflow-hidden">
           <div className="px-4 pb-3 pt-4 sm:px-6 sm:pt-5">
-            <h1 className="text-[28px] font-bold text-[#1c2b1f] dark:text-white">Settings</h1>
+            <h1 className="company-workspace-page-title">Settings</h1>
             <div className="relative mt-3">
             <Search className="absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#5f6f52] dark:text-[#a8b1ba]" />
             <input
@@ -95,7 +95,7 @@ export default function CompanySettingsPage() {
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search settings"
-              className="w-full rounded-[20px] border border-[#bfd0af] bg-[#f8fbf6] py-2.5 pl-10 pr-4 text-[15px] font-medium text-[#1c2b1f] outline-none placeholder:text-[#6b7c6a] focus:ring-2 focus:ring-[#588157]/25 dark:border-[#444d57] dark:bg-[#22272b] dark:text-white dark:placeholder:text-[#9da7b1] dark:focus:ring-[#6f9b74]/25"
+              className="company-workspace-control w-full py-2.5 pl-10 pr-4 text-[15px] font-medium outline-none placeholder:text-[var(--workspace-text-muted)]"
             />
             </div>
           </div>

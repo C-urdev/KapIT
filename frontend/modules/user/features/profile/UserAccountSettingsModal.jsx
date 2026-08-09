@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Briefcase, Save, UserCircle, X } from 'lucide-react';
 import SearchableSelect from '@sharedComponents/forms/SearchableSelect';
 import SkillTags from '@userComponents/developer/UserSkillTags';
@@ -122,6 +122,7 @@ const EMPTY_FORM = {
   yearsOfExperience: '',
   skills: [],
   preferredRole: '',
+  preferredRoles: [],
   educationAttainment: '',
   vocationalCourse: '',
   customEducationAttainment: '',
@@ -138,6 +139,8 @@ const EMPTY_FORM = {
 };
 const PROFILE_CACHE_KEY = 'kapit_user_developer_profile';
 const DEBUG_PROFILE_SYNC = import.meta.env.VITE_DEBUG_PROFILE_SYNC === 'true';
+const GLASS_FIELD_CLASS = 'font-sans w-full rounded-xl border border-white/40 dark:border-white/10 bg-white/40 dark:bg-[#22272b]/40 py-2.5 px-3 text-[15px] font-medium text-[#1c2b1f] dark:text-white outline-none transition-all duration-200 focus:bg-white/60 dark:focus:bg-[#22272b]/60 focus:border-[#8ea488] focus:ring-2 focus:ring-[#8ea488]/20 dark:focus:border-[#5e8b67] dark:focus:ring-[#5e8b67]/20 backdrop-blur-md shadow-sm';
+
 
 const parseLocation = (rawLocation, provinceOptions, provinceCodeByLabel, getCitiesForProvince) => {
   const normalized = String(rawLocation || '')
@@ -230,6 +233,9 @@ const deriveFormFromProfile = ({ user, profile }) => {
     yearsOfExperience: source.experience_years == null ? '' : String(source.experience_years),
     skills: Array.isArray(source.skills) ? source.skills : Array.isArray(user?.skills) ? user.skills : [],
     preferredRole: source.preferred_it_role || user?.preferredRole || user?.desiredJob || '',
+    preferredRoles: Array.isArray(source.preferred_it_roles)
+      ? source.preferred_it_roles.filter(Boolean).slice(0, 3)
+      : (user?.preferredRoles || (source.preferred_it_role || user?.preferredRole || user?.desiredJob ? [source.preferred_it_role || user?.preferredRole || user?.desiredJob] : [])),
     educationAttainment: isSavedVocational ? VOCATIONAL_EDUCATION_OPTION : isSavedCustomEducation ? OTHER_EDUCATION_OPTION : savedEducation,
     vocationalCourse: savedVocationalCourse,
     customEducationAttainment: isSavedCustomEducation ? savedEducation : '',
@@ -260,6 +266,9 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
   const [developerProfile, setDeveloperProfile] = useState(cachedDeveloperProfile);
   const [resumeDirty, setResumeDirty] = useState(false);
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const latestUserRef = useRef(user);
+  const latestProfileRef = useRef(developerProfile);
+  const latestCachedProfileRef = useRef(cachedDeveloperProfile);
 
   const resolvedJobTitle = String(formData.jobTitle || '').trim();
   const preferredRoleOptions = useMemo(() => {
@@ -298,12 +307,22 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
   }, [isOpen, user, mode, developerProfile]);
 
   useEffect(() => {
+    latestUserRef.current = user;
+    latestProfileRef.current = developerProfile;
+    latestCachedProfileRef.current = cachedDeveloperProfile;
+  }, [cachedDeveloperProfile, developerProfile, user]);
+
+  useEffect(() => {
     let cancelled = false;
 
     const loadDeveloperProfile = async () => {
-      if (!isOpen || user?.type === 'company') return;
+      const currentUser = latestUserRef.current;
+      const currentProfile = latestProfileRef.current;
+      const currentCachedProfile = latestCachedProfileRef.current;
 
-      if (!developerProfile) {
+      if (!isOpen || currentUser?.type === 'company') return;
+
+      if (!currentProfile) {
         setProfileLoading(true);
       }
 
@@ -313,7 +332,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
         const hasServerProfile = Boolean(responseProfile && typeof responseProfile === 'object');
         const nextProfile = hasServerProfile
           ? responseProfile
-          : (developerProfile || cachedDeveloperProfile || null);
+          : (currentProfile || currentCachedProfile || null);
         logProfileSync('settings-fetch-profile-response', {
           profile: hasServerProfile ? responseProfile : null,
           warning: data?.warning || '',
@@ -324,15 +343,15 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
         }
         if (cancelled) return;
         setDeveloperProfile(nextProfile);
-        const nextForm = deriveFormFromProfile({ user, profile: nextProfile });
+        const nextForm = deriveFormFromProfile({ user: currentUser, profile: nextProfile });
         setFormData(nextForm);
         logProfileSync('settings-form-after-fetch', nextForm);
       } catch {
         if (cancelled) return;
-        const fallback = cachedDeveloperProfile || null;
+        const fallback = currentCachedProfile || null;
         logProfileSync('settings-fetch-profile-fallback', fallback);
         setDeveloperProfile(fallback);
-        const nextForm = deriveFormFromProfile({ user, profile: fallback });
+        const nextForm = deriveFormFromProfile({ user: currentUser, profile: fallback });
         setFormData(nextForm);
         logProfileSync('settings-form-after-fallback', nextForm);
       } finally {
@@ -386,16 +405,22 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
 
   useEffect(() => {
     if (!resolvedJobTitle) {
-      if (formData.preferredRole) {
-        setFormData((prev) => ({ ...prev, preferredRole: '' }));
+      if (formData.preferredRole || formData.preferredRoles.length) {
+        setFormData((prev) => ({ ...prev, preferredRole: '', preferredRoles: [] }));
       }
       return;
     }
 
-    if (preferredRoleOptions.length && !preferredRoleOptions.includes(formData.preferredRole)) {
-      setFormData((prev) => ({ ...prev, preferredRole: preferredRoleOptions[0] }));
+    const nextPreferredRoles = formData.preferredRoles.filter((role) => preferredRoleOptions.includes(role)).slice(0, 3);
+    const nextPrimaryRole = nextPreferredRoles[0] || '';
+    if (nextPrimaryRole !== formData.preferredRole || nextPreferredRoles.length !== formData.preferredRoles.length) {
+      setFormData((prev) => ({
+        ...prev,
+        preferredRole: nextPrimaryRole,
+        preferredRoles: nextPreferredRoles,
+      }));
     }
-  }, [formData.preferredRole, preferredRoleOptions, resolvedJobTitle]);
+  }, [formData.preferredRole, formData.preferredRoles, preferredRoleOptions, resolvedJobTitle]);
 
   useEffect(() => {
     if (!locationData.provinceOptions.length) {
@@ -460,7 +485,8 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
       jobTitle: resolvedJobTitle,
       yearsOfExperience: formData.yearsOfExperience,
       skills: formData.skills,
-      preferredRole: formData.preferredRole,
+      preferredRole: formData.preferredRoles[0] || formData.preferredRole,
+      preferredRoles: formData.preferredRoles,
       educationAttainment,
       school,
       certifications: formData.certifications,
@@ -504,6 +530,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
         yearsOfExperience: payload.yearsOfExperience,
         skills: payload.skills,
         preferredRole: payload.preferredRole,
+        preferredRoles: payload.preferredRoles,
         desiredJob: payload.preferredRole || payload.jobTitle,
         educationAttainment,
         education: educationAttainment,
@@ -531,6 +558,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
         experience_years: payload.yearsOfExperience === '' ? null : Number(payload.yearsOfExperience),
         skills: Array.isArray(payload.skills) ? payload.skills : [],
         preferred_it_role: payload.preferredRole,
+        preferred_it_roles: Array.isArray(payload.preferredRoles) ? payload.preferredRoles : [],
         education: educationAttainment,
         bio: payload.aboutMe,
         github_link: payload.github || null,
@@ -595,7 +623,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   value={formData.fullName}
                   onChange={(e) => setFormData((p) => ({ ...p, fullName: e.target.value }))}
                   readOnly={isIdentityLocked}
-                  className={`field ${isIdentityLocked ? 'bg-[#edf3e8] dark:bg-[#2f343b]' : ''}`}
+                  className={`${GLASS_FIELD_CLASS} ${isIdentityLocked ? 'bg-[#edf3e8] dark:bg-[#2f343b]' : ''}`}
                 />
               </Field>
               <Field label="Province">
@@ -605,7 +633,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   options={locationData.provinceOptions.map((province) => ({ value: province.code, label: province.label }))}
                   placeholder="Select a province"
                   searchPlaceholder="Search provinces"
-                  className="field"
+                  className={GLASS_FIELD_CLASS}
                 />
               </Field>
               <Field label="City / Municipality">
@@ -616,7 +644,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   placeholder={formData.provinceCode ? 'Select a city or municipality' : 'Select a province first'}
                   searchPlaceholder="Search cities"
                   disabled={!formData.provinceCode}
-                  className="field"
+                  className={GLASS_FIELD_CLASS}
                 />
               </Field>
               <Field label="Phone Number">
@@ -624,11 +652,11 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   value={formData.phoneNumber}
                   onChange={(e) => setFormData((p) => ({ ...p, phoneNumber: e.target.value }))}
                   readOnly={isIdentityLocked}
-                  className={`field ${isIdentityLocked ? 'bg-[#edf3e8] dark:bg-[#2f343b]' : ''}`}
+                  className={`${GLASS_FIELD_CLASS} ${isIdentityLocked ? 'bg-[#edf3e8] dark:bg-[#2f343b]' : ''}`}
                 />
               </Field>
               <Field label="Email">
-                <input value={formData.email} readOnly className="field bg-[#edf3e8] dark:bg-[#2f343b]" />
+                <input value={formData.email} readOnly className={`${GLASS_FIELD_CLASS} bg-[#edf3e8] dark:bg-[#2f343b]`} />
               </Field>
             </div>
           </SettingsCard>
@@ -645,22 +673,47 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   placeholder="Select a job title"
                   searchPlaceholder="Search job titles"
                   allowCustomValue
-                  className="field"
+                  className={GLASS_FIELD_CLASS}
                 />
               </Field>
               <Field label="Years of Experience">
-                <input type="number" min="0" max="60" value={formData.yearsOfExperience} onChange={(e) => setFormData((p) => ({ ...p, yearsOfExperience: e.target.value }))} className="field" />
+                <input type="number" min="0" max="60" value={formData.yearsOfExperience} onChange={(e) => setFormData((p) => ({ ...p, yearsOfExperience: e.target.value }))} className={GLASS_FIELD_CLASS} />
               </Field>
-              <Field label="Preferred IT Role" full>
-                <SearchableSelect
-                  value={formData.preferredRole}
-                  onChange={(preferredRole) => setFormData((p) => ({ ...p, preferredRole }))}
-                  options={preferredRoleOptions}
-                  placeholder={resolvedJobTitle ? 'Select a preferred IT role' : 'Select a job title first'}
-                  searchPlaceholder="Search roles"
-                  disabled={!resolvedJobTitle}
-                  className="field"
-                />
+              <Field label="Preferred IT Roles" full>
+                <p className="mb-2 text-xs text-[#5f6f52] dark:text-[#b3bcc5]">Select up to 3 preferred roles for your profile.</p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {preferredRoleOptions.map((role) => {
+                    const selected = formData.preferredRoles.includes(role);
+                    const disabled = !selected && formData.preferredRoles.length >= 3;
+                    return (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => {
+                          if (disabled) return;
+                          setFormData((current) => {
+                            const nextRoles = selected
+                              ? current.preferredRoles.filter((entry) => entry !== role)
+                              : [...current.preferredRoles, role].slice(0, 3);
+                            return {
+                              ...current,
+                              preferredRoles: nextRoles,
+                              preferredRole: nextRoles[0] || '',
+                            };
+                          });
+                        }}
+                        disabled={!resolvedJobTitle || disabled}
+                        className={`rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-all ${
+                          selected
+                            ? 'border-[#588157] bg-[#eef6ee] text-[#3a5a40] dark:border-[#6f9b74] dark:bg-[#353c44] dark:text-white'
+                            : 'border-[#dce5d4] bg-[#f8fbf6] text-[#344e41] dark:border-[#3d454e] dark:bg-[#121416] dark:text-[#eceff2]'
+                        } ${(!resolvedJobTitle || disabled) ? 'cursor-not-allowed opacity-50' : 'hover:border-[#8ea488] dark:hover:border-[#6f9b74]'}`}
+                      >
+                        {role}
+                      </button>
+                    );
+                  })}
+                </div>
               </Field>
               <Field label="Skills" full>
                 <SkillTags value={formData.skills} onChange={(skills) => setFormData((p) => ({ ...p, skills }))} />
@@ -686,7 +739,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   options={EDUCATIONAL_ATTAINMENT_OPTIONS}
                   placeholder="Select educational attainment"
                   searchPlaceholder="Search education"
-                  className="field"
+                  className={GLASS_FIELD_CLASS}
                 />
               </Field>
               <Field label="School / University">
@@ -696,26 +749,26 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                   options={SCHOOL_OPTIONS}
                   placeholder="Select a school or university"
                   searchPlaceholder="Search schools"
-                  className="field"
+                  className={GLASS_FIELD_CLASS}
                 />
               </Field>
               {requiresVocationalCourse ? (
                 <Field label="Specify Vocational Course">
-                  <input value={formData.vocationalCourse} onChange={(e) => setFormData((p) => ({ ...p, vocationalCourse: e.target.value }))} className="field" />
+                  <input value={formData.vocationalCourse} onChange={(e) => setFormData((p) => ({ ...p, vocationalCourse: e.target.value }))} className={GLASS_FIELD_CLASS} />
                 </Field>
               ) : null}
               {requiresCustomEducation ? (
                 <Field label="Specify Educational Attainment">
-                  <input value={formData.customEducationAttainment} onChange={(e) => setFormData((p) => ({ ...p, customEducationAttainment: e.target.value }))} className="field" />
+                  <input value={formData.customEducationAttainment} onChange={(e) => setFormData((p) => ({ ...p, customEducationAttainment: e.target.value }))} className={GLASS_FIELD_CLASS} />
                 </Field>
               ) : null}
               {requiresCustomSchool ? (
                 <Field label="Specify School / University">
-                  <input value={formData.customSchool} onChange={(e) => setFormData((p) => ({ ...p, customSchool: e.target.value }))} className="field" />
+                  <input value={formData.customSchool} onChange={(e) => setFormData((p) => ({ ...p, customSchool: e.target.value }))} className={GLASS_FIELD_CLASS} />
                 </Field>
               ) : null}
               <Field label="Certifications" full>
-                <input value={formData.certifications} onChange={(e) => setFormData((p) => ({ ...p, certifications: e.target.value }))} className="field" />
+                <input value={formData.certifications} onChange={(e) => setFormData((p) => ({ ...p, certifications: e.target.value }))} className={GLASS_FIELD_CLASS} />
               </Field>
             </div>
           </SettingsCard>
@@ -725,16 +778,16 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
           <SettingsCard title="Socials" icon={UserCircle} plain={asPage}>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Field label="GitHub">
-                <input value={formData.github} onChange={(e) => setFormData((p) => ({ ...p, github: e.target.value }))} className="field" placeholder="https://" />
+                <input value={formData.github} onChange={(e) => setFormData((p) => ({ ...p, github: e.target.value }))} className={GLASS_FIELD_CLASS} placeholder="https://" />
               </Field>
               <Field label="Portfolio Website">
-                <input value={formData.portfolioWebsite} onChange={(e) => setFormData((p) => ({ ...p, portfolioWebsite: e.target.value }))} className="field" placeholder="https://" />
+                <input value={formData.portfolioWebsite} onChange={(e) => setFormData((p) => ({ ...p, portfolioWebsite: e.target.value }))} className={GLASS_FIELD_CLASS} placeholder="https://" />
               </Field>
               <Field label="LinkedIn">
-                <input value={formData.linkedin} onChange={(e) => setFormData((p) => ({ ...p, linkedin: e.target.value }))} className="field" placeholder="https://" />
+                <input value={formData.linkedin} onChange={(e) => setFormData((p) => ({ ...p, linkedin: e.target.value }))} className={GLASS_FIELD_CLASS} placeholder="https://" />
               </Field>
               <Field label="Other Links">
-                <input value={formData.otherLinks} onChange={(e) => setFormData((p) => ({ ...p, otherLinks: e.target.value }))} className="field" placeholder="https://" />
+                <input value={formData.otherLinks} onChange={(e) => setFormData((p) => ({ ...p, otherLinks: e.target.value }))} className={GLASS_FIELD_CLASS} placeholder="https://" />
               </Field>
             </div>
           </SettingsCard>
@@ -771,7 +824,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
                 <textarea
                   value={formData.aboutMe}
                   onChange={(e) => setFormData((p) => ({ ...p, aboutMe: e.target.value }))}
-                  className="field min-h-24"
+                  className={`${GLASS_FIELD_CLASS} min-h-24`}
                   placeholder="Tell employers about your experience and strengths."
                 />
               </Field>
@@ -792,7 +845,7 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
 
         </main>
 
-        <div className={`${asPage ? 'mt-3 flex justify-end' : 'flex shrink-0 items-center justify-end gap-3 border-t border-[#d8e0cf] bg-[#f2f7ef] p-4 dark:border-[#353c44] dark:bg-[#22272b]'}`}>
+        <div className={`${asPage ? 'relative mt-8' : 'flex shrink-0 items-center justify-end gap-3 border-t border-[#d8e0cf] bg-[#f2f7ef] p-4 dark:border-[#353c44] dark:bg-[#22272b]'}`}>
           {!asPage ? (
             <button type="button" onClick={onClose} className="rounded-xl px-5 py-2 font-semibold text-[#5f6f52] transition-colors hover:bg-black/5 dark:text-[#d0d7dd] dark:hover:bg-white/10">
               Cancel
@@ -802,9 +855,11 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#3a5a40] px-5 py-2 font-semibold text-white shadow-sm transition-transform active:scale-95 disabled:opacity-60 dark:bg-[#6f9b74]"
+            className={asPage 
+              ? "fixed bottom-8 right-8 z-50 flex items-center gap-2 rounded-full bg-[#3a5a40] dark:bg-[#6f9b74] px-6 py-3.5 text-[15px] font-semibold text-white shadow-[0_10px_30px_rgba(58,90,64,0.3)] dark:shadow-[0_10px_30px_rgba(111,155,116,0.3)] transition-all duration-300 hover:scale-105 hover:shadow-[0_15px_40px_rgba(58,90,64,0.4)] active:scale-95 disabled:opacity-60"
+              : "inline-flex items-center gap-2 rounded-xl bg-[#3a5a40] px-5 py-2 font-semibold text-white shadow-sm transition-transform active:scale-95 disabled:opacity-60 dark:bg-[#6f9b74]"}
           >
-            <Save className="h-4 w-4" />
+            <Save className={asPage ? "h-5 w-5" : "h-4 w-4"} />
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
@@ -816,11 +871,16 @@ export default function UserAccountSettingsModal({ isOpen, user, onClose, onSave
 function SettingsCard({ title, icon: Icon, children, plain = false }) {
   if (plain) {
     return (
-      <section>
-        <div className="mb-3 px-1 text-sm font-bold uppercase tracking-[0.08em] text-[#5f6f52] dark:text-[#b3bcc5]">
-          {title}
+      <section className="user-desktop-flat-surface bg-white/70 dark:bg-[#22272b]/70 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.08)] overflow-hidden mb-6 transition-all duration-300 hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)]">
+        <div className="flex items-center gap-3 px-6 pt-6 pb-4 border-b border-black/5 dark:border-white/5">
+          <Icon className="h-5 w-5 text-[#3a5a40] dark:text-[#6f9b74]" />
+          <h2 className="text-[17px] font-bold text-[#1c2b1f] dark:text-white tracking-tight">
+            {title}
+          </h2>
         </div>
-        {children}
+        <div className="p-6">
+          {children}
+        </div>
       </section>
     );
   }

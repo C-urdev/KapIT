@@ -8,8 +8,10 @@ const normalizeOptions = (options) =>
       : {
           value: String(option?.value ?? ''),
           label: String(option?.label ?? option?.value ?? ''),
-        }
+      }
   );
+
+const selectedControlClass = '!border-[#0f5a48] !bg-[#e8f5f0] dark:!border-[#176c57] dark:!bg-[#17382f]';
 
 export default function SearchableSelect({
   options,
@@ -22,6 +24,8 @@ export default function SearchableSelect({
   className = 'field',
   searchInTrigger = true,
   allowCustomValue = false,
+  showTriggerSearchIcon = true,
+  showTriggerChevron = true,
 }) {
   const normalizedOptions = useMemo(() => normalizeOptions(options), [options]);
   const [open, setOpen] = useState(false);
@@ -70,10 +74,10 @@ export default function SearchableSelect({
   }, [open, searchInTrigger]);
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative font-sans">
       {searchInTrigger ? (
-        <div className={`${className} flex w-full items-center gap-3 disabled:cursor-not-allowed disabled:opacity-60 ${hasSelection ? 'bg-[#eef6ee] border-[#7aa27d] dark:bg-[#1f2b23] dark:border-[#5f8a68]' : ''}`}>
-          <Search className="h-4 w-4 shrink-0 text-[#6b7280] dark:text-[#adb5be]" />
+        <div className={`${className} flex w-full items-center gap-3 disabled:cursor-not-allowed disabled:opacity-60 ${hasSelection ? selectedControlClass : ''}`}>
+          {showTriggerSearchIcon ? <Search className="h-4 w-4 shrink-0 text-[#6b7280] dark:text-[#adb5be]" /> : null}
           <input
             ref={triggerSearchRef}
             type="text"
@@ -96,26 +100,28 @@ export default function SearchableSelect({
             }}
             placeholder={placeholder}
             disabled={disabled}
-            className={`min-w-0 flex-1 bg-transparent text-left outline-none placeholder:text-[#6b7280] dark:placeholder:text-[#adb5be] ${hasSelection ? 'text-[#1f3a2a] dark:text-[#e7f4ea]' : 'text-[#344e41] dark:text-white'}`}
+            className={`searchable-select-trigger-input min-w-0 flex-1 bg-transparent text-left outline-none placeholder:text-[#6b7280] dark:placeholder:text-[#adb5be] ${hasSelection ? '!text-[#0f3f34] dark:!text-[#e9fbf4]' : 'text-[#344e41] dark:text-white'}`}
           />
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={() => setOpen((prev) => !prev)}
-            className="shrink-0 text-[#6b7280] dark:text-[#adb5be]"
-            aria-label={open ? 'Close options' : 'Open options'}
-          >
-            <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
-          </button>
+          {showTriggerChevron ? (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => setOpen((prev) => !prev)}
+              className="shrink-0 text-[#6b7280] dark:text-[#adb5be]"
+              aria-label={open ? 'Close options' : 'Open options'}
+            >
+              <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+            </button>
+          ) : null}
         </div>
       ) : (
         <button
           type="button"
           disabled={disabled}
           onClick={() => setOpen((prev) => !prev)}
-          className={`${className} flex w-full items-center justify-between gap-3 text-left disabled:cursor-not-allowed disabled:opacity-60 ${hasSelection ? 'bg-[#eef6ee] border-[#7aa27d] dark:bg-[#1f2b23] dark:border-[#5f8a68]' : ''}`}
+          className={`${className} flex w-full items-center justify-between gap-3 text-left disabled:cursor-not-allowed disabled:opacity-60 ${hasSelection ? selectedControlClass : ''}`}
         >
-          <span className={selectedOption ? 'text-[#1f3a2a] dark:text-[#e7f4ea]' : 'text-[#6b7280] dark:text-[#adb5be]'}>
+          <span className={selectedOption ? '!text-[#0f3f34] dark:!text-[#e9fbf4]' : 'text-[#6b7280] dark:text-[#adb5be]'}>
             {selectedOption?.label || placeholder}
           </span>
           <span className="inline-flex items-center gap-2 text-[#6b7280] dark:text-[#adb5be]">
@@ -157,7 +163,7 @@ export default function SearchableSelect({
                     }}
                     className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors ${
                       active
-                        ? 'bg-[#eef6ee] text-[#3a5a40] dark:bg-[#353c44] dark:text-white'
+                        ? 'bg-[#e8f5f0] text-[#0f3f34] dark:bg-[#17382f] dark:text-[#e9fbf4]'
                         : 'text-[#344e41] hover:bg-[#f5f5f2] dark:text-[#eceff2] dark:hover:bg-[#202428]'
                     }`}
                   >

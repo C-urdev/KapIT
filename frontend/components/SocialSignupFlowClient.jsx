@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from '@shared/hooks/useAppRouter';
 import { AlertCircle, ArrowLeft, Briefcase, Building2, CheckCircle2, Eye, EyeOff, Loader2, Mail, ShieldCheck } from 'lucide-react';
 import {
@@ -164,7 +164,7 @@ export default function SocialSignupFlowClient() {
     return 'Choose account type';
   }, [step]);
 
-  const startOtpStep = async (accountTypeValue, emailOverride = '') => {
+  const startOtpStep = useCallback(async (accountTypeValue, emailOverride = '') => {
     const signupEmail = String(emailOverride || session?.email || '').trim().toLowerCase();
     const runtimeIsLocalhost = isLocalhost || (
       typeof window !== 'undefined' &&
@@ -231,7 +231,7 @@ export default function SocialSignupFlowClient() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isLocalhost, localAuthBypassEnabled, session?.email]);
 
   useEffect(() => {
     const loadSession = async () => {
@@ -270,7 +270,7 @@ export default function SocialSignupFlowClient() {
     };
 
     loadSession();
-  }, []);
+  }, [startOtpStep]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

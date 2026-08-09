@@ -130,3 +130,23 @@ def test_huh_with_question_mark_follow_up_uses_last_intent_actions():
     assert result['intent'] == 'pricing'
     assert result['confidence'] > 0.5
     assert any(str(action.get('href')) == '/pricing' for action in result['actions'])
+
+
+def test_employer_audience_uses_employer_intents_and_actions():
+    result = process_message('How do I post an IT role?', audience='employer')
+    assert result['intent'] == 'post-job'
+    assert result['confidence'] > 0.5
+    assert any(str(action.get('href')) == '/auth/register?type=company' for action in result['actions'])
+
+
+def test_employer_audience_uses_employer_fallback_copy():
+    result = process_message('quantum tomato protocol', audience='employer')
+    assert result['intent'] == 'fallback'
+    assert 'company' in str(result['reply']).lower() or 'employer' in str(result['reply']).lower()
+
+
+def test_expanded_user_questions_are_supported():
+    matching = process_message('How does AI matching work?')
+    status = process_message('Where is my application?')
+    assert matching['intent'] == 'how-matching-works'
+    assert status['intent'] == 'application-status'

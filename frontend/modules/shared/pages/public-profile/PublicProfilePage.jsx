@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Building2, Globe, Mail, MapPin, MessageCircle, User } from 'lucide-react';
 import {
   addCommentToPost,
@@ -16,6 +16,24 @@ export default function PublicProfilePage({ profile, onBack, onMessage, onMore, 
   const [posts, setPosts] = useState([]);
   const isCompany = profile?.type === 'company';
   const relatedCompanies = Array.isArray(profile?.relatedCompanies) ? profile.relatedCompanies : [];
+  const preferredRoles = useMemo(() => {
+    if (Array.isArray(profile?.preferredRoles) && profile.preferredRoles.length) {
+      return profile.preferredRoles.filter(Boolean).slice(0, 3);
+    }
+    if (Array.isArray(profile?.preferred_it_roles) && profile.preferred_it_roles.length) {
+      return profile.preferred_it_roles.filter(Boolean).slice(0, 3);
+    }
+    if (profile?.preferredRole) {
+      return [profile.preferredRole];
+    }
+    if (profile?.preferred_it_role) {
+      return [profile.preferred_it_role];
+    }
+    if (profile?.desiredJob) {
+      return [profile.desiredJob];
+    }
+    return [];
+  }, [profile?.desiredJob, profile?.preferredRole, profile?.preferredRoles, profile?.preferred_it_role, profile?.preferred_it_roles]);
 
   useEffect(() => {
     let mounted = true;
@@ -114,7 +132,7 @@ export default function PublicProfilePage({ profile, onBack, onMessage, onMore, 
         </div>
       </div>
 
-      <section className="bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl overflow-hidden">
+      <section className="user-desktop-flat-surface bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl overflow-hidden">
         <div className="h-20 bg-gradient-to-r from-[#588157] to-[#3a5a40] dark:from-[#82ad86] dark:to-[#6f9b74]" />
         <div className="px-5 sm:px-8 py-5 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex w-full min-w-0 flex-col items-start gap-4 sm:flex-row sm:items-center">
@@ -130,7 +148,19 @@ export default function PublicProfilePage({ profile, onBack, onMessage, onMore, 
                 <h1 className="text-2xl sm:text-3xl font-bold text-[#1f3a2a] dark:text-white break-words">{displayName}</h1>
                 {profile?.isPremium ? <PremiumBadge /> : null}
               </div>
-              <p className="text-sm text-[#2f4e39] dark:text-[#d0d7dd]">{isCompany ? 'Company account' : (profile?.desiredJob || 'IT Professional')}</p>
+              <p className="text-sm text-[#2f4e39] dark:text-[#d0d7dd]">{isCompany ? 'Company account' : (preferredRoles[0] || 'IT Professional')}</p>
+              {!isCompany && preferredRoles.length ? (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {preferredRoles.map((role) => (
+                    <span
+                      key={role}
+                      className="inline-flex items-center rounded-full border border-[#c7d6bf] bg-[#f4f9f1] px-3 py-1 text-[12px] font-semibold text-[#3a5a40] dark:border-[#4a545f] dark:bg-[#2b3137] dark:text-[#e6f1e8]"
+                    >
+                      {role}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
               {(profile?.shortDescription || profile?.bio) && <p className="text-sm text-[#344e41] dark:text-[#d0d7dd]">{profile?.shortDescription || profile?.bio}</p>}
             </div>
           </div>
@@ -162,7 +192,7 @@ export default function PublicProfilePage({ profile, onBack, onMessage, onMore, 
 
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-5">
         <aside className="space-y-4">
-          <section className="bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-4">
+          <section className="user-desktop-flat-surface bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-4">
             <h2 className="text-lg font-semibold text-[#3a5a40] dark:text-white mb-3">Info</h2>
             <InfoRow icon={User} text={displayName} />
             {profile?.email && <InfoRow icon={Mail} text={profile.email} />}
@@ -172,7 +202,7 @@ export default function PublicProfilePage({ profile, onBack, onMessage, onMore, 
           </section>
 
           {isCompany && (
-            <section className="bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-4">
+            <section className="user-desktop-flat-surface bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-4">
               <h2 className="text-lg font-semibold text-[#3a5a40] dark:text-white mb-3">Related Companies</h2>
               {relatedCompanies.length === 0 ? (
                 <p className="text-sm text-[#344e41] dark:text-[#d0d7dd]">No related companies listed yet.</p>
@@ -197,7 +227,7 @@ export default function PublicProfilePage({ profile, onBack, onMessage, onMore, 
         </aside>
 
         <main className="space-y-4">
-          <section className="bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-4">
+          <section className="user-desktop-flat-surface bg-white dark:bg-[#22272b] border border-[#a3b18a] dark:border-[#353c44] rounded-xl p-4">
             <h2 className="text-lg font-semibold text-[#3a5a40] dark:text-white mb-3">Posts</h2>
             {posts.length === 0 ? (
               <p className="text-sm text-[#344e41] dark:text-[#d0d7dd]">No posts yet.</p>
@@ -242,4 +272,3 @@ function InfoRow({ icon: Icon, text }) {
     </div>
   );
 }
-

@@ -3,16 +3,17 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from '../../../../components/shared/Link';
 import { usePathname, useRouter } from '@shared/hooks/useAppRouter';
-import { Bot, Send, Volume2, VolumeX, Paperclip, Ellipsis, SquarePen, X } from 'lucide-react';
+import { Send, Volume2, VolumeX, Paperclip, Ellipsis, SquarePen, X } from 'lucide-react';
+import ChatbotBrandMark from './ChatbotBrandMark';
 import { useTheme } from '@sharedContext/ThemeContext';
 import { CHATBOT_DEFAULT_SUGGESTIONS, CHATBOT_WELCOME_MESSAGE } from '@shared/data/chatbotFaq';
+import { EMPLOYER_CHATBOT_DEFAULT_SUGGESTIONS, EMPLOYER_CHATBOT_WELCOME_MESSAGE } from '@shared/data/employerChatbotFaq';
 import { getChatbotErrorReply, requestChatbotMessage } from '@sharedServices/chatbotService';
 import { playNotificationSound, safeGetStorage, safeSetStorage } from './chatbotSafety';
 
 const STORAGE_KEY = 'kapit-chatbot-minimized';
 const SOUND_STORAGE_KEY = 'kapit-chatbot-sound';
 const CHAT_STATE_STORAGE_KEY = 'kapit-chatbot-state-v1';
-const INITIAL_PROMPTS = CHATBOT_DEFAULT_SUGGESTIONS.map((item) => item.prompt);
 
 const createBotMessage = (text, extras = {}) => ({ id: `${Date.now()}-${Math.random()}`, role: 'bot', text, ...extras });
 const createUserMessage = (text) => ({ id: `${Date.now()}-${Math.random()}`, role: 'user', text });
@@ -52,11 +53,32 @@ const getStoredSessionUser = () => {
   }
 };
 
-export default function FaqChatbot() {
+export default function FaqChatbot({ audience = 'general' }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const pathname = usePathname();
   const router = useRouter();
+  const isLandingPage = pathname === '/';
+  const isEmployerLandingPage = pathname === '/for-employers';
+  const isEmployerAudience = audience === 'employer';
+  const isUserDashboardPage = String(pathname || '').startsWith('/dashboard/');
+  const isCompanyPage = String(pathname || '').startsWith('/company/');
+  const useLandingPosition = isLandingPage || isEmployerLandingPage || isCompanyPage;
+  const isPublicLandingPage = isLandingPage || isEmployerLandingPage;
+  const isPricingPage = pathname === '/pricing' || pathname === '/for-employers/pricing';
+  const anchorClassName = `chatbot-fab-anchor${useLandingPosition ? ' chatbot-fab-anchor--landing' : ''}${isPublicLandingPage ? ' chatbot-fab-anchor--public-landing' : ''}${isUserDashboardPage ? ' chatbot-fab-anchor--dashboard' : ''}${isPricingPage ? ' chatbot-fab-anchor--pricing' : ''}`;
+  const chatbotWelcomeMessage = isEmployerAudience ? EMPLOYER_CHATBOT_WELCOME_MESSAGE : CHATBOT_WELCOME_MESSAGE;
+  const chatbotSuggestions = isEmployerAudience ? EMPLOYER_CHATBOT_DEFAULT_SUGGESTIONS : CHATBOT_DEFAULT_SUGGESTIONS;
+  const chatStateStorageKey = `${CHAT_STATE_STORAGE_KEY}-${isEmployerAudience ? 'employer' : 'general'}`;
+  const launcherButtonClass = isDark
+    ? 'group relative z-10 inline-flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#202428]/92 text-[#e2e6e9] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_38px_rgba(0,0,0,0.34)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-[#2a2f35] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_22px_42px_rgba(0,0,0,0.4)] active:scale-[0.98]'
+    : 'group relative z-10 inline-flex h-[52px] w-[52px] items-center justify-center rounded-full border border-[#9ab896] bg-[#bcd3af]/96 text-[#2f4a36] shadow-[0_16px_34px_rgba(58,90,64,0.18),inset_0_1px_0_rgba(255,255,255,0.52)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-[#c8dcbf] hover:shadow-[0_20px_40px_rgba(58,90,64,0.24),inset_0_1px_0_rgba(255,255,255,0.58)] active:scale-[0.98]';
+  const landingLauncherClass = isDark
+    ? 'group relative z-10 inline-flex h-12 w-12 items-center justify-center rounded-[1rem] bg-[#dcebd8] px-0 text-sm font-semibold leading-none text-[#102a1b] shadow-[0_18px_44px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.45)] transition-[transform,background-color,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-[#e7f1e3] hover:shadow-[0_22px_52px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.52)] active:scale-[0.98] sm:w-auto sm:gap-3 sm:px-4 sm:pl-5'
+    : 'group relative z-10 inline-flex h-12 w-12 items-center justify-center rounded-[1rem] bg-[#2f4a36] px-0 text-sm font-semibold leading-none text-white shadow-[0_18px_40px_rgba(47,74,54,0.22)] transition-[transform,background-color,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-[#3a5a40] hover:shadow-[0_22px_48px_rgba(47,74,54,0.26)] active:scale-[0.98] sm:w-auto sm:gap-3 sm:px-4 sm:pl-5';
+  const landingLauncherIconClass = isDark
+    ? 'inline-flex h-8 w-8 items-center justify-center rounded-[0.75rem] bg-[#2f4a36] text-[#f4faf1] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]'
+    : 'inline-flex h-8 w-8 items-center justify-center rounded-[0.75rem] bg-[#e5f0df] text-[#2f4a36] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]';
 
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -67,7 +89,7 @@ export default function FaqChatbot() {
   const [showPolicyNotice, setShowPolicyNotice] = useState(true);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [suggestedPrompts, setSuggestedPrompts] = useState(CHATBOT_DEFAULT_SUGGESTIONS.slice(0, 5));
+  const [suggestedPrompts, setSuggestedPrompts] = useState(chatbotSuggestions.slice(0, 5));
 
   const scrollRef = useRef(null);
   const pendingReplyTimeoutRef = useRef(null);
@@ -75,9 +97,16 @@ export default function FaqChatbot() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    setMessages([]);
+    setInputValue('');
+    setIsTyping(false);
+    setIsOpen(false);
+    setHasUserInteracted(false);
+    setShowPolicyNotice(true);
+    setSuggestedPrompts(chatbotSuggestions.slice(0, 5));
     const saved = safeGetStorage(STORAGE_KEY, null);
     const soundPref = safeGetStorage(SOUND_STORAGE_KEY, null);
-    const savedChatState = safeGetStorage(CHAT_STATE_STORAGE_KEY, null);
+    const savedChatState = safeGetStorage(chatStateStorageKey, null);
     setIsMinimized(saved === '1');
     setSoundEnabled(soundPref !== '0');
     if (savedChatState) {
@@ -95,7 +124,7 @@ export default function FaqChatbot() {
       }
     }
     lastKnownSessionUserRef.current = getStoredSessionUser();
-  }, []);
+  }, [audience, chatStateStorageKey, chatbotSuggestions]);
 
   useEffect(() => {
     const currentUser = getStoredSessionUser();
@@ -108,7 +137,7 @@ export default function FaqChatbot() {
         pendingReplyTimeoutRef.current = null;
       }
       try {
-        window.localStorage.removeItem(CHAT_STATE_STORAGE_KEY);
+        window.localStorage.removeItem(chatStateStorageKey);
       } catch {
         // ignore storage clear failures
       }
@@ -119,11 +148,11 @@ export default function FaqChatbot() {
       setHasUserInteracted(false);
       setIsOpen(false);
       setIsMinimized(false);
-      setSuggestedPrompts(CHATBOT_DEFAULT_SUGGESTIONS.slice(0, 5));
+      setSuggestedPrompts(chatbotSuggestions.slice(0, 5));
     }
 
     lastKnownSessionUserRef.current = currentUser;
-  }, [pathname]);
+  }, [chatbotSuggestions, chatStateStorageKey, pathname]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -135,12 +164,12 @@ export default function FaqChatbot() {
     if (typeof window === 'undefined') return;
     try {
       if (messages.length === 0) {
-        window.localStorage.removeItem(CHAT_STATE_STORAGE_KEY);
+        window.localStorage.removeItem(chatStateStorageKey);
         return;
       }
 
       window.localStorage.setItem(
-        CHAT_STATE_STORAGE_KEY,
+        chatStateStorageKey,
         JSON.stringify({
           messages: messages.map((message) => ({
             id: message.id,
@@ -155,7 +184,7 @@ export default function FaqChatbot() {
     } catch {
       // ignore storage write failures
     }
-  }, [messages]);
+  }, [chatStateStorageKey, messages]);
 
   useEffect(() => {
     return () => {
@@ -203,7 +232,7 @@ export default function FaqChatbot() {
       (async () => {
         let replyPayload;
         try {
-          replyPayload = await requestChatbotMessage(trimmed, { lastIntent: lastActionableBotIntent });
+          replyPayload = await requestChatbotMessage(trimmed, { lastIntent: lastActionableBotIntent, audience });
         } catch {
           replyPayload = {
             reply: getChatbotErrorReply(),
@@ -231,12 +260,12 @@ export default function FaqChatbot() {
         }, remainingDelay);
       })();
     },
-    [isTyping, messages, playBotSound]
+    [audience, isTyping, messages, playBotSound]
   );
 
   const startNewChat = useCallback(() => {
     try {
-      window.localStorage.removeItem(CHAT_STATE_STORAGE_KEY);
+      window.localStorage.removeItem(chatStateStorageKey);
     } catch {
       // ignore storage clear failures
     }
@@ -246,11 +275,19 @@ export default function FaqChatbot() {
     setShowPolicyNotice(true);
     setHasUserInteracted(false);
     setIsMenuOpen(false);
-    setSuggestedPrompts(CHATBOT_DEFAULT_SUGGESTIONS.slice(0, 5));
-  }, []);
+    setSuggestedPrompts(chatbotSuggestions.slice(0, 5));
+  }, [chatStateStorageKey, chatbotSuggestions]);
+
+  const toggleLauncher = () => {
+    if (isMinimized) {
+      setIsMinimized(false);
+      return;
+    }
+    setIsOpen((prev) => !prev);
+  };
 
   return (
-    <div className="fixed bottom-16 right-4 z-[70] sm:bottom-20 sm:right-5">
+    <div className={anchorClassName}>
       {isOpen && !isMinimized ? (
         <div
           className={`mb-3 flex h-[min(88vh,820px)] max-h-[calc(100vh-36px)] w-[min(94vw,390px)] flex-col overflow-hidden rounded-3xl border shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-all duration-300 ${
@@ -260,12 +297,10 @@ export default function FaqChatbot() {
           <div className={`relative shrink-0 px-4 py-4 ${isDark ? 'border-b border-[#3b434b] bg-[#121416]' : 'border-b border-[#c9d4ba] bg-white text-[#102a1b]'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full border ${isDark ? 'border-[#6f9b74] bg-[#2b3138]' : 'border-[#a3b18a] bg-[#f5f5f2]'}`}>
-                  <Bot size={16} className={isDark ? 'text-[#9fd3a6]' : 'text-[#3a5a40]'} />
-                </span>
+                <ChatbotBrandMark size="md" isDark={isDark} />
                 <div>
-                  <p className="text-sm font-semibold">KapIT Support Agent</p>
-                  <p className={`text-[11px] ${isDark ? 'text-white/60' : 'text-[#102a1b]/60'}`}>Online</p>
+                  <p className="text-sm font-semibold tracking-[-0.02em]">KapIT Assistant</p>
+                  <p className={`text-[11px] font-medium ${isDark ? 'text-[#9fd3a6]' : 'text-[#588157]'}`}>Online now</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -320,10 +355,10 @@ export default function FaqChatbot() {
             <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto pr-1">
               <div className="space-y-2 pb-1">
                 <div className={`max-w-[92%] rounded-2xl px-4 py-2.5 text-sm ${isDark ? 'bg-white/10' : 'bg-[#ebe6da] text-[#344e41]'}`}>
-                  {CHATBOT_WELCOME_MESSAGE}
+                  {chatbotWelcomeMessage}
                 </div>
                 <div className={`max-w-[92%] rounded-2xl px-4 py-2.5 text-sm ${isDark ? 'bg-white/10' : 'bg-[#ebe6da] text-[#344e41]'}`}>
-                  Ask anything, even short or informal messages. I will guide you step by step.
+                    {isEmployerAudience ? 'Ask about your next hiring step, even in a short message.' : 'Ask anything, even short or informal messages. I will guide you step by step.'}
                 </div>
               </div>
 
@@ -381,7 +416,7 @@ export default function FaqChatbot() {
             {suggestedPrompts.length > 0 && !hasUserInteracted && messages.length === 0 ? (
               <div className="mb-3">
                 <div className="flex flex-wrap items-center justify-center gap-2 px-1 py-1">
-                  {(messages.length === 0 ? INITIAL_PROMPTS : suggestedPrompts.map((item) => item.prompt || item.label)).map((prompt) => (
+                  {(messages.length === 0 ? chatbotSuggestions.map((item) => item.prompt) : suggestedPrompts.map((item) => item.prompt || item.label)).map((prompt) => (
                     <button
                       key={prompt}
                       type="button"
@@ -392,9 +427,9 @@ export default function FaqChatbot() {
                     </button>
                   ))}
                 </div>
-                <div className="mt-3 flex items-center justify-center gap-1 text-xs text-[#8b8f8a]">
-                  <span className="inline-flex h-4 w-4 items-center justify-center rounded bg-[#9ca3af] text-[10px] font-semibold text-white">C</span>
-                  <span>Powered by KapIT</span>
+                <div className="mt-3 flex items-center justify-center gap-2 text-xs text-[#8b8f8a]">
+                  <ChatbotBrandMark size="xs" showStatus={false} isDark={isDark} />
+                  <span>Powered by {isEmployerAudience ? 'KapIT Employer Assistant' : 'KapIT Assistant'}</span>
                 </div>
               </div>
             ) : null}
@@ -439,7 +474,7 @@ export default function FaqChatbot() {
                 type="text"
                 value={inputValue}
                 onChange={(event) => setInputValue(event.target.value)}
-                placeholder="Ask support anything..."
+                placeholder={isEmployerAudience ? 'Ask about hiring...' : 'Ask support anything...'}
                 className={`h-9 flex-1 bg-transparent px-1 text-sm outline-none ${isDark ? 'text-white placeholder:text-white/45' : 'text-[#111827] placeholder:text-[#9ca3af]'}`}
               />
               <button
@@ -454,31 +489,37 @@ export default function FaqChatbot() {
               </button>
             </form>
             {isTyping ? (
-              <p className={`px-2 pt-2 text-[11px] ${isDark ? 'text-white/50' : 'text-[#102a1b]/55'}`}>KapIT Support Agent is typing...</p>
+              <p className={`px-2 pt-2 text-[11px] ${isDark ? 'text-white/50' : 'text-[#102a1b]/55'}`}>KapIT Assistant is typing...</p>
             ) : null}
           </div>
         </div>
       ) : null}
 
       {(!isOpen || isMinimized) ? (
-        <button
-          type="button"
-          onClick={() => {
-            if (isMinimized) {
-              setIsMinimized(false);
-              return;
-            }
-            setIsOpen((prev) => !prev);
-          }}
-          className={`group inline-flex h-12 w-12 items-center justify-center rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.15)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:scale-110 active:scale-[0.98] ${
-            isDark
-              ? 'bg-[#6f9b74] text-[#111]'
-              : 'bg-[#3a5a40] text-white'
-          }`}
-          aria-label={isOpen ? 'Toggle chatbot' : 'Open chatbot'}
-        >
-          <Bot size={20} className="transition-transform duration-300 group-hover:rotate-6" />
-        </button>
+        <div className="flex items-center justify-end">
+            {isPublicLandingPage ? (
+            <button
+              type="button"
+              onClick={toggleLauncher}
+              className={landingLauncherClass}
+              aria-label={isOpen ? 'Toggle chatbot' : 'Open chatbot'}
+            >
+              <span className="hidden whitespace-nowrap sm:inline">Chat with us now!</span>
+              <span className={landingLauncherIconClass} aria-hidden="true">
+                <ChatbotBrandMark size="md" isDark={isDark} emphasis={isDark} showStatus={false} shell="none" />
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={toggleLauncher}
+              className={launcherButtonClass}
+              aria-label={isOpen ? 'Toggle chatbot' : 'Open chatbot'}
+            >
+              <ChatbotBrandMark size="lg" isDark={isDark} showStatus={false} shell="none" />
+            </button>
+          )}
+        </div>
       ) : null}
     </div>
   );

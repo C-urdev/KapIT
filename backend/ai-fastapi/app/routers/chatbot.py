@@ -8,7 +8,7 @@ router = APIRouter(tags=['chatbot'])
 
 @router.post('/api/chatbot/message', response_model=ChatbotMessageResponse)
 def handle_chatbot_message(payload: ChatbotMessageRequest):
-    result = process_message(payload.message, payload.last_intent)
+    result = process_message(payload.message, payload.last_intent, payload.audience)
     return ChatbotMessageResponse(
         reply=str(result.get('reply', '')).strip(),
         intent=str(result.get('intent', 'fallback')).strip() or 'fallback',
