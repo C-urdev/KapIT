@@ -8,6 +8,8 @@ import ChatbotErrorBoundary from './ChatbotErrorBoundary';
 
 const STATIC_TITLES_BY_PATH = {
   '/': 'AI Job Matching Platform',
+  '/for-employers': 'Hire Vetted IT Talent',
+  '/for-employers/pricing': 'Employer Pricing',
   '/auth/login': 'Login',
   '/auth/register': 'Register',
   '/forgot-password': 'Forgot Password',
@@ -17,6 +19,33 @@ const STATIC_TITLES_BY_PATH = {
   '/premium/payment': 'Premium Payment',
   '/onboarding/developer-profile': 'Developer Onboarding',
   '/onboarding/company-profile': 'Company Onboarding',
+};
+
+const SEO_BY_PATH = {
+  '/': {
+    title: 'KapIT - AI Job Matching Platform',
+    description: 'KapIT helps IT professionals find skill-matched roles and helps companies hire vetted developers in one focused platform.',
+  },
+  '/for-employers': {
+    title: 'KapIT for Employers - Hire Vetted IT Talent',
+    description: 'Find, review, and hire vetted developers and IT professionals with KapIT employer hiring tools.',
+  },
+  '/pricing': {
+    title: 'KapIT Pricing - Plans for Job Seekers',
+    description: 'Explore KapIT plans for IT professionals who want better matching, applications, and profile tools.',
+  },
+  '/for-employers/pricing': {
+    title: 'KapIT Employer Pricing - Hiring Plans',
+    description: 'Compare KapIT employer plans for posting jobs, reviewing applicants, and hiring IT talent.',
+  },
+  '/jobs': {
+    title: 'KapIT Jobs - Skill-Matched IT Roles',
+    description: 'Browse IT jobs and developer roles matched through KapIT.',
+  },
+  '/privacy-policy': {
+    title: 'KapIT Privacy Policy',
+    description: 'Read how KapIT handles privacy, account data, and platform information.',
+  },
 };
 
 const toTitleCase = (value) =>
@@ -71,6 +100,24 @@ const resolveTitleText = (pathname) => {
   return segment ? toTitleCase(segment) : 'KapIT';
 };
 
+const setMetaContent = (selector, content) => {
+  if (typeof document === 'undefined') return;
+  const element = document.head.querySelector(selector);
+  if (!element || !content) return;
+  element.setAttribute('content', content);
+};
+
+const setCanonicalHref = (href) => {
+  if (typeof document === 'undefined') return;
+  let element = document.head.querySelector('link[rel="canonical"]');
+  if (!element) {
+    element = document.createElement('link');
+    element.setAttribute('rel', 'canonical');
+    document.head.appendChild(element);
+  }
+  element.setAttribute('href', href);
+};
+
 export default function AppProviders({ children, initialTheme = 'light' }) {
   const pathname = usePathname();
   const isEmployerLandingPage = pathname === '/for-employers';
@@ -109,13 +156,20 @@ export default function AppProviders({ children, initialTheme = 'light' }) {
   }, []);
 
   useEffect(() => {
-    const titleText = resolveTitleText(pathname);
-    if (pathname === '/') {
-      document.title = 'KapIT - AI Job Matching Platform';
-      return;
-    }
+    const route = String(pathname || '/');
+    const seo = SEO_BY_PATH[route];
+    const titleText = resolveTitleText(route);
+    const title = seo?.title || (titleText ? `KapIT | ${titleText}` : 'KapIT - AI Job Matching Platform');
+    const description = seo?.description || 'KapIT helps IT professionals and companies connect through focused job matching tools.';
+    const canonicalPath = route === '/' ? '/' : route.replace(/\/$/, '');
+    const canonicalUrl = `https://kapit.online${canonicalPath}`;
 
-    document.title = titleText ? `KapIT | ${titleText}` : 'KapIT - AI Job Matching Platform';
+    document.title = title;
+    setMetaContent('meta[name="description"]', description);
+    setMetaContent('meta[property="og:title"]', title);
+    setMetaContent('meta[property="og:description"]', description);
+    setMetaContent('meta[property="og:url"]', canonicalUrl);
+    setCanonicalHref(canonicalUrl);
   }, [pathname]);
 
   return (
