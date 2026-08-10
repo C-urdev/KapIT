@@ -143,3 +143,13 @@ test('company account popover keeps logout and removes profile and pricing entri
   assert.doesNotMatch(sidebarSource, /label="Company profile"/);
   assert.doesNotMatch(sidebarSource, /label="Pricing"/);
 });
+
+test('collapsed company sidebar shows the KapIT logo until the sidebar toggle is hovered or focused', () => {
+  assert.match(sidebarSource, /group\/sidebar-brand/);
+  assert.match(sidebarSource, /: \(\s*<span[\s\S]*?<KapITLogo className="h-7 w-auto"/);
+  assert.match(sidebarSource, /group-hover\/sidebar-brand:opacity-0/);
+  assert.match(sidebarSource, /group-focus-within\/sidebar-brand:opacity-0/);
+  assert.match(sidebarSource, /absolute left-1\/2 top-1\/2 -translate-x-1\/2 -translate-y-1\/2 opacity-0/);
+  assert.match(sidebarSource, /group-hover\/sidebar-brand:opacity-100/);
+  assert.match(sidebarSource, /group-focus-within\/sidebar-brand:opacity-100/);
+});

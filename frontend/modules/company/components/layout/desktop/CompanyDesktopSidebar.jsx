@@ -53,17 +53,29 @@ export default function CompanyDesktopSidebar({
         collapsed ? 'w-[4.5rem]' : 'w-72'
       }`}
     >
-      <div className={`flex h-[68px] shrink-0 items-center border-b border-[var(--workspace-border)] px-4 ${collapsed ? 'justify-center px-2' : 'justify-between'}`}>
+      <div className={`relative flex h-[68px] shrink-0 items-center border-b border-[var(--workspace-border)] px-4 ${collapsed ? 'group/sidebar-brand justify-center px-2' : 'justify-between'}`}>
         {!collapsed ? (
           <button type="button" onClick={() => navigate(COMPANY_PATHS.dashboard)} className="flex items-center gap-2" aria-label="Open company dashboard">
             <KapITLogo className="h-6 w-auto" />
             <span className="text-[1.35rem] font-bold text-[var(--workspace-text-strong)]">KapIT</span>
           </button>
-        ) : null}
+        ) : (
+          <span
+            className="flex h-10 w-10 items-center justify-center rounded-lg transition-[opacity,transform] duration-150 group-hover/sidebar-brand:scale-95 group-hover/sidebar-brand:opacity-0 group-focus-within/sidebar-brand:scale-95 group-focus-within/sidebar-brand:opacity-0"
+            title="KapIT dashboard"
+            aria-hidden="true"
+          >
+            <KapITLogo className="h-7 w-auto" />
+          </span>
+        )}
         <button
           type="button"
           onClick={onToggleSidebarCollapsed}
-          className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--workspace-text-muted)] transition-colors duration-150 hover:bg-[var(--workspace-surface-selected)] hover:text-[var(--workspace-text-strong)]"
+          className={`flex h-8 w-8 items-center justify-center rounded-md text-[var(--workspace-text-muted)] transition-[background-color,color,opacity,transform] duration-150 hover:bg-[var(--workspace-surface-selected)] hover:text-[var(--workspace-text-strong)] focus-visible:bg-[var(--workspace-surface-selected)] focus-visible:text-[var(--workspace-text-strong)] ${
+            collapsed
+              ? 'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover/sidebar-brand:opacity-100 group-focus-within/sidebar-brand:opacity-100'
+              : ''
+          }`}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
