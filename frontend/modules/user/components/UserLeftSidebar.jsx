@@ -44,17 +44,29 @@ export default function UserLeftSidebar({
 
   return (
     <div className="flex h-full flex-col bg-transparent">
-      <div className={`flex items-center h-[68px] border-b border-[var(--user-border)] px-4 ${collapsed ? 'justify-center px-2' : 'justify-between'}`}>
-        {!collapsed && (
+      <div className={`relative flex h-[68px] items-center border-b border-[var(--user-border)] px-4 ${collapsed ? 'group/sidebar-brand justify-center px-2' : 'justify-between'}`}>
+        {!collapsed ? (
           <div className="flex items-center gap-2">
             <KapITLogo className="h-6 w-auto" />
             <span className="text-[1.35rem] font-bold tracking-tight text-[var(--user-text-strong)]">KapIT</span>
           </div>
+        ) : (
+          <span
+            className="flex h-10 w-10 items-center justify-center rounded-lg transition-[opacity,transform] duration-150 group-hover/sidebar-brand:scale-95 group-hover/sidebar-brand:opacity-0 group-focus-within/sidebar-brand:scale-95 group-focus-within/sidebar-brand:opacity-0"
+            title="KapIT dashboard"
+            aria-hidden="true"
+          >
+            <KapITLogo className="h-7 w-auto" />
+          </span>
         )}
         <button
           type="button"
           onClick={onToggleCollapsed}
-          className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--user-text-muted)] transition-colors hover:bg-[var(--user-surface)] hover:text-[var(--user-text-strong)]"
+          className={`flex h-8 w-8 items-center justify-center rounded-md text-[var(--user-text-muted)] transition-[background-color,color,opacity,transform] duration-150 hover:bg-[var(--user-surface)] hover:text-[var(--user-text-strong)] focus-visible:bg-[var(--user-surface)] focus-visible:text-[var(--user-text-strong)] ${
+            collapsed
+              ? 'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover/sidebar-brand:opacity-100 group-focus-within/sidebar-brand:opacity-100'
+              : ''
+          }`}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
