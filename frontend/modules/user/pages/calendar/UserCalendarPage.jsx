@@ -135,14 +135,10 @@ export default function UserCalendarPage({ user }) {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[min(100%,1500px)] space-y-5">
-      <header className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+    <div className="mx-auto w-full max-w-[min(100%,1500px)] flex h-full min-h-0 flex-col gap-4">
+      <header className="shrink-0 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <p className="text-sm font-medium text-[var(--user-primary)]">Planner</p>
-          <h1 className="user-workspace-page-title mt-1">Calendar</h1>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-[var(--user-text-muted)]">
-            Keep notes, reminders, interview dates, and application follow-ups in one place.
-          </p>
+          <h1 className="user-workspace-page-title">Calendar</h1>
         </div>
         <div className="user-workspace-surface-subtle inline-flex h-10 w-fit items-center gap-2 px-3 text-sm font-medium text-[var(--user-text)]">
           <CalendarDays className="h-4 w-4 text-[var(--user-primary)]" />
@@ -150,8 +146,8 @@ export default function UserCalendarPage({ user }) {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <section className="user-workspace-surface min-w-0 overflow-hidden">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <section className="user-workspace-surface flex min-h-0 min-w-0 flex-col overflow-hidden">
           <div className="flex items-center justify-between border-b border-[var(--user-border)] px-4 py-3 sm:px-5">
             <h2 className="user-workspace-section-title">{MONTH_FORMATTER.format(visibleDate)}</h2>
             <div className="flex items-center gap-1">
@@ -169,13 +165,13 @@ export default function UserCalendarPage({ user }) {
 
           <div className="grid grid-cols-7 border-b border-[var(--user-border)] bg-[var(--user-surface-subtle)]">
             {WEEKDAYS.map((day) => (
-              <div key={day} className="px-2 py-3 text-center text-xs font-semibold uppercase tracking-[0.08em] text-[var(--user-text-muted)]">
+              <div key={day} className="px-2 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.08em] text-[var(--user-text-muted)]">
                 {day}
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-7">
+          <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6">
             {monthDays.map((day, index) => {
               const dayEntries = entriesByDate[day.dateKey] || [];
               const isSelected = selectedDateKey === day.dateKey;
@@ -184,7 +180,7 @@ export default function UserCalendarPage({ user }) {
                   key={day.dateKey}
                   type="button"
                   onClick={() => setSelectedDateKey(day.dateKey)}
-                  className={`min-h-[96px] border-b border-[var(--user-border)] p-2 text-left transition-[background-color,color] duration-150 hover:bg-[var(--user-surface-subtle)] ${
+                  className={`min-h-0 overflow-hidden border-b border-[var(--user-border)] p-2 text-left transition-[background-color,color] duration-150 hover:bg-[var(--user-surface-subtle)] ${
                     isSelected ? 'bg-[var(--user-surface-selected)]' : ''
                   } ${(index + 1) % 7 === 0 ? '' : 'border-r'} ${day.isCurrentMonth ? 'text-[var(--user-text-strong)]' : 'text-[var(--user-text-muted)] opacity-70'}`}
                   aria-pressed={isSelected}
@@ -210,14 +206,14 @@ export default function UserCalendarPage({ user }) {
           </div>
         </section>
 
-        <aside className="space-y-5">
-          <section className="user-workspace-surface p-5">
+        <aside className="space-y-4 xl:min-h-0 xl:space-y-3 xl:overflow-hidden">
+          <section className="user-workspace-surface p-5 xl:p-4">
             <div>
               <p className="text-sm font-medium text-[var(--user-primary)]">Selected day</p>
               <h2 className="user-workspace-section-title mt-1">{DAY_FORMATTER.format(selectedDate)}</h2>
             </div>
 
-            <form onSubmit={handleSubmit} className="mt-5 space-y-3">
+            <form onSubmit={handleSubmit} className="mt-4 space-y-2.5">
               <label className="block">
                 <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--user-text-muted)]">Title</span>
                 <input
@@ -244,7 +240,7 @@ export default function UserCalendarPage({ user }) {
                   onChange={(event) => setNote(event.target.value)}
                   placeholder="Add details, links, or reminders."
                   rows={4}
-                  className="mt-1 w-full resize-none rounded-md border border-[var(--user-border)] bg-[var(--user-surface-subtle)] px-3 py-2 text-sm leading-6 text-[var(--user-text-strong)] outline-none transition-[border-color,background-color,box-shadow] duration-150 placeholder:text-[var(--user-text-muted)] focus:border-[var(--user-primary)] focus:bg-[var(--user-surface)] focus:ring-2 focus:ring-[var(--user-primary-soft)]"
+                  className="mt-1 h-24 w-full resize-none rounded-md border border-[var(--user-border)] bg-[var(--user-surface-subtle)] px-3 py-2 text-sm leading-6 text-[var(--user-text-strong)] outline-none transition-[border-color,background-color,box-shadow] duration-150 placeholder:text-[var(--user-text-muted)] focus:border-[var(--user-primary)] focus:bg-[var(--user-surface)] focus:ring-2 focus:ring-[var(--user-primary-soft)]"
                 />
               </label>
               <button type="submit" className="user-workspace-primary-button inline-flex w-full items-center justify-center gap-2 px-4 text-sm font-semibold">
@@ -254,7 +250,7 @@ export default function UserCalendarPage({ user }) {
             </form>
           </section>
 
-          <section className="user-workspace-surface p-5">
+          <section className="user-workspace-surface p-5 xl:p-4">
             <h2 className="user-workspace-section-title">Day notes</h2>
             <div className="mt-4 space-y-3">
               {selectedEntries.length > 0 ? selectedEntries.map((entry) => (
@@ -276,16 +272,15 @@ export default function UserCalendarPage({ user }) {
                   {entry.note ? <p className="mt-3 text-sm leading-6 text-[var(--user-text)] [text-wrap:pretty]">{entry.note}</p> : null}
                 </article>
               )) : (
-                <div className="rounded-md border border-dashed border-[var(--user-border)] bg-[var(--user-surface-subtle)] px-4 py-6 text-center">
-                  <FileText className="mx-auto h-6 w-6 text-[var(--user-text-muted)]" />
-                  <p className="mt-2 text-sm font-medium text-[var(--user-text-strong)]">No notes for this day</p>
-                  <p className="mt-1 text-xs text-[var(--user-text-muted)]">Add an interview, task, reminder, or private note.</p>
+                <div className="flex items-center justify-center gap-3 rounded-md border border-dashed border-[var(--user-border)] bg-[var(--user-surface-subtle)] px-4 py-3 xl:h-14">
+                  <FileText className="h-5 w-5 shrink-0 text-[var(--user-text-muted)]" />
+                  <p className="text-sm font-medium text-[var(--user-text-strong)]">No notes for this day</p>
                 </div>
               )}
             </div>
           </section>
 
-          <section className="user-workspace-surface p-5">
+          <section className="user-workspace-surface p-5 xl:p-4">
             <h2 className="user-workspace-section-title">Upcoming</h2>
             <div className="mt-4 space-y-2">
               {upcomingEntries.length > 0 ? upcomingEntries.map((entry) => (
@@ -306,7 +301,7 @@ export default function UserCalendarPage({ user }) {
                   <ChevronRight className="h-4 w-4 shrink-0 text-[var(--user-text-muted)]" />
                 </button>
               )) : (
-                <p className="rounded-md border border-dashed border-[var(--user-border)] bg-[var(--user-surface-subtle)] px-4 py-5 text-sm text-[var(--user-text-muted)]">
+                <p className="rounded-md border border-dashed border-[var(--user-border)] px-4 py-5 text-sm text-[var(--user-text-muted)] xl:py-4">
                   Upcoming notes will appear here.
                 </p>
               )}
