@@ -175,6 +175,15 @@ html::-webkit-scrollbar-thumb {
   scrollbar-width: none;
 }
 
+@media (min-width: 1280px) {
+  html.user-dashboard-page-lock,
+  html.user-dashboard-page-lock body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+}
+
 .user-dashboard-shell {
   --user-canvas: #e7e2d7;
   --user-surface: rgba(248, 251, 246, 0.76);
@@ -394,6 +403,39 @@ html.dark .user-dashboard-shell .user-workspace-surface {
 
   .user-dashboard-shell .user-workspace-primary-button:active {
     transform: translateY(1px);
+  }
+
+  /* Scroll-reveal panels: stable gutter prevents layout shift; thumb hidden at rest, visible on hover */
+  .user-dashboard-shell .scroll-panel .overflow-y-auto {
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+
+  .user-dashboard-shell .scroll-panel .overflow-y-auto::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .user-dashboard-shell .scroll-panel .overflow-y-auto::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .user-dashboard-shell .scroll-panel .overflow-y-auto::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 999px;
+    transition: background-color 150ms ease;
+  }
+
+  .user-dashboard-shell .scroll-panel:hover .overflow-y-auto {
+    scrollbar-color: var(--user-border-strong) transparent;
+  }
+
+  .user-dashboard-shell .scroll-panel:hover .overflow-y-auto::-webkit-scrollbar-thumb {
+    background-color: var(--user-border-strong);
+  }
+
+  .user-dashboard-shell .scroll-panel:hover .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background-color: var(--user-primary);
   }
 
   .user-dashboard-shell .user-messages-workspace {

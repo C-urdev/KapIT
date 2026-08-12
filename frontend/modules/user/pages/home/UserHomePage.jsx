@@ -64,6 +64,7 @@ const FEED_PAGE_SIZE = 10;
 const USER_PROFILE_QUERY_KEY = 'profileId';
 const USER_JOB_QUERY_KEY = 'jobId';
 const USER_NAV_TABS = new Set(['home', 'jobs', 'job-detail', 'pre-assessment', 'projects', 'search', 'messages', 'notifications', 'calendar', 'saved-jobs', 'applications', 'my-profile', 'resume-viewer', 'help', 'feedback', 'tips', 'verified', 'settings', 'public-profile', 'settings-account', 'settings-career', 'settings-resume-ats', 'settings-notifications', 'settings-saved-jobs', 'settings-applications', 'privacy-settings', 'privacy-change-password', 'privacy-comments', 'privacy-mentions', 'privacy-following', 'privacy-likes']);
+const pagesWithLockedWorkspace = ['jobs', 'calendar', 'saved-jobs', 'applications'];
 const resolveProfileId = (value) => {
   const normalized = String(value || '').trim();
   return normalized || '';
@@ -142,13 +143,20 @@ export default function UserHomePage({ user, userType, onOpenHelp: _onOpenHelp, 
   const [cookiesOpen, setCookiesOpen] = useState(false);
   const [notificationPreference, setNotificationPreference] = useState('all');
   useEffect(() => {
-    const pagesWithNoScroll = ['jobs', 'saved-jobs', 'applications'];
-    if (pagesWithNoScroll.includes(activeNav)) {
+    if (pagesWithLockedWorkspace.includes(activeNav)) {
       document.documentElement.classList.add('no-scrollbar');
+      document.documentElement.classList.add('user-dashboard-page-lock');
+      document.body.classList.add('user-dashboard-page-lock');
     } else {
       document.documentElement.classList.remove('no-scrollbar');
+      document.documentElement.classList.remove('user-dashboard-page-lock');
+      document.body.classList.remove('user-dashboard-page-lock');
     }
-    return () => document.documentElement.classList.remove('no-scrollbar');
+    return () => {
+      document.documentElement.classList.remove('no-scrollbar');
+      document.documentElement.classList.remove('user-dashboard-page-lock');
+      document.body.classList.remove('user-dashboard-page-lock');
+    };
   }, [activeNav]);
 
   const [canReturnToSettings, setCanReturnToSettings] = useState(false);
@@ -203,6 +211,7 @@ export default function UserHomePage({ user, userType, onOpenHelp: _onOpenHelp, 
   const isResumeAtsPreviewActive = activeNav === 'settings-resume-ats';
   const isSearchActive = activeNav === 'search';
   const isEdgeToEdgeView = isMessagesActive || isSettingsActive;
+  const isWorkspaceLockedPage = pagesWithLockedWorkspace.includes(activeNav);
   const pageBackgroundClass = isMessagesActive
     ? 'bg-[#e7e2d7] dark:bg-[#121212]'
     : 'bg-[#e7e2d7] dark:bg-[#121212]';
@@ -1228,7 +1237,7 @@ export default function UserHomePage({ user, userType, onOpenHelp: _onOpenHelp, 
         </aside>
 
         {/* Main Content Area */}
-        <div className="flex-1 min-w-0 flex flex-col min-h-[100dvh]">
+        <div className="flex-1 min-w-0 flex flex-col min-h-[100dvh] xl:h-[100dvh] xl:min-h-0">
           <UserNavbar
             activeNav={activeNav}
             setActiveNav={updateActiveNav}
@@ -1279,7 +1288,11 @@ export default function UserHomePage({ user, userType, onOpenHelp: _onOpenHelp, 
                 height: isMobileShellViewport ? '100dvh' : 'calc(100dvh - 4rem)',
                 overflow: 'hidden',
               }
-            : { paddingBottom: mobileSafeAreaBottomPadding }}
+            : {
+                paddingBottom: mobileSafeAreaBottomPadding,
+                height: isMobileShellViewport ? undefined : (isWorkspaceLockedPage ? 'calc(100dvh - 4rem)' : undefined),
+                overflow: isWorkspaceLockedPage && !isMobileShellViewport ? 'hidden' : undefined,
+              }}
       >
         {canReturnToSettings && ['my-profile', 'projects', 'saved-jobs', 'applications'].includes(activeNav) && (
           <div className="mb-4">
