@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const root = process.cwd();
+const root = process.cwd().endsWith('frontend') ? process.cwd() : path.join(process.cwd(), 'frontend');
 
-const read = (relativePath) =>
-  fs.readFileSync(path.join(root, relativePath), 'utf8');
+const read = (relativePath) => {
+  const cleanPath = relativePath.startsWith('frontend/') ? relativePath.substring(9) : relativePath;
+  return fs.readFileSync(path.join(root, cleanPath), 'utf8');
+};
 
 test('developer onboarding source is question-first and removes phone, location, and links from the final onboarding details form', () => {
   const source = read('frontend/modules/shared/pages/onboarding/DeveloperProfileOnboardingPage.jsx');

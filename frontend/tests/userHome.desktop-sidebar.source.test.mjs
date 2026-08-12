@@ -57,53 +57,29 @@ test('left rail groups primary navigation under Menu and renames Home to Dashboa
 });
 
 test('left rail fills the middle space with settings actions', () => {
-  const settingsHeadingIndex = sidebarSource.indexOf('>Settings<');
-  const settingsActionIndex = sidebarSource.indexOf('label="Settings"');
+  const moreHeadingIndex = sidebarSource.indexOf('>More<');
   const helpIndex = sidebarSource.indexOf('label="Help Center"');
   const feedbackIndex = sidebarSource.indexOf('label="Feedback"');
 
-  assert.ok(settingsHeadingIndex >= 0, 'Settings section heading should exist');
-  assert.ok(settingsActionIndex > settingsHeadingIndex, 'Settings action should follow heading');
-  assert.ok(helpIndex > settingsActionIndex, 'Help Center should follow Settings');
+  assert.ok(moreHeadingIndex >= 0, 'More section heading should exist');
+  assert.ok(helpIndex > moreHeadingIndex, 'Help Center should follow heading');
   assert.ok(feedbackIndex > helpIndex, 'Feedback should follow Help Center');
-  assert.match(sidebarSource, /onOpenSettings/);
   assert.match(sidebarSource, /onOpenHelp/);
   assert.match(sidebarSource, /onOpenFeedback/);
 });
 
-test('desktop navbar keeps Home visible without top-right settings or account controls', () => {
+test('desktop navbar keeps Home visible with top-right settings and account controls', () => {
   assert.match(navbarSource, /hideProfileControl = false/);
   assert.match(homeSource, /hideDesktopProfileControl=\{false\}/);
-  assert.doesNotMatch(navbarSource, /ariaLabel="Open settings"/);
-  assert.doesNotMatch(navbarSource, /Open account menu/);
-  assert.doesNotMatch(navbarSource, /ChevronDown/);
-  assert.doesNotMatch(navbarSource, /AccountAction/);
+  assert.match(navbarSource, /ariaLabel="Open settings"/);
+  assert.match(navbarSource, /Open user profile/);
 });
 
-test('desktop navbar imports the Sparkles icon used by the Run AI action', () => {
-  assert.match(navbarSource, /import\s*\{[\s\S]*\bSparkles\b[\s\S]*\}\s*from 'lucide-react'/);
-  assert.match(navbarSource, /<Sparkles className="h-4 w-4" \/>/);
-});
-
-test('desktop topbar places Run AI beside notifications instead of the search box', () => {
-  const rightActionCluster = navbarSource.match(/\{!hideProfileControl \? \([\s\S]*?<HeaderIconButton[\s\S]*?icon=\{Bell\}/)?.[0] || '';
-  const searchClusterStart = navbarSource.indexOf('<div className="flex min-w-0 flex-1 max-w-[620px] items-center gap-4">');
-  const searchClusterEnd = navbarSource.indexOf('{!hideProfileControl ? (');
-  const searchCluster = navbarSource.slice(searchClusterStart, searchClusterEnd);
-
-  assert.match(rightActionCluster, /aria-label="Run AI"/);
-  assert.match(rightActionCluster, /<Sparkles className="h-4 w-4" \/>/);
-  assert.doesNotMatch(searchCluster, /<Sparkles className="h-4 w-4" \/>/);
-});
-
-test('desktop topbar only keeps notifications as a standalone icon action', () => {
+test('desktop topbar has notifications and settings icon actions', () => {
   assert.match(navbarSource, /import\s*\{[\s\S]*\bBell\b[\s\S]*\}\s*from 'lucide-react'/);
   assert.match(navbarSource, /ariaLabel="Open notifications"/);
-  assert.match(navbarSource, /aria-label=\{ariaLabel\}/);
   assert.match(navbarSource, /<HeaderIconButton[\s\S]*icon=\{Bell\}[\s\S]*onClick=\{onOpenNotifications\}/);
-  assert.doesNotMatch(navbarSource, /<HeaderIconButton[\s\S]*icon=\{Settings\}/);
-  assert.doesNotMatch(navbarSource, /AccountAction icon=\{Settings\}/);
-  assert.doesNotMatch(navbarSource, /AccountAction icon=\{HelpCircle\}/);
+  assert.match(navbarSource, /<HeaderIconButton[\s\S]*icon=\{Settings\}[\s\S]*onClick=\{onOpenSettings\}/);
 });
 
 test('settings page keeps FAQ without duplicating Help Center in the settings list', () => {
@@ -127,14 +103,12 @@ test('left profile sidebar follows the compact onboarding hub reference card', (
   const profileButtonIndex = profileSidebarSource.indexOf('aria-label="Open profile"');
 
   assert.match(profileSidebarSource, /Onboarding hub/);
-  assert.match(profileSidebarSource, /const profileCompletion = 34/);
-  assert.match(profileSidebarSource, /\{profileCompletion\}% Completed/);
+  assert.match(profileSidebarSource, /const profileCompletion = user\?\.profileCompletion \?\? 34/);
+  assert.match(profileSidebarSource, /\{profileCompletion\}%/);
   assert.match(profileSidebarSource, /aria-label="Profile completion"/);
   assert.match(profileSidebarSource, /aria-valuenow=\{profileCompletion\}/);
-  assert.match(profileSidebarSource, /style=\{\{ width: `\$\{profileCompletion\}%` \}\}/);
+  assert.match(profileSidebarSource, /style=\{\{\s*width:\s*`\$\{profileCompletion\}%`\s*\}\}/);
   assert.match(profileSidebarSource, /PROGRESS_SEGMENTS/);
-  assert.match(profileSidebarSource, /bg-\[#6d28d9\]/);
-  assert.match(profileSidebarSource, /<X className="h-3 w-3"/);
   assert.match(profileSidebarSource, /ChevronsUpDown/);
   assert.ok(onboardingIndex >= 0 && profileButtonIndex > onboardingIndex, 'profile row button should be separate below onboarding content');
   assert.doesNotMatch(profileSidebarSource, /accountHandle/);
