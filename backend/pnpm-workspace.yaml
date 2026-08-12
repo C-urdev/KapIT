@@ -8,3 +8,4 @@ allowBuilds:
 overrides:
   path-to-regexp: 0.1.13
   qs: 6.15.2
+  nanoid: ^5.1.16

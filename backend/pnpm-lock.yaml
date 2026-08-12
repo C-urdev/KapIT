@@ -5,8 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  qs: 6.15.2
   path-to-regexp: 0.1.13
+  qs: 6.15.2
+  nanoid: ^5.1.16
 
 importers:
 
@@ -1075,8 +1076,8 @@ packages:
   msgpackr@2.0.1:
     resolution: {integrity: sha512-9J+tqTEsbHqY8YohazYgty7LgerFIWxvMLpUjqETSmjHojtJm2WnX2kK/2a1fLI7CO7ERP1YSEUXMucz4j+yBA==}
 
-  nanoid@5.1.11:
-    resolution: {integrity: sha512-v+KEsUv2ps74PaSKv0gHTxTCgMXOIfBEbaqa6w6ISIGC7ZsvHN4N9oJ8d4cmf0n5oTzQz2SLmThbQWhjd/8eKg==}
+  nanoid@5.1.16:
+    resolution: {integrity: sha512-kVrnsrJqMR8+oLJnGEmSWw9BivK5mt7H3FZatVRjrc5wGqFYuBxX1yG7+A7Gi5AefkX6t/oCkizcQgpu0cY1dQ==}
     engines: {node: ^18 || >=20}
     hasBin: true
 
@@ -2128,7 +2129,7 @@ snapshots:
       '@types/node': 25.9.1
       hash.js: 1.1.7
       jszip: 3.10.1
-      nanoid: 5.1.11
+      nanoid: 5.1.16
       xml: 1.0.1
       xml-js: 1.6.11
 
@@ -2549,7 +2550,7 @@ snapshots:
     optionalDependencies:
       msgpackr-extract: 3.0.3
 
-  nanoid@5.1.11: {}
+  nanoid@5.1.16: {}
 
   negotiator@0.6.3: {}
 
