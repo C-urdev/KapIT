@@ -165,7 +165,7 @@ test('auth integration: register + login success, generic login failure, and mis
 
   const registerPayload = {
     username: 'qa_user_001',
-    email: 'mock-qa_user_001@example.com',
+    email: 'local-bypass-qa_user_001@example.com',
     password: validPassword,
     accountType: 'developer',
   };
