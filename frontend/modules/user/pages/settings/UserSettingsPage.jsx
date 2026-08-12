@@ -146,7 +146,6 @@ export default function UserSettingsPage({
           </button>
           <div className="min-w-0 flex-1">
             <h1 className="user-workspace-page-title mt-1">Settings</h1>
-            <p className="mt-1 text-sm text-[var(--user-text-muted)]">Manage your profile, preferences, privacy, and support options.</p>
           </div>
         </header>
 
@@ -201,7 +200,6 @@ export default function UserSettingsPage({
         <div className="user-desktop-flat-surface min-w-0 flex-1 overflow-hidden rounded-2xl border border-[#a8bc94] bg-white shadow-sm shadow-black/5 dark:border-[#3a434d] dark:bg-[#1f2429]">
           <div className="px-4 pb-3 pt-4 sm:px-6 sm:pt-5">
             <h1 className="text-[28px] font-bold text-[#1c2b1f] dark:text-white xl:mt-1 xl:text-3xl xl:font-semibold xl:text-[var(--user-text-strong)]">Settings</h1>
-            <p className="mt-1 hidden text-sm text-[var(--user-text-muted)] xl:block">Manage your profile, preferences, privacy, and support options.</p>
             <div className="relative mt-3">
               <Search className="absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#5f6f52] dark:text-[#a8b1ba]" />
               <input

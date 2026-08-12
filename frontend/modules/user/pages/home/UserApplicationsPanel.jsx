@@ -44,7 +44,6 @@ export default function UserApplicationsPanel({ applications = [], embedded = fa
       {!embedded ? (
         <div className="px-5 pb-1 pt-5 xl:px-6 xl:pt-6">
           <h2 className="text-[22px] font-semibold tracking-tight text-[var(--user-text-strong)] xl:text-3xl">Applications</h2>
-          <p className="mt-1 text-sm text-[var(--user-text-muted)]">Track every role and its current hiring status.</p>
         </div>
       ) : null}
 

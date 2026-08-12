@@ -22,11 +22,10 @@ const FEEDBACK_TYPES = [
   },
 ];
 
-export default function UserFeedbackPage({ user, onBack }) {
+export default function UserFeedbackPage({ onBack }) {
   const [feedbackType, setFeedbackType] = useState('experience');
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const displayName = user?.fullName || user?.name || user?.username || 'there';
   const selectedType = FEEDBACK_TYPES.find((type) => type.id === feedbackType) || FEEDBACK_TYPES[0];
 
   const handleSubmit = (event) => {
@@ -56,9 +55,6 @@ export default function UserFeedbackPage({ user, onBack }) {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--user-text-strong)] sm:text-3xl">Share feedback</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--user-text-muted)]">
-                Hi {displayName}, tell us what would make the dashboard easier, clearer, or more helpful for your career workflow.
-              </p>
             </div>
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--user-primary-soft)] text-[var(--user-primary)]">
               <MessageSquare className="h-5 w-5" />

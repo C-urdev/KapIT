@@ -28,9 +28,6 @@ export default function HelpPage({ onBack }) {
             Back
           </button>
           <h1 className="help-workspace-title mt-5">Help</h1>
-          <p className="help-workspace-copy mt-2 max-w-2xl text-sm leading-6">
-            Contact KapIT support with account, hiring, payment, or onboarding questions.
-          </p>
         </div>
         <div className="help-workspace-status flex items-center gap-2 rounded-md px-3 py-2 text-sm">
           <Clock3 className="h-4 w-4" />

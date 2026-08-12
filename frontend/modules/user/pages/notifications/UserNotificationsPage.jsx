@@ -191,7 +191,6 @@ export default function UserNotificationsPage({ onReadAll }) {
       <header className="mb-5">
         <p className="text-sm font-medium text-[var(--user-primary)]">Activity</p>
         <h1 className="user-workspace-page-title mt-1">Notifications</h1>
-        <p className="mt-1 text-sm text-[var(--user-text-muted)]">Review messages, profile activity, and important account updates.</p>
       </header>
 
       {loading ? (

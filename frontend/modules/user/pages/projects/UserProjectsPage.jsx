@@ -548,7 +548,6 @@ function DesktopProjectsWorkspace({ userType, projects, onCreate, onEdit, onDele
       <header className="mb-5 flex items-end justify-between gap-6">
         <div>
           <h1 className="user-workspace-page-title mt-1">{userType === 'employee' ? 'Projects' : 'Projects library'}</h1>
-          <p className="mt-1 text-sm text-[var(--user-text-muted)]">Show the work, tools, and outcomes that represent your experience.</p>
         </div>
         {userType === 'employee' ? (
           <button type="button" onClick={onCreate} className="user-workspace-primary-button inline-flex items-center gap-2 px-4 text-sm font-semibold">

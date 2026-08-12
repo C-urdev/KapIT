@@ -79,7 +79,6 @@ export default function CenterFeed(props) {
       <header className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="user-workspace-page-title mt-1">Welcome back, {displayName.split(' ')[0]}</h1>
-          <p className="mt-1 text-sm text-[var(--user-text-muted)]">Keep your profile active and your next opportunity moving.</p>
         </div>
       </header>
 
