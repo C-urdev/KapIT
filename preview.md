@@ -20,22 +20,32 @@ At runtime, the frontend calls `/api/*`. In local development, Vite proxies thos
 | --- | --- |
 | `frontend/` | Vite React web application for public pages, developer dashboards, company dashboards, onboarding, jobs, payments, and account flows. |
 | `frontend/src/App.jsx` | Main browser route table. It wires public routes, auth pages, dashboards, onboarding, job pages, payment pages, and fallback routing. |
+| `frontend/src/pages/` | Viewport-aware page shell components that dispatch to desktop or mobile variants via `useViewportMode`. |
+| `frontend/src/pages/desktop/` | Desktop-specific page variants split by domain: auth, company, public, user. |
+| `frontend/src/pages/mobile/` | Mobile-specific page variants split by domain: auth, company, public, user. |
+| `frontend/src/pages/shared/` | Shared page content components reused across viewport variants. |
+| `frontend/lib/` | Frontend utility library (e.g. `seo.ts` for SEO helpers). |
 | `frontend/modules/shared/` | Shared frontend UI, services, hooks, contexts, public pages, auth components, navigation, utilities, and reusable feature code. |
-| `frontend/modules/user/` | Developer/user-only dashboard pages, features, navigation, profile, posts, jobs, messages, notifications, premium, settings, search, and calendar views. |
+| `frontend/modules/user/` | Developer/user-only dashboard pages, features, layouts, and components. |
 | `frontend/modules/company/` | Company-only pages, layouts, components, and feature code for employer workflows. |
 | `frontend/modules/desktop/` | Desktop-specific public page and navigation variants. |
 | `frontend/modules/mobile/` | Mobile-specific public page and navigation variants. |
+| `frontend/modules/assets/` | Static asset files (SVGs, logos) used across the frontend. |
+| `frontend/modules/hooks/` | Top-level shared React hooks directory. |
 | `frontend/components/` | Legacy/shared frontend component area still used by current lazy-loaded pages. |
 | `frontend/tests/` | Frontend source and behavior checks. |
 | `backend/api/` | Express API server. It owns routes, controllers, middleware, services, queues, validation, config, uploads, and backend tests. |
 | `backend/api/app.ts` | Express application factory. It installs security headers, CORS, body parsing, validation, rate limits, route mounts, health checks, readiness checks, and error handling. |
 | `backend/api/server.ts` | Backend runtime entrypoint. It starts Express, warms runtime schemas, starts cleanup jobs and resume workers, logs Redis status, handles port fallback in development, and performs graceful shutdown. |
 | `backend/api/routes/` | API route modules for auth, company, developer, matching, messages, notifications, payments, public data, resume, and uploads. |
-| `backend/api/controllers/` | Request handlers for auth, OAuth, recovery, company, developer, matching, messages, notifications, posts, payments, resumes, uploads, and public data. |
-| `backend/api/services/` | Business logic and integrations for auth, sessions, jobs, matching, messaging, payments, email, AI, resume storage, resume cleanup, uploads, antivirus, and rollout/migration support. |
-| `backend/api/middleware/` | Security, request validation, authentication, input sanitization, and request processing middleware. |
-| `backend/api/config/` | Environment loading, database, Redis, origins/CORS, logging, runtime schema warming, payment config, R2 storage config, and security event logging. |
+| `backend/api/controllers/` | Request handlers for auth, OAuth, recovery, terms, chatbot, company, developer, matching, messages, notifications, posts, payments, resumes, uploads, and public data. |
+| `backend/api/services/` | Business logic and integrations for auth, sessions, jobs, job availability, match-job, chatbot fallback, account search, messaging, payments, email, AI, resume storage, resume cleanup, resume job events, uploads, antivirus, and rollout/migration support. |
+| `backend/api/middleware/` | Security, request validation, authentication, input sanitization, idempotency key handling, messaging debug, and write-validation middleware. |
+| `backend/api/config/` | Environment loading, database, Redis, origins/CORS, logging, runtime schema warming, local dev bypass, schema management mode, payment config, R2 storage config, and security event logging. |
 | `backend/api/queues/` | Background queue workers, currently used by resume-related processing. |
+| `backend/api/utils/` | Shared backend utility modules (auth serializer, match signatures, socials, username generator). |
+| `backend/api/scripts/` | Backend-local automation scripts. |
+| `backend/api/uploads/` | Local upload staging area for file ingestion. |
 | `backend/api/tests/` | Backend tests using Node's test runner and `supertest`. |
 | `backend/serverless/` | Serverless adapter area for Vercel-style deployment paths. |
 | `backend/ai-fastapi/` | Optional Python FastAPI AI service with its own app, tests, virtual environment, and requirements. |
@@ -69,7 +79,7 @@ Main route owners:
 
 ### Authentication And Account Access
 
-The app supports register, login, logout, refresh/session flows, Google OAuth, GitHub OAuth, password reset, OTP-backed recovery, registration terms, and role-based dashboard routing.
+The app supports register, login, logout, refresh/session flows, Google OAuth, GitHub OAuth, password reset, OTP-backed recovery, registration terms acceptance, and role-based dashboard routing.
 
 Main backend owners:
 
@@ -77,6 +87,7 @@ Main backend owners:
 - `backend/api/controllers/authController.ts`
 - `backend/api/controllers/oauthController.ts`
 - `backend/api/controllers/authRecoveryController.ts`
+- `backend/api/controllers/authTermsController.ts`
 - `backend/api/services/authService.ts`
 - `backend/api/services/authSessionService.ts`
 
@@ -102,6 +113,9 @@ Main backend owners:
 - `backend/api/controllers/matchController.ts`
 - `backend/api/controllers/resumeController.ts`
 - `backend/api/controllers/uploadController.ts`
+- `backend/api/services/accountSearchService.ts`
+- `backend/api/services/jobAvailabilityService.ts`
+- `backend/api/services/matchJobService.ts`
 
 ### Company Workspace
 
@@ -155,7 +169,7 @@ Main backend owners:
 
 ### Resume And AI
 
-Resume-related features include uploads, storage, cleanup, parsing/conversion support, optimization, and queue-backed processing. AI matching can run through the optional FastAPI service when configured.
+Resume-related features include uploads, storage, cleanup, parsing/conversion support, optimization, queue-backed processing, and resume job event tracking. Chatbot support uses a fallback service. AI matching can run through the optional FastAPI service when configured.
 
 Main backend owners:
 
@@ -164,6 +178,9 @@ Main backend owners:
 - `backend/api/services/resumeOptimizationService.ts`
 - `backend/api/services/resumeCleanupService.ts`
 - `backend/api/services/pdfConversionService.ts`
+- `backend/api/services/resumeJobEvents.ts`
+- `backend/api/services/chatbotFallbackService.ts`
+- `backend/api/controllers/chatbotController.ts`
 - `backend/api/queues/`
 - `backend/ai-fastapi/`
 

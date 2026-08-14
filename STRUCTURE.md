@@ -7,19 +7,40 @@ This file is the single source of truth for repository layout and frontend place
 ```text
 kapIT/
 |- frontend/                # Vite React frontend
+|  |- src/
+|  |  |- pages/             # Viewport-aware page shells
+|  |  |  |- desktop/        # Desktop page variants (auth/company/public/user)
+|  |  |  |- mobile/         # Mobile page variants (auth/company/public/user)
+|  |  |  `- shared/         # Shared page content components
+|  |  `- App.jsx
+|  |- modules/
+|  |  |- shared/            # Shared UI, services, hooks, contexts
+|  |  |- user/              # Developer/user-only features & pages
+|  |  |- company/           # Company-only features & pages
+|  |  |- desktop/           # Desktop navigation & public page variants
+|  |  |- mobile/            # Mobile navigation & public page variants
+|  |  |- assets/            # Static assets (SVGs, logos)
+|  |  `- hooks/             # Top-level shared hooks
+|  |- lib/                  # Utility libraries (e.g. seo.ts)
+|  `- components/           # Legacy/shared component area
 |- backend/
 |  |- api/                  # Express API server
-|  |  |- config/
-|  |  |- controllers/
-|  |  |- middleware/
-|  |  |- routes/
-|  |  |- services/
-|  |  |- tests/
-|  |  `- validation/
+|  |  |- config/            # Env, DB, Redis, CORS, logging, schema warmers
+|  |  |- controllers/       # Request handlers
+|  |  |- middleware/        # Auth, security, validation, sanitization
+|  |  |- routes/            # Route modules
+|  |  |- services/          # Business logic & integrations
+|  |  |- queues/            # Background queue workers
+|  |  |- utils/             # Shared backend utilities
+|  |  |- scripts/           # Backend-local scripts
+|  |  |- uploads/           # Local upload staging area
+|  |  `- tests/
 |  |- serverless/           # Serverless adapter (Vercel-style)
 |  `- ai-fastapi/           # Optional FastAPI AI microservice
 |- database/
 |  |- migrations/           # SQL migrations
+|  |- reports/              # RLS & schema audit reports
+|  |- examples/             # Example data / seed helpers
 |  `- init.sql
 |- scripts/                 # Dev/build orchestration scripts
 |- render.yaml              # Render backend config

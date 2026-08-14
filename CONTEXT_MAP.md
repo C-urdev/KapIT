@@ -19,12 +19,21 @@ Read this file first when starting any session. Use this lookup table to load th
 .
 |- frontend/
 |  |- src/
+|  |  |- pages/
+|  |  |  |- desktop/
+|  |  |  |- mobile/
+|  |  |  `- shared/
+|  |  `- App.jsx
 |  |- modules/
 |  |  |- shared/
 |  |  |- user/
-|  |  `- company/
-|  |- components/
-|  `- tests/
+|  |  |- company/
+|  |  |- desktop/
+|  |  |- mobile/
+|  |  |- assets/
+|  |  `- hooks/
+|  |- lib/
+|  `- components/
 |- backend/
 |  |- api/
 |  |  |- config/
@@ -33,6 +42,9 @@ Read this file first when starting any session. Use this lookup table to load th
 |  |  |- routes/
 |  |  |- services/
 |  |  |- queues/
+|  |  |- utils/
+|  |  |- scripts/
+|  |  |- uploads/
 |  |  `- tests/
 |  |- ai-fastapi/
 |  |- serverless/
@@ -309,9 +321,15 @@ These were discovered in workspace but are not project-authored context docs. Tr
 - Target paths:
   - `frontend/src/App.jsx`
   - `frontend/src/pages/`
+  - `frontend/src/pages/desktop/`
+  - `frontend/src/pages/mobile/`
+  - `frontend/src/pages/shared/`
+  - `frontend/lib/`
   - `frontend/modules/shared/`
   - `frontend/modules/user/`
   - `frontend/modules/company/`
+  - `frontend/modules/assets/`
+  - `frontend/modules/hooks/`
   - `frontend/components/`
   - `frontend/tests/`
 
@@ -504,14 +522,25 @@ These were discovered in workspace but are not project-authored context docs. Tr
 - Middleware: `backend/api/middleware/`
 - Routes: `backend/api/routes/`
 - Services: `backend/api/services/`
+- Queues: `backend/api/queues/`
+- Utils: `backend/api/utils/`
+- Scripts: `backend/api/scripts/`
+- Uploads: `backend/api/uploads/`
 - Tests: `backend/api/tests/`
 
 ### Frontend Source Anchors
 
 - Main router: `frontend/src/App.jsx`
+- Page shells: `frontend/src/pages/` (viewport-dispatching wrappers)
+  - Desktop variants: `frontend/src/pages/desktop/`
+  - Mobile variants: `frontend/src/pages/mobile/`
+  - Shared content: `frontend/src/pages/shared/`
 - Shared domain: `frontend/modules/shared/`
 - User domain: `frontend/modules/user/`
 - Company domain: `frontend/modules/company/`
+- Static assets: `frontend/modules/assets/`
+- Top-level hooks: `frontend/modules/hooks/`
+- Frontend lib utilities: `frontend/lib/`
 - Legacy/shared component area: `frontend/components/`
 - Frontend tests: `frontend/tests/`
 
