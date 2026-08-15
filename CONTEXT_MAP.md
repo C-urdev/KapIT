@@ -120,6 +120,9 @@ Read this file first when starting any session. Use this lookup table to load th
 
 #### Development Skills
 
+- `.agents/skills/development/codebase-reorganize/SKILL.md`
+- `.agents/skills/development/codebase-reorganize/references/layout-archetypes.md`
+- `.agents/skills/development/codebase-reorganize/references/import-rewriting-guide.md`
 - `.agents/skills/development/finishing-a-development-branch/SKILL.md`
 - `.agents/skills/development/junior-to-senior/SKILL.md`
 - `.agents/skills/development/junior-to-senior/references/research-playbook.md`
@@ -205,6 +208,12 @@ Read this file first when starting any session. Use this lookup table to load th
 - `.agents/skills/planning-context/loop-factory/references/commands.md`
 - `.agents/skills/planning-context/loop-factory/references/install.md`
 - `.agents/skills/planning-context/loop-factory/references/spec-authoring.md`
+- `.agents/skills/planning-context/project-docs/SKILL.md`
+- `.agents/skills/planning-context/project-docs/references/discovery-playbook.md`
+- `.agents/skills/planning-context/project-docs/references/structure-template.md`
+- `.agents/skills/planning-context/project-docs/references/preview-template.md`
+- `.agents/skills/planning-context/project-docs/references/context-map-template.md`
+- `.agents/skills/planning-context/project-docs/references/readme-template.md`
 - `.agents/skills/planning-context/using-git-worktrees/SKILL.md`
 - `.agents/skills/planning-context/writing-plans/SKILL.md`
 - `.agents/skills/planning-context/writing-plans/plan-document-reviewer-prompt.md`
